@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://irisje.onrender.com';
 
 function calcAverage(reviews) {
   if (!reviews || reviews.length === 0) return 0;
