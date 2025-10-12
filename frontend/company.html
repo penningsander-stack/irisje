@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bedrijf – Irisje</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1 id="companyName">Bedrijf</h1>
+  </header>
+  <main>
+    <section id="companyDetails"></section>
+
+    <h2>Reviews</h2>
+    <div id="reviewsList"></div>
+
+    <h3>Schrijf een review</h3>
+    <form id="reviewForm">
+      <input type="text" id="author" placeholder="Jouw naam" required /><br />
+      <input type="number" id="rating" placeholder="Beoordeling (1-5)" min="1" max="5" required /><br />
+      <textarea id="comment" placeholder="Jouw ervaring" required></textarea><br />
+      <button type="submit">Verstuur review</button>
+    </form>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
