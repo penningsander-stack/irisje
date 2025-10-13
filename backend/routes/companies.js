@@ -2,35 +2,34 @@ const express = require('express');
 const router = express.Router();
 const Company = require('../models/Company');
 
-// Get all companies
+// GET all companies
 router.get('/', async (req, res) => {
-  const companies = await Company.find();
-  res.json(companies);
+  try {
+    const companies = await Company.find();
+    res.json(companies);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-// Get single company by ID
+// GET single company
 router.get('/:id', async (req, res) => {
-  const company = await Company.findById(req.params.id);
-  res.json(company);
+  try {
+    const company = await Company.findById(req.params.id);
+    res.json(company);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-// Add a new company
-router.post('/', async (req, res) => {
-  const company = new Company(req.body);
-  await company.save();
-  res.status(201).json(company);
-});
-
-// Update a company
-router.put('/:id', async (req, res) => {
-  const company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
-  res.json(company);
-});
-
-// Delete a company
+// DELETE company
 router.delete('/:id', async (req, res) => {
-  await Company.findByIdAndDelete(req.params.id);
-  res.json({ message: 'Bedrijf verwijderd' });
+  try {
+    await Company.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Bedrijf verwijderd' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 module.exports = router;
