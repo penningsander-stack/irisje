@@ -1,114 +1,82 @@
 const API_BASE_URL = 'https://irisje.onrender.com';
 
-function initReviewForm() {
-  const reviewForm = document.getElementById('reviewForm');
-  const reviewList = document.getElementById('reviewList');
-  const companyTitle = document.getElementById('companyTitle');
+document.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const companyId = params.get('id');
 
-  if (!reviewForm || !reviewList) {
-    console.log("Geen reviewform of reviewList gevonden.");
-    return;
-  }
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const companyId = urlParams.get('id');
   if (!companyId) {
-    console.log("Geen bedrijf ID in URL.");
+    document.getElementById('companyDetails').innerHTML = '<p>Bedrijf niet gevonden.</p>';
     return;
   }
 
-  console.log("Bedrijf ID:", companyId);
+  try {
+    // Bedrijfsdetails ophalen
+    const companyRes = await fetch(`${API_BASE_URL}/api/companies/${companyId}`);
+    const company = await companyRes.json();
 
-  function loadReviews() {
-    fetch(`${API_BASE_URL}/api/reviews/company/${companyId}`)
-      .then(res => res.json())
-      .then(reviews => {
-        reviewList.innerHTML = '';
-        if (!reviews.length) {
-          reviewList.innerHTML = '<p>Nog geen reviews.</p>';
-        } else {
-          reviews.forEach(r => {
-            const div = document.createElement('div');
-            div.innerHTML = `<p><strong>${r.author}</strong> (${r.rating}/5): ${r.comment}</p>`;
-            reviewList.appendChild(div);
-          });
-        }
-      });
+    document.getElementById('companyDetails').innerHTML = `
+      <h2>${company.name}</h2>
+      <p><strong>${company.category}</strong> – ${company.location}</p>
+      <p>${company.description}</p>
+    `;
+
+    // Reviews ophalen
+    const reviewRes = await fetch(`${API_BASE_URL}/api/reviews/company/${companyId}`);
+    const reviews = await reviewRes.json();
+
+    const reviewList = document.getElementById('reviewList');
+    if (reviews.length === 0) {
+      reviewList.innerHTML = '<p>Er zijn nog geen reviews voor dit bedrijf.</p>';
+    } else {
+      reviewList.innerHTML = '<ul>' + reviews.map(r => `
+        <li>
+          <strong>${r.name}</strong> (${r.rating}/5):<br />
+          ${r.comment}
+        </li>
+      `).join('') + '</ul>';
+    }
+  } catch (err) {
+    console.error(err);
+    document.getElementById('companyDetails').innerHTML = '<p>Fout bij laden van gegevens.</p>';
   }
 
-  reviewForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const author = document.getElementById('author').value;
-    const rating = parseInt(document.getElementById('rating').value);
-    const comment = document.getElementById('comment').value;
+  // Review versturen
+  const submitBtn = document.getElementById('submitReview');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const name = document.getElementById('reviewName').value.trim();
+      const rating = parseInt(document.getElementById('reviewRating').value);
+      const comment = document.getElementById('reviewComment').value.trim();
+      const status = document.getElementById('reviewStatus');
 
-    console.log("Review verstuurd:", { author, rating, comment });
+      if (!name || !rating || !comment) {
+        status.textContent = 'Vul alle velden in.';
+        status.style.color = 'red';
+        return;
+      }
 
-    fetch(`${API_BASE_URL}/api/reviews`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company: companyId, author, rating, comment })
-    })
-      .then(res => res.json())
-      .then(() => {
-        reviewForm.reset();
-        loadReviews();
-      })
-      .catch(err => console.error('Fout bij POST:', err));
-  });
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/reviews`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId, name, rating, comment })
+        });
 
-  loadReviews();
-}
-
-function initSearch() {
-  const searchBtn = document.getElementById('searchBtn');
-  const searchInput = document.getElementById('searchInput');
-  const resultsDiv = document.getElementById('results');
-
-  if (!searchBtn || !searchInput || !resultsDiv) return;
-
-  searchBtn.addEventListener('click', () => {
-    const query = searchInput.value.trim().toLowerCase();
-    fetch(`${API_BASE_URL}/api/companies`)
-      .then(res => res.json())
-      .then(data => {
-        resultsDiv.innerHTML = '';
-        const filtered = data.filter(company =>
-          company.name.toLowerCase().includes(query) ||
-          company.category.toLowerCase().includes(query) ||
-          company.location.toLowerCase().includes(query)
-        );
-
-        if (filtered.length === 0) {
-          resultsDiv.innerHTML = '<p>Geen resultaten gevonden.</p>';
+        if (res.ok) {
+          status.textContent = 'Review succesvol toegevoegd!';
+          status.style.color = 'green';
+          document.getElementById('reviewName').value = '';
+          document.getElementById('reviewRating').value = '';
+          document.getElementById('reviewComment').value = '';
+          setTimeout(() => location.reload(), 1000);
         } else {
-          filtered.forEach(company => {
-            const avgRating =
-              company.reviews && company.reviews.length
-                ? (
-                    company.reviews.reduce((sum, r) => sum + r.rating, 0) /
-                    company.reviews.length
-                  ).toFixed(1)
-                : 0;
-
-            const card = document.createElement('div');
-            card.className = 'company-card';
-            card.innerHTML = `
-              <h3>${company.name}</h3>
-              <p><strong>${company.category}</strong> – ${company.location}</p>
-              <p>⭐ Gem. beoordeling: ${avgRating} / 5 (${company.reviews?.length || 0} reviews)</p>
-              <a href="company.html?id=${company._id}">Bekijk</a>
-            `;
-            resultsDiv.appendChild(card);
-          });
+          throw new Error('Fout bij toevoegen');
         }
-      })
-      .catch(err => {
-        resultsDiv.innerHTML = `<p>Fout bij het laden van gegevens: ${err.message}</p>`;
-      });
-  });
-}
-
-// Altijd direct uitvoeren
-initSearch();
-initReviewForm();
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Er is iets misgegaan.';
+        status.style.color = 'red';
+      }
+    });
+  }
+});
