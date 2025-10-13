@@ -1,70 +1,36 @@
 const express = require('express');
 const router = express.Router();
-const Company = require('../models/company');
+const Company = require('../models/Company');
 
-// GET alle bedrijven
+// Get all companies
 router.get('/', async (req, res) => {
-  try {
-    const companies = await Company.find();
-    res.json(companies);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  const companies = await Company.find();
+  res.json(companies);
 });
 
-// GET één bedrijf
+// Get single company by ID
 router.get('/:id', async (req, res) => {
-  try {
-    const company = await Company.findById(req.params.id);
-    if (!company) return res.status(404).json({ message: 'Niet gevonden' });
-    res.json(company);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  const company = await Company.findById(req.params.id);
+  res.json(company);
 });
 
-// POST nieuw bedrijf
+// Add a new company
 router.post('/', async (req, res) => {
-  const { name, category, location, description } = req.body;
-  if (!name || !category || !location || !description) {
-    return res.status(400).json({ message: 'Alle velden zijn verplicht.' });
-  }
-  try {
-    const newCompany = new Company({ name, category, location, description });
-    const saved = await newCompany.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  const company = new Company(req.body);
+  await company.save();
+  res.status(201).json(company);
 });
 
-// PUT: bedrijf bijwerken
+// Update a company
 router.put('/:id', async (req, res) => {
-  try {
-    const company = await Company.findById(req.params.id);
-    if (!company) return res.status(404).json({ message: 'Niet gevonden' });
-    const { name, category, location, description } = req.body;
-    if (name) company.name = name;
-    if (category) company.category = category;
-    if (location) company.location = location;
-    if (description) company.description = description;
-    const updated = await company.save();
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+  const company = await Company.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.json(company);
 });
 
-// DELETE: bedrijf verwijderen
+// Delete a company
 router.delete('/:id', async (req, res) => {
-  try {
-    const company = await Company.findById(req.params.id);
-    if (!company) return res.status(404).json({ message: 'Niet gevonden' });
-    await company.remove();
-    res.json({ message: 'Bedrijf verwijderd' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  await Company.findByIdAndDelete(req.params.id);
+  res.json({ message: 'Bedrijf verwijderd' });
 });
 
 module.exports = router;
