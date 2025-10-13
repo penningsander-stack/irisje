@@ -1,88 +1,137 @@
 const API_BASE_URL = 'https://irisje.onrender.com';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const params = new URLSearchParams(window.location.search);
-  const companyId = params.get('id');
+document.addEventListener('DOMContentLoaded', () => {
+  const searchBtn = document.getElementById('searchBtn');
+  const searchInput = document.getElementById('searchInput');
+  const resultsContainer = document.getElementById('results');
 
-  if (!companyId) {
-    document.getElementById('companyDetails').innerHTML = '<p>Bedrijf niet gevonden.</p>';
-    return;
+  if (searchBtn && searchInput && resultsContainer) {
+    searchBtn.addEventListener('click', () => {
+      const query = searchInput.value.trim();
+      if (!query) return;
+
+      fetch(`${API_BASE_URL}/api/companies`)
+        .then(res => res.json())
+        .then(data => {
+          const filtered = data.filter(c =>
+            c.name.toLowerCase().includes(query.toLowerCase()) ||
+            c.category.toLowerCase().includes(query.toLowerCase())
+          );
+
+          resultsContainer.innerHTML = '';
+          if (filtered.length === 0) {
+            resultsContainer.innerHTML = '<p>Geen resultaten gevonden.</p>';
+            return;
+          }
+
+          filtered.forEach(company => {
+            const div = document.createElement('div');
+            div.className = 'company-card';
+            div.innerHTML = `
+              <h2>${company.name}</h2>
+              <p><strong>${company.category}</strong> – ${company.location}</p>
+              <p>${company.description}</p>
+              <a href="company.html?id=${company._id}">Bekijk</a>
+            `;
+            resultsContainer.appendChild(div);
+          });
+        });
+    });
   }
 
-  try {
-    // Bedrijfsgegevens ophalen
-    const compRes = await fetch(`${API_BASE_URL}/api/companies/${companyId}`);
-    const company = await compRes.json();
+  const isCompanyPage = window.location.pathname.includes('company.html');
+  if (isCompanyPage) {
+    const params = new URLSearchParams(window.location.search);
+    const companyId = params.get('id');
 
-    document.getElementById('companyDetails').innerHTML = `
-      <h2>${company.name}</h2>
-      <p><strong>${company.category}</strong> – ${company.location}</p>
-      <p>${company.description}</p>
-    `;
-
-    // Reviews ophalen
-    const revRes = await fetch(`${API_BASE_URL}/api/reviews/company/${companyId}`);
-    const reviews = await revRes.json();
+    const nameEl = document.getElementById('companyName');
+    const categoryEl = document.getElementById('companyCategory');
+    const locationEl = document.getElementById('companyLocation');
+    const descEl = document.getElementById('companyDescription');
     const reviewList = document.getElementById('reviewList');
+    const reviewForm = document.getElementById('reviewForm');
 
-    if (!reviews.length) {
-      reviewList.innerHTML = '<p>Er zijn nog geen reviews voor dit bedrijf.</p>';
-    } else {
-      reviewList.innerHTML = '<ul>' + reviews.map(r => `
-        <li>
-          <strong>${r.author}</strong> (${r.rating}/5):<br/>
-          ${r.comment}
-        </li>
-      `).join('') + '</ul>';
-    }
-  } catch (err) {
-    console.error('Fout bij ophalen:', err);
-    document.getElementById('companyDetails').innerHTML = '<p>Fout bij laden van gegevens.</p>';
-  }
+    fetch(`${API_BASE_URL}/api/companies/${companyId}`)
+      .then(res => res.json())
+      .then(company => {
+        nameEl.textContent = company.name;
+        categoryEl.textContent = `${company.category} – ${company.location}`;
+        locationEl.textContent = company.location;
+        descEl.textContent = company.description;
+      });
 
-  // Review verzenden
-  const submitBtn = document.getElementById('submitReview');
-  if (submitBtn) {
-    submitBtn.addEventListener('click', async () => {
-      const author = document.getElementById('reviewName').value.trim();
-      const rating = parseInt(document.getElementById('reviewRating').value);
-      const comment = document.getElementById('reviewComment').value.trim();
-      const status = document.getElementById('reviewStatus');
+    fetch(`${API_BASE_URL}/api/reviews/${companyId}`)
+      .then(res => res.json())
+      .then(reviews => {
+        reviewList.innerHTML = '';
+        if (reviews.length === 0) {
+          reviewList.innerHTML = '<p>Er zijn nog geen reviews.</p>';
+        } else {
+          reviews.forEach(r => {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${r.name}</strong> (${r.rating}/5):<br>${r.comment}<hr>`;
+            reviewList.appendChild(div);
+          });
+        }
+      });
 
-      if (!author || !rating || !comment) {
-        status.textContent = 'Vul alle velden in.';
-        status.style.color = 'red';
+    reviewForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = reviewForm.name.value.trim();
+      const rating = reviewForm.rating.value;
+      const comment = reviewForm.comment.value.trim();
+
+      if (!name || !rating || !comment) {
+        alert('Vul alle velden in.');
         return;
       }
 
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/reviews`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            company: companyId,
-            author,
-            rating,
-            comment
-          })
+      fetch(`${API_BASE_URL}/api/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId, name, rating, comment })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('Review niet opgeslagen');
+          alert('Review succesvol toegevoegd!');
+          location.reload();
+        })
+        .catch(() => alert('Er is iets misgegaan.'));
+    });
+  }
+
+  const isAdminPage = window.location.pathname.includes('admin.html');
+  if (isAdminPage) {
+    const companyList = document.getElementById('companyList');
+
+    fetch(`${API_BASE_URL}/api/companies`)
+      .then(res => res.json())
+      .then(data => {
+        companyList.innerHTML = '';
+        data.forEach(company => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${company.name}</strong> – ${company.category} – ${company.location}<br />
+            <button data-id="${company._id}" class="deleteBtn">Verwijderen</button>
+          `;
+          companyList.appendChild(li);
         });
 
-        if (res.ok) {
-          status.textContent = 'Review succesvol toegevoegd!';
-          status.style.color = 'green';
-          document.getElementById('reviewName').value = '';
-          document.getElementById('reviewRating').value = '';
-          document.getElementById('reviewComment').value = '';
-          setTimeout(() => location.reload(), 1000);
-        } else {
-          const errData = await res.json();
-          throw new Error(errData.message || 'Fout bij toevoegen review.');
-        }
-      } catch (err) {
-        console.error('Fout bij POST review:', err);
-        status.textContent = `Er is iets misgegaan: ${err.message}`;
-        status.style.color = 'red';
-      }
-    });
+        document.querySelectorAll('.deleteBtn').forEach(button => {
+          button.addEventListener('click', () => {
+            const id = button.getAttribute('data-id');
+            if (confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) {
+              fetch(`${API_BASE_URL}/api/companies/${id}`, {
+                method: 'DELETE'
+              })
+                .then(res => res.json())
+                .then(() => {
+                  alert('Bedrijf verwijderd.');
+                  location.reload();
+                });
+            }
+          });
+        });
+      });
   }
 });
