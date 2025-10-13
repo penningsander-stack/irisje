@@ -6,12 +6,34 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <script>
+    const wachtwoord = prompt("Voer het beheerderswachtwoord in:");
+    if (wachtwoord !== "beheer123") {
+      alert("Toegang geweigerd.");
+      window.location.href = "/";
+    }
+  </script>
+
   <header>
     <h1>Beheer – Irisje</h1>
   </header>
 
   <main>
-    <div id="companyList"></div>
+    <section>
+      <h2>Nieuw bedrijf toevoegen</h2>
+      <input id="newName" placeholder="Naam" />
+      <input id="newCategory" placeholder="Categorie" />
+      <input id="newLocation" placeholder="Locatie" />
+      <textarea id="newDescription" placeholder="Beschrijving"></textarea>
+      <button onclick="addCompany()">Toevoegen</button>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>Alle bedrijven</h2>
+      <div id="companyList"></div>
+    </section>
   </main>
 
   <script>
@@ -23,14 +45,19 @@
       const list = document.getElementById('companyList');
       list.innerHTML = '';
 
-      companies.forEach(company => {
+      for (const company of companies) {
+        const reviewsRes = await fetch(`${API_BASE_URL}/api/reviews/company/${company._id}`);
+        const reviews = await reviewsRes.json();
+
         const div = document.createElement('div');
         div.innerHTML = `
-          <h2>${company.name}</h2>
+          <h3>${company.name}</h3>
           <p>${company.category} – ${company.location}</p>
           <p>${company.description}</p>
+
           <button onclick="deleteCompany('${company._id}')">Verwijderen</button>
           <button onclick="editCompany('${company._id}')">Bewerken</button>
+
           <div id="edit-${company._id}" style="display:none;">
             <input id="name-${company._id}" value="${company.name}" />
             <input id="category-${company._id}" value="${company.category}" />
@@ -38,9 +65,21 @@
             <textarea id="description-${company._id}">${company.description}</textarea>
             <button onclick="saveCompany('${company._id}')">Opslaan</button>
           </div>
+
+          <details>
+            <summary>Reviews (${reviews.length})</summary>
+            <ul>
+              ${reviews.map(r => `
+                <li>
+                  <strong>${r.name}</strong> (${r.rating}/5): ${r.comment}
+                  <button onclick="deleteReview('${r._id}')">Verwijder</button>
+                </li>
+              `).join('')}
+            </ul>
+          </details>
         `;
         list.appendChild(div);
-      });
+      }
     }
 
     function editCompany(id) {
@@ -65,6 +104,33 @@
     async function deleteCompany(id) {
       if (confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) {
         await fetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' });
+        fetchCompanies();
+      }
+    }
+
+    async function addCompany() {
+      const name = document.getElementById('newName').value;
+      const category = document.getElementById('newCategory').value;
+      const location = document.getElementById('newLocation').value;
+      const description = document.getElementById('newDescription').value;
+
+      await fetch(`${API_BASE_URL}/api/companies`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, category, location, description })
+      });
+
+      document.getElementById('newName').value = '';
+      document.getElementById('newCategory').value = '';
+      document.getElementById('newLocation').value = '';
+      document.getElementById('newDescription').value = '';
+
+      fetchCompanies();
+    }
+
+    async function deleteReview(id) {
+      if (confirm('Review verwijderen?')) {
+        await fetch(`${API_BASE_URL}/api/reviews/${id}`, { method: 'DELETE' });
         fetchCompanies();
       }
     }
