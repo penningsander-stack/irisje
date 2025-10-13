@@ -10,9 +10,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    // Bedrijfsgegevens
+    // Bedrijfsgegevens ophalen
     const compRes = await fetch(`${API_BASE_URL}/api/companies/${companyId}`);
     const company = await compRes.json();
+
     document.getElementById('companyDetails').innerHTML = `
       <h2>${company.name}</h2>
       <p><strong>${company.category}</strong> – ${company.location}</p>
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const revRes = await fetch(`${API_BASE_URL}/api/reviews/company/${companyId}`);
     const reviews = await revRes.json();
     const reviewList = document.getElementById('reviewList');
+
     if (!reviews.length) {
       reviewList.innerHTML = '<p>Er zijn nog geen reviews voor dit bedrijf.</p>';
     } else {
@@ -34,11 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       `).join('') + '</ul>';
     }
   } catch (err) {
-    console.error(err);
+    console.error('Fout bij ophalen:', err);
     document.getElementById('companyDetails').innerHTML = '<p>Fout bij laden van gegevens.</p>';
   }
 
-  // Review versturen
+  // Review verzenden
   const submitBtn = document.getElementById('submitReview');
   if (submitBtn) {
     submitBtn.addEventListener('click', async () => {
@@ -59,9 +61,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             company: companyId,
-            author: author,
-            rating: rating,
-            comment: comment
+            author,
+            rating,
+            comment
           })
         });
 
