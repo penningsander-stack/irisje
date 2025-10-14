@@ -1,137 +1,102 @@
 const API_BASE_URL = 'https://irisje.onrender.com';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const searchBtn = document.getElementById('searchBtn');
-  const searchInput = document.getElementById('searchInput');
-  const resultsContainer = document.getElementById('results');
+  const isAdmin = window.location.pathname.includes('admin.html');
+  if (isAdmin) {
+    const companyList = document.getElementById('companyList');
+    const form = document.getElementById('addCompanyForm');
 
-  if (searchBtn && searchInput && resultsContainer) {
-    searchBtn.addEventListener('click', () => {
-      const query = searchInput.value.trim();
-      if (!query) return;
+    if (!companyList) {
+      console.error('companyList element niet gevonden');
+      return;
+    }
+    if (!form) {
+      console.error('addCompanyForm element niet gevonden');
+      return;
+    }
 
-      fetch(`${API_BASE_URL}/api/companies`)
-        .then(res => res.json())
-        .then(data => {
-          const filtered = data.filter(c =>
-            c.name.toLowerCase().includes(query.toLowerCase()) ||
-            c.category.toLowerCase().includes(query.toLowerCase())
-          );
-
-          resultsContainer.innerHTML = '';
-          if (filtered.length === 0) {
-            resultsContainer.innerHTML = '<p>Geen resultaten gevonden.</p>';
-            return;
-          }
-
-          filtered.forEach(company => {
-            const div = document.createElement('div');
-            div.className = 'company-card';
-            div.innerHTML = `
-              <h2>${company.name}</h2>
-              <p><strong>${company.category}</strong> – ${company.location}</p>
-              <p>${company.description}</p>
-              <a href="company.html?id=${company._id}">Bekijk</a>
-            `;
-            resultsContainer.appendChild(div);
-          });
-        });
-    });
-  }
-
-  const isCompanyPage = window.location.pathname.includes('company.html');
-  if (isCompanyPage) {
-    const params = new URLSearchParams(window.location.search);
-    const companyId = params.get('id');
-
-    const nameEl = document.getElementById('companyName');
-    const categoryEl = document.getElementById('companyCategory');
-    const locationEl = document.getElementById('companyLocation');
-    const descEl = document.getElementById('companyDescription');
-    const reviewList = document.getElementById('reviewList');
-    const reviewForm = document.getElementById('reviewForm');
-
-    fetch(`${API_BASE_URL}/api/companies/${companyId}`)
-      .then(res => res.json())
-      .then(company => {
-        nameEl.textContent = company.name;
-        categoryEl.textContent = `${company.category} – ${company.location}`;
-        locationEl.textContent = company.location;
-        descEl.textContent = company.description;
-      });
-
-    fetch(`${API_BASE_URL}/api/reviews/${companyId}`)
-      .then(res => res.json())
-      .then(reviews => {
-        reviewList.innerHTML = '';
-        if (reviews.length === 0) {
-          reviewList.innerHTML = '<p>Er zijn nog geen reviews.</p>';
+    // Laden bedrijven
+    fetch(`${API_BASE_URL}/api/companies`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data)) {
+          console.error('Verwachte array van bedrijven, kreeg:', data);
+          return;
+        }
+        companyList.innerHTML = '';
+        if (data.length === 0) {
+          companyList.innerHTML = '<li>Geen bedrijven gevonden.</li>';
         } else {
-          reviews.forEach(r => {
-            const div = document.createElement('div');
-            div.innerHTML = `<strong>${r.name}</strong> (${r.rating}/5):<br>${r.comment}<hr>`;
-            reviewList.appendChild(div);
+          data.forEach(company => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <strong>${company.name}</strong> – ${company.category} – ${company.location}<br>
+              ${company.description}<br>
+              <button data-id="${company._id}" class="btn-delete">Verwijder</button>
+            `;
+            companyList.appendChild(li);
+          });
+
+          document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const id = btn.getAttribute('data-id');
+              if (confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) {
+                fetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' })
+                  .then(r => {
+                    if (!r.ok) throw new Error('Delete mislukt');
+                    return r.json();
+                  })
+                  .then(() => {
+                    alert('Bedrijf verwijderd');
+                    location.reload();
+                  })
+                  .catch(err => {
+                    console.error('Fout bij verwijderen:', err);
+                    alert('Kon bedrijf niet verwijderen');
+                  });
+              }
+            });
           });
         }
+      })
+      .catch(err => {
+        console.error('Fout bij fetch bedrijven:', err);
+        companyList.innerHTML = '<li>Fout bij laden bedrijven.</li>';
       });
 
-    reviewForm.addEventListener('submit', e => {
+    // Formulier toevoegen
+    form.addEventListener('submit', e => {
       e.preventDefault();
-      const name = reviewForm.name.value.trim();
-      const rating = reviewForm.rating.value;
-      const comment = reviewForm.comment.value.trim();
+      const name = document.getElementById('newName').value.trim();
+      const category = document.getElementById('newCategory').value.trim();
+      const location = document.getElementById('newLocation').value.trim();
+      const description = document.getElementById('newDescription').value.trim();
 
-      if (!name || !rating || !comment) {
-        alert('Vul alle velden in.');
+      if (!name || !category || !location || !description) {
+        alert('Vul alle velden in');
         return;
       }
 
-      fetch(`${API_BASE_URL}/api/reviews`, {
+      fetch(`${API_BASE_URL}/api/companies`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyId, name, rating, comment })
+        body: JSON.stringify({ name, category, location, description })
       })
-        .then(res => {
-          if (!res.ok) throw new Error('Review niet opgeslagen');
-          alert('Review succesvol toegevoegd!');
+        .then(r => {
+          if (!r.ok) throw new Error('POST mislukt');
+          return r.json();
+        })
+        .then(() => {
+          alert('Bedrijf toegevoegd');
           location.reload();
         })
-        .catch(() => alert('Er is iets misgegaan.'));
+        .catch(err => {
+          console.error('Fout bij toevoegen:', err);
+          alert('Kon bedrijf niet toevoegen');
+        });
     });
-  }
-
-  const isAdminPage = window.location.pathname.includes('admin.html');
-  if (isAdminPage) {
-    const companyList = document.getElementById('companyList');
-
-    fetch(`${API_BASE_URL}/api/companies`)
-      .then(res => res.json())
-      .then(data => {
-        companyList.innerHTML = '';
-        data.forEach(company => {
-          const li = document.createElement('li');
-          li.innerHTML = `
-            <strong>${company.name}</strong> – ${company.category} – ${company.location}<br />
-            <button data-id="${company._id}" class="deleteBtn">Verwijderen</button>
-          `;
-          companyList.appendChild(li);
-        });
-
-        document.querySelectorAll('.deleteBtn').forEach(button => {
-          button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            if (confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) {
-              fetch(`${API_BASE_URL}/api/companies/${id}`, {
-                method: 'DELETE'
-              })
-                .then(res => res.json())
-                .then(() => {
-                  alert('Bedrijf verwijderd.');
-                  location.reload();
-                });
-            }
-          });
-        });
-      });
   }
 });
