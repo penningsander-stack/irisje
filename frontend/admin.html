@@ -8,13 +8,26 @@
 </head>
 <body>
   <header>
-    <h1>Beheer bedrijven</h1>
+    <h1>Beheer bedrijven en reviews</h1>
   </header>
   <main>
-    <div id="adminContainer">
-      <h2>Overzicht bedrijven</h2>
+    <section>
+      <h2>Nieuw bedrijf toevoegen</h2>
+      <form id="addCompanyForm">
+        <input type="text" id="newName" placeholder="Naam" required />
+        <input type="text" id="newCategory" placeholder="Categorie" required />
+        <input type="text" id="newLocation" placeholder="Locatie" required />
+        <textarea id="newDescription" placeholder="Beschrijving" required></textarea>
+        <button type="submit">Toevoegen</button>
+      </form>
+    </section>
+
+    <hr>
+
+    <section>
+      <h2>Bestaande bedrijven</h2>
       <ul id="companyList"></ul>
-    </div>
+    </section>
   </main>
   <script src="script.js"></script>
 </body>
