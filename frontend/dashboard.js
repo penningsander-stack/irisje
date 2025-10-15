@@ -9,12 +9,57 @@ if (!token) {
   window.location.href = "index.html";
 }
 
+// Tabs
+const panelRequests = document.getElementById("panelRequests");
+const panelEmail = document.getElementById("panelEmail");
+document.getElementById("tabRequests").addEventListener("click", () => {
+  panelRequests.classList.remove("hidden");
+  panelEmail.classList.add("hidden");
+});
+document.getElementById("tabEmail").addEventListener("click", () => {
+  panelRequests.classList.add("hidden");
+  panelEmail.classList.remove("hidden");
+});
+
 document.getElementById("logoutBtn").addEventListener("click", () => {
   localStorage.removeItem("irisje_token");
   window.location.href = "index.html";
 });
 
 document.getElementById("filterBtn").addEventListener("click", loadRequests);
+
+// E-mail test form
+const emailForm = document.getElementById("emailForm");
+const emailMsg = document.getElementById("emailMsg");
+emailForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  emailMsg.textContent = "Bezig met verzenden...";
+  const to = document.getElementById("emailTo").value.trim();
+  const subject = document.getElementById("emailSubject").value.trim() || "Testmail van irisje";
+  const text = document.getElementById("emailText").value.trim() || "Hallo, dit is een testmail vanaf irisje.";
+
+  try {
+    const res = await fetch(`${API}/api/email/test`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify({ to, subject, text })
+    });
+    const data = await res.json();
+    if (!res.ok || data.ok === false) {
+      emailMsg.textContent = "Kon niet verzenden: " + (data.message || data.reason || "onbekende fout");
+      emailMsg.className = "text-sm mt-3 text-red-600";
+      return;
+    }
+    emailMsg.textContent = "✅ Verstuurt! messageId: " + data.messageId;
+    emailMsg.className = "text-sm mt-3 text-green-600";
+  } catch (err) {
+    emailMsg.textContent = "Fout: " + err.message;
+    emailMsg.className = "text-sm mt-3 text-red-600";
+  }
+});
 
 async function loadStats() {
   try {
@@ -64,7 +109,7 @@ async function loadRequests() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.message);
 
-    if (data.items.length === 0) {
+    if (!data.items || data.items.length === 0) {
       message.textContent = "Geen aanvragen gevonden.";
       return;
     }
@@ -74,10 +119,10 @@ async function loadRequests() {
       .map(
         (r) => `
       <tr>
-        <td class="p-3">${r.customerName || ""}</td>
-        <td class="p-3">${r.customerEmail || ""}</td>
-        <td class="p-3">${r.category || ""}</td>
-        <td class="p-3">${r.statusByCompany?.[0]?.status || "Nieuw"}</td>
+        <td class="p-3">${escapeHtml(r.customerName || "")}</td>
+        <td class="p-3">${escapeHtml(r.customerEmail || "")}</td>
+        <td class="p-3">${escapeHtml(r.category || "")}</td>
+        <td class="p-3">${escapeHtml(r.statusByCompany?.[0]?.status || "Nieuw")}</td>
         <td class="p-3">
           <select class="border rounded p-1" data-id="${r._id}">
             <option value="Nieuw">Nieuw</option>
@@ -91,7 +136,6 @@ async function loadRequests() {
       )
       .join("");
 
-    // selecteer huidige status
     document.querySelectorAll("select[data-id]").forEach((sel) => {
       const id = sel.getAttribute("data-id");
       const current = data.items.find((r) => r._id === id)?.statusByCompany?.[0]?.status;
@@ -122,6 +166,10 @@ async function updateStatus(id, status) {
   } catch (err) {
     message.textContent = "Fout bij bijwerken: " + err.message;
   }
+}
+
+function escapeHtml(str = "") {
+  return String(str).replace(/[&<>"']/g, s => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
