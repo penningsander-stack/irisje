@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inloggen | Irisje.nl</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #f9fafb;
+      font-family: system-ui, sans-serif;
+    }
+    .card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+    button {
+      width: 100%;
+      background: #2563eb;
+      color: white;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+    button:hover { background: #1e40af; }
+    .msg {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .small {
+      text-align: center;
+      margin-top: .5rem;
+      font-size: .9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Inloggen</h2>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="E-mailadres" required />
+      <input type="password" id="password" placeholder="Wachtwoord" required />
+      <button type="submit">Inloggen</button>
+    </form>
+    <div class="msg" id="message"></div>
+    <div class="small">
+      Nog geen account? <a href="register.html">Registreren</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const msg = document.getElementById('message');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.textContent = 'Bezig met inloggen...';
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try {
+        const res = await fetch('https://irisje-backend.onrender.com/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          // 🔐 Token en gebruikersinfo opslaan
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('userEmail', data.user.email);
+
+          msg.innerHTML = '✅ Inloggen gelukt! Je wordt doorgestuurd...';
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 1000);
+        } else {
+          msg.textContent = `❌ ${data.message || 'Onjuiste inloggegevens'}`;
+        }
+      } catch (err) {
+        console.error(err);
+        msg.textContent = '❌ Serverfout of geen verbinding.';
+      }
+    });
+  </script>
+</body>
+</html>
