@@ -1,8 +1,9 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./config/db');
-require('dotenv').config(); // handig voor lokaal; op Render negeert dit als er geen .env is
+require('dotenv').config();
 
 const companyRoutes = require('./routes/companies');
 const reviewRoutes = require('./routes/reviews');
@@ -16,19 +17,34 @@ app.use(express.json());
 // Port
 const PORT = process.env.PORT || 10000;
 
-// Pak de URI uit env (Render: MONGO_URI). MONGODB_URI blijft als fallback voor lokaal/oud.
+// Mongo URI (Render gebruikt MONGO_URI)
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
-// Duidelijke fout als de env mist
+// Check of Mongo-URI aanwezig is
 if (!mongoUri) {
   console.error('❌ Missing MONGO_URI environment variable — set it in Render → Settings → Environment Variables');
   process.exit(1);
 }
 
-// Database connect
+// Database connectie
 connectDB(mongoUri);
 
-// Health endpoint (handig voor checks)
+// --- Root route (voor https://irisje-backend.onrender.com) ---
+app.get('/', (req, res) => {
+  res.json({
+    ok: true,
+    message: '🚀 irisje backend is live',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: [
+      '/health',
+      '/api/companies',
+      '/api/reviews',
+      '/api/dev/seed (indien tijdelijk actief)'
+    ]
+  });
+});
+
+// --- Health route ---
 app.get('/health', (req, res) => {
   res.json({
     ok: true,
@@ -38,11 +54,15 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
+// --- API routes ---
 app.use('/api/companies', companyRoutes);
 app.use('/api/reviews', reviewRoutes);
 
-// Start server
+// --- (optioneel) statische bestanden uit /public ---
+// Als je later een kleine landing wilt tonen, zet daar een index.html
+app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Server start ---
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });
