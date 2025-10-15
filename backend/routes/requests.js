@@ -6,7 +6,10 @@ const Request = require('../models/Request');
 const Company = require('../models/Company');
 const { verifyToken } = require('../middleware/auth');
 
-// 📬 Nieuwe aanvraag aanmaken (publiek endpoint)
+// 🔍 Log helper (alleen tijdelijk voor debug)
+const log = (...args) => console.log('🪶 [requests.js]', ...args);
+
+// 📬 Nieuwe aanvraag aanmaken
 router.post('/', async (req, res) => {
   try {
     const newRequest = await Request.create(req.body);
@@ -17,21 +20,37 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 📋 Aanvragen ophalen (alleen voor ingelogde bedrijven)
+// 📋 Aanvragen ophalen (dashboard)
 router.get('/', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    log('Gebruiker-ID uit token:', userId);
 
-    // 🔍 Probeer zowel op string als op ObjectId te zoeken
+    // Kijk eerst of er bedrijven zijn
+    const allCompanies = await Company.find({});
+    log('Aantal bedrijven in DB:', allCompanies.length);
+
+    // Toon de eerste 1 of 2 bedrijven in logs (alleen voor test)
+    if (allCompanies.length > 0) {
+      log('Eerste bedrijf:', {
+        id: allCompanies[0]._id.toString(),
+        name: allCompanies[0].name,
+        user: allCompanies[0].user?.toString(),
+      });
+    }
+
+    // Probeer zowel string- als ObjectId-vergelijking
     let company = await Company.findOne({ user: userId });
     if (!company && mongoose.isValidObjectId(userId)) {
       company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
     }
 
     if (!company) {
-      console.warn('⚠️ Geen bedrijf gevonden voor gebruiker:', userId);
+      log('⚠️ Geen bedrijf gevonden voor userId:', userId);
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
     }
+
+    log('✅ Bedrijf gevonden:', company.name);
 
     const { q, status } = req.query;
     const query = { company: company._id };
@@ -42,10 +61,7 @@ router.get('/', verifyToken, async (req, res) => {
         { customerEmail: new RegExp(q, 'i') }
       ];
     }
-
-    if (status) {
-      query['statusByCompany.status'] = status;
-    }
+    if (status) query['statusByCompany.status'] = status;
 
     const items = await Request.find(query).sort({ createdAt: -1 });
     res.json({ items });
@@ -96,7 +112,7 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
   }
 });
 
-// 📈 Statistieken ophalen
+// 📈 Statistieken
 router.get('/stats/overview', verifyToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -132,55 +148,5 @@ router.get('/stats/overview', verifyToken, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
-
-
-
-
-// ⚙️ Tijdelijke route om testaanvragen toe te voegen
-router.get('/seed', async (req, res) => {
-  try {
-    const company = await Company.findOne({ email: 'demo@irisje.nl' });
-    if (!company) return res.status(404).json({ message: 'Demo-bedrijf niet gevonden.' });
-
-    const testRequests = [
-      {
-        customerName: 'Jan Jansen',
-        customerEmail: 'jan.jansen@example.com',
-        customerPhone: '0612345678',
-        description: 'Ik heb lekkage bij mijn dak en zoek een bedrijf in de buurt om dit te repareren.',
-        company: company._id,
-        statusByCompany: [{ company: company._id, status: 'Nieuw', updatedAt: new Date() }],
-        createdAt: new Date()
-      },
-      {
-        customerName: 'Marieke de Boer',
-        customerEmail: 'marieke.deboer@example.com',
-        customerPhone: '0622334455',
-        description: 'Ik wil graag mijn tuin opnieuw laten aanleggen, kunnen jullie een offerte maken?',
-        company: company._id,
-        statusByCompany: [{ company: company._id, status: 'Nieuw', updatedAt: new Date() }],
-        createdAt: new Date()
-      }
-    ];
-
-    await Request.insertMany(testRequests);
-    res.json({ message: '✅ Twee testaanvragen toegevoegd!' });
-  } catch (err) {
-    console.error('❌ Fout bij seeden:', err.message);
-    res.status(500).json({ message: err.message });
-  }
-});
-
-
-
-
-
-
-
-
-
-
-
 
 module.exports = router;
