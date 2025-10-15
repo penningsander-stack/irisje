@@ -1,0 +1,20 @@
+<!-- frontend/dashboard.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>irisje.nl — Bedrijf Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+  <header class="bg-blue-600 text-white py-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center px-4">
+      <h1 class="text-xl font-semibold">irisje.nl — Dashboard</h1>
+      <button id="logoutBtn" class="bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded">Uitloggen</button>
+    </div>
+  </header>
+
+  <main class="flex-1 container mx-auto px-4 py-6">
+    <section class="grid md:grid-cols-4 gap-4 mb-6" id="stats">
+      <div class="bg-white rounded-xl shadow p
