@@ -4,7 +4,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const Request = require('../models/Request');
 const Company = require('../models/Company');
-const { verifyToken } = require('../middleware/authMiddleware');
+const { verifyToken } = require('../middleware/auth');
 
 //
 // 📬 Nieuwe aanvraag aanmaken (publiek endpoint)
