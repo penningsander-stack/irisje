@@ -1,17 +1,15 @@
 // frontend/app.js
 const API = "https://irisje-backend.onrender.com";
 
-const form = document.getElementById("loginForm");
-const msg = document.getElementById("message");
-const profile = document.getElementById("profile");
-
-form.addEventListener("submit", async (e) => {
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  msg.textContent = "Bezig met inloggen...";
-  profile.classList.add("hidden");
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
+  const message = document.getElementById("message");
+
+  message.textContent = "Bezig met inloggen...";
+  message.className = "text-gray-600";
 
   try {
     const res = await fetch(`${API}/api/auth/login`, {
@@ -23,45 +21,21 @@ form.addEventListener("submit", async (e) => {
     const data = await res.json();
 
     if (!res.ok) {
-      msg.textContent = data.message || "Inloggen mislukt";
-      return;
+      throw new Error(data.message || "Ongeldige inloggegevens");
     }
 
+    // Token opslaan
     localStorage.setItem("irisje_token", data.token);
-    msg.textContent = "✅ Inloggen gelukt!";
-    await showProfile();
+
+    message.textContent = "✅ Inloggen gelukt! Doorsturen...";
+    message.className = "text-green-600";
+
+    // Wacht 1 seconde en ga naar dashboard
+    setTimeout(() => {
+      window.location.href = "dashboard.html";
+    }, 1000);
   } catch (err) {
-    msg.textContent = "Fout: " + err.message;
+    message.textContent = "❌ " + err.message;
+    message.className = "text-red-600";
   }
 });
-
-async function showProfile() {
-  const token = localStorage.getItem("irisje_token");
-  if (!token) return;
-
-  try {
-    const res = await fetch(`${API}/api/me`, {
-      headers: { Authorization: "Bearer " + token }
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      msg.textContent = "Token ongeldig, log opnieuw in.";
-      localStorage.removeItem("irisje_token");
-      return;
-    }
-
-    profile.innerHTML = `
-      <p><strong>ID:</strong> ${data.user._id}</p>
-      <p><strong>Email:</strong> ${data.user.email}</p>
-      <p><strong>Rol:</strong> ${data.user.role}</p>
-      <p><strong>Aangemaakt:</strong> ${new Date(data.user.createdAt).toLocaleString()}</p>
-    `;
-    profile.classList.remove("hidden");
-  } catch (err) {
-    msg.textContent = "Fout bij ophalen profiel.";
-  }
-}
-
-// Toon profiel automatisch als er al een token is
-document.addEventListener("DOMContentLoaded", showProfile);
