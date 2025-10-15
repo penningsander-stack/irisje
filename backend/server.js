@@ -14,10 +14,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Port
+// Poort instellen
 const PORT = process.env.PORT || 10000;
 
-// Mongo URI (Render gebruikt MONGO_URI)
+// Mongo URI ophalen (Render gebruikt MONGO_URI)
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 // Check of Mongo-URI aanwezig is
@@ -26,25 +26,15 @@ if (!mongoUri) {
   process.exit(1);
 }
 
-// Database connectie
+// Verbinden met MongoDB
 connectDB(mongoUri);
 
-// --- Root route (voor https://irisje-backend.onrender.com) ---
-app.get('/', (req, res) => {
-  res.json({
-    ok: true,
-    message: '🚀 irisje backend is live',
-    environment: process.env.NODE_ENV || 'development',
-    endpoints: [
-      '/health',
-      '/api/companies',
-      '/api/reviews',
-      '/api/dev/seed (indien tijdelijk actief)'
-    ]
-  });
-});
+// === Routes ===
 
-// --- Health route ---
+// 1️⃣ Statische bestanden (zoals index.html in /public)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 2️⃣ Health check
 app.get('/health', (req, res) => {
   res.json({
     ok: true,
@@ -54,15 +44,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-// --- API routes ---
+// 3️⃣ API-routes
 app.use('/api/companies', companyRoutes);
 app.use('/api/reviews', reviewRoutes);
 
-// --- (optioneel) statische bestanden uit /public ---
-// Als je later een kleine landing wilt tonen, zet daar een index.html
-app.use(express.static(path.join(__dirname, 'public')));
+// 4️⃣ Fallback naar index.html voor root (alle andere GET requests tonen /public/index.html)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-// --- Server start ---
+// 5️⃣ Server starten
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
