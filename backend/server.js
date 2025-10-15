@@ -9,7 +9,8 @@ const companyRoutes = require('./routes/companies');
 const reviewRoutes = require('./routes/reviews');
 const authRoutes = require('./routes/auth');
 const secureRoutes = require('./routes/secure');
-const requestRoutes = require('./routes/requests'); // ✅ nieuwe route
+const requestRoutes = require('./routes/requests');
+const emailRoutes = require('./routes/email'); // ✅ nieuw
 
 const app = express();
 
@@ -30,7 +31,7 @@ if (!mongoUri) {
 // DB connect
 connectDB(mongoUri);
 
-// Statische bestanden (statuspagina in /backend/public/index.html)
+// Statische bestanden
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Health
@@ -43,21 +44,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Auth & beveiligde routes
+// Auth & beveiligd
 app.use('/api/auth', authRoutes);
-app.use('/api', secureRoutes); // /api/me, /api/secure/ping
+app.use('/api', secureRoutes);
 
-// API-routes
+// API
 app.use('/api/companies', companyRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/requests', requestRoutes); // ✅ registreren
+app.use('/api/requests', requestRoutes);
+app.use('/api/email', emailRoutes); // ✅ nieuw
 
-// Root naar index.html
+// Root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
+// Start
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
