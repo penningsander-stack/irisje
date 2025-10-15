@@ -9,6 +9,7 @@ const companyRoutes = require('./routes/companies');
 const reviewRoutes = require('./routes/reviews');
 const authRoutes = require('./routes/auth');
 const secureRoutes = require('./routes/secure');
+const requestRoutes = require('./routes/requests'); // ✅ nieuwe route
 
 const app = express();
 
@@ -49,8 +50,9 @@ app.use('/api', secureRoutes); // /api/me, /api/secure/ping
 // API-routes
 app.use('/api/companies', companyRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/requests', requestRoutes); // ✅ registreren
 
-// Root naar index.html (geen wildcard gebruiken)
+// Root naar index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
