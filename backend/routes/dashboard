@@ -1,1 +1,65 @@
 
+<!-- frontend/dashboard.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Irisje Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+  <nav class="bg-blue-700 text-white px-6 py-3 flex justify-between items-center">
+    <h1 class="text-xl font-semibold">📊 Irisje Dashboard</h1>
+    <button id="logoutBtn" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">
+      Uitloggen
+    </button>
+  </nav>
+
+  <main class="p-6 max-w-6xl mx-auto">
+    <!-- Stats -->
+    <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-medium">Zoeken</label>
+        <input id="searchInput" type="text" class="border rounded p-2 w-60" placeholder="Naam of e-mail" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium">Status</label>
+        <select id="statusFilter" class="border rounded p-2">
+          <option value="">Alle</option>
+          <option value="Nieuw">Nieuw</option>
+          <option value="Geaccepteerd">Geaccepteerd</option>
+          <option value="Afgewezen">Afgewezen</option>
+          <option value="Opgevolgd">Opgevolgd</option>
+        </select>
+      </div>
+      <button id="filterBtn" class="bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700">
+        Filteren
+      </button>
+    </div>
+
+    <!-- Tabel -->
+    <div class="overflow-x-auto bg-white rounded-2xl shadow">
+      <table class="min-w-full border-collapse">
+        <thead class="bg-gray-100 text-sm">
+          <tr>
+            <th class="p-3 text-left">Naam</th>
+            <th class="p-3 text-left">E-mail</th>
+            <th class="p-3 text-left">Categorie</th>
+            <th class="p-3 text-left">Status</th>
+            <th class="p-3 text-left">Actie</th>
+          </tr>
+        </thead>
+        <tbody id="requestsTable" class="divide-y text-sm"></tbody>
+      </table>
+    </div>
+
+    <p id="message" class="mt-6 text-sm text-gray-600"></p>
+  </main>
+
+  <script src="./dashboard.js"></script>
+</body>
+</html>
