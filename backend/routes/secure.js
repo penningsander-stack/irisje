@@ -1,26 +1,24 @@
 // backend/routes/secure.js
 const express = require('express');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-
 const router = express.Router();
+const { verifyToken } = require('../middleware/auth');
 
-/**
- * GET /api/me
- * Headers: Authorization: Bearer <token>
- */
-router.get('/me', auth(), async (req, res) => {
-  const user = await User.findById(req.user.sub).select('_id email role createdAt updatedAt');
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  res.json({ user });
+// 👤 Test endpoint om gebruikersinformatie te tonen
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    res.json({
+      id: req.user.id,
+      role: req.user.role,
+      email: req.user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-/**
- * GET /api/secure/ping
- * Alleen voor admin
- */
-router.get('/secure/ping', auth('admin'), (req, res) => {
-  res.json({ ok: true, role: req.user.role, message: 'pong (admin only)' });
+// 🔒 Test secure route
+router.get('/ping', verifyToken, (req, res) => {
+  res.json({ ok: true, message: 'Secure route works ✅' });
 });
 
 module.exports = router;
