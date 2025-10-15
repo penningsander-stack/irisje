@@ -13,7 +13,15 @@ app.use(cors());
 app.use(express.json());
 
 // Database
-connectDB();
+const mongoUri = process.env.MONGO_URI;
+
+if (!mongoUri) {
+  console.error("❌ Missing MONGO_URI environment variable — check Render → Settings → Environment");
+  process.exit(1);
+}
+
+connectDB(mongoUri);
+
 
 // Routes
 app.use('/api/companies', companyRoutes);
