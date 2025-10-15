@@ -1,3 +1,6 @@
 ﻿node_modules/
+# negeer alle .env-bestanden overal
+**/.env
 .env
+
 
