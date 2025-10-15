@@ -5,12 +5,11 @@ const Company = require('../models/Company');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { statusEnum } = require('../models/Request');
+const { sendMail } = require('../utils/mailer');
 
 const router = express.Router();
 
-/**
- * Helper: haal companyId op van de ingelogde user (voor rol 'company').
- */
+/** Helper: gekoppelde companyId van user */
 async function getActorCompanyId(userId) {
   const user = await User.findById(userId).select('company role');
   if (!user) return null;
@@ -19,10 +18,8 @@ async function getActorCompanyId(userId) {
 
 /**
  * POST /api/requests
- * Publiek: Maak een nieuwe aanvraag en distribueer naar max 5 bedrijven.
+ * Publiek: maak nieuwe aanvraag; selecteer max 5 bedrijven op slug of categorie.
  * body: { customerName, customerEmail, customerPhone?, message?, category, companySlugs?: [] }
- * - Als companySlugs gegeven zijn → max 5 matchende bedrijven (actief).
- * - Anders: kies op category max 5 bedrijven (actief).
  */
 router.post('/', async (req, res) => {
   try {
@@ -43,12 +40,12 @@ router.post('/', async (req, res) => {
     if (Array.isArray(companySlugs) && companySlugs.length > 0) {
       targets = await Company.find(
         { slug: { $in: companySlugs.slice(0, 5) }, isActive: { $ne: false } },
-        '_id'
+        '_id name email slug'
       );
     } else {
       targets = await Company.find(
         { categories: category, isActive: { $ne: false } },
-        '_id'
+        '_id name email slug'
       ).limit(5);
     }
 
@@ -69,7 +66,34 @@ router.post('/', async (req, res) => {
       }
     });
 
-    // TODO (fase e-mail): trigger mail naar targets
+    // 📧 E-mailnotificaties (best-effort; fouten blokkeren niet de API)
+    (async () => {
+      try {
+        const bcc = process.env.SMTP_FROM || process.env.SMTP_USER;
+        const html = `
+          <div style="font-family:Arial,sans-serif">
+            <h2>Nieuwe aanvraag via irisje.nl</h2>
+            <p><b>Naam:</b> ${escapeHtml(customerName)}</p>
+            <p><b>E-mail:</b> ${escapeHtml(customerEmail)}</p>
+            ${customerPhone ? `<p><b>Telefoon:</b> ${escapeHtml(customerPhone)}</p>` : ''}
+            <p><b>Categorie:</b> ${escapeHtml(category)}</p>
+            ${message ? `<p><b>Bericht:</b><br>${escapeHtml(message).replace(/\n/g,'<br>')}</p>` : ''}
+          </div>
+        `;
+        for (const c of targets) {
+          if (!c.email) continue;
+          await sendMail({
+            to: c.email,
+            subject: `Nieuwe aanvraag via irisje.nl — ${category}`,
+            html,
+            text: `Nieuwe aanvraag: ${customerName} <${customerEmail}> — ${category}${customerPhone ? ` — ${customerPhone}` : ''}\n\n${message || ''}`,
+            bcc
+          });
+        }
+      } catch (err) {
+        console.warn('⚠️ Mail send failed (non-blocking):', err.message);
+      }
+    })();
 
     return res.status(201).json(doc);
   } catch (e) {
@@ -77,11 +101,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * GET /api/requests
- * Auth: company (ziet alleen eigen leads), admin (ziet alles)
- * query: status?, q?, dateFrom?, dateTo?, page=1, limit=20, sort=-createdAt, companyId?(admin)
- */
+/** GET /api/requests (company/admin) met filters */
 router.get('/', auth(), async (req, res) => {
   try {
     const role = req.user.role;
@@ -95,7 +115,7 @@ router.get('/', auth(), async (req, res) => {
       page = 1,
       limit = 20,
       sort = '-createdAt',
-      companyId // alleen admin mag overschrijven
+      companyId // admin
     } = req.query;
 
     let actorCompanyId = null;
@@ -160,11 +180,7 @@ router.get('/', auth(), async (req, res) => {
   }
 });
 
-/**
- * PATCH /api/requests/:id/status
- * Auth: company kan alleen eigen status wijzigen; admin kan companyId meegeven.
- * body: { status, companyId? }
- */
+/** PATCH /api/requests/:id/status — wijzig status (company/admin) */
 router.patch('/:id/status', auth(), async (req, res) => {
   try {
     const { id } = req.params;
@@ -189,10 +205,8 @@ router.patch('/:id/status', auth(), async (req, res) => {
     const doc = await Request.findById(id);
     if (!doc) return res.status(404).json({ message: 'Aanvraag niet gevonden' });
 
-    // Zoek de status entry voor dit bedrijf
     const entry = doc.statusByCompany.find(e => String(e.company) === String(targetCompanyId));
     if (!entry) {
-      // Voeg toe als er nog geen entry is
       doc.statusByCompany.push({ company: targetCompanyId, status, updatedAt: new Date() });
     } else {
       entry.status = status;
@@ -200,18 +214,13 @@ router.patch('/:id/status', auth(), async (req, res) => {
     }
 
     await doc.save();
-
     return res.json(doc);
   } catch (e) {
     return res.status(500).json({ message: e.message });
   }
 });
 
-/**
- * GET /api/requests/stats/overview?days=30
- * Auth: company (eigen stats), admin (optioneel companyId)
- * Returns: { total, accepted, rejected, followedUp, since }
- */
+/** GET /api/requests/stats/overview — counters */
 router.get('/stats/overview', auth(), async (req, res) => {
   try {
     const { days = 30, companyId } = req.query;
@@ -246,5 +255,10 @@ router.get('/stats/overview', auth(), async (req, res) => {
     return res.status(500).json({ message: e.message });
   }
 });
+
+// Helper: HTML escaping
+function escapeHtml(str = '') {
+  return String(str).replace(/[&<>"']/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s]));
+}
 
 module.exports = router;
