@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 
 /**
- * Connect to MongoDB with a provided connection string.
- * Usage: connectDB(process.env.MONGO_URI)
+ * Verbindt met MongoDB via de opgegeven URI.
+ * Wordt aangeroepen vanuit server.js met connectDB(process.env.MONGO_URI)
  */
 const connectDB = async (uri) => {
   try {
