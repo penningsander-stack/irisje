@@ -133,4 +133,54 @@ router.get('/stats/overview', verifyToken, async (req, res) => {
   }
 });
 
+
+
+
+
+// ⚙️ Tijdelijke route om testaanvragen toe te voegen
+router.post('/seed', async (req, res) => {
+  try {
+    const company = await Company.findOne({ email: 'demo@irisje.nl' });
+    if (!company) return res.status(404).json({ message: 'Demo-bedrijf niet gevonden.' });
+
+    const testRequests = [
+      {
+        customerName: 'Jan Jansen',
+        customerEmail: 'jan.jansen@example.com',
+        customerPhone: '0612345678',
+        description: 'Ik heb lekkage bij mijn dak en zoek een bedrijf in de buurt om dit te repareren.',
+        company: company._id,
+        statusByCompany: [{ company: company._id, status: 'Nieuw', updatedAt: new Date() }],
+        createdAt: new Date()
+      },
+      {
+        customerName: 'Marieke de Boer',
+        customerEmail: 'marieke.deboer@example.com',
+        customerPhone: '0622334455',
+        description: 'Ik wil graag mijn tuin opnieuw laten aanleggen, kunnen jullie een offerte maken?',
+        company: company._id,
+        statusByCompany: [{ company: company._id, status: 'Nieuw', updatedAt: new Date() }],
+        createdAt: new Date()
+      }
+    ];
+
+    await Request.insertMany(testRequests);
+    res.json({ message: '✅ Twee testaanvragen toegevoegd!' });
+  } catch (err) {
+    console.error('❌ Fout bij seeden:', err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
 module.exports = router;
