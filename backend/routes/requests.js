@@ -6,51 +6,30 @@ const Request = require('../models/Request');
 const Company = require('../models/Company');
 const { verifyToken } = require('../middleware/auth');
 
-// 🔍 Log helper (alleen tijdelijk voor debug)
-const log = (...args) => console.log('🪶 [requests.js]', ...args);
+// helper om bedrijf op te zoeken via user-id of e-mail
+async function findCompanyByUser(req) {
+  const userId = req.user.id;
+  const userEmail = req.user.email;
 
-// 📬 Nieuwe aanvraag aanmaken
-router.post('/', async (req, res) => {
-  try {
-    const newRequest = await Request.create(req.body);
-    res.status(201).json(newRequest);
-  } catch (err) {
-    console.error('❌ Fout bij aanmaken aanvraag:', err.message);
-    res.status(400).json({ message: err.message });
+  let company = await Company.findOne({ user: userId });
+  if (!company && mongoose.isValidObjectId(userId)) {
+    company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
   }
-});
+  // fallback: zoeken op e-mail
+  if (!company && userEmail) {
+    company = await Company.findOne({ email: userEmail });
+  }
 
-// 📋 Aanvragen ophalen (dashboard)
+  return company;
+}
+
+// 📋 Aanvragen ophalen
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    log('Gebruiker-ID uit token:', userId);
-
-    // Kijk eerst of er bedrijven zijn
-    const allCompanies = await Company.find({});
-    log('Aantal bedrijven in DB:', allCompanies.length);
-
-    // Toon de eerste 1 of 2 bedrijven in logs (alleen voor test)
-    if (allCompanies.length > 0) {
-      log('Eerste bedrijf:', {
-        id: allCompanies[0]._id.toString(),
-        name: allCompanies[0].name,
-        user: allCompanies[0].user?.toString(),
-      });
-    }
-
-    // Probeer zowel string- als ObjectId-vergelijking
-    let company = await Company.findOne({ user: userId });
-    if (!company && mongoose.isValidObjectId(userId)) {
-      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
-    }
-
+    const company = await findCompanyByUser(req);
     if (!company) {
-      log('⚠️ Geen bedrijf gevonden voor userId:', userId);
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
     }
-
-    log('✅ Bedrijf gevonden:', company.name);
 
     const { q, status } = req.query;
     const query = { company: company._id };
@@ -58,7 +37,7 @@ router.get('/', verifyToken, async (req, res) => {
     if (q) {
       query.$or = [
         { customerName: new RegExp(q, 'i') },
-        { customerEmail: new RegExp(q, 'i') }
+        { customerEmail: new RegExp(q, 'i') },
       ];
     }
     if (status) query['statusByCompany.status'] = status;
@@ -74,18 +53,12 @@ router.get('/', verifyToken, async (req, res) => {
 // 🟢 Status bijwerken
 router.patch('/:id/status', verifyToken, async (req, res) => {
   try {
-    const { status } = req.body;
-    const userId = req.user.id;
-
-    let company = await Company.findOne({ user: userId });
-    if (!company && mongoose.isValidObjectId(userId)) {
-      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
-    }
-
+    const company = await findCompanyByUser(req);
     if (!company) {
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
     }
 
+    const { status } = req.body;
     const request = await Request.findById(req.params.id);
     if (!request) return res.status(404).json({ message: 'Aanvraag niet gevonden' });
 
@@ -115,13 +88,7 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
 // 📈 Statistieken
 router.get('/stats/overview', verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    let company = await Company.findOne({ user: userId });
-    if (!company && mongoose.isValidObjectId(userId)) {
-      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
-    }
-
+    const company = await findCompanyByUser(req);
     if (!company) {
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
     }
