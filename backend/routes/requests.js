@@ -138,7 +138,7 @@ router.get('/stats/overview', verifyToken, async (req, res) => {
 
 
 // ⚙️ Tijdelijke route om testaanvragen toe te voegen
-router.post('/seed', async (req, res) => {
+router.get('/seed', async (req, res) => {
   try {
     const company = await Company.findOne({ email: 'demo@irisje.nl' });
     if (!company) return res.status(404).json({ message: 'Demo-bedrijf niet gevonden.' });
