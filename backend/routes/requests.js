@@ -6,9 +6,7 @@ const Request = require('../models/Request');
 const Company = require('../models/Company');
 const { verifyToken } = require('../middleware/auth');
 
-//
 // 📬 Nieuwe aanvraag aanmaken (publiek endpoint)
-//
 router.post('/', async (req, res) => {
   try {
     const newRequest = await Request.create(req.body);
@@ -19,15 +17,19 @@ router.post('/', async (req, res) => {
   }
 });
 
-//
-// 📋 Alle aanvragen ophalen (alleen ingelogde bedrijven)
-//
+// 📋 Aanvragen ophalen (alleen voor ingelogde bedrijven)
 router.get('/', verifyToken, async (req, res) => {
   try {
-    // 👇 Belangrijk: cast string-ID naar ObjectId
-    const company = await Company.findOne({ user: new mongoose.Types.ObjectId(req.user.id) });
+    const userId = req.user.id;
+
+    // 🔍 Probeer zowel op string als op ObjectId te zoeken
+    let company = await Company.findOne({ user: userId });
+    if (!company && mongoose.isValidObjectId(userId)) {
+      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
+    }
 
     if (!company) {
+      console.warn('⚠️ Geen bedrijf gevonden voor gebruiker:', userId);
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
     }
 
@@ -53,13 +55,16 @@ router.get('/', verifyToken, async (req, res) => {
   }
 });
 
-//
 // 🟢 Status bijwerken
-//
 router.patch('/:id/status', verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
-    const company = await Company.findOne({ user: new mongoose.Types.ObjectId(req.user.id) });
+    const userId = req.user.id;
+
+    let company = await Company.findOne({ user: userId });
+    if (!company && mongoose.isValidObjectId(userId)) {
+      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
+    }
 
     if (!company) {
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
@@ -91,12 +96,15 @@ router.patch('/:id/status', verifyToken, async (req, res) => {
   }
 });
 
-//
 // 📈 Statistieken ophalen
-//
 router.get('/stats/overview', verifyToken, async (req, res) => {
   try {
-    const company = await Company.findOne({ user: new mongoose.Types.ObjectId(req.user.id) });
+    const userId = req.user.id;
+
+    let company = await Company.findOne({ user: userId });
+    if (!company && mongoose.isValidObjectId(userId)) {
+      company = await Company.findOne({ user: new mongoose.Types.ObjectId(userId) });
+    }
 
     if (!company) {
       return res.status(404).json({ message: 'Geen gekoppeld bedrijf voor deze gebruiker' });
