@@ -1,29 +1,35 @@
 // backend/routes/email.js
 const express = require('express');
 const router = express.Router();
-const { sendMail } = require('../utils/mailer');
-const auth = require('../middleware/auth');
+const nodemailer = require('nodemailer');
+const { verifyToken } = require('../middleware/auth');
 
-// Test e-mail sturen (ingelogd voldoende)
-// POST /api/email/test  body: { to?, subject?, text? }
-router.post('/test', auth(), async (req, res) => {
+// 📧 Test endpoint om e-mailverzending te controleren
+router.post('/test', verifyToken, async (req, res) => {
   try {
-    const { to, subject, text } = req.body || {};
-    const recipient = to || process.env.SMTP_USER;
-
-    const out = await sendMail({
-      to: recipient,
-      subject: subject || 'Testmail van irisje-backend',
-      text: text || 'Dit is een testmail vanaf irisje-backend.',
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
     });
 
-    if (out.skipped) {
-      return res.status(200).json({ ok: false, skipped: true, reason: out.reason });
-    }
+    const info = await transporter.sendMail({
+      from: `"Irisje.nl" <${process.env.SMTP_USER}>`,
+      to: req.user?.email || 'info@irisje.nl',
+      subject: 'Testmail Irisje',
+      text: '✅ Dit is een testbericht vanuit de Irisje backend!',
+      html: '<p>✅ Dit is een <strong>testbericht</strong> vanuit de Irisje backend!</p>'
+    });
 
-    return res.json({ ok: true, messageId: out.messageId });
-  } catch (e) {
-    return res.status(500).json({ ok: false, message: e.message });
+    console.log('📧 E-mail verzonden:', info.messageId);
+    res.json({ success: true, messageId: info.messageId });
+  } catch (err) {
+    console.error('❌ Fout bij e-mailverzending:', err.message);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
