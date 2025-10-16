@@ -26,6 +26,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/secure', secureRoutes);
+app.use('/api/seed', seedRoutes);
 
 // Root
 app.get('/', (req, res) => {
