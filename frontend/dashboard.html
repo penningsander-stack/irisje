@@ -1,71 +1,102 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard | Irisje</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <header>
-    <h1>Bedrijfsdashboard</h1>
-    <button id="logoutBtn">Uitloggen</button>
-  </header>
+// frontend/dashboard.js
+console.log('✅ dashboard.js geladen');
 
-  <main>
-    <section id="bedrijf-info">
-      <h2>Bedrijfsinformatie</h2>
-      <p><strong>E-mail:</strong> <span id="userEmail"></span></p>
-      <p id="bedrijfStatus"></p>
-    </section>
+const API = 'https://irisje-backend.onrender.com/api';
 
-    <section id="statistieken">
-      <h2>📊 Statistieken</h2>
-      <div class="stats-container">
-        <div class="stat-box"><strong>Totaal</strong><p id="stat-total">0</p></div>
-        <div class="stat-box"><strong>Geaccepteerd</strong><p id="stat-accepted">0</p></div>
-        <div class="stat-box"><strong>Afgewezen</strong><p id="stat-rejected">0</p></div>
-        <div class="stat-box"><strong>Opgevolgd</strong><p id="stat-followed">0</p></div>
-      </div>
+document.addEventListener('DOMContentLoaded', init);
 
-      <div class="chart-wrapper">
-        <canvas id="statusChart" width="300" height="300"></canvas>
-        <canvas id="trendChart" width="500" height="250"></canvas>
-      </div>
-    </section>
+async function init() {
+  const token = localStorage.getItem('token');
+  const userInfoDiv = document.getElementById('userInfo');
+  const tbody = document.getElementById('requestsTableBody');
 
-    <section id="aanvragen">
-      <h2>📬 Aanvragen</h2>
+  const totalEl = document.getElementById('statTotal');
+  const acceptedEl = document.getElementById('statAccepted');
+  const rejectedEl = document.getElementById('statRejected');
+  const followedEl = document.getElementById('statFollowed');
 
-      <div class="filter-bar">
-        <input type="text" id="searchInput" placeholder="Naam of e-mail" />
-        <select id="statusFilter">
-          <option value="">Alle</option>
-          <option value="Nieuw">Nieuw</option>
-          <option value="Geaccepteerd">Geaccepteerd</option>
-          <option value="Afgewezen">Afgewezen</option>
-          <option value="Opgevolgd">Opgevolgd</option>
-        </select>
-        <button id="filterBtn">Filteren</button>
-      </div>
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    });
+  }
 
-      <table id="aanvragenTable">
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Bericht</th>
-            <th>Status</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <p id="noResults" style="display:none;">Geen aanvragen gevonden.</p>
-    </section>
-  </main>
+  if (!token) {
+    userInfoDiv.innerHTML = '<p>⚠️ Geen token gevonden — log eerst in.</p>';
+    return;
+  }
 
-  <script src="dashboard.js"></script>
-</body>
-</html>
+  try {
+    // 1) Me
+    const me = await apiGet('/secure/me', token);
+    console.log('🪶 /secure/me →', me);
+
+    const bedrijf = me?.company?.name || 'Onbekend';
+    const email = me?.email || 'Onbekend';
+    const categorie = me?.company?.category || 'Onbekend';
+
+    userInfoDiv.innerHTML = `
+      <h3>${bedrijf}</h3>
+      <p><strong>E-mail:</strong> ${email}</p>
+      <p><strong>Categorie:</strong> ${categorie}</p>
+    `;
+
+    // 2) Statistieken
+    const stats = await apiGet('/requests/stats/overview', token);
+    console.log('🪶 /requests/stats/overview →', stats);
+    if (totalEl) totalEl.textContent = stats.total ?? 0;
+    if (acceptedEl) acceptedEl.textContent = stats.accepted ?? 0;
+    if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
+    if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
+
+    // 3) Aanvragen
+    const items = await apiGet('/requests', token); // array
+    console.log('🪶 /requests →', items);
+
+    if (!Array.isArray(items) || items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = items.map(r => {
+      const msg = r.message || r.customerMessage || '';
+      const status = r.status || 'Nieuw';
+      const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '';
+      return `
+        <tr>
+          <td>${escapeHtml(r.customerName || '')}</td>
+          <td>${escapeHtml(r.customerEmail || '')}</td>
+          <td>${escapeHtml(msg)}</td>
+          <td>${escapeHtml(status)}</td>
+          <td>${escapeHtml(created)}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('❌ Dashboard fout:', err);
+    userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden: ${err.message || err}</p>`;
+  }
+}
+
+async function apiGet(path, token) {
+  const res = await fetch(`${API}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const t = await safeJson(res);
+    throw new Error(t?.message || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+async function safeJson(res) {
+  try { return await res.json(); } catch { return null; }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+  })[s]);
+}
