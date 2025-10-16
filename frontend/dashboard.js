@@ -1,178 +1,141 @@
-// frontend/dashboard.js
-const API = "https://irisje-backend.onrender.com";
-const token = localStorage.getItem("irisje_token");
-const message = document.getElementById("message");
-const table = document.getElementById("requestsTable");
-const statsDiv = document.getElementById("stats");
+const API_BASE = 'https://irisje-backend.onrender.com/api';
+const token = localStorage.getItem('token');
 
 if (!token) {
-  window.location.href = "index.html";
+  window.location.href = 'index.html';
 }
 
-// Tabs
-const panelRequests = document.getElementById("panelRequests");
-const panelEmail = document.getElementById("panelEmail");
-document.getElementById("tabRequests").addEventListener("click", () => {
-  panelRequests.classList.remove("hidden");
-  panelEmail.classList.add("hidden");
-});
-document.getElementById("tabEmail").addEventListener("click", () => {
-  panelRequests.classList.add("hidden");
-  panelEmail.classList.remove("hidden");
-});
+const userEmailSpan = document.getElementById('userEmail');
+const bedrijfStatus = document.getElementById('bedrijfStatus');
+const noResults = document.getElementById('noResults');
+const tableBody = document.querySelector('#aanvragenTable tbody');
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
-  localStorage.removeItem("irisje_token");
-  window.location.href = "index.html";
+// Uitloggen
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('token');
+  window.location.href = 'index.html';
 });
 
-document.getElementById("filterBtn").addEventListener("click", loadRequests);
+// Dashboard laden
+document.addEventListener('DOMContentLoaded', () => {
+  laadBedrijfInfo();
+  laadStatistieken();
+  laadAanvragen();
+});
 
-// E-mail test form
-const emailForm = document.getElementById("emailForm");
-const emailMsg = document.getElementById("emailMsg");
-emailForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  emailMsg.textContent = "Bezig met verzenden...";
-  const to = document.getElementById("emailTo").value.trim();
-  const subject = document.getElementById("emailSubject").value.trim() || "Testmail van irisje";
-  const text = document.getElementById("emailText").value.trim() || "Hallo, dit is een testmail vanaf irisje.";
-
+// 📌 Bedrijfsinfo
+async function laadBedrijfInfo() {
   try {
-    const res = await fetch(`${API}/api/email/test`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify({ to, subject, text })
+    const res = await fetch(`${API_BASE}/secure/me`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
-    if (!res.ok || data.ok === false) {
-      emailMsg.textContent = "Kon niet verzenden: " + (data.message || data.reason || "onbekende fout");
-      emailMsg.className = "text-sm mt-3 text-red-600";
-      return;
-    }
-    emailMsg.textContent = "✅ Verstuurt! messageId: " + data.messageId;
-    emailMsg.className = "text-sm mt-3 text-green-600";
-  } catch (err) {
-    emailMsg.textContent = "Fout: " + err.message;
-    emailMsg.className = "text-sm mt-3 text-red-600";
-  }
-});
-
-async function loadStats() {
-  try {
-    const res = await fetch(`${API}/api/requests/stats/overview`, {
-      headers: { Authorization: "Bearer " + token }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
-
-    statsDiv.innerHTML = `
-      <div class="bg-white p-4 rounded-xl shadow text-center">
-        <p class="text-sm text-gray-500">Totaal</p>
-        <p class="text-2xl font-bold">${data.total}</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow text-center">
-        <p class="text-sm text-gray-500">Geaccepteerd</p>
-        <p class="text-2xl font-bold text-green-600">${data.accepted}</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow text-center">
-        <p class="text-sm text-gray-500">Afgewezen</p>
-        <p class="text-2xl font-bold text-red-600">${data.rejected}</p>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow text-center">
-        <p class="text-sm text-gray-500">Opgevolgd</p>
-        <p class="text-2xl font-bold text-blue-600">${data.followedUp}</p>
-      </div>
-    `;
-  } catch (err) {
-    statsDiv.innerHTML = `<p class="text-sm text-red-600">${err.message}</p>`;
+    userEmailSpan.textContent = data.email || 'Onbekend';
+    bedrijfStatus.textContent = data.companyName
+      ? `Gekoppeld aan: ${data.companyName}`
+      : '⚠️ Geen gekoppeld bedrijf';
+  } catch {
+    bedrijfStatus.textContent = '⚠️ Fout bij laden bedrijfsinfo';
   }
 }
 
-async function loadRequests() {
-  const q = document.getElementById("searchInput").value.trim();
-  const status = document.getElementById("statusFilter").value;
-  message.textContent = "Bezig met laden...";
-  table.innerHTML = "";
-
-  const params = new URLSearchParams();
-  if (q) params.append("q", q);
-  if (status) params.append("status", status);
-
+// 📈 Statistieken
+async function laadStatistieken() {
   try {
-    const res = await fetch(`${API}/api/requests?${params.toString()}`, {
-      headers: { Authorization: "Bearer " + token }
+    const res = await fetch(`${API_BASE}/requests/stats/overview`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const stats = await res.json();
+
+    document.getElementById('stat-total').textContent = stats.total || 0;
+    document.getElementById('stat-accepted').textContent = stats.accepted || 0;
+    document.getElementById('stat-rejected').textContent = stats.rejected || 0;
+    document.getElementById('stat-followed').textContent = stats.followedUp || 0;
+
+    tekenGrafiek(stats);
+  } catch (err) {
+    console.error('Fout bij laden statistieken:', err);
+  }
+}
+
+// 🎨 Grafiek tekenen
+function tekenGrafiek(stats) {
+  const ctx = document.getElementById('statusChart');
+  new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Geaccepteerd', 'Afgewezen', 'Opgevolgd', 'Overig'],
+      datasets: [{
+        data: [
+          stats.accepted || 0,
+          stats.rejected || 0,
+          stats.followedUp || 0,
+          stats.total - ((stats.accepted || 0) + (stats.rejected || 0) + (stats.followedUp || 0))
+        ],
+        backgroundColor: ['#4CAF50', '#f44336', '#ff9800', '#9e9e9e']
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+}
+
+// 📬 Aanvragen
+async function laadAanvragen() {
+  try {
+    const res = await fetch(`${API_BASE}/requests`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.message);
+    const aanvragen = data.items || [];
 
-    if (!data.items || data.items.length === 0) {
-      message.textContent = "Geen aanvragen gevonden.";
+    tableBody.innerHTML = '';
+    if (aanvragen.length === 0) {
+      noResults.style.display = 'block';
       return;
     }
 
-    message.textContent = "";
-    table.innerHTML = data.items
-      .map(
-        (r) => `
-      <tr>
-        <td class="p-3">${escapeHtml(r.customerName || "")}</td>
-        <td class="p-3">${escapeHtml(r.customerEmail || "")}</td>
-        <td class="p-3">${escapeHtml(r.category || "")}</td>
-        <td class="p-3">${escapeHtml(r.statusByCompany?.[0]?.status || "Nieuw")}</td>
-        <td class="p-3">
-          <select class="border rounded p-1" data-id="${r._id}">
-            <option value="Nieuw">Nieuw</option>
+    noResults.style.display = 'none';
+    aanvragen.forEach((a) => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${a.customerName}</td>
+        <td>${a.customerEmail}</td>
+        <td>${a.message || ''}</td>
+        <td>${(a.statusByCompany && a.statusByCompany[0]?.status) || 'Nieuw'}</td>
+        <td>
+          <select onchange="updateStatus('${a._id}', this.value)">
+            <option value="">Wijzig</option>
             <option value="Geaccepteerd">Geaccepteerd</option>
             <option value="Afgewezen">Afgewezen</option>
             <option value="Opgevolgd">Opgevolgd</option>
           </select>
         </td>
-      </tr>
-    `
-      )
-      .join("");
-
-    document.querySelectorAll("select[data-id]").forEach((sel) => {
-      const id = sel.getAttribute("data-id");
-      const current = data.items.find((r) => r._id === id)?.statusByCompany?.[0]?.status;
-      if (current) sel.value = current;
-      sel.addEventListener("change", () => updateStatus(id, sel.value));
+      `;
+      tableBody.appendChild(row);
     });
   } catch (err) {
-    message.textContent = "Fout bij laden: " + err.message;
+    console.error('Fout bij laden aanvragen:', err);
   }
 }
 
+// 🔄 Status wijzigen
 async function updateStatus(id, status) {
   try {
-    const res = await fetch(`${API}/api/requests/${id}/status`, {
-      method: "PATCH",
+    await fetch(`${API_BASE}/requests/${id}/status`, {
+      method: 'PATCH',
       headers: {
-        Authorization: "Bearer " + token,
-        "Content-Type": "application/json"
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ status })
+      body: JSON.stringify({ status }),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message);
-    }
-    message.textContent = "Status bijgewerkt ✅";
-    loadStats();
+    laadStatistieken();
+    laadAanvragen();
   } catch (err) {
-    message.textContent = "Fout bij bijwerken: " + err.message;
+    console.error('Fout bij updaten status:', err);
   }
 }
-
-function escapeHtml(str = "") {
-  return String(str).replace(/[&<>"']/g, s => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[s]));
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  loadStats();
-  loadRequests();
-});
