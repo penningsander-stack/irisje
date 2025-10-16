@@ -28,7 +28,7 @@ async function init() {
   }
 
   try {
-    // 🔹 1) Auth check
+    // 1️⃣ Profielinformatie
     const me = await apiGet('/secure/me', token);
     console.log('🪶 /secure/me →', me);
 
@@ -42,7 +42,7 @@ async function init() {
       <p><strong>Categorie:</strong> ${categorie}</p>
     `;
 
-    // 🔹 2) Statistieken
+    // 2️⃣ Statistieken
     const stats = await apiGet('/requests/stats/overview', token);
     console.log('🪶 /requests/stats/overview →', stats);
     if (totalEl) totalEl.textContent = stats.total ?? 0;
@@ -50,7 +50,7 @@ async function init() {
     if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
     if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
 
-    // 🔹 3) Aanvragen
+    // 3️⃣ Aanvragen
     const items = await apiGet('/requests', token);
     console.log('🪶 /requests →', items);
 
@@ -80,12 +80,14 @@ async function init() {
   }
 }
 
+// Universele fetch-wrapper
 async function apiGet(path, token) {
   const res = await fetch(`${API}${path}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
     }
   });
 
