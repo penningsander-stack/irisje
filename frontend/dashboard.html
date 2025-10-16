@@ -1,45 +1,41 @@
+// frontend/dashboard.html
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bedrijfsdashboard - Irisje</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bedrijfsdashboard | Irisje</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="dashboard-page">
-  <header>
-    <h1>Bedrijfsdashboard</h1>
-    <button id="logoutBtn">Uitloggen</button>
-  </header>
+<body class="bg-gray-50 text-gray-800">
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <h1>Bedrijfsdashboard</h1>
+      <button id="logoutBtn" class="btn-logout">Uitloggen</button>
+    </header>
 
-  <main>
-    <section id="userInfo" class="card">
-      <h2>Bedrijfsinformatie</h2>
-      <p>E-mail:</p>
-    </section>
+    <section id="userInfo" class="info-card"></section>
 
-    <section class="card">
+    <section class="stats-section">
       <h2>📊 Statistieken</h2>
-      <div class="stats">
-        <div class="stat-item">Totaal<br><span id="statTotal">0</span></div>
-        <div class="stat-item">Geaccepteerd<br><span id="statAccepted">0</span></div>
-        <div class="stat-item">Afgewezen<br><span id="statRejected">0</span></div>
-        <div class="stat-item">Opgevolgd<br><span id="statFollowed">0</span></div>
+      <div class="stats-grid">
+        <div>Totaal<br><span id="statTotal">0</span></div>
+        <div>Geaccepteerd<br><span id="statAccepted">0</span></div>
+        <div>Afgewezen<br><span id="statRejected">0</span></div>
+        <div>Opgevolgd<br><span id="statFollowed">0</span></div>
       </div>
     </section>
 
-    <section class="card">
+    <section class="requests-section">
       <h2>📬 Aanvragen</h2>
-      <div class="filter-bar">
-        <input type="text" placeholder="Naam of e-mail" id="searchInput">
-        <select id="statusFilter">
-          <option value="all">Alle</option>
-          <option value="accepted">Geaccepteerd</option>
-          <option value="rejected">Afgewezen</option>
-          <option value="followed">Opgevolgd</option>
-        </select>
-        <button id="filterBtn">Filteren</button>
-      </div>
+      <label for="statusFilter">Filter op status:</label>
+      <select id="statusFilter">
+        <option value="Alle">Alle</option>
+        <option value="Nieuw">Nieuw</option>
+        <option value="Geaccepteerd">Geaccepteerd</option>
+        <option value="Afgewezen">Afgewezen</option>
+        <option value="Opgevolgd">Opgevolgd</option>
+      </select>
 
       <table class="data-table">
         <thead>
@@ -48,21 +44,13 @@
             <th>E-mail</th>
             <th>Bericht</th>
             <th>Status</th>
-            <th>Datum</th>
+            <th>Actie</th>
           </tr>
         </thead>
-        <tbody id="requestsTableBody">
-          <tr><td colspan="5">Laden...</td></tr>
-        </tbody>
+        <tbody id="requestsTableBody"></tbody>
       </table>
     </section>
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Irisje.nl</p>
-  </footer>
-
-  <!-- ✅ Koppeling met JavaScript -->
+  </div>
   <script src="dashboard.js"></script>
 </body>
 </html>
