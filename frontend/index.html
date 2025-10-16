@@ -1,63 +1,66 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inloggen | Irisje</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inloggen - Irisje</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="login-body">
-  <div class="login-container">
-    <div class="login-card">
-      <h1>Irisje</h1>
-      <p class="subtitle">Inloggen voor bedrijven</p>
+<body class="login-page">
+  <header>
+    <h1>Irisje Bedrijvenportaal</h1>
+  </header>
 
+  <main>
+    <section class="card">
+      <h2>🔐 Inloggen</h2>
       <form id="loginForm">
         <label for="email">E-mail</label>
-        <input type="email" id="email" name="email" placeholder="info@bedrijf.nl" required />
+        <input type="email" id="email" name="email" placeholder="voorbeeld@bedrijf.nl" required>
 
         <label for="password">Wachtwoord</label>
-        <input type="password" id="password" name="password" placeholder="••••••••" required />
+        <input type="password" id="password" name="password" placeholder="••••••••••" required>
 
         <button type="submit">Inloggen</button>
-        <p id="loginMessage"></p>
       </form>
 
-      <p class="hint">Heb je nog geen account? Vraag toegang aan via <a href="mailto:info@irisje.nl">info@irisje.nl</a></p>
-    </div>
-  </div>
+      <p id="loginMessage" class="message"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Irisje.nl</p>
+  </footer>
 
   <script>
-    const API_BASE = 'https://irisje-backend.onrender.com/api';
+    const API = 'https://irisje-backend.onrender.com/api/auth/login';
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const msg = document.getElementById('loginMessage');
-
-      msg.textContent = 'Even geduld...';
-      msg.style.color = '#1e3a8a';
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const message = document.getElementById('loginMessage');
 
       try {
-        const res = await fetch(`${API_BASE}/auth/login`, {
+        const res = await fetch(API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
         });
 
         const data = await res.json();
-        if (res.ok && data.token) {
-          localStorage.setItem('token', data.token);
-          msg.textContent = '✅ Inloggen gelukt!';
-          msg.style.color = '#16a34a';
-          setTimeout(() => (window.location.href = 'dashboard.html'), 800);
-        } else {
-          msg.textContent = data.message || 'Onjuiste inloggegevens.';
-          msg.style.color = '#dc2626';
-        }
+        if (!res.ok) throw new Error(data.message || 'Onbekende fout');
+
+        localStorage.setItem('token', data.token);
+        message.textContent = '✅ Inloggen gelukt!';
+        message.style.color = 'green';
+
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1000);
       } catch (err) {
-        msg.textContent = 'Fout bij verbinden met server.';
-        msg.style.color = '#dc2626';
+        message.textContent = `⚠️ ${err.message}`;
+        message.style.color = 'red';
       }
     });
   </script>
