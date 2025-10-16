@@ -1,35 +1,65 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>irisje.nl — Login demo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Inloggen | Irisje</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-gray-50 text-gray-800 flex flex-col items-center justify-center min-h-screen">
-  <main class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-sm text-center">
-    <h1 class="text-2xl font-bold mb-4">🔐 irisje Login</h1>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <h1>Irisje</h1>
+      <p class="subtitle">Inloggen voor bedrijven</p>
 
-    <form id="loginForm" class="space-y-4">
-      <div class="text-left">
-        <label class="block text-sm font-medium">E-mail</label>
-        <input type="email" id="email" class="border rounded w-full p-2" required />
-      </div>
-      <div class="text-left">
-        <label class="block text-sm font-medium">Wachtwoord</label>
-        <input type="password" id="password" class="border rounded w-full p-2" required />
-      </div>
-      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white rounded w-full py-2">
-        Inloggen
-      </button>
-    </form>
+      <form id="loginForm">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" name="email" placeholder="info@bedrijf.nl" required />
 
-    <p id="message" class="text-sm text-gray-600 mt-4"></p>
+        <label for="password">Wachtwoord</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required />
 
-    <div id="profile" class="hidden mt-6 text-left bg-gray-50 p-4 rounded-xl border text-sm"></div>
-  </main>
+        <button type="submit">Inloggen</button>
+        <p id="loginMessage"></p>
+      </form>
 
-  <script src="./app.js"></script>
+      <p class="hint">Heb je nog geen account? Vraag toegang aan via <a href="mailto:info@irisje.nl">info@irisje.nl</a></p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://irisje-backend.onrender.com/api';
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const msg = document.getElementById('loginMessage');
+
+      msg.textContent = 'Even geduld...';
+      msg.style.color = '#1e3a8a';
+
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.token) {
+          localStorage.setItem('token', data.token);
+          msg.textContent = '✅ Inloggen gelukt!';
+          msg.style.color = '#16a34a';
+          setTimeout(() => (window.location.href = 'dashboard.html'), 800);
+        } else {
+          msg.textContent = data.message || 'Onjuiste inloggegevens.';
+          msg.style.color = '#dc2626';
+        }
+      } catch (err) {
+        msg.textContent = 'Fout bij verbinden met server.';
+        msg.style.color = '#dc2626';
+      }
+    });
+  </script>
 </body>
 </html>
