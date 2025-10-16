@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const Request = require('../models/Request');
 const Company = require('../models/Company');
-const auth = require('../middleware/auth');
+const auth = require('../auth'); // ✅ aangepast pad
+
 
 // ✅ Alle aanvragen voor ingelogd bedrijf
 router.get('/', auth, async (req, res) => {
