@@ -1,5 +1,5 @@
 // frontend/dashboard.js
-console.log('✅ dashboard.js geladen');
+console.log('✅ NIEUWE dashboard.js geladen');
 
 const API = 'https://irisje-backend.onrender.com/api';
 
@@ -28,7 +28,7 @@ async function init() {
   }
 
   try {
-    // 1️⃣ Profielinformatie
+    // 1️⃣ Profiel ophalen
     const me = await apiGet('/secure/me', token);
     console.log('🪶 /secure/me →', me);
 
@@ -50,7 +50,7 @@ async function init() {
     if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
     if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
 
-    // 3️⃣ Aanvragen
+    // 3️⃣ Aanvragen ophalen
     const items = await apiGet('/requests', token);
     console.log('🪶 /requests →', items);
 
@@ -80,7 +80,6 @@ async function init() {
   }
 }
 
-// Universele fetch-wrapper
 async function apiGet(path, token) {
   const res = await fetch(`${API}${path}`, {
     method: 'GET',
