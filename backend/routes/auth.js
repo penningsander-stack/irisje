@@ -1,44 +1,62 @@
 // backend/routes/auth.js
-// ✅ Middleware voor tokenverificatie
+// ✅ Combineert login-route + tokenverificatie middleware
 
+const express = require('express');
+const router = express.Router();
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 dotenv.config();
 
-/**
- * Controleert of een geldig JWT-token is meegestuurd in de Authorization-header.
- * Zet daarna de inhoud (payload) van het token in req.user zodat andere routes
- * kunnen zien welke gebruiker is ingelogd.
- */
-module.exports = function (req, res, next) {
+// Simpele inlogdemo (je kunt dit later koppelen aan MongoDB)
+const DEMO_USER = {
+  id: '68ef7f6659b5c49a78deacda',
+  email: 'demo@irisje.nl',
+  password: 'demo1234',
+  role: 'company',
+};
+
+// 🔐 Login endpoint
+router.post('/login', async (req, res) => {
   try {
-    // Verwacht header in de vorm: Authorization: Bearer <token>
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ message: 'E-mail en wachtwoord zijn verplicht' });
+
+    if (email !== DEMO_USER.email || password !== DEMO_USER.password)
+      return res.status(401).json({ message: 'Ongeldige inloggegevens' });
+
+    // Token genereren
+    const token = jwt.sign(
+      { id: DEMO_USER.id, role: DEMO_USER.role, email: DEMO_USER.email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    console.log('✅ Token aangemaakt voor', email);
+    res.json({ token });
+  } catch (err) {
+    console.error('❌ Loginfout:', err);
+    res.status(500).json({ message: 'Serverfout bij inloggen' });
+  }
+});
+
+// 🔒 Middleware voor beveiligde routes
+function verifyToken(req, res, next) {
+  try {
     const authHeader = req.header('Authorization');
-    if (!authHeader) {
-      console.warn('⚠️ Geen Authorization-header gevonden');
-      return res.status(401).json({ message: 'Geen token opgegeven' });
-    }
+    if (!authHeader) return res.status(401).json({ message: 'Geen token opgegeven' });
 
     const token = authHeader.split(' ')[1];
-    if (!token) {
-      console.warn('⚠️ Geen Bearer-token gevonden');
-      return res.status(401).json({ message: 'Geen token opgegeven' });
-    }
+    if (!token) return res.status(401).json({ message: 'Geen token opgegeven' });
 
-    // Token decoderen
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded) {
-      console.warn('⚠️ Token kon niet worden geverifieerd');
-      return res.status(401).json({ message: 'Ongeldige token' });
-    }
-
-    // Zet de payload in req.user
     req.user = decoded;
-
-    console.log('🪶 [auth.js] Token geverifieerd:', decoded);
     next();
   } catch (err) {
-    console.error('❌ Fout bij tokenverificatie:', err.message);
-    res.status(401).json({ message: 'Ongeldige of verlopen token' });
+    console.error('❌ Ongeldige token:', err.message);
+    res.status(401).json({ message: 'Ongeldige token' });
   }
-};
+}
+
+module.exports = { router, verifyToken };
