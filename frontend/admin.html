@@ -1,34 +1,101 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin – Irisje</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beheer - Irisje</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Beheer bedrijven en reviews</h1>
+    <h1>Beheerderspaneel</h1>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
+
   <main>
-    <section>
-      <h2>Nieuw bedrijf toevoegen</h2>
-      <form id="addCompanyForm">
-        <input type="text" id="newName" placeholder="Naam" required />
-        <input type="text" id="newCategory" placeholder="Categorie" required />
-        <input type="text" id="newLocation" placeholder="Locatie" required />
-        <textarea id="newDescription" placeholder="Beschrijving" required></textarea>
-        <button type="submit">Toevoegen</button>
-      </form>
-    </section>
+    <section class="card">
+      <h2>📋 Gemelde reviews</h2>
+      <p id="adminMessage">Laden...</p>
 
-    <hr>
-
-    <section>
-      <h2>Bestaande bedrijven</h2>
-      <ul id="companyList"></ul>
+      <table class="data-table" id="reviewsTable">
+        <thead>
+          <tr>
+            <th>Bedrijf</th>
+            <th>Klant</th>
+            <th>Review</th>
+            <th>Status</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody id="reviewsBody">
+          <tr><td colspan="5">Nog geen gegevens.</td></tr>
+        </tbody>
+      </table>
     </section>
   </main>
-  <script src="script.js"></script>
+
+  <footer>
+    <p>&copy; 2025 Irisje.nl</p>
+  </footer>
+
+  <script>
+    const API = 'https://irisje-backend.onrender.com/api/reviews/reported';
+    const logoutBtn = document.getElementById('logoutBtn');
+    const tableBody = document.getElementById('reviewsBody');
+    const msg = document.getElementById('adminMessage');
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        msg.textContent = '⚠️ Geen token gevonden — log eerst in.';
+        return;
+      }
+
+      try {
+        const res = await fetch(API, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          msg.textContent = '✅ Geen gemelde reviews op dit moment.';
+          return;
+        }
+
+        msg.textContent = '';
+        tableBody.innerHTML = data.map(r => `
+          <tr>
+            <td>${r.companyName || '-'}</td>
+            <td>${r.customerName || '-'}</td>
+            <td>${r.text || '-'}</td>
+            <td>${r.status || 'Nieuw'}</td>
+            <td><button onclick="markHandled('${r._id}')">Afgehandeld</button></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        msg.textContent = `❌ Fout bij laden: ${err.message}`;
+      }
+    });
+
+    async function markHandled(id) {
+      const token = localStorage.getItem('token');
+      try {
+        await fetch(`https://irisje-backend.onrender.com/api/reviews/${id}/resolve`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        location.reload();
+      } catch (err) {
+        alert('Fout bij bijwerken status: ' + err.message);
+      }
+    }
+  </script>
 </body>
 </html>
