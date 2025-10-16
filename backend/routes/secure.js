@@ -5,7 +5,7 @@ const { verifyToken } = require('../middleware/auth');
 const User = require('../models/User');
 const Company = require('../models/Company');
 
-// ✅ Authenticated user info
+// ✅ Ingelogde gebruiker ophalen
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-passwordHash');
@@ -13,13 +13,12 @@ router.get('/me', verifyToken, async (req, res) => {
       return res.status(404).json({ message: 'Gebruiker niet gevonden' });
     }
 
-    // Zoek gekoppeld bedrijf
     const company = await Company.findOne({ user: user._id });
     res.json({
       id: user._id,
       email: user.email,
       role: user.role,
-      companyName: company ? company.name : null,
+      companyName: company ? company.name : null
     });
   } catch (err) {
     console.error('❌ secure.js fout:', err.message);
