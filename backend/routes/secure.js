@@ -11,18 +11,14 @@ router.get('/me', verifyToken, async (req, res) => {
 
     const user = await User.findById(req.user.id).select('-passwordHash');
     if (!user) {
-      console.log('⚠️ Gebruiker niet gevonden voor ID:', req.user.id);
+      console.log('⚠️ Geen gebruiker gevonden voor ID:', req.user.id);
       return res.status(404).json({ message: 'Gebruiker niet gevonden' });
     }
 
     const company = await Company.findOne({ user: user._id });
-    if (company) {
-      console.log('✅ Bedrijf gevonden:', company.name);
-    } else {
-      console.log('⚠️ Geen bedrijf gevonden voor gebruiker:', user.email);
-    }
+    console.log('🪶 [secure.js] Gevonden user:', user.email);
+    console.log('🪶 [secure.js] Gevonden company:', company ? company.name : '(geen)');
 
-    // ✅ Altijd duidelijk antwoord geven
     res.json({
       id: user._id,
       email: user.email,
@@ -37,7 +33,7 @@ router.get('/me', verifyToken, async (req, res) => {
         : null,
     });
   } catch (err) {
-    console.error('❌ secure.js fout:', err.message);
+    console.error('❌ [secure.js] Fout:', err.message);
     res.status(500).json({ message: 'Serverfout', error: err.message });
   }
 });
