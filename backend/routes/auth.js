@@ -59,4 +59,4 @@ function verifyToken(req, res, next) {
   }
 }
 
-module.exports = { router, verifyToken };
+module.exports = router;
