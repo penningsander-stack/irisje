@@ -2,23 +2,29 @@
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
+const User = require('../models/User');
+const Company = require('../models/Company');
 
-// 👤 Test endpoint om gebruikersinformatie te tonen
+// ✅ Authenticated user info
 router.get('/me', verifyToken, async (req, res) => {
   try {
+    const user = await User.findById(req.user.id).select('-passwordHash');
+    if (!user) {
+      return res.status(404).json({ message: 'Gebruiker niet gevonden' });
+    }
+
+    // Zoek gekoppeld bedrijf
+    const company = await Company.findOne({ user: user._id });
     res.json({
-      id: req.user.id,
-      role: req.user.role,
-      email: req.user.email,
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      companyName: company ? company.name : null,
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('❌ secure.js fout:', err.message);
+    res.status(500).json({ message: 'Serverfout' });
   }
-});
-
-// 🔒 Test secure route
-router.get('/ping', verifyToken, (req, res) => {
-  res.json({ ok: true, message: 'Secure route works ✅' });
 });
 
 module.exports = router;
