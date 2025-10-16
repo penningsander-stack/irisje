@@ -1,18 +1,20 @@
 // frontend/dashboard.js
+console.log('✅ dashboard.js geladen');
 
-document.addEventListener('DOMContentLoaded', async () => {
+const API = 'https://irisje-backend.onrender.com/api';
+
+document.addEventListener('DOMContentLoaded', init);
+
+async function init() {
   const token = localStorage.getItem('token');
   const userInfoDiv = document.getElementById('userInfo');
-  const requestsTable = document.getElementById('requestsTableBody');
-
+  const tbody = document.getElementById('requestsTableBody');
   const totalEl = document.getElementById('statTotal');
   const acceptedEl = document.getElementById('statAccepted');
   const rejectedEl = document.getElementById('statRejected');
   const followedEl = document.getElementById('statFollowed');
-
   const logoutBtn = document.getElementById('logoutBtn');
 
-  // ✅ Uitloggen
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('token');
@@ -26,68 +28,89 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    // --- 1️⃣ Bedrijfsinfo ophalen ---
-    console.log('🔹 Ophalen bedrijfsinfo...');
-    const meRes = await fetch('https://irisje-backend.onrender.com/api/secure/me', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const meData = await meRes.json();
-    console.log('🪶 /api/secure/me response:', meData);
+    // 🔹 1) Auth check
+    const me = await apiGet('/secure/me', token);
+    console.log('🪶 /secure/me →', me);
 
-    if (!meRes.ok) throw new Error(meData.message || 'Kon bedrijfsinfo niet laden');
-
-    const bedrijf = meData.company ? meData.company.name : 'Onbekend';
-    const email = meData.email || 'Onbekend';
-    const categorie = meData.company ? meData.company.category : 'Onbekend';
+    const bedrijf = me?.company?.name || 'Onbekend';
+    const email = me?.email || 'Onbekend';
+    const categorie = me?.company?.category || 'Onbekend';
 
     userInfoDiv.innerHTML = `
-      <h3>${bedrijf}</h3>
+      <h2>${bedrijf}</h2>
       <p><strong>E-mail:</strong> ${email}</p>
       <p><strong>Categorie:</strong> ${categorie}</p>
     `;
 
-    // --- 2️⃣ Aanvragen ophalen ---
-    console.log('🔹 Ophalen aanvragen...');
-    const reqRes = await fetch('https://irisje-backend.onrender.com/api/requests', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const requests = await reqRes.json();
-    console.log('🪶 /api/requests response:', requests);
+    // 🔹 2) Statistieken
+    const stats = await apiGet('/requests/stats/overview', token);
+    console.log('🪶 /requests/stats/overview →', stats);
+    if (totalEl) totalEl.textContent = stats.total ?? 0;
+    if (acceptedEl) acceptedEl.textContent = stats.accepted ?? 0;
+    if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
+    if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
 
-    if (!reqRes.ok || !Array.isArray(requests)) {
-      throw new Error('Fout bij ophalen aanvragen');
+    // 🔹 3) Aanvragen
+    const items = await apiGet('/requests', token);
+    console.log('🪶 /requests →', items);
+
+    if (!Array.isArray(items) || items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+      return;
     }
 
-    // --- 3️⃣ Statistieken berekenen ---
-    const total = requests.length;
-    const accepted = requests.filter((r) => r.status === 'Geaccepteerd').length;
-    const rejected = requests.filter((r) => r.status === 'Afgewezen').length;
-    const followed = requests.filter((r) => r.status === 'Opgevolgd').length;
+    tbody.innerHTML = items.map(r => {
+      const msg = r.message || r.customerMessage || '';
+      const status = r.status || 'Nieuw';
+      const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '';
+      return `
+        <tr>
+          <td>${escapeHtml(r.customerName || '')}</td>
+          <td>${escapeHtml(r.customerEmail || '')}</td>
+          <td>${escapeHtml(msg)}</td>
+          <td>${escapeHtml(status)}</td>
+          <td>${escapeHtml(created)}</td>
+        </tr>
+      `;
+    }).join('');
 
-    if (totalEl) totalEl.textContent = total;
-    if (acceptedEl) acceptedEl.textContent = accepted;
-    if (rejectedEl) rejectedEl.textContent = rejected;
-    if (followedEl) followedEl.textContent = followed;
-
-    // --- 4️⃣ Aanvragen tonen in tabel ---
-    if (total === 0) {
-      requestsTable.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-    } else {
-      requestsTable.innerHTML = requests
-        .map(
-          (r) => `
-          <tr>
-            <td>${r.customerName || '-'}</td>
-            <td>${r.customerEmail || '-'}</td>
-            <td>${r.customerMessage || '-'}</td>
-            <td>${r.status || 'Nieuw'}</td>
-            <td>${new Date(r.createdAt).toLocaleDateString('nl-NL')}</td>
-          </tr>`
-        )
-        .join('');
-    }
   } catch (err) {
     console.error('❌ Dashboard fout:', err);
-    userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden bedrijfsinfo: ${err.message}</p>`;
+    userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden: ${err.message || err}</p>`;
   }
-});
+}
+
+async function apiGet(path, token) {
+  const res = await fetch(`${API}${path}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    const t = await safeJson(res);
+    throw new Error(t?.message || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[s]));
+}
