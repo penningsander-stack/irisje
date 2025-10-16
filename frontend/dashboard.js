@@ -16,7 +16,6 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   window.location.href = 'index.html';
 });
 
-// Dashboard laden
 document.addEventListener('DOMContentLoaded', () => {
   laadBedrijfInfo();
   laadStatistieken();
@@ -39,7 +38,7 @@ async function laadBedrijfInfo() {
   }
 }
 
-// 📈 Statistieken
+// 📈 Statistieken + grafieken
 async function laadStatistieken() {
   try {
     const res = await fetch(`${API_BASE}/requests/stats/overview`, {
@@ -52,14 +51,15 @@ async function laadStatistieken() {
     document.getElementById('stat-rejected').textContent = stats.rejected || 0;
     document.getElementById('stat-followed').textContent = stats.followedUp || 0;
 
-    tekenGrafiek(stats);
+    tekenTaartGrafiek(stats);
+    tekenTrendGrafiek();
   } catch (err) {
     console.error('Fout bij laden statistieken:', err);
   }
 }
 
-// 🎨 Grafiek tekenen
-function tekenGrafiek(stats) {
+// 🎨 Taartdiagram
+function tekenTaartGrafiek(stats) {
   const ctx = document.getElementById('statusChart');
   new Chart(ctx, {
     type: 'pie',
@@ -81,6 +81,49 @@ function tekenGrafiek(stats) {
       }
     }
   });
+}
+
+// 📉 Trendgrafiek (aanvragen per dag)
+async function tekenTrendGrafiek() {
+  try {
+    const res = await fetch(`${API_BASE}/requests?days=30`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const aanvragen = data.items || [];
+
+    // groepeer per datum
+    const perDag = {};
+    aanvragen.forEach(a => {
+      const d = new Date(a.createdAt).toISOString().slice(0, 10);
+      perDag[d] = (perDag[d] || 0) + 1;
+    });
+
+    const labels = Object.keys(perDag).sort();
+    const waarden = labels.map(l => perDag[l]);
+
+    const ctx = document.getElementById('trendChart');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Aanvragen per dag',
+          data: waarden,
+          backgroundColor: '#2196f3'
+        }]
+      },
+      options: {
+        scales: {
+          x: { title: { display: true, text: 'Datum' } },
+          y: { title: { display: true, text: 'Aantal aanvragen' }, beginAtZero: true }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  } catch (err) {
+    console.error('Fout bij trendgrafiek:', err);
+  }
 }
 
 // 📬 Aanvragen
