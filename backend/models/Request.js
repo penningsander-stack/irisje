@@ -1,37 +1,35 @@
 // backend/models/Request.js
 const mongoose = require('mongoose');
 
-const statusEnum = ['Nieuw', 'Geaccepteerd', 'Afgewezen', 'Opgevolgd'];
-
 const requestSchema = new mongoose.Schema(
   {
     customerName: { type: String, required: true },
     customerEmail: { type: String, required: true },
     customerPhone: { type: String },
+    // Ondersteun zowel 'message' als oudere 'customerMessage'
     message: { type: String },
-    category: { type: String, index: true },
+    customerMessage: { type: String },
 
-    // Bedrijven die de aanvraag zouden moeten ontvangen (targets)
-    targetCompanies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Company' }],
+    company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
 
-    // Status per bedrijf
-    statusByCompany: [
-      {
-        company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company' },
-        status: { type: String, enum: statusEnum, default: 'Nieuw' },
-        updatedAt: { type: Date, default: Date.now }
-      }
-    ],
-
-    // Metadata
-    meta: {
-      ip: String,
-      userAgent: String,
-      sourceUrl: String
-    }
+    status: {
+      type: String,
+      enum: ['Nieuw', 'Geaccepteerd', 'Afgewezen', 'Opgevolgd'],
+      default: 'Nieuw',
+    },
   },
   { timestamps: true }
 );
 
+// Zorg dat toJSON altijd één 'message' veld exposeert
+requestSchema.set('toJSON', {
+  virtuals: true,
+  versionKey: false,
+  transform: (_, ret) => {
+    ret.message = ret.message || ret.customerMessage || '';
+    delete ret.customerMessage;
+    return ret;
+  },
+});
+
 module.exports = mongoose.model('Request', requestSchema);
-module.exports.statusEnum = statusEnum;
