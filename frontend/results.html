@@ -1,19 +1,94 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Zoekresultaten - Irisje</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Zoekresultaten</h1>
-    <a href="index.html">← Terug</a>
+    <h1>Zoek een bedrijf</h1>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
+
   <main>
-    <div id="results"></div>
+    <section class="card">
+      <h2>🔍 Zoekresultaten</h2>
+
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Zoek op bedrijfsnaam of categorie...">
+        <button id="searchBtn">Zoeken</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Bedrijf</th>
+            <th>Categorie</th>
+            <th>Locatie</th>
+            <th>Website</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr><td colspan="5">Voer een zoekterm in om resultaten te tonen.</td></tr>
+        </tbody>
+      </table>
+    </section>
   </main>
-  <script src="script.js"></script>
+
+  <footer>
+    <p>&copy; 2025 Irisje.nl</p>
+  </footer>
+
+  <script>
+    const API = 'https://irisje-backend.onrender.com/api/companies';
+    const logoutBtn = document.getElementById('logoutBtn');
+    const searchBtn = document.getElementById('searchBtn');
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('resultsBody');
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+      });
+    }
+
+    searchBtn.addEventListener('click', async () => {
+      const term = searchInput.value.trim();
+      if (!term) {
+        tableBody.innerHTML = '<tr><td colspan="5">Voer eerst een zoekterm in.</td></tr>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}?search=${encodeURIComponent(term)}`);
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="5">Geen bedrijven gevonden.</td></tr>';
+          return;
+        }
+
+        tableBody.innerHTML = data.map(c => `
+          <tr>
+            <td>${c.name}</td>
+            <td>${c.category || '-'}</td>
+            <td>${c.address || '-'}</td>
+            <td>${c.website ? `<a href="${c.website}" target="_blank">Bezoek</a>` : '-'}</td>
+            <td><button onclick="openCompany('${c._id}')">Bekijk</button></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tableBody.innerHTML = `<tr><td colspan="5">❌ Fout: ${err.message}</td></tr>`;
+      }
+    });
+
+    function openCompany(id) {
+      window.location.href = `company.html?id=${id}`;
+    }
+  </script>
 </body>
 </html>
