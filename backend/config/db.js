@@ -1,13 +1,20 @@
 // backend/config/db.js
 const mongoose = require('mongoose');
+require('dotenv').config();
 
-/**
- * Verbindt met MongoDB via de opgegeven URI.
- * Wordt aangeroepen vanuit server.js met connectDB(process.env.MONGO_URI)
- */
-const connectDB = async (uri) => {
+const connectDB = async () => {
   try {
-    await mongoose.connect(uri, { autoIndex: true });
+    // ✅ werkt met beide variabelen (Render gebruikt MONGO_URI)
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+    if (!uri) {
+      throw new Error('❌ Geen MongoDB URI gevonden in environment variabelen');
+    }
+
+    await mongoose.connect(uri, {
+      autoIndex: true
+    });
+
     console.log('✅ MongoDB connected');
   } catch (err) {
     console.error('❌ DB connection error:', err.message);
