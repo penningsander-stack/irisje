@@ -1,33 +1,150 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Bedrijf – Irisje</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedrijfsinformatie - Irisje</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
-    <h1>Bedrijf</h1>
+    <h1>Bedrijfsinformatie</h1>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
-    <section id="companyDetails"></section>
-
-    <section>
-      <h2>Reviews</h2>
-      <div id="reviewList">Laden...</div>
+    <section class="card">
+      <div id="companyInfo">
+        <p>Laden...</p>
+      </div>
     </section>
 
-    <section>
-      <h2>Schrijf een review</h2>
-      <input id="reviewName" placeholder="Jouw naam" />
-      <input id="reviewRating" type="number" min="1" max="5" placeholder="Beoordeling (1-5)" />
-      <textarea id="reviewComment" placeholder="Jouw ervaring"></textarea>
-      <button id="submitReview">Verstuur review</button>
-      <p id="reviewStatus"></p>
+    <section class="card">
+      <h2>📝 Laat een review achter</h2>
+      <form id="reviewForm">
+        <label for="name">Jouw naam</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="rating">Beoordeling</label>
+        <select id="rating" name="rating" required>
+          <option value="">Kies een score</option>
+          <option value="5">⭐️⭐️⭐️⭐️⭐️</option>
+          <option value="4">⭐️⭐️⭐️⭐️</option>
+          <option value="3">⭐️⭐️⭐️</option>
+          <option value="2">⭐️⭐️</option>
+          <option value="1">⭐️</option>
+        </select>
+
+        <label for="comment">Jouw ervaring</label>
+        <textarea id="comment" name="comment" rows="4" required></textarea>
+
+        <button type="submit">Review plaatsen</button>
+      </form>
+
+      <p id="reviewMessage" class="message"></p>
+    </section>
+
+    <section class="card">
+      <h2>💬 Reviews</h2>
+      <div id="reviewsList">Nog geen reviews.</div>
     </section>
   </main>
 
-  <script src="script.js"></script>
+  <footer>
+    <p>&copy; 2025 Irisje.nl</p>
+  </footer>
+
+  <script>
+    const API = 'https://irisje-backend.onrender.com/api';
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    const infoDiv = document.getElementById('companyInfo');
+    const reviewsDiv = document.getElementById('reviewsList');
+    const form = document.getElementById('reviewForm');
+    const message = document.getElementById('reviewMessage');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!id) {
+        infoDiv.innerHTML = '<p>⚠️ Geen bedrijf geselecteerd.</p>';
+        return;
+      }
+      await loadCompany();
+      await loadReviews();
+    });
+
+    async function loadCompany() {
+      try {
+        const res = await fetch(`${API}/companies/${id}`);
+        const company = await res.json();
+
+        infoDiv.innerHTML = `
+          <h2>${company.name}</h2>
+          <p><strong>Categorie:</strong> ${company.category || '-'}</p>
+          <p><strong>Adres:</strong> ${company.address || '-'}</p>
+          <p><strong>Telefoon:</strong> ${company.phone || '-'}</p>
+          <p><strong>Website:</strong> ${company.website ? `<a href="${company.website}" target="_blank">${company.website}</a>` : '-'}</p>
+        `;
+      } catch (err) {
+        infoDiv.innerHTML = `<p>❌ Fout bij laden: ${err.message}</p>`;
+      }
+    }
+
+    async function loadReviews() {
+      try {
+        const res = await fetch(`${API}/reviews/company/${id}`);
+        const reviews = await res.json();
+
+        if (!Array.isArray(reviews) || reviews.length === 0) {
+          reviewsDiv.innerHTML = '<p>Nog geen reviews voor dit bedrijf.</p>';
+          return;
+        }
+
+        reviewsDiv.innerHTML = reviews.map(r => `
+          <div class="review">
+            <strong>${r.name || 'Anoniem'}</strong>
+            <p>${'⭐️'.repeat(r.rating || 0)}</p>
+            <p>${r.comment || ''}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        reviewsDiv.innerHTML = `<p>❌ Fout bij laden van reviews: ${err.message}</p>`;
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const rating = document.getElementById('rating').value;
+      const comment = document.getElementById('comment').value.trim();
+
+      try {
+        const res = await fetch(`${API}/reviews`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ companyId: id, name, rating, comment })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Fout bij plaatsen review');
+
+        message.textContent = '✅ Review geplaatst!';
+        message.style.color = 'green';
+        form.reset();
+        loadReviews();
+      } catch (err) {
+        message.textContent = `⚠️ ${err.message}`;
+        message.style.color = 'red';
+      }
+    });
+  </script>
 </body>
 </html>
