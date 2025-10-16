@@ -1,102 +1,68 @@
-// frontend/dashboard.js
-console.log('✅ dashboard.js geladen');
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedrijfsdashboard - Irisje</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="dashboard-page">
+  <header>
+    <h1>Bedrijfsdashboard</h1>
+    <button id="logoutBtn">Uitloggen</button>
+  </header>
 
-const API = 'https://irisje-backend.onrender.com/api';
+  <main>
+    <section id="userInfo" class="card">
+      <h2>Bedrijfsinformatie</h2>
+      <p>E-mail:</p>
+    </section>
 
-document.addEventListener('DOMContentLoaded', init);
+    <section class="card">
+      <h2>📊 Statistieken</h2>
+      <div class="stats">
+        <div class="stat-item">Totaal<br><span id="statTotal">0</span></div>
+        <div class="stat-item">Geaccepteerd<br><span id="statAccepted">0</span></div>
+        <div class="stat-item">Afgewezen<br><span id="statRejected">0</span></div>
+        <div class="stat-item">Opgevolgd<br><span id="statFollowed">0</span></div>
+      </div>
+    </section>
 
-async function init() {
-  const token = localStorage.getItem('token');
-  const userInfoDiv = document.getElementById('userInfo');
-  const tbody = document.getElementById('requestsTableBody');
+    <section class="card">
+      <h2>📬 Aanvragen</h2>
+      <div class="filter-bar">
+        <input type="text" placeholder="Naam of e-mail" id="searchInput">
+        <select id="statusFilter">
+          <option value="all">Alle</option>
+          <option value="accepted">Geaccepteerd</option>
+          <option value="rejected">Afgewezen</option>
+          <option value="followed">Opgevolgd</option>
+        </select>
+        <button id="filterBtn">Filteren</button>
+      </div>
 
-  const totalEl = document.getElementById('statTotal');
-  const acceptedEl = document.getElementById('statAccepted');
-  const rejectedEl = document.getElementById('statRejected');
-  const followedEl = document.getElementById('statFollowed');
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>E-mail</th>
+            <th>Bericht</th>
+            <th>Status</th>
+            <th>Datum</th>
+          </tr>
+        </thead>
+        <tbody id="requestsTableBody">
+          <tr><td colspan="5">Laden...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
 
-  const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      window.location.href = 'index.html';
-    });
-  }
+  <footer>
+    <p>&copy; 2025 Irisje.nl</p>
+  </footer>
 
-  if (!token) {
-    userInfoDiv.innerHTML = '<p>⚠️ Geen token gevonden — log eerst in.</p>';
-    return;
-  }
-
-  try {
-    // 1) Me
-    const me = await apiGet('/secure/me', token);
-    console.log('🪶 /secure/me →', me);
-
-    const bedrijf = me?.company?.name || 'Onbekend';
-    const email = me?.email || 'Onbekend';
-    const categorie = me?.company?.category || 'Onbekend';
-
-    userInfoDiv.innerHTML = `
-      <h3>${bedrijf}</h3>
-      <p><strong>E-mail:</strong> ${email}</p>
-      <p><strong>Categorie:</strong> ${categorie}</p>
-    `;
-
-    // 2) Statistieken
-    const stats = await apiGet('/requests/stats/overview', token);
-    console.log('🪶 /requests/stats/overview →', stats);
-    if (totalEl) totalEl.textContent = stats.total ?? 0;
-    if (acceptedEl) acceptedEl.textContent = stats.accepted ?? 0;
-    if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
-    if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
-
-    // 3) Aanvragen
-    const items = await apiGet('/requests', token); // array
-    console.log('🪶 /requests →', items);
-
-    if (!Array.isArray(items) || items.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = items.map(r => {
-      const msg = r.message || r.customerMessage || '';
-      const status = r.status || 'Nieuw';
-      const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '';
-      return `
-        <tr>
-          <td>${escapeHtml(r.customerName || '')}</td>
-          <td>${escapeHtml(r.customerEmail || '')}</td>
-          <td>${escapeHtml(msg)}</td>
-          <td>${escapeHtml(status)}</td>
-          <td>${escapeHtml(created)}</td>
-        </tr>
-      `;
-    }).join('');
-  } catch (err) {
-    console.error('❌ Dashboard fout:', err);
-    userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden: ${err.message || err}</p>`;
-  }
-}
-
-async function apiGet(path, token) {
-  const res = await fetch(`${API}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    const t = await safeJson(res);
-    throw new Error(t?.message || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
-
-async function safeJson(res) {
-  try { return await res.json(); } catch { return null; }
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, s => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
-  })[s]);
-}
+  <!-- ✅ Koppeling met JavaScript -->
+  <script src="dashboard.js"></script>
+</body>
+</html>
