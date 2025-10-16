@@ -3,10 +3,9 @@ const express = require('express');
 const router = express.Router();
 const Request = require('../models/Request');
 const Company = require('../models/Company');
-const auth = require('../auth'); // ✅ aangepast pad
+const auth = require('../middleware/auth'); // ✅ correct pad en export
 
-
-// ✅ Alle aanvragen voor ingelogd bedrijf
+// ✅ Alle aanvragen voor het ingelogde bedrijf
 router.get('/', auth, async (req, res) => {
   try {
     const company = await Company.findOne({ user: req.user.id });
@@ -35,30 +34,34 @@ router.get('/stats/overview', auth, async (req, res) => {
     };
     res.json(stats);
   } catch (err) {
+    console.error('❌ Fout bij stats:', err);
     res.status(500).json({ message: 'Serverfout' });
   }
 });
 
-// ✅ Status wijzigen
+// ✅ Status wijzigen van een aanvraag (alleen eigen bedrijf)
 router.patch('/:id/status', auth, async (req, res) => {
   try {
     const { status } = req.body;
     const allowed = ['Nieuw', 'Geaccepteerd', 'Afgewezen', 'Opgevolgd'];
-    if (!allowed.includes(status)) return res.status(400).json({ message: 'Ongeldige status' });
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ message: 'Ongeldige status' });
+    }
 
     const company = await Company.findOne({ user: req.user.id });
     if (!company) return res.status(404).json({ message: 'Geen bedrijf gevonden' });
 
-    const request = await Request.findOneAndUpdate(
+    const updated = await Request.findOneAndUpdate(
       { _id: req.params.id, company: company._id },
       { status },
       { new: true }
     );
 
-    if (!request) return res.status(404).json({ message: 'Aanvraag niet gevonden' });
+    if (!updated) return res.status(404).json({ message: 'Aanvraag niet gevonden' });
 
-    res.json({ message: 'Status bijgewerkt', request });
+    res.json({ message: 'Status bijgewerkt', request: updated });
   } catch (err) {
+    console.error('❌ Fout bij status update:', err);
     res.status(500).json({ message: 'Serverfout' });
   }
 });
