@@ -14,6 +14,9 @@ const CompanySchema = new mongoose.Schema({
   email: { type: String, unique: true },
   password: String,
   category: String,
+  phone: String,
+  address: String,
+  website: String,
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -34,7 +37,7 @@ function verifyToken(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.companyId = decoded.companyId;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ error: "Ongeldig of verlopen token" });
   }
 }
@@ -46,7 +49,7 @@ router.post("/login", async (req, res) => {
     const company = await Company.findOne({ email });
     if (!company) return res.status(401).json({ error: "Onbekend e-mailadres" });
 
-    const isMatch = await bcrypt.compare(password, company.password);
+    const isMatch = await bcrypt.compare(password, company.password || "");
     if (!isMatch) return res.status(401).json({ error: "Ongeldig wachtwoord" });
 
     const token = generateToken(company);
@@ -70,8 +73,34 @@ router.get("/me", verifyToken, async (req, res) => {
 });
 
 // ===== LOGOUT =====
-router.post("/logout", (req, res) => {
-  res.json({ success: true });
+router.post("/logout", (req, res) => res.json({ success: true }));
+
+// ===== RESET DEMO WACHTWOORD =====
+router.get("/reset-demo", async (req, res) => {
+  try {
+    const demoEmail = "demo@irisje.nl";
+    const demoPassword = "demo1234";
+    const hashed = await bcrypt.hash(demoPassword, 10);
+
+    const company = await Company.findOneAndUpdate(
+      { email: demoEmail },
+      { password: hashed },
+      { new: true }
+    );
+
+    if (!company) {
+      return res.status(404).json({ error: "Demo-account niet gevonden" });
+    }
+
+    res.json({
+      success: true,
+      message: "Demo-wachtwoord is opnieuw ingesteld naar demo1234",
+      email: demoEmail,
+    });
+  } catch (err) {
+    console.error("Reset-fout:", err);
+    res.status(500).json({ error: "Fout bij resetten demo-wachtwoord" });
+  }
 });
 
 module.exports = router;
