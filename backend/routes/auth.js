@@ -1,14 +1,14 @@
 // backend/routes/auth.js
-import express from "express";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
-import mongoose from "mongoose";
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 
 dotenv.config();
 const router = express.Router();
 
-// ====== MODEL ======
+// ===== MODEL =====
 const CompanySchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
@@ -19,7 +19,7 @@ const CompanySchema = new mongoose.Schema({
 
 const Company = mongoose.model("Company", CompanySchema);
 
-// ====== JWT FUNCTIES ======
+// ===== JWT FUNCTIES =====
 function generateToken(company) {
   return jwt.sign({ companyId: company._id }, process.env.JWT_SECRET, {
     expiresIn: "1d",
@@ -39,7 +39,7 @@ function verifyToken(req, res, next) {
   }
 }
 
-// ====== LOGIN ======
+// ===== LOGIN =====
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -57,7 +57,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// ====== PROFIEL (voor dashboard) ======
+// ===== PROFIEL =====
 router.get("/me", verifyToken, async (req, res) => {
   try {
     const company = await Company.findById(req.companyId).select("-password");
@@ -69,9 +69,9 @@ router.get("/me", verifyToken, async (req, res) => {
   }
 });
 
-// ====== LOGOUT (optioneel) ======
+// ===== LOGOUT =====
 router.post("/logout", (req, res) => {
   res.json({ success: true });
 });
 
-export default router;
+module.exports = router;
