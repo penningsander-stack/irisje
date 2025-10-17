@@ -1,101 +1,131 @@
+<!-- frontend/admin.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beheer - Irisje</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Gemelde Reviews | Irisje.nl</title>
+
+  <script>
+    window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
+  </script>
+
+  <style>
+    :root {
+      --irisje-primary: #4f46e5;
+      --irisje-bg: #f9fafb;
+      --irisje-text: #1f2937;
+      --irisje-muted: #6b7280;
+      --irisje-border: #e5e7eb;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--irisje-bg);
+      color: var(--irisje-text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      color: var(--irisje-primary);
+      margin: 0;
+    }
+
+    main {
+      flex: 1;
+      max-width: 900px;
+      margin: 2rem auto;
+      background: #fff;
+      border: 1px solid var(--irisje-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--irisje-border);
+      text-align: left;
+    }
+
+    th {
+      color: var(--irisje-muted);
+    }
+
+    button {
+      padding: 0.4rem 0.7rem;
+      margin-right: 0.3rem;
+      border: none;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .approve {
+      background: #22c55e;
+      color: #fff;
+    }
+
+    .delete {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    .logout {
+      background: #ef4444;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <header>
-    <h1>Beheerderspaneel</h1>
-    <button id="logoutBtn">Uitloggen</button>
+    <h1>Admin – Gemelde Reviews</h1>
+    <button class="logout" id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
-    <section class="card">
-      <h2>📋 Gemelde reviews</h2>
-      <p id="adminMessage">Laden...</p>
-
-      <table class="data-table" id="reviewsTable">
-        <thead>
-          <tr>
-            <th>Bedrijf</th>
-            <th>Klant</th>
-            <th>Review</th>
-            <th>Status</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody id="reviewsBody">
-          <tr><td colspan="5">Nog geen gegevens.</td></tr>
-        </tbody>
-      </table>
-    </section>
+    <h2>🚩 Gemelde reviews</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Bedrijf</th>
+          <th>Naam</th>
+          <th>Beoordeling</th>
+          <th>Bericht</th>
+          <th>Datum</th>
+          <th>Acties</th>
+        </tr>
+      </thead>
+      <tbody id="reviewsBody">
+        <tr><td colspan="6">Laden...</td></tr>
+      </tbody>
+    </table>
   </main>
 
-  <footer>
-    <p>&copy; 2025 Irisje.nl</p>
-  </footer>
-
-  <script>
-    const API = 'https://irisje-backend.onrender.com/api/reviews/reported';
-    const logoutBtn = document.getElementById('logoutBtn');
-    const tableBody = document.getElementById('reviewsBody');
-    const msg = document.getElementById('adminMessage');
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        localStorage.removeItem('token');
-        window.location.href = 'index.html';
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        msg.textContent = '⚠️ Geen token gevonden — log eerst in.';
-        return;
-      }
-
-      try {
-        const res = await fetch(API, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-
-        if (!Array.isArray(data) || data.length === 0) {
-          msg.textContent = '✅ Geen gemelde reviews op dit moment.';
-          return;
-        }
-
-        msg.textContent = '';
-        tableBody.innerHTML = data.map(r => `
-          <tr>
-            <td>${r.companyName || '-'}</td>
-            <td>${r.customerName || '-'}</td>
-            <td>${r.text || '-'}</td>
-            <td>${r.status || 'Nieuw'}</td>
-            <td><button onclick="markHandled('${r._id}')">Afgehandeld</button></td>
-          </tr>
-        `).join('');
-      } catch (err) {
-        msg.textContent = `❌ Fout bij laden: ${err.message}`;
-      }
-    });
-
-    async function markHandled(id) {
-      const token = localStorage.getItem('token');
-      try {
-        await fetch(`https://irisje-backend.onrender.com/api/reviews/${id}/resolve`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        location.reload();
-      } catch (err) {
-        alert('Fout bij bijwerken status: ' + err.message);
-      }
-    }
-  </script>
+  <script src="js/admin.js"></script>
 </body>
 </html>
