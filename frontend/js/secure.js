@@ -1,36 +1,16 @@
 // frontend/js/secure.js
-//
-// Doel:
-// Beveiligde inlogcontrole + dynamische weergave van bedrijfsgegevens
-// op het dashboard. Dit script zorgt dat "Demo Bedrijf" automatisch wordt
-// vervangen door de echte bedrijfsnaam, e-mail en categorie van de ingelogde gebruiker.
-//
-// Werking:
-// - Controleert JWT-token in localStorage.
-// - Vraagt /api/auth/me op om het bedrijf te laden.
-// - Toont de bedrijfsgegevens in de HTML (met data-attributes).
-// - Stuurt automatisch door naar login.html als er geen geldige sessie is.
-//
-// Selectoren die automatisch worden gevuld (optioneel in HTML):
-//   [data-company-name]
-//   [data-company-email]
-//   [data-company-category]
-//   #logoutBtn
-//
-// Deze code is veilig, snel en vereist geen aanpassingen in styling.
-//
-
 (() => {
   "use strict";
 
-  // ================= Configuratie =================
+  // ====== CONFIGURATIE ======
+  // Zet dit in je HTML <head>:
+  // <script>window.ENV = { API_BASE: "https://irisje.onrender.com" };</script>
   const API_BASE =
-    (window.ENV && typeof window.ENV.API_BASE === "string" && window.ENV.API_BASE) ||
-    "";
+    (window.ENV && typeof window.ENV.API_BASE === "string" && window.ENV.API_BASE) || "";
 
   const ACCESS_TOKEN_KEY = "irisje_access_token";
 
-  // ================= Hulpfuncties =================
+  // ====== HULPFUNCTIES ======
   const qs = (sel, root = document) => root.querySelector(sel);
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
@@ -50,15 +30,14 @@
       } else {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
       }
-    } catch {
-      /* negeren */
-    }
+    } catch {}
   }
 
   function clearAuth() {
     setToken(null);
   }
 
+  // Decode JWT payload (zonder te crashen)
   function decodeJwtPayload(token) {
     try {
       const parts = token.split(".");
@@ -72,11 +51,13 @@
     }
   }
 
+  // Tokencontrole: tolerant als er geen exp in zit
   function isJwtExpired(token) {
     const payload = decodeJwtPayload(token);
-    if (!payload || typeof payload.exp !== "number") return true;
+    if (!payload) return false; // onbekend, beschouw als geldig
+    if (typeof payload.exp !== "number") return false; // geen exp → niet verlopen
     const now = Math.floor(Date.now() / 1000);
-    return payload.exp <= now + 10; // kleine marge
+    return payload.exp <= now + 10; // 10s marge
   }
 
   async function fetchWithAuth(path, options = {}) {
@@ -91,13 +72,19 @@
       credentials: options.credentials || "same-origin",
     };
 
-    const res = await fetch(API_BASE + path, init);
-    if (res.status === 401 || res.status === 403) {
-      clearAuth();
-      redirectToLogin();
-      throw new Error("Unauthorized");
+    try {
+      const res = await fetch(API_BASE + path, init);
+      if (res.status === 401 || res.status === 403) {
+        console.warn("Auth-verzoek mislukt → redirect naar login");
+        clearAuth();
+        redirectToLogin();
+        throw new Error("Unauthorized");
+      }
+      return res;
+    } catch (err) {
+      console.error("fetchWithAuth fout:", err);
+      throw err;
     }
-    return res;
   }
 
   function redirectToLogin() {
@@ -109,7 +96,13 @@
 
   function requireAuth() {
     const token = getToken();
-    if (!token || isJwtExpired(token)) {
+    if (!token) {
+      clearAuth();
+      redirectToLogin();
+      return false;
+    }
+    if (isJwtExpired(token)) {
+      console.warn("JWT verlopen of ongeldig, terug naar login");
       clearAuth();
       redirectToLogin();
       return false;
@@ -117,24 +110,12 @@
     return true;
   }
 
-  // ================= Profiel laden =================
+  // ====== PROFIEL LADEN ======
   async function loadMyCompanyProfile() {
     const res = await fetchWithAuth("/api/auth/me", { method: "GET" });
-    if (!res.ok) {
-      throw new Error(`Failed to load profile: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Fout bij profiel laden: ${res.status}`);
     const data = await res.json();
-
-    // Verwacht object:
-    // {
-    //   _id: "...",
-    //   name: "Bedrijfsnaam",
-    //   email: "info@bedrijf.nl",
-    //   category: "Categorie"
-    // }
-    if (!data || typeof data !== "object") {
-      throw new Error("Invalid profile payload");
-    }
+    if (!data || typeof data !== "object") throw new Error("Ongeldige profieldata");
     return data;
   }
 
@@ -155,7 +136,7 @@
     }
   }
 
-  // ================= Logout =================
+  // ====== LOGOUT KNOP ======
   function installLogout() {
     const btn = qs("#logoutBtn");
     if (!btn) return;
@@ -174,7 +155,7 @@
     });
   }
 
-  // ================= Externe API (optioneel) =================
+  // ====== PUBLIEKE API ======
   const Secure = {
     requireAuth,
     getToken,
@@ -192,7 +173,7 @@
     writable: false,
   });
 
-  // ================= Startpunt =================
+  // ====== STARTUP ======
   window.addEventListener("DOMContentLoaded", async () => {
     installLogout();
 
@@ -202,9 +183,10 @@
       const profile = await loadMyCompanyProfile();
       injectCompanyIntoDom(profile);
     } catch (err) {
-      console.error(err);
-      clearAuth();
-      redirectToLogin();
+      console.error("Fout bij laden profiel:", err);
+      // Geen auto-logout meer bij tijdelijke netwerkfout
+      const nameEl = qs("[data-company-name]");
+      if (nameEl) nameEl.textContent = "Onbekend bedrijf";
     }
   });
 })();
