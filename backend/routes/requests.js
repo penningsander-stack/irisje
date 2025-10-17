@@ -1,53 +1,35 @@
 // backend/routes/requests.js
-// ✅ Toont aanvragen per bedrijf — werkt ook met demo@irisje.nl en oude data
-
 const express = require("express");
-const router = express.Router();
+const Company = require("../routes/auth").Company || require("../models/Company");
 const Request = require("../models/Request");
-const { verifyToken } = require("./auth");
+const router = express.Router();
 
-// 📊 Statistieken-overzicht
-router.get("/stats/overview", verifyToken, async (req, res) => {
+// Nieuwe aanvraag aanmaken
+router.post("/create", async (req, res) => {
   try {
-    const companyId = req.user.company || req.user.id;
-
-    let requests = await Request.find({ company: companyId });
-
-    // ✅ Fallback: toon alle aanvragen bij demo-account
-    if (!requests.length && req.user.email === "demo@irisje.nl") {
-      requests = await Request.find({});
+    const { company, name, email, message } = req.body;
+    if (!company || !name || !email || !message) {
+      return res.status(400).json({ error: "Alle velden zijn verplicht." });
     }
 
-    const stats = {
-      total: requests.length,
-      accepted: requests.filter((r) => r.status === "Geaccepteerd").length,
-      rejected: requests.filter((r) => r.status === "Afgewezen").length,
-      followedUp: requests.filter((r) => r.status === "Opgevolgd").length,
-    };
-
-    res.json(stats);
-  } catch (err) {
-    console.error("❌ Statistiekfout:", err);
-    res.status(500).json({ message: "Serverfout bij statistieken" });
-  }
-});
-
-// 📬 Aanvragen ophalen
-router.get("/", verifyToken, async (req, res) => {
-  try {
-    const companyId = req.user.company || req.user.id;
-
-    let requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
-
-    // ✅ Fallback voor demo: toon alles
-    if (!requests.length && req.user.email === "demo@irisje.nl") {
-      requests = await Request.find({}).sort({ createdAt: -1 });
+    const target = await Company.findOne({ name: company });
+    if (!target) {
+      return res.status(404).json({ error: "Bedrijf niet gevonden." });
     }
 
-    res.json(requests);
+    const newReq = await Request.create({
+      companyId: target._id,
+      name,
+      email,
+      message,
+      status: "Nieuw",
+      date: new Date(),
+    });
+
+    res.json({ success: true, id: newReq._id });
   } catch (err) {
-    console.error("❌ Fout bij ophalen aanvragen:", err);
-    res.status(500).json({ message: "Serverfout bij ophalen aanvragen" });
+    console.error("Fout bij aanvraag:", err);
+    res.status(500).json({ error: "Serverfout bij indienen aanvraag." });
   }
 });
 
