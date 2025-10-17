@@ -4,119 +4,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bedrijfsdashboard – Irisje.nl</title>
+  <title>Dashboard – Irisje.nl</title>
 
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
   </script>
 
   <style>
-    :root {
-      --irisje-primary: #4f46e5;
-      --irisje-bg: #f9fafb;
-      --irisje-text: #1f2937;
-      --irisje-muted: #6b7280;
-      --irisje-border: #e5e7eb;
-    }
-
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--irisje-bg);
-      color: var(--irisje-text);
+      background: #f9fafb;
+      color: #1f2937;
       margin: 0;
       padding: 0;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
-
     header {
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      background: white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
     header h1 {
       font-size: 1.2rem;
-      color: var(--irisje-primary);
-      font-weight: 600;
+      color: #4f46e5;
       margin: 0;
     }
-
-    header button {
-      background: #ef4444;
-      color: #fff;
-      border: none;
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
-
     main {
       flex: 1;
       max-width: 1000px;
       margin: 2rem auto;
-      padding: 0 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    .card {
-      background: #fff;
-      border: 1px solid var(--irisje-border);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-    }
-
-    .stat {
-      background: var(--irisje-bg);
-      border-radius: 0.75rem;
       padding: 1rem;
-      text-align: center;
-    }
-
-    .controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    select, input[type="text"] {
-      padding: 0.5rem;
-      border: 1px solid var(--irisje-border);
-      border-radius: 0.4rem;
-      background: #fff;
-      font-size: 0.95rem;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--irisje-border);
-      text-align: left;
-    }
-
-    th {
-      color: var(--irisje-muted);
-      font-weight: 600;
     }
   </style>
 </head>
@@ -127,55 +49,18 @@
   </header>
 
   <main>
-    <section class="card">
-      <h2 id="companyName">Bedrijfsnaam</h2>
-      <p id="companyEmail"></p>
-      <p id="companyCategory"></p>
+    <section>
+      <h2 data-company-name>Bedrijfsnaam</h2>
+      <p data-company-email>info@bedrijf.nl</p>
+      <p data-company-category>Categorie</p>
     </section>
 
-    <section class="card">
+    <section>
       <h3>📊 Statistieken</h3>
-      <div class="stats">
-        <div class="stat">Totaal<br><strong id="statTotal">0</strong></div>
-        <div class="stat">Geaccepteerd<br><strong id="statAccepted">0</strong></div>
-        <div class="stat">Afgewezen<br><strong id="statRejected">0</strong></div>
-        <div class="stat">Opgevolgd<br><strong id="statFollowed">0</strong></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h3>📬 Aanvragen</h3>
-
-      <div class="controls">
-        <select id="filterStatus">
-          <option value="Alle">Alle</option>
-          <option value="Nieuw">Nieuw</option>
-          <option value="Geaccepteerd">Geaccepteerd</option>
-          <option value="Afgewezen">Afgewezen</option>
-          <option value="Opgevolgd">Opgevolgd</option>
-        </select>
-
-        <input id="searchInput" type="text" placeholder="Zoeken op naam of e-mail..." />
-      </div>
-
-      <table id="requestsTable">
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Bericht</th>
-            <th>Status</th>
-            <th>Datum</th>
-          </tr>
-        </thead>
-        <tbody id="requestsBody">
-          <tr><td colspan="5">Laden...</td></tr>
-        </tbody>
-      </table>
+      <p>Totaal aanvragen: <span id="totalRequests">0</span></p>
     </section>
   </main>
 
   <script src="js/secure.js"></script>
-  <script src="js/dashboard.js"></script>
 </body>
 </html>
