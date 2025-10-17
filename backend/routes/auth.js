@@ -1,50 +1,67 @@
 // backend/routes/auth.js
-const express = require("express");
+// ✅ Login + tokenverificatie met company-veld in JWT
+
+const express = require('express');
 const router = express.Router();
-const jwt = require("jsonwebtoken");
-const dotenv = require("dotenv");
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
 dotenv.config();
 
+// 🎯 Demo-gebruiker (kan later vervangen worden door DB-lookup)
 const DEMO_USER = {
-  id: "68ef7f6659b5c49a78deacda",
-  email: "demo@irisje.nl",
-  password: "demo1234",
-  role: "company",
+  id: '68ef7f6659b5c49a78deacda', // demo-bedrijf-ID
+  email: 'demo@irisje.nl',
+  password: 'demo1234',
+  role: 'company',
+  company: '68ef7f6659b5c49a78deacda', // belangrijk: koppeling met aanvragen
 };
 
 // 🔐 Inloggen
-router.post("/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password)
-      return res.status(400).json({ message: "E-mail en wachtwoord verplicht" });
+      return res.status(400).json({ message: 'E-mail en wachtwoord zijn verplicht' });
 
     if (email !== DEMO_USER.email || password !== DEMO_USER.password)
-      return res.status(401).json({ message: "Ongeldige inloggegevens" });
+      return res.status(401).json({ message: 'Ongeldige inloggegevens' });
 
+    // ✅ Token bevat nu ook company
     const token = jwt.sign(
-      { id: DEMO_USER.id, email: DEMO_USER.email, role: DEMO_USER.role },
+      {
+        id: DEMO_USER.id,
+        company: DEMO_USER.company,
+        role: DEMO_USER.role,
+        email: DEMO_USER.email,
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: '7d' }
     );
+
+    console.log('✅ Token aangemaakt voor', email);
     res.json({ token });
   } catch (err) {
-    console.error("❌ Loginfout:", err);
-    res.status(500).json({ message: "Serverfout bij inloggen" });
+    console.error('❌ Loginfout:', err);
+    res.status(500).json({ message: 'Serverfout bij inloggen' });
   }
 });
 
-// ✅ Tokenverificatie middleware
+// 🧩 Middleware voor beveiligde routes
 function verifyToken(req, res, next) {
   try {
-    const authHeader = req.header("Authorization");
-    if (!authHeader) return res.status(401).json({ message: "Geen token opgegeven" });
-    const token = authHeader.split(" ")[1];
+    const authHeader = req.header('Authorization');
+    if (!authHeader) return res.status(401).json({ message: 'Geen token opgegeven' });
+
+    const token = authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Geen token opgegeven' });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ message: "Ongeldige token" });
+    console.error('❌ Ongeldige token:', err.message);
+    res.status(401).json({ message: 'Ongeldige token' });
   }
 }
 
