@@ -4,59 +4,96 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bedrijfsdashboard</title>
-  <link rel="stylesheet" href="css/tailwind.css" />
-  <script>
-    // Optioneel: API-basisadres instellen (alleen nodig bij gescheiden hosting)
-    window.ENV = { API_BASE: "" };
-  </script>
-</head>
+  <title>Bedrijfsdashboard – Irisje.nl</title>
 
-<body class="min-h-screen bg-gray-50 text-gray-800">
-  <!-- Navigatiebalk -->
-  <header class="bg-white shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
-      <h1 class="text-xl font-semibold text-indigo-600">
-        <span id="companyHeaderName" data-company-name>Bedrijf</span> – Dashboard
-      </h1>
-      <button id="logoutBtn"
-        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm transition">
-        Uitloggen
-      </button>
-    </div>
-  </header>
+  <!-- Moderne, geïntegreerde styling -->
+  <style>
+    :root {
+      --irisje-primary: #4f46e5;
+      --irisje-bg: #f9fafb;
+      --irisje-text: #1f2937;
+      --irisje-muted: #6b7280;
+      --irisje-border: #e5e7eb;
+    }
 
-  <!-- Hoofdinhoud -->
-  <main class="max-w-6xl mx-auto py-8 px-6 space-y-8">
-    <!-- Bedrijfsinfo -->
-    <section
-      class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900" data-company-name>Bedrijfsnaam</h2>
-        <p class="text-gray-600" data-company-email>info@bedrijf.nl</p>
-        <p class="text-sm text-indigo-500 mt-1" data-company-category>Categorie</p>
-      </div>
-      <div class="mt-4 sm:mt-0">
-        <span class="text-sm text-gray-500">Laatst ingelogd: <span id="lastLogin">vandaag</span></span>
-      </div>
-    </section>
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--irisje-bg);
+      color: var(--irisje-text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
 
-    <!-- Statistieken -->
-    <section class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
-      <h3 class="text-xl font-semibold mb-4 text-gray-800">📊 Statistieken</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
-        <div class="bg-indigo-50 p-4 rounded-xl">
-          <p class="text-gray-600 text-sm">Totaal</p>
-          <p id="statTotal" class="text-2xl font-bold text-indigo-600">0</p>
-        </div>
-        <div class="bg-green-50 p-4 rounded-xl">
-          <p class="text-gray-600 text-sm">Geaccepteerd</p>
-          <p id="statAccepted" class="text-2xl font-bold text-green-600">0</p>
-        </div>
-        <div class="bg-red-50 p-4 rounded-xl">
-          <p class="text-gray-600 text-sm">Afgewezen</p>
-          <p id="statRejected" class="text-2xl font-bold text-red-600">0</p>
-        </div>
-        <div class="bg-yellow-50 p-4 rounded-xl">
-          <p class="text-gray-600 text-sm">Opgevolgd</p>
-          <p id="st
+    header {
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      color: var(--irisje-primary);
+      font-weight: 600;
+      margin: 0;
+    }
+
+    header button {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    header button:hover {
+      background: #dc2626;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    section {
+      background: #fff;
+      border: 1px solid var(--irisje-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    h2, h3 {
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+      color: var(--irisje-text);
+    }
+
+    [data-company-name] {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--irisje-text);
+    }
+
+    [data-company-email] {
+      color: var(--irisje-muted);
+      font-size: 0.95rem;
+    }
+
+    [data-company-category] {
+      color: var(--irisje-primary);
+      font-size: 0.9rem;
+      margin-top: 0.2rem;
+    }
