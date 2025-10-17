@@ -10,7 +10,7 @@ const CompanySchema = new mongoose.Schema({
   address: { type: String },
   website: { type: String },
   dateCreated: { type: Date, default: Date.now },
-  blocked: { type: Boolean, default: false }
+  blocked: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.models.Company || mongoose.model("Company", CompanySchema);
