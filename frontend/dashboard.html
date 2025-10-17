@@ -17,17 +17,19 @@
       --irisje-text: #1f2937;
       --irisje-muted: #6b7280;
       --irisje-border: #e5e7eb;
+      --irisje-card: #ffffff;
     }
+
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--irisje-bg);
       color: var(--irisje-text);
       margin: 0;
-      padding: 0;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
+      min-height: 100vh;
     }
+
     header {
       background: #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
@@ -36,12 +38,14 @@
       justify-content: space-between;
       align-items: center;
     }
+
     header h1 {
       font-size: 1.2rem;
       color: var(--irisje-primary);
       font-weight: 600;
       margin: 0;
     }
+
     header button {
       background: #ef4444;
       color: #fff;
@@ -51,7 +55,11 @@
       cursor: pointer;
       transition: background 0.2s ease;
     }
-    header button:hover { background: #dc2626; }
+
+    header button:hover {
+      background: #dc2626;
+    }
+
     main {
       flex: 1;
       max-width: 1000px;
@@ -61,35 +69,135 @@
       flex-direction: column;
       gap: 2rem;
     }
-    section {
-      background: #fff;
+
+    .company-info {
+      background: var(--irisje-card);
       border: 1px solid var(--irisje-border);
       border-radius: 1rem;
       padding: 1.5rem;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    h2, h3 {
-      margin: 0 0 0.5rem;
+
+    .company-info h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
       font-weight: 600;
-      color: var(--irisje-text);
+      color: var(--irisje-primary);
+    }
+
+    .company-info p {
+      margin: 0.25rem 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--irisje-card);
+      border: 1px solid var(--irisje-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      color: var(--irisje-muted);
+      margin: 0;
+    }
+
+    .card p {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0.3rem 0 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--irisje-border);
+      text-align: left;
+    }
+
+    th {
+      color: var(--irisje-muted);
+      font-weight: 500;
+    }
+
+    tr:hover {
+      background: #f3f4f6;
+    }
+
+    select {
+      padding: 0.4rem;
+      border: 1px solid var(--irisje-border);
+      border-radius: 0.4rem;
     }
   </style>
 </head>
-
 <body>
   <header>
-    <h1><span id="companyHeaderName" data-company-name>Bedrijf</span> – Dashboard</h1>
+    <h1><span data-company-name>Bedrijf</span> – Dashboard</h1>
     <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
+    <section class="company-info">
+      <h2>Bedrijfsinformatie</h2>
+      <p><strong>Naam:</strong> <span data-company-name>Bedrijfsnaam</span></p>
+      <p><strong>E-mail:</strong> <span data-company-email>demo@irisje.nl</span></p>
+      <p><strong>Categorie:</strong> <span data-company-category>Algemeen</span></p>
+      <p><strong>Laatst ingelogd:</strong> <span data-company-lastlogin>vandaag</span></p>
+    </section>
+
     <section>
-      <h2 data-company-name>Bedrijfsnaam</h2>
-      <p data-company-email>info@bedrijf.nl</p>
-      <p data-company-category>Categorie</p>
+      <h2>📊 Statistieken</h2>
+      <div class="stats">
+        <div class="card"><h3>Totaal</h3><p id="stat-total">0</p></div>
+        <div class="card"><h3>Geaccepteerd</h3><p id="stat-accepted">0</p></div>
+        <div class="card"><h3>Afgewezen</h3><p id="stat-rejected">0</p></div>
+        <div class="card"><h3>Opgevolgd</h3><p id="stat-followed">0</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>📬 Aanvragen</h2>
+      <label>Filter op status: </label>
+      <select id="statusFilter">
+        <option value="">Alle</option>
+        <option value="Geaccepteerd">Geaccepteerd</option>
+        <option value="Afgewezen">Afgewezen</option>
+        <option value="Opgevolgd">Opgevolgd</option>
+      </select>
+
+      <table id="requestsTable">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>E-mail</th>
+            <th>Bericht</th>
+            <th>Status</th>
+            <th>Datum</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr><td colspan="5">Geen aanvragen gevonden.</td></tr>
+        </tbody>
+      </table>
     </section>
   </main>
 
   <script src="js/secure.js"></script>
+  <script src="js/dashboard.js"></script>
 </body>
 </html>
