@@ -1,10 +1,16 @@
-const mongoose = require('mongoose');
+// backend/models/Company.js
+const mongoose = require("mongoose");
 
-const companySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+const CompanySchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
   category: String,
-  location: String,
-  description: String
+  phone: String,
+  address: String,
+  website: String,
+  createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('Company', companySchema);
+// Hergebruik bestaand model als het al bestaat (voorkomt OverwriteModelError)
+module.exports = mongoose.models.Company || mongoose.model("Company", CompanySchema);
