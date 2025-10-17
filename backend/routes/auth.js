@@ -1,68 +1,77 @@
 // backend/routes/auth.js
-// ✅ Login + tokenverificatie met company-veld in JWT
+import express from "express";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-const express = require('express');
-const router = express.Router();
-const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
 dotenv.config();
+const router = express.Router();
 
-// 🎯 Demo-gebruiker (kan later vervangen worden door DB-lookup)
-const DEMO_USER = {
-  id: '68ef7f6659b5c49a78deacda', // demo-bedrijf-ID
-  email: 'demo@irisje.nl',
-  password: 'demo1234',
-  role: 'company',
-  company: '68ef7f6659b5c49a78deacda', // belangrijk: koppeling met aanvragen
-};
-
-// 🔐 Inloggen
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password)
-      return res.status(400).json({ message: 'E-mail en wachtwoord zijn verplicht' });
-
-    if (email !== DEMO_USER.email || password !== DEMO_USER.password)
-      return res.status(401).json({ message: 'Ongeldige inloggegevens' });
-
-    // ✅ Token bevat nu ook company
-    const token = jwt.sign(
-      {
-        id: DEMO_USER.id,
-        company: DEMO_USER.company,
-        role: DEMO_USER.role,
-        email: DEMO_USER.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    console.log('✅ Token aangemaakt voor', email);
-    res.json({ token });
-  } catch (err) {
-    console.error('❌ Loginfout:', err);
-    res.status(500).json({ message: 'Serverfout bij inloggen' });
-  }
+// ====== MODEL ======
+const CompanySchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  category: String,
+  createdAt: { type: Date, default: Date.now },
 });
 
-// 🧩 Middleware voor beveiligde routes
+const Company = mongoose.model("Company", CompanySchema);
+
+// ====== JWT FUNCTIES ======
+function generateToken(company) {
+  return jwt.sign({ companyId: company._id }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
+}
+
 function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "Geen token meegegeven" });
+  const token = authHeader.split(" ")[1];
   try {
-    const authHeader = req.header('Authorization');
-    if (!authHeader) return res.status(401).json({ message: 'Geen token opgegeven' });
-
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ message: 'Geen token opgegeven' });
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    req.companyId = decoded.companyId;
     next();
   } catch (err) {
-    console.error('❌ Ongeldige token:', err.message);
-    res.status(401).json({ message: 'Ongeldige token' });
+    return res.status(401).json({ error: "Ongeldig of verlopen token" });
   }
 }
 
-module.exports = { router, verifyToken };
+// ====== LOGIN ======
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const company = await Company.findOne({ email });
+    if (!company) return res.status(401).json({ error: "Onbekend e-mailadres" });
+
+    const isMatch = await bcrypt.compare(password, company.password);
+    if (!isMatch) return res.status(401).json({ error: "Ongeldig wachtwoord" });
+
+    const token = generateToken(company);
+    res.json({ token });
+  } catch (err) {
+    console.error("Login-fout:", err);
+    res.status(500).json({ error: "Serverfout bij inloggen" });
+  }
+});
+
+// ====== PROFIEL (voor dashboard) ======
+router.get("/me", verifyToken, async (req, res) => {
+  try {
+    const company = await Company.findById(req.companyId).select("-password");
+    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    res.json(company);
+  } catch (err) {
+    console.error("Auth/me-fout:", err);
+    res.status(500).json({ error: "Serverfout bij profiel ophalen" });
+  }
+});
+
+// ====== LOGOUT (optioneel) ======
+router.post("/logout", (req, res) => {
+  res.json({ success: true });
+});
+
+export default router;
