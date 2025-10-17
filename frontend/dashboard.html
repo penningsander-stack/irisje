@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
 
-  <!-- Backend API-adres -->
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
   </script>
@@ -19,7 +18,6 @@
       --irisje-muted: #6b7280;
       --irisje-border: #e5e7eb;
     }
-
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background: var(--irisje-bg);
@@ -30,7 +28,6 @@
       display: flex;
       flex-direction: column;
     }
-
     header {
       background: #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
@@ -39,14 +36,12 @@
       justify-content: space-between;
       align-items: center;
     }
-
     header h1 {
       font-size: 1.2rem;
       color: var(--irisje-primary);
       font-weight: 600;
       margin: 0;
     }
-
     header button {
       background: #ef4444;
       color: #fff;
@@ -56,11 +51,7 @@
       cursor: pointer;
       transition: background 0.2s ease;
     }
-
-    header button:hover {
-      background: #dc2626;
-    }
-
+    header button:hover { background: #dc2626; }
     main {
       flex: 1;
       max-width: 1000px;
@@ -70,7 +61,6 @@
       flex-direction: column;
       gap: 2rem;
     }
-
     section {
       background: #fff;
       border: 1px solid var(--irisje-border);
@@ -78,101 +68,10 @@
       padding: 1.5rem;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-
     h2, h3 {
       margin: 0 0 0.5rem;
       font-weight: 600;
       color: var(--irisje-text);
-    }
-
-    [data-company-name] {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--irisje-text);
-    }
-
-    [data-company-email] {
-      color: var(--irisje-muted);
-      font-size: 0.95rem;
-    }
-
-    [data-company-category] {
-      color: var(--irisje-primary);
-      font-size: 0.9rem;
-      margin-top: 0.2rem;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-
-    .stat {
-      background: #f3f4f6;
-      border-radius: 0.75rem;
-      padding: 1rem;
-      text-align: center;
-    }
-
-    .stat span {
-      display: block;
-      font-size: 0.9rem;
-      color: var(--irisje-muted);
-    }
-
-    .stat strong {
-      display: block;
-      font-size: 1.5rem;
-      margin-top: 0.3rem;
-      color: var(--irisje-primary);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      font-size: 0.95rem;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--irisje-border);
-      text-align: left;
-    }
-
-    th {
-      background: #f3f4f6;
-      color: var(--irisje-muted);
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-
-    select {
-      padding: 0.4rem 0.6rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--irisje-border);
-      font-size: 0.9rem;
-      color: var(--irisje-text);
-      background: #fff;
-    }
-
-    footer {
-      background: #fff;
-      border-top: 1px solid var(--irisje-border);
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.85rem;
-      color: var(--irisje-muted);
-    }
-
-    @media (max-width: 640px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
     }
   </style>
 </head>
@@ -188,74 +87,9 @@
       <h2 data-company-name>Bedrijfsnaam</h2>
       <p data-company-email>info@bedrijf.nl</p>
       <p data-company-category>Categorie</p>
-      <p style="margin-top:0.5rem; font-size:0.85rem; color:var(--irisje-muted);">
-        Laatst ingelogd: <span id="lastLogin">vandaag</span>
-      </p>
-    </section>
-
-    <section>
-      <h3>📊 Statistieken</h3>
-      <div class="stats-grid">
-        <div class="stat">
-          <span>Totaal</span>
-          <strong id="statTotal">0</strong>
-        </div>
-        <div class="stat">
-          <span>Geaccepteerd</span>
-          <strong id="statAccepted">0</strong>
-        </div>
-        <div class="stat">
-          <span>Afgewezen</span>
-          <strong id="statRejected">0</strong>
-        </div>
-        <div class="stat">
-          <span>Opgevolgd</span>
-          <strong id="statFollowed">0</strong>
-        </div>
-      </div>
-    </section>
-
-    <section>
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-        <h3>📬 Aanvragen</h3>
-        <label>
-          <span style="font-size:0.85rem; color:var(--irisje-muted); margin-right:0.3rem;">Filter:</span>
-          <select id="filterStatus">
-            <option value="all">Alle</option>
-            <option value="accepted">Geaccepteerd</option>
-            <option value="rejected">Afgewezen</option>
-            <option value="followed">Opgevolgd</option>
-          </select>
-        </label>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Bericht</th>
-            <th>Status</th>
-            <th>Datum</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody id="requestsTableBody">
-          <tr>
-            <td colspan="6" style="text-align:center; color:var(--irisje-muted); padding:1rem;">
-              Geen aanvragen gevonden.
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </section>
   </main>
 
-  <footer>
-    © 2025 Irisje.nl – Alle rechten voorbehouden.
-  </footer>
-
   <script src="js/secure.js"></script>
-  <script src="js/dashboard.js"></script>
 </body>
 </html>
