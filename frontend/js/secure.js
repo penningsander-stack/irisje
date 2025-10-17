@@ -4,7 +4,6 @@
 
   const API_BASE =
     (window.ENV && typeof window.ENV.API_BASE === "string" && window.ENV.API_BASE) || "";
-
   const ACCESS_TOKEN_KEY = "irisje_access_token";
   const qs = (sel, root = document) => root.querySelector(sel);
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
