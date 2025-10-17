@@ -1,76 +1,107 @@
 // frontend/js/dashboard.js
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
-  const api = (window.ENV && window.ENV.API_BASE) || "";
-  const logoutBtn = document.getElementById("logoutBtn");
+  if (!token) {
+    window.location.href = "login.html";
+    return;
+  }
 
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("token");
+  const company = JSON.parse(localStorage.getItem("company"));
+  document.getElementById("companyName").textContent = company.name;
+  document.getElementById("companyEmail").textContent = company.email;
+  document.getElementById("companyCategory").textContent = company.category;
+
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.clear();
     window.location.href = "login.html";
   });
 
-  try {
-    const res = await fetch(`${api}/api/dashboard/data`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const tbody = document.getElementById("requestsBody");
+  const filterSelect = document.getElementById("filterStatus");
+  const searchInput = document.getElementById("searchInput");
 
-    if (!res.ok) throw new Error("Fout bij laden dashboardgegevens");
-    const data = await res.json();
+  let requestsData = [];
 
-    document.getElementById("stat-total").textContent = data.total || 0;
-    document.getElementById("stat-accepted").textContent = data.accepted || 0;
-    document.getElementById("stat-rejected").textContent = data.rejected || 0;
-    document.getElementById("stat-followed").textContent = data.followed || 0;
+  async function loadDashboard() {
+    try {
+      const res = await fetch(`${window.ENV.API_BASE}/api/dashboard/data`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Fout bij laden dashboard");
 
-    const tbody = document.getElementById("requestsBody");
+      requestsData = data.requests;
+      updateStats(data);
+      renderTable();
+    } catch (err) {
+      console.error("Dashboard-fout:", err);
+      tbody.innerHTML = `<tr><td colspan="5">Serverfout bij laden dashboard.</td></tr>`;
+    }
+  }
+
+  function updateStats(data) {
+    document.getElementById("statTotal").textContent = data.total;
+    document.getElementById("statAccepted").textContent = data.accepted;
+    document.getElementById("statRejected").textContent = data.rejected;
+    document.getElementById("statFollowed").textContent = data.followed;
+  }
+
+  function renderTable() {
+    const filter = filterSelect.value;
+    const search = searchInput.value.toLowerCase();
     tbody.innerHTML = "";
 
-    if (data.requests && data.requests.length > 0) {
-      for (const r of data.requests) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.name}</td>
-          <td>${r.email}</td>
-          <td>${r.message}</td>
-          <td>
-            <select class="status-select" data-id="${r._id}">
-              <option ${r.status === "Nieuw" ? "selected" : ""}>Nieuw</option>
-              <option ${r.status === "Geaccepteerd" ? "selected" : ""}>Geaccepteerd</option>
-              <option ${r.status === "Afgewezen" ? "selected" : ""}>Afgewezen</option>
-              <option ${r.status === "Opgevolgd" ? "selected" : ""}>Opgevolgd</option>
-            </select>
-          </td>
-          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
-        `;
-        tbody.appendChild(tr);
-      }
+    const filtered = requestsData.filter((r) => {
+      const matchStatus = filter === "Alle" || r.status === filter;
+      const matchSearch =
+        r.name.toLowerCase().includes(search) ||
+        r.email.toLowerCase().includes(search);
+      return matchStatus && matchSearch;
+    });
 
-      // Eventlisteners voor statuswijziging
-      document.querySelectorAll(".status-select").forEach((sel) => {
-        sel.addEventListener("change", async (e) => {
-          const id = e.target.getAttribute("data-id");
-          const status = e.target.value;
-          try {
-            const update = await fetch(`${api}/api/dashboard/update/${id}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({ status }),
-            });
-            if (update.ok) {
-              console.log(`Status aanvraag ${id} gewijzigd naar ${status}`);
-            }
-          } catch (err) {
-            console.error("Fout bij updaten status:", err);
-          }
-        });
-      });
-    } else {
-      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="5">Geen resultaten gevonden.</td></tr>`;
+      return;
     }
-  } catch (err) {
-    console.error("Dashboard-fout:", err);
+
+    filtered.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.name}</td>
+        <td>${r.email}</td>
+        <td>${r.message}</td>
+        <td>
+          <select data-id="${r._id}">
+            <option ${r.status === "Nieuw" ? "selected" : ""}>Nieuw</option>
+            <option ${r.status === "Geaccepteerd" ? "selected" : ""}>Geaccepteerd</option>
+            <option ${r.status === "Afgewezen" ? "selected" : ""}>Afgewezen</option>
+            <option ${r.status === "Opgevolgd" ? "selected" : ""}>Opgevolgd</option>
+          </select>
+        </td>
+        <td>${new Date(r.date).toLocaleDateString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll("select[data-id]").forEach((sel) => {
+      sel.addEventListener("change", async (e) => {
+        const id = e.target.dataset.id;
+        const status = e.target.value;
+        await fetch(`${window.ENV.API_BASE}/api/dashboard/status/${id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status }),
+        });
+        loadDashboard();
+      });
+    });
   }
+
+  filterSelect.addEventListener("change", renderTable);
+  searchInput.addEventListener("input", renderTable);
+
+  await loadDashboard();
 });
