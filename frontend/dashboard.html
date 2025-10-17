@@ -17,7 +17,6 @@
       --irisje-text: #1f2937;
       --irisje-muted: #6b7280;
       --irisje-border: #e5e7eb;
-      --irisje-card: #ffffff;
     }
 
     body {
@@ -25,9 +24,10 @@
       background: var(--irisje-bg);
       color: var(--irisje-text);
       margin: 0;
+      padding: 0;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
     }
 
     header {
@@ -53,10 +53,7 @@
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
       cursor: pointer;
-      transition: background 0.2s ease;
     }
-
-    header button:hover { background: #dc2626; }
 
     main {
       flex: 1;
@@ -68,65 +65,99 @@
       gap: 2rem;
     }
 
-    .company-info, .card {
-      background: var(--irisje-card);
+    .card {
+      background: #fff;
       border: 1px solid var(--irisje-border);
       border-radius: 1rem;
       padding: 1.5rem;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat {
+      background: var(--irisje-bg);
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    select, input[type="text"] {
+      padding: 0.5rem;
+      border: 1px solid var(--irisje-border);
+      border-radius: 0.4rem;
+      background: #fff;
       font-size: 0.95rem;
     }
 
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
     th, td {
-      padding: 0.75rem 0.5rem;
+      padding: 0.75rem;
       border-bottom: 1px solid var(--irisje-border);
       text-align: left;
     }
 
-    th { color: var(--irisje-muted); font-weight: 500; }
-    tr:hover { background: #f3f4f6; }
-
-    select.status-select {
-      padding: 0.3rem;
-      border: 1px solid var(--irisje-border);
-      border-radius: 0.4rem;
-      background: #fff;
+    th {
+      color: var(--irisje-muted);
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1><span data-company-name>Bedrijf</span> – Dashboard</h1>
+    <h1>Bedrijf – Dashboard</h1>
     <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
-    <section class="company-info">
-      <h2>Bedrijfsinformatie</h2>
-      <p><strong>Naam:</strong> <span data-company-name>Bedrijfsnaam</span></p>
-      <p><strong>E-mail:</strong> <span data-company-email>demo@irisje.nl</span></p>
-      <p><strong>Categorie:</strong> <span data-company-category>Algemeen</span></p>
-      <p><strong>Laatst ingelogd:</strong> <span data-company-lastlogin>vandaag</span></p>
+    <section class="card">
+      <h2 id="companyName">Bedrijfsnaam</h2>
+      <p id="companyEmail"></p>
+      <p id="companyCategory"></p>
     </section>
 
-    <section>
-      <h2>📊 Statistieken</h2>
+    <section class="card">
+      <h3>📊 Statistieken</h3>
       <div class="stats">
-        <div class="card"><h3>Totaal</h3><p id="stat-total">0</p></div>
-        <div class="card"><h3>Geaccepteerd</h3><p id="stat-accepted">0</p></div>
-        <div class="card"><h3>Afgewezen</h3><p id="stat-rejected">0</p></div>
-        <div class="card"><h3>Opgevolgd</h3><p id="stat-followed">0</p></div>
+        <div class="stat">Totaal<br><strong id="statTotal">0</strong></div>
+        <div class="stat">Geaccepteerd<br><strong id="statAccepted">0</strong></div>
+        <div class="stat">Afgewezen<br><strong id="statRejected">0</strong></div>
+        <div class="stat">Opgevolgd<br><strong id="statFollowed">0</strong></div>
       </div>
     </section>
 
-    <section>
-      <h2>📬 Aanvragen</h2>
+    <section class="card">
+      <h3>📬 Aanvragen</h3>
+
+      <div class="controls">
+        <select id="filterStatus">
+          <option value="Alle">Alle</option>
+          <option value="Nieuw">Nieuw</option>
+          <option value="Geaccepteerd">Geaccepteerd</option>
+          <option value="Afgewezen">Afgewezen</option>
+          <option value="Opgevolgd">Opgevolgd</option>
+        </select>
+
+        <input id="searchInput" type="text" placeholder="Zoeken op naam of e-mail..." />
+      </div>
+
       <table id="requestsTable">
         <thead>
           <tr>
@@ -138,7 +169,7 @@
           </tr>
         </thead>
         <tbody id="requestsBody">
-          <tr><td colspan="5">Geen aanvragen gevonden.</td></tr>
+          <tr><td colspan="5">Laden...</td></tr>
         </tbody>
       </table>
     </section>
