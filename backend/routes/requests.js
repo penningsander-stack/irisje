@@ -1,13 +1,17 @@
 // backend/routes/requests.js
+// ✅ Haalt aanvragen en statistieken op per bedrijf (met fallback voor oude tokenstructuur)
+
 const express = require("express");
 const router = express.Router();
 const Request = require("../models/Request");
 const { verifyToken } = require("./auth");
 
-// 📊 Overzicht
+// 📊 Statistieken-overzicht
 router.get("/stats/overview", verifyToken, async (req, res) => {
   try {
-    const companyId = req.user.id;
+    // ✅ Gebruik company uit token als die bestaat, anders id
+    const companyId = req.user.company || req.user.id;
+
     const requests = await Request.find({ company: companyId });
 
     const stats = {
@@ -27,11 +31,13 @@ router.get("/stats/overview", verifyToken, async (req, res) => {
 // 📬 Aanvragen ophalen
 router.get("/", verifyToken, async (req, res) => {
   try {
-    const companyId = req.user.id;
+    // ✅ Zelfde fix hier
+    const companyId = req.user.company || req.user.id;
+
     const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
     res.json(requests);
   } catch (err) {
-    console.error("❌ Fout bij aanvragen:", err);
+    console.error("❌ Fout bij ophalen aanvragen:", err);
     res.status(500).json({ message: "Serverfout bij ophalen aanvragen" });
   }
 });
