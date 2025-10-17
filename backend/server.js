@@ -3,12 +3,15 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
 const authRoutes = require("./routes/auth");
 const dashboardRoutes = require("./routes/dashboard");
+const requestsRoutes = require("./routes/requests");
 
 dotenv.config();
 const app = express();
 
+// Middleware
 app.use(express.json());
 app.use(
   cors({
@@ -18,7 +21,7 @@ app.use(
   })
 );
 
-// MongoDB
+// MongoDB-verbinding
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Verbonden met MongoDB"))
@@ -27,9 +30,12 @@ mongoose
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/requests", requestsRoutes);
 
-// Root
-app.get("/", (req, res) => res.send("Irisje backend actief"));
+// Root endpoint
+app.get("/", (req, res) => {
+  res.send("🌐 Irisje backend actief en verbonden met MongoDB");
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
