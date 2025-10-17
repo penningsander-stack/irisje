@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Irisje Bedrijfsdashboard</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
@@ -14,7 +15,7 @@
     <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Uitloggen</button>
   </header>
 
-  <main class="p-6 space-y-6 max-w-5xl mx-auto">
+  <main class="p-6 space-y-6 max-w-6xl mx-auto">
     <section id="userInfo" class="bg-white shadow rounded p-4 text-gray-700">
       <p>Bedrijfsinformatie wordt geladen...</p>
     </section>
@@ -52,10 +53,11 @@
               <th class="p-2 text-left">Bericht</th>
               <th class="p-2 text-left">Status</th>
               <th class="p-2 text-left">Datum</th>
+              <th class="p-2 text-left">Actie</th>
             </tr>
           </thead>
           <tbody id="requestsTableBody">
-            <tr><td colspan="5" class="text-center py-3 text-gray-500">Laden...</td></tr>
+            <tr><td colspan="6" class="text-center py-3 text-gray-500">Laden...</td></tr>
           </tbody>
         </table>
       </div>
@@ -64,7 +66,6 @@
 
   <script>
     console.log('✅ dashboard.js geladen');
-
     const API = 'https://irisje-backend.onrender.com/api';
 
     document.addEventListener('DOMContentLoaded', init);
@@ -93,7 +94,6 @@
       }
 
       try {
-        // 1️⃣ Gebruiker ophalen
         const me = await apiGet('/secure/me', token);
         console.log('🪶 /secure/me →', me);
 
@@ -107,53 +107,76 @@
           <p><strong>Categorie:</strong> ${categorie}</p>
         `;
 
-        // 2️⃣ Statistieken
-        const stats = await apiGet('/requests/stats/overview', token);
-        console.log('🪶 /requests/stats/overview →', stats);
-        if (totalEl) totalEl.textContent = stats.total ?? 0;
-        if (acceptedEl) acceptedEl.textContent = stats.accepted ?? 0;
-        if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
-        if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
+        let stats = await apiGet('/requests/stats/overview', token);
+        updateStats(stats);
 
-        // 3️⃣ Aanvragen ophalen
         const items = await apiGet('/requests', token);
         console.log('🪶 /requests →', items);
 
         let currentItems = Array.isArray(items) ? items.filter(r => r) : [];
 
         function renderTable(filter = 'Alle') {
-          let filtered = currentItems;
-          if (filter !== 'Alle') filtered = currentItems.filter(r => r.status === filter);
+          let filtered = filter === 'Alle' ? currentItems : currentItems.filter(r => r.status === filter);
 
           if (!filtered.length) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-gray-500">Geen aanvragen gevonden.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-gray-500">Geen aanvragen gevonden.</td></tr>`;
             return;
           }
 
-          tbody.innerHTML = filtered
-            .filter(r => r.customerName || r.customerEmail)
-            .map(r => {
-              const name = r.customerName?.trim() || '—';
-              const email = r.customerEmail?.trim() || '—';
-              const msg = (r.message || r.customerMessage || '').trim() || '—';
-              const status = r.status?.trim() || 'Nieuw';
-              const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '—';
+          tbody.innerHTML = filtered.map(r => {
+            const id = r._id;
+            const name = r.customerName || '—';
+            const email = r.customerEmail || '—';
+            const msg = r.message || r.customerMessage || '—';
+            const status = r.status || 'Nieuw';
+            const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '—';
 
-              return `
-                <tr class="border-b hover:bg-gray-50">
-                  <td class="p-2">${escapeHtml(name)}</td>
-                  <td class="p-2">${escapeHtml(email)}</td>
-                  <td class="p-2">${escapeHtml(msg)}</td>
-                  <td class="p-2">${escapeHtml(status)}</td>
-                  <td class="p-2">${escapeHtml(created)}</td>
-                </tr>
-              `;
-            })
-            .join('');
+            return `
+              <tr class="border-b hover:bg-gray-50">
+                <td class="p-2">${escapeHtml(name)}</td>
+                <td class="p-2">${escapeHtml(email)}</td>
+                <td class="p-2">${escapeHtml(msg)}</td>
+                <td class="p-2">${escapeHtml(status)}</td>
+                <td class="p-2">${escapeHtml(created)}</td>
+                <td class="p-2 space-x-2">
+                  <button onclick="updateStatus('${id}', 'Geaccepteerd')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 text-xs">✔</button>
+                  <button onclick="updateStatus('${id}', 'Afgewezen')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs">✖</button>
+                  <button onclick="updateStatus('${id}', 'Opgevolgd')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs">↩</button>
+                </td>
+              </tr>`;
+          }).join('');
         }
 
         filterSelect.addEventListener('change', e => renderTable(e.target.value));
         renderTable();
+
+        window.updateStatus = async (id, newStatus) => {
+          try {
+            const res = await fetch(`${API}/requests/${id}/status`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status: newStatus })
+            });
+
+            if (!res.ok) throw new Error(`Status update mislukt: ${res.status}`);
+            console.log(`✅ Aanvraag ${id} → ${newStatus}`);
+
+            // Lokaal updaten zonder opnieuw laden
+            const item = currentItems.find(i => i._id === id);
+            if (item) item.status = newStatus;
+            renderTable(filterSelect.value);
+
+            // Statistieken opnieuw ophalen
+            stats = await apiGet('/requests/stats/overview', token);
+            updateStats(stats);
+
+          } catch (err) {
+            alert(`❌ Fout bij status update: ${err.message}`);
+          }
+        };
 
       } catch (err) {
         console.error('❌ Dashboard fout:', err);
@@ -181,7 +204,13 @@
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
       })[s]);
     }
-  </script>
 
+    function updateStats(stats) {
+      document.getElementById('statTotal').textContent = stats.total ?? 0;
+      document.getElementById('statAccepted').textContent = stats.accepted ?? 0;
+      document.getElementById('statRejected').textContent = stats.rejected ?? 0;
+      document.getElementById('statFollowed').textContent = stats.followedUp ?? 0;
+    }
+  </script>
 </body>
 </html>
