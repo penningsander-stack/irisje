@@ -1,5 +1,5 @@
 // backend/routes/requests.js
-// ✅ Haalt aanvragen en statistieken op per bedrijf (met fallback voor oude tokenstructuur)
+// ✅ Toont aanvragen per bedrijf — werkt ook met demo@irisje.nl en oude data
 
 const express = require("express");
 const router = express.Router();
@@ -9,10 +9,14 @@ const { verifyToken } = require("./auth");
 // 📊 Statistieken-overzicht
 router.get("/stats/overview", verifyToken, async (req, res) => {
   try {
-    // ✅ Gebruik company uit token als die bestaat, anders id
     const companyId = req.user.company || req.user.id;
 
-    const requests = await Request.find({ company: companyId });
+    let requests = await Request.find({ company: companyId });
+
+    // ✅ Fallback: toon alle aanvragen bij demo-account
+    if (!requests.length && req.user.email === "demo@irisje.nl") {
+      requests = await Request.find({});
+    }
 
     const stats = {
       total: requests.length,
@@ -31,10 +35,15 @@ router.get("/stats/overview", verifyToken, async (req, res) => {
 // 📬 Aanvragen ophalen
 router.get("/", verifyToken, async (req, res) => {
   try {
-    // ✅ Zelfde fix hier
     const companyId = req.user.company || req.user.id;
 
-    const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
+    let requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
+
+    // ✅ Fallback voor demo: toon alles
+    if (!requests.length && req.user.email === "demo@irisje.nl") {
+      requests = await Request.find({}).sort({ createdAt: -1 });
+    }
+
     res.json(requests);
   } catch (err) {
     console.error("❌ Fout bij ophalen aanvragen:", err);
