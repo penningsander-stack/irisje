@@ -19,7 +19,7 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Dashboard data ophalen
+// Dashboarddata ophalen
 router.get("/data", verifyToken, async (req, res) => {
   try {
     const companyId = req.companyId;
@@ -36,6 +36,35 @@ router.get("/data", verifyToken, async (req, res) => {
   } catch (err) {
     console.error("Dashboard-fout:", err);
     res.status(500).json({ error: "Serverfout bij ophalen dashboarddata" });
+  }
+});
+
+// Status bijwerken
+router.put("/update/:id", verifyToken, async (req, res) => {
+  try {
+    const companyId = req.companyId;
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const valid = ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"];
+    if (!valid.includes(status)) {
+      return res.status(400).json({ error: "Ongeldige statuswaarde" });
+    }
+
+    const request = await Request.findOneAndUpdate(
+      { _id: id, companyId },
+      { status },
+      { new: true }
+    );
+
+    if (!request) {
+      return res.status(404).json({ error: "Aanvraag niet gevonden" });
+    }
+
+    res.json({ success: true, request });
+  } catch (err) {
+    console.error("Update-fout:", err);
+    res.status(500).json({ error: "Fout bij bijwerken status" });
   }
 });
 
