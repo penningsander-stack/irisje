@@ -32,23 +32,44 @@ document.addEventListener("DOMContentLoaded", async () => {
           <td>${r.name}</td>
           <td>${r.email}</td>
           <td>${r.message}</td>
-          <td>${r.status}</td>
+          <td>
+            <select class="status-select" data-id="${r._id}">
+              <option ${r.status === "Nieuw" ? "selected" : ""}>Nieuw</option>
+              <option ${r.status === "Geaccepteerd" ? "selected" : ""}>Geaccepteerd</option>
+              <option ${r.status === "Afgewezen" ? "selected" : ""}>Afgewezen</option>
+              <option ${r.status === "Opgevolgd" ? "selected" : ""}>Opgevolgd</option>
+            </select>
+          </td>
           <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
         `;
         tbody.appendChild(tr);
       }
+
+      // Eventlisteners voor statuswijziging
+      document.querySelectorAll(".status-select").forEach((sel) => {
+        sel.addEventListener("change", async (e) => {
+          const id = e.target.getAttribute("data-id");
+          const status = e.target.value;
+          try {
+            const update = await fetch(`${api}/api/dashboard/update/${id}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ status }),
+            });
+            if (update.ok) {
+              console.log(`Status aanvraag ${id} gewijzigd naar ${status}`);
+            }
+          } catch (err) {
+            console.error("Fout bij updaten status:", err);
+          }
+        });
+      });
     } else {
       tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
     }
-
-    document.getElementById("statusFilter").addEventListener("change", (e) => {
-      const val = e.target.value;
-      const rows = tbody.querySelectorAll("tr");
-      rows.forEach((row) => {
-        const status = row.children[3]?.textContent || "";
-        row.style.display = !val || status === val ? "" : "none";
-      });
-    });
   } catch (err) {
     console.error("Dashboard-fout:", err);
   }
