@@ -1,14 +1,43 @@
-// backend/models/review.js
-const mongoose = require("mongoose");
+// backend/routes/reviews.js
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const Review = require("../models/review"); // let op: kleine letter
+const router = express.Router();
 
-const ReviewSchema = new mongoose.Schema({
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
-  name: String,
-  rating: Number,
-  message: String,
-  date: { type: Date, default: Date.now },
-  reported: { type: Boolean, default: false }
+// Middleware om token te controleren
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "Geen token meegegeven" });
+  const token = authHeader.split(" ")[1];
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.companyId = decoded.companyId;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Ongeldig of verlopen token" });
+  }
+}
+
+// ✅ Reviews ophalen van ingelogd bedrijf
+router.get("/list", verifyToken, async (req, res) => {
+  try {
+    const reviews = await Review.find({ companyId: req.companyId }).sort({ date: -1 });
+    res.json(reviews);
+  } catch (err) {
+    console.error("Fout bij ophalen reviews:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen reviews" });
+  }
 });
 
-// Hergebruik bestaand model om OverwriteModelError te voorkomen
-module.exports = mongoose.models.Review || mongoose.model("Review", ReviewSchema);
+// ✅ Review melden (bedrijf kan review markeren als 'gemeld')
+router.put("/report/:id", verifyToken, async (req, res) => {
+  try {
+    await Review.findByIdAndUpdate(req.params.id, { reported: true });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Fout bij melden review:", err);
+    res.status(500).json({ error: "Serverfout bij melden review" });
+  }
+});
+
+module.exports = router;
