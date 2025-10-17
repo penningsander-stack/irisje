@@ -1,33 +1,39 @@
 // backend/server.js
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-dotenv.config();
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
 
+dotenv.config();
 const app = express();
 
-app.use(cors());
+// ====== CONFIG ======
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI;
+const FRONTEND_URL = "https://irisje-frontend.onrender.com";
+
+// ====== MIDDLEWARE ======
 app.use(express.json());
+app.use(
+  cors({
+    origin: FRONTEND_URL,
+    credentials: true,
+  })
+);
 
-// ✅ Routes importeren
-const { router: authRoutes } = require("./routes/auth");
-const secureRoutes = require("./routes/secure");
-const requestRoutes = require("./routes/requests");
-const publicRequestRoutes = require("./routes/publicRequests");
-
-// ✅ Routes activeren
+// ====== ROUTES ======
 app.use("/api/auth", authRoutes);
-app.use("/api/secure", secureRoutes);
-app.use("/api/requests", requestRoutes);
-app.use("/api/public", publicRequestRoutes);
 
-// ✅ Database
+// ====== MONGODB CONNECTIE ======
 mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB fout:", err));
+  .connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ Verbonden met MongoDB"))
+  .catch((err) => console.error("❌ Fout bij MongoDB:", err));
 
-// ✅ Server starten
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`✅ Server draait op poort ${PORT}`));
+// ====== START SERVER ======
+app.get("/", (req, res) => res.send("Irisje backend draait ✔️"));
+app.listen(PORT, () => console.log(`🚀 Server actief op poort ${PORT}`));
