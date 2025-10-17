@@ -1,27 +1,29 @@
 // backend/routes/secure.js
+// ✅ Geeft bedrijfsinformatie terug voor ingelogde gebruiker
+
 const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('./auth');
 const Company = require('../models/Company');
-const User = require('../models/User');
 
-// ✅ /api/secure/me
+// GET /api/secure/me
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    if (!req.user || !req.user.id)
-      return res.status(401).json({ message: 'Ongeldige token' });
-
-    const user = await User.findById(req.user.id);
-    const company = await Company.findOne({ user: req.user.id });
-
+    // Haal company info op uit database
+    const company = await Company.findOne({ _id: req.user.id });
     res.json({
-      email: user?.email || 'Onbekend',
-      role: user?.role || 'company',
-      company: company || null,
+      email: req.user.email,
+      role: req.user.role,
+      company: company
+        ? {
+            name: company.name,
+            category: company.category,
+          }
+        : { name: 'Demo Bedrijf', category: 'Algemeen' },
     });
   } catch (err) {
     console.error('❌ Fout in /secure/me:', err);
-    res.status(500).json({ message: 'Serverfout bij ophalen bedrijfsinfo' });
+    res.status(500).json({ message: 'Serverfout bij ophalen profiel' });
   }
 });
 
