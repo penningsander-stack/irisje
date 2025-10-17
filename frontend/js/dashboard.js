@@ -1,75 +1,55 @@
 // frontend/js/dashboard.js
-(() => {
-  "use strict";
+document.addEventListener("DOMContentLoaded", async () => {
+  const token = localStorage.getItem("token");
+  const api = (window.ENV && window.ENV.API_BASE) || "";
+  const logoutBtn = document.getElementById("logoutBtn");
 
-  const qs = (sel, root = document) => root.querySelector(sel);
-
-  function safeText(v) {
-    return typeof v === "string" ? v : v == null ? "" : String(v);
-  }
-
-  function formatDate(input) {
-    try {
-      const d = new Date(input);
-      return isNaN(d) ? "" : d.toLocaleString("nl-NL");
-    } catch {
-      return "";
-    }
-  }
-
-  function renderStats(data = {}) {
-    qs("#statTotal").textContent = data.total ?? 0;
-    qs("#statAccepted").textContent = data.accepted ?? 0;
-    qs("#statRejected").textContent = data.rejected ?? 0;
-    qs("#statFollowed").textContent = data.followed ?? 0;
-  }
-
-  function renderRequests(requests = []) {
-    const tbody = qs("#requestsTableBody");
-    tbody.innerHTML = "";
-    if (!requests.length) {
-      tbody.innerHTML =
-        `<tr><td colspan="6" style="text-align:center; color:gray; padding:1rem;">Geen aanvragen gevonden.</td></tr>`;
-      return;
-    }
-
-    for (const r of requests) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${safeText(r.name)}</td>
-        <td>${safeText(r.email)}</td>
-        <td>${safeText(r.message)}</td>
-        <td>${safeText(r.status)}</td>
-        <td>${formatDate(r.date || r.createdAt)}</td>
-        <td>-</td>
-      `;
-      tbody.appendChild(tr);
-    }
-  }
-
-  async function loadStats() {
-    try {
-      const res = await window.Secure.fetchWithAuth("/api/dashboard/stats");
-      const data = await res.json();
-      renderStats(data);
-    } catch {
-      renderStats({});
-    }
-  }
-
-  async function loadRequests() {
-    try {
-      const res = await window.Secure.fetchWithAuth("/api/dashboard/requests");
-      const data = await res.json();
-      renderRequests(data);
-    } catch {
-      renderRequests([]);
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", async () => {
-    if (!window.Secure.requireAuth()) return;
-    await loadStats();
-    await loadRequests();
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
   });
-})();
+
+  try {
+    const res = await fetch(`${api}/api/dashboard/data`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Fout bij laden dashboardgegevens");
+    const data = await res.json();
+
+    document.getElementById("stat-total").textContent = data.total || 0;
+    document.getElementById("stat-accepted").textContent = data.accepted || 0;
+    document.getElementById("stat-rejected").textContent = data.rejected || 0;
+    document.getElementById("stat-followed").textContent = data.followed || 0;
+
+    const tbody = document.getElementById("requestsBody");
+    tbody.innerHTML = "";
+
+    if (data.requests && data.requests.length > 0) {
+      for (const r of data.requests) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.name}</td>
+          <td>${r.email}</td>
+          <td>${r.message}</td>
+          <td>${r.status}</td>
+          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+    }
+
+    document.getElementById("statusFilter").addEventListener("change", (e) => {
+      const val = e.target.value;
+      const rows = tbody.querySelectorAll("tr");
+      rows.forEach((row) => {
+        const status = row.children[3]?.textContent || "";
+        row.style.display = !val || status === val ? "" : "none";
+      });
+    });
+  } catch (err) {
+    console.error("Dashboard-fout:", err);
+  }
+});
