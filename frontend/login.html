@@ -61,24 +61,18 @@
       background: var(--irisje-primary);
       color: #fff;
       border: none;
-      padding: 0.75rem;
-      font-size: 1rem;
+      padding: 0.6rem;
       border-radius: 0.5rem;
       cursor: pointer;
-      transition: background 0.2s ease;
+      font-size: 1rem;
     }
     button:hover { background: #4338ca; }
     .error {
-      color: #b91c1c;
-      background: #fee2e2;
-      border: 1px solid #fecaca;
-      padding: 0.75rem;
-      border-radius: 0.5rem;
-      margin-top: 1rem;
+      color: #dc2626;
       text-align: center;
-      display: none;
+      margin-top: 1rem;
     }
-    .footer {
+    .register-link {
       text-align: center;
       margin-top: 1rem;
       font-size: 0.9rem;
@@ -86,57 +80,21 @@
     }
   </style>
 </head>
-
 <body>
   <div class="card">
     <h1>Inloggen</h1>
-    <form id="loginForm">
-      <label>E-mail
-        <input type="email" id="email" required autocomplete="username" />
-      </label>
-      <label>Wachtwoord
-        <input type="password" id="password" required autocomplete="current-password" />
-      </label>
-      <button type="submit">Inloggen</button>
-      <div class="error" id="errorBox">❌ Serverfout of geen verbinding.</div>
-    </form>
-    <div class="footer">
-      Nog geen account? <a href="/register.html">Registreren</a>
-    </div>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" placeholder="demo@irisje.nl" required />
+
+    <label for="password">Wachtwoord</label>
+    <input id="password" type="password" placeholder="••••••••" required />
+
+    <button id="loginBtn">Inloggen</button>
+
+    <div id="error" class="error"></div>
+    <div class="register-link">Nog geen account? <a href="register.html">Registreren</a></div>
   </div>
 
-  <script>
-    const API_BASE = window.ENV.API_BASE || "";
-    const form = document.getElementById("loginForm");
-    const errorBox = document.getElementById("errorBox");
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      errorBox.style.display = "none";
-
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      try {
-        const res = await fetch(API_BASE + "/api/auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!res.ok) throw new Error("Login mislukt");
-        const data = await res.json();
-        if (data && data.token) {
-          localStorage.setItem("irisje_access_token", data.token);
-          window.location.href = "/dashboard.html";
-        } else {
-          throw new Error("Geen token ontvangen");
-        }
-      } catch (err) {
-        console.error("Login-fout:", err);
-        errorBox.style.display = "block";
-      }
-    });
-  </script>
+  <script src="js/login.js"></script>
 </body>
 </html>
