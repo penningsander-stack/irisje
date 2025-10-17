@@ -1,38 +1,46 @@
 // frontend/js/secure.js
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+  // Controleer of token bestaat
   const token = localStorage.getItem("token");
   if (!token) {
     window.location.href = "login.html";
     return;
   }
 
-  try {
-    const res = await fetch(`${window.ENV.API_BASE}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  // Token valideren via backend
+  async function verifyToken() {
+    try {
+      const res = await fetch(`${window.ENV.API_BASE}/api/auth/verify`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    if (!res.ok) {
+      // Ongeldig of verlopen token
+      if (!res.ok) {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Gegevens van ingelogd bedrijf ophalen
+      const data = await res.json();
+      document.querySelector("[data-company-name]").textContent = data.company.name;
+      document.querySelector("[data-company-email]").textContent = data.company.email;
+      document.querySelector("[data-company-category]").textContent = data.company.category;
+    } catch (err) {
+      console.error("Tokencontrole mislukt:", err);
       localStorage.removeItem("token");
       window.location.href = "login.html";
-      return;
     }
+  }
 
-    const company = await res.json();
+  verifyToken();
 
-    // Vul bedrijfsinfo op dashboard in
-    const nameEl = document.querySelector("[data-company-name]");
-    const emailEl = document.querySelector("[data-company-email]");
-    const categoryEl = document.querySelector("[data-company-category]");
-    const dateEl = document.querySelector("[data-company-lastlogin]");
-
-    if (nameEl) nameEl.textContent = company.name || "";
-    if (emailEl) emailEl.textContent = company.email || "";
-    if (categoryEl) categoryEl.textContent = company.category || "";
-    if (dateEl) dateEl.textContent = new Date().toLocaleDateString("nl-NL");
-
-  } catch (err) {
-    console.error("Beveiligingsfout:", err);
-    localStorage.removeItem("token");
-    window.location.href = "login.html";
+  // Uitloggen-knop
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    });
   }
 });
