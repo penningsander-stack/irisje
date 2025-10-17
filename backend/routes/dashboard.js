@@ -5,7 +5,6 @@ const Request = require("../models/Request");
 
 const router = express.Router();
 
-// Middleware om token te controleren
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).json({ error: "Geen token meegegeven" });
@@ -19,7 +18,7 @@ function verifyToken(req, res, next) {
   }
 }
 
-// Dashboarddata ophalen
+// Dashboard data ophalen
 router.get("/data", verifyToken, async (req, res) => {
   try {
     const companyId = req.companyId;
@@ -39,32 +38,15 @@ router.get("/data", verifyToken, async (req, res) => {
   }
 });
 
-// Status bijwerken
-router.put("/update/:id", verifyToken, async (req, res) => {
+// ✅ Status van aanvraag bijwerken
+router.put("/status/:id", verifyToken, async (req, res) => {
   try {
-    const companyId = req.companyId;
-    const { id } = req.params;
     const { status } = req.body;
-
-    const valid = ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"];
-    if (!valid.includes(status)) {
-      return res.status(400).json({ error: "Ongeldige statuswaarde" });
-    }
-
-    const request = await Request.findOneAndUpdate(
-      { _id: id, companyId },
-      { status },
-      { new: true }
-    );
-
-    if (!request) {
-      return res.status(404).json({ error: "Aanvraag niet gevonden" });
-    }
-
-    res.json({ success: true, request });
+    await Request.findByIdAndUpdate(req.params.id, { status });
+    res.json({ success: true });
   } catch (err) {
-    console.error("Update-fout:", err);
-    res.status(500).json({ error: "Fout bij bijwerken status" });
+    console.error("Fout bij updaten status:", err);
+    res.status(500).json({ error: "Serverfout bij statusupdate" });
   }
 });
 
