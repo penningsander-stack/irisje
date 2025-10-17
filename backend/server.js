@@ -1,4 +1,5 @@
 // backend/server.js
+const adminRoutes = require("./routes/admin");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -14,6 +15,7 @@ const app = express();
 
 // Middleware
 app.use("/api/reviews", reviewsRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use(express.json());
 app.use(
