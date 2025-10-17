@@ -1,12 +1,15 @@
 <!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
-<script>window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };</script>
-
-  <head>
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
+
+  <!-- Backend API-adres -->
+  <script>
+    window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
+  </script>
 
   <style>
     :root {
@@ -172,10 +175,6 @@
       }
     }
   </style>
-
-  <script>
-    window.ENV = { API_BASE: "" };
-  </script>
 </head>
 
 <body>
@@ -185,7 +184,6 @@
   </header>
 
   <main>
-    <!-- Bedrijfsinfo -->
     <section>
       <h2 data-company-name>Bedrijfsnaam</h2>
       <p data-company-email>info@bedrijf.nl</p>
@@ -195,7 +193,6 @@
       </p>
     </section>
 
-    <!-- Statistieken -->
     <section>
       <h3>📊 Statistieken</h3>
       <div class="stats-grid">
@@ -218,7 +215,6 @@
       </div>
     </section>
 
-    <!-- Aanvragen -->
     <section>
       <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
         <h3>📬 Aanvragen</h3>
