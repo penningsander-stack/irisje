@@ -1,44 +1,36 @@
 // backend/server.js
-// ✅ Hoofdserver voor Irisje-backend
+// ✅ Volledige backend-server voor Irisje (bedrijven + klantaanvragen)
 
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 10000;
 
-// 🔧 Middleware
+// 🌍 Middleware
 app.use(cors());
 app.use(express.json());
 
-// 🔗 Routes
-const authRoutes = require('./routes/auth');
-const secureRoutes = require('./routes/secure');
-const requestRoutes = require('./routes/requests');
-const companyRoutes = require('./routes/companies');
-const reviewRoutes = require('./routes/reviews');
-const emailRoutes = require('./routes/email');
+// 🧩 Routes importeren
+const { router: authRoutes } = require("./routes/auth");
+const secureRoutes = require("./routes/secure");
+const requestRoutes = require("./routes/requests");
+const publicRequestRoutes = require("./routes/publicRequests");
 
-app.use('/api/auth', authRoutes);        // ✅ juiste export (router)
-app.use('/api/secure', secureRoutes);
-app.use('/api/requests', requestRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/reviews', reviewRoutes);
-app.use('/api/email', emailRoutes);
+// 📦 Routes activeren
+app.use("/api/auth", authRoutes);         // Inloggen + token
+app.use("/api/secure", secureRoutes);     // Beveiligde bedrijfsinfo
+app.use("/api/requests", requestRoutes);  // Dashboard-aanvragen
+app.use("/api/public", publicRequestRoutes); // Publieke aanvragen
 
-// 🌐 Root endpoint
-app.get('/', (req, res) => {
-  res.send('✅ Irisje backend draait correct');
-});
-
-// 🧠 Database
+// ⚙️ Database verbinden
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB fout:', err));
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connectie fout:", err));
 
 // 🚀 Start server
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`✅ Server is running on port ${PORT}`));
