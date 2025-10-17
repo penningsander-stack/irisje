@@ -1,216 +1,62 @@
-// frontend/dashboard.html
+<!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Irisje Bedrijfsdashboard</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Bedrijfsdashboard</title>
+  <link rel="stylesheet" href="css/tailwind.css" />
+  <script>
+    // Optioneel: API-basisadres instellen (alleen nodig bij gescheiden hosting)
+    window.ENV = { API_BASE: "" };
+  </script>
 </head>
-<body class="bg-gray-50 text-gray-800">
 
-  <header class="p-4 bg-blue-700 text-white flex justify-between items-center">
-    <h1 class="text-xl font-semibold">Bedrijfsdashboard</h1>
-    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Uitloggen</button>
+<body class="min-h-screen bg-gray-50 text-gray-800">
+  <!-- Navigatiebalk -->
+  <header class="bg-white shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-xl font-semibold text-indigo-600">
+        <span id="companyHeaderName" data-company-name>Bedrijf</span> – Dashboard
+      </h1>
+      <button id="logoutBtn"
+        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-sm transition">
+        Uitloggen
+      </button>
+    </div>
   </header>
 
-  <main class="p-6 space-y-6 max-w-6xl mx-auto">
-    <section id="userInfo" class="bg-white shadow rounded p-4 text-gray-700">
-      <p>Bedrijfsinformatie wordt geladen...</p>
-    </section>
-
-    <section class="bg-white shadow rounded p-4">
-      <h2 class="text-lg font-semibold mb-3">📊 Statistieken</h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div><p class="text-gray-500">Totaal</p><p id="statTotal" class="text-2xl font-bold">0</p></div>
-        <div><p class="text-gray-500">Geaccepteerd</p><p id="statAccepted" class="text-2xl font-bold">0</p></div>
-        <div><p class="text-gray-500">Afgewezen</p><p id="statRejected" class="text-2xl font-bold">0</p></div>
-        <div><p class="text-gray-500">Opgevolgd</p><p id="statFollowed" class="text-2xl font-bold">0</p></div>
+  <!-- Hoofdinhoud -->
+  <main class="max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <!-- Bedrijfsinfo -->
+    <section
+      class="bg-white rounded-2xl shadow-md p-6 border border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900" data-company-name>Bedrijfsnaam</h2>
+        <p class="text-gray-600" data-company-email>info@bedrijf.nl</p>
+        <p class="text-sm text-indigo-500 mt-1" data-company-category>Categorie</p>
+      </div>
+      <div class="mt-4 sm:mt-0">
+        <span class="text-sm text-gray-500">Laatst ingelogd: <span id="lastLogin">vandaag</span></span>
       </div>
     </section>
 
-    <section class="bg-white shadow rounded p-4">
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-lg font-semibold">📬 Aanvragen</h2>
-        <label>Filter op status:
-          <select id="statusFilter" class="border rounded p-1 ml-2">
-            <option value="Alle">Alle</option>
-            <option value="Nieuw">Nieuw</option>
-            <option value="Geaccepteerd">Geaccepteerd</option>
-            <option value="Afgewezen">Afgewezen</option>
-            <option value="Opgevolgd">Opgevolgd</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm">
-          <thead class="bg-gray-100 border-b">
-            <tr>
-              <th class="p-2 text-left">Naam</th>
-              <th class="p-2 text-left">E-mail</th>
-              <th class="p-2 text-left">Bericht</th>
-              <th class="p-2 text-left">Status</th>
-              <th class="p-2 text-left">Datum</th>
-              <th class="p-2 text-left">Actie</th>
-            </tr>
-          </thead>
-          <tbody id="requestsTableBody">
-            <tr><td colspan="6" class="text-center py-3 text-gray-500">Laden...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    console.log('✅ dashboard.js geladen');
-    const API = 'https://irisje-backend.onrender.com/api';
-
-    document.addEventListener('DOMContentLoaded', init);
-
-    async function init() {
-      const token = localStorage.getItem('token');
-      const userInfoDiv = document.getElementById('userInfo');
-      const tbody = document.getElementById('requestsTableBody');
-      const totalEl = document.getElementById('statTotal');
-      const acceptedEl = document.getElementById('statAccepted');
-      const rejectedEl = document.getElementById('statRejected');
-      const followedEl = document.getElementById('statFollowed');
-      const logoutBtn = document.getElementById('logoutBtn');
-      const filterSelect = document.getElementById('statusFilter');
-
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
-          localStorage.removeItem('token');
-          window.location.href = 'index.html';
-        });
-      }
-
-      if (!token) {
-        userInfoDiv.innerHTML = '<p>⚠️ Geen token gevonden — log eerst in.</p>';
-        return;
-      }
-
-      try {
-        const me = await apiGet('/secure/me', token);
-        console.log('🪶 /secure/me →', me);
-
-        const bedrijf = me?.company?.name || 'Onbekend';
-        const email = me?.email || 'Onbekend';
-        const categorie = me?.company?.category || 'Onbekend';
-
-        userInfoDiv.innerHTML = `
-          <h3 class="text-lg font-semibold">${bedrijf}</h3>
-          <p><strong>E-mail:</strong> ${email}</p>
-          <p><strong>Categorie:</strong> ${categorie}</p>
-        `;
-
-        let stats = await apiGet('/requests/stats/overview', token);
-        updateStats(stats);
-
-        const items = await apiGet('/requests', token);
-        console.log('🪶 /requests →', items);
-
-        let currentItems = Array.isArray(items) ? items.filter(r => r) : [];
-
-        function renderTable(filter = 'Alle') {
-          let filtered = filter === 'Alle' ? currentItems : currentItems.filter(r => r.status === filter);
-
-          if (!filtered.length) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-3 text-gray-500">Geen aanvragen gevonden.</td></tr>`;
-            return;
-          }
-
-          tbody.innerHTML = filtered.map(r => {
-            const id = r._id;
-            const name = r.customerName || '—';
-            const email = r.customerEmail || '—';
-            const msg = r.message || r.customerMessage || '—';
-            const status = r.status || 'Nieuw';
-            const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '—';
-
-            return `
-              <tr class="border-b hover:bg-gray-50">
-                <td class="p-2">${escapeHtml(name)}</td>
-                <td class="p-2">${escapeHtml(email)}</td>
-                <td class="p-2">${escapeHtml(msg)}</td>
-                <td class="p-2">${escapeHtml(status)}</td>
-                <td class="p-2">${escapeHtml(created)}</td>
-                <td class="p-2 space-x-2">
-                  <button onclick="updateStatus('${id}', 'Geaccepteerd')" class="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 text-xs">✔</button>
-                  <button onclick="updateStatus('${id}', 'Afgewezen')" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-xs">✖</button>
-                  <button onclick="updateStatus('${id}', 'Opgevolgd')" class="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 text-xs">↩</button>
-                </td>
-              </tr>`;
-          }).join('');
-        }
-
-        filterSelect.addEventListener('change', e => renderTable(e.target.value));
-        renderTable();
-
-        window.updateStatus = async (id, newStatus) => {
-          try {
-            const res = await fetch(`${API}/requests/${id}/status`, {
-              method: 'PATCH',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ status: newStatus })
-            });
-
-            if (!res.ok) throw new Error(`Status update mislukt: ${res.status}`);
-            console.log(`✅ Aanvraag ${id} → ${newStatus}`);
-
-            // Lokaal updaten zonder opnieuw laden
-            const item = currentItems.find(i => i._id === id);
-            if (item) item.status = newStatus;
-            renderTable(filterSelect.value);
-
-            // Statistieken opnieuw ophalen
-            stats = await apiGet('/requests/stats/overview', token);
-            updateStats(stats);
-
-          } catch (err) {
-            alert(`❌ Fout bij status update: ${err.message}`);
-          }
-        };
-
-      } catch (err) {
-        console.error('❌ Dashboard fout:', err);
-        userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden: ${err.message || err}</p>`;
-      }
-    }
-
-    async function apiGet(path, token) {
-      const res = await fetch(`${API}${path}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const t = await safeJson(res);
-        throw new Error(t?.message || `HTTP ${res.status}`);
-      }
-      return res.json();
-    }
-
-    async function safeJson(res) {
-      try { return await res.json(); } catch { return null; }
-    }
-
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>"']/g, s => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
-      })[s]);
-    }
-
-    function updateStats(stats) {
-      document.getElementById('statTotal').textContent = stats.total ?? 0;
-      document.getElementById('statAccepted').textContent = stats.accepted ?? 0;
-      document.getElementById('statRejected').textContent = stats.rejected ?? 0;
-      document.getElementById('statFollowed').textContent = stats.followedUp ?? 0;
-    }
-  </script>
-</body>
-</html>
+    <!-- Statistieken -->
+    <section class="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800">📊 Statistieken</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+        <div class="bg-indigo-50 p-4 rounded-xl">
+          <p class="text-gray-600 text-sm">Totaal</p>
+          <p id="statTotal" class="text-2xl font-bold text-indigo-600">0</p>
+        </div>
+        <div class="bg-green-50 p-4 rounded-xl">
+          <p class="text-gray-600 text-sm">Geaccepteerd</p>
+          <p id="statAccepted" class="text-2xl font-bold text-green-600">0</p>
+        </div>
+        <div class="bg-red-50 p-4 rounded-xl">
+          <p class="text-gray-600 text-sm">Afgewezen</p>
+          <p id="statRejected" class="text-2xl font-bold text-red-600">0</p>
+        </div>
+        <div class="bg-yellow-50 p-4 rounded-xl">
+          <p class="text-gray-600 text-sm">Opgevolgd</p>
+          <p id="st
