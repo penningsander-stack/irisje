@@ -1,15 +1,15 @@
 // frontend/js/login.js
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("loginBtn");
-  const errorDiv = document.getElementById("error");
+  const errorMsg = document.getElementById("errorMsg");
 
   btn.addEventListener("click", async () => {
-    errorDiv.textContent = "";
+    errorMsg.textContent = "";
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
 
     if (!email || !password) {
-      errorDiv.textContent = "Vul zowel e-mail als wachtwoord in.";
+      errorMsg.textContent = "Vul je e-mail en wachtwoord in.";
       return;
     }
 
@@ -20,22 +20,22 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          errorDiv.textContent = data.error || "Ongeldig e-mailadres of wachtwoord.";
-        } else {
-          errorDiv.textContent = data.error || "Serverfout of geen verbinding.";
-        }
+        errorMsg.textContent = data.error || "Fout bij inloggen.";
         return;
       }
 
-      const data = await res.json();
+      // ✅ Token opslaan
       localStorage.setItem("token", data.token);
+      localStorage.setItem("company", JSON.stringify(data.company));
+
+      // ✅ Doorsturen naar dashboard
       window.location.href = "dashboard.html";
     } catch (err) {
       console.error("Login-fout:", err);
-      errorDiv.textContent = "Serverfout of geen verbinding.";
+      errorMsg.textContent = "Serverfout of geen verbinding.";
     }
   });
 });
