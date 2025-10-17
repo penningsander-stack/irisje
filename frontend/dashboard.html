@@ -4,53 +4,184 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bedrijfsdashboard | Irisje</title>
+  <title>Irisje Bedrijfsdashboard</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="bg-gray-50 text-gray-800">
-  <div class="dashboard-container">
-    <header class="dashboard-header">
-      <h1>Bedrijfsdashboard</h1>
-      <button id="logoutBtn" class="btn-logout">Uitloggen</button>
-    </header>
 
-    <section id="userInfo" class="info-card"></section>
+  <header class="p-4 bg-blue-700 text-white flex justify-between items-center">
+    <h1 class="text-xl font-semibold">Bedrijfsdashboard</h1>
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">Uitloggen</button>
+  </header>
 
-    <section class="stats-section">
-      <h2>📊 Statistieken</h2>
-      <div class="stats-grid">
-        <div>Totaal<br><span id="statTotal">0</span></div>
-        <div>Geaccepteerd<br><span id="statAccepted">0</span></div>
-        <div>Afgewezen<br><span id="statRejected">0</span></div>
-        <div>Opgevolgd<br><span id="statFollowed">0</span></div>
+  <main class="p-6 space-y-6 max-w-5xl mx-auto">
+    <section id="userInfo" class="bg-white shadow rounded p-4 text-gray-700">
+      <p>Bedrijfsinformatie wordt geladen...</p>
+    </section>
+
+    <section class="bg-white shadow rounded p-4">
+      <h2 class="text-lg font-semibold mb-3">📊 Statistieken</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div><p class="text-gray-500">Totaal</p><p id="statTotal" class="text-2xl font-bold">0</p></div>
+        <div><p class="text-gray-500">Geaccepteerd</p><p id="statAccepted" class="text-2xl font-bold">0</p></div>
+        <div><p class="text-gray-500">Afgewezen</p><p id="statRejected" class="text-2xl font-bold">0</p></div>
+        <div><p class="text-gray-500">Opgevolgd</p><p id="statFollowed" class="text-2xl font-bold">0</p></div>
       </div>
     </section>
 
-    <section class="requests-section">
-      <h2>📬 Aanvragen</h2>
-      <label for="statusFilter">Filter op status:</label>
-      <select id="statusFilter">
-        <option value="Alle">Alle</option>
-        <option value="Nieuw">Nieuw</option>
-        <option value="Geaccepteerd">Geaccepteerd</option>
-        <option value="Afgewezen">Afgewezen</option>
-        <option value="Opgevolgd">Opgevolgd</option>
-      </select>
+    <section class="bg-white shadow rounded p-4">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-semibold">📬 Aanvragen</h2>
+        <label>Filter op status:
+          <select id="statusFilter" class="border rounded p-1 ml-2">
+            <option value="Alle">Alle</option>
+            <option value="Nieuw">Nieuw</option>
+            <option value="Geaccepteerd">Geaccepteerd</option>
+            <option value="Afgewezen">Afgewezen</option>
+            <option value="Opgevolgd">Opgevolgd</option>
+          </select>
+        </label>
+      </div>
 
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Bericht</th>
-            <th>Status</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody id="requestsTableBody"></tbody>
-      </table>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead class="bg-gray-100 border-b">
+            <tr>
+              <th class="p-2 text-left">Naam</th>
+              <th class="p-2 text-left">E-mail</th>
+              <th class="p-2 text-left">Bericht</th>
+              <th class="p-2 text-left">Status</th>
+              <th class="p-2 text-left">Datum</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            <tr><td colspan="5" class="text-center py-3 text-gray-500">Laden...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
-  </div>
-  <script src="dashboard.js"></script>
+  </main>
+
+  <script>
+    console.log('✅ dashboard.js geladen');
+
+    const API = 'https://irisje-backend.onrender.com/api';
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+      const token = localStorage.getItem('token');
+      const userInfoDiv = document.getElementById('userInfo');
+      const tbody = document.getElementById('requestsTableBody');
+      const totalEl = document.getElementById('statTotal');
+      const acceptedEl = document.getElementById('statAccepted');
+      const rejectedEl = document.getElementById('statRejected');
+      const followedEl = document.getElementById('statFollowed');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const filterSelect = document.getElementById('statusFilter');
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+          localStorage.removeItem('token');
+          window.location.href = 'index.html';
+        });
+      }
+
+      if (!token) {
+        userInfoDiv.innerHTML = '<p>⚠️ Geen token gevonden — log eerst in.</p>';
+        return;
+      }
+
+      try {
+        // 1️⃣ Gebruiker ophalen
+        const me = await apiGet('/secure/me', token);
+        console.log('🪶 /secure/me →', me);
+
+        const bedrijf = me?.company?.name || 'Onbekend';
+        const email = me?.email || 'Onbekend';
+        const categorie = me?.company?.category || 'Onbekend';
+
+        userInfoDiv.innerHTML = `
+          <h3 class="text-lg font-semibold">${bedrijf}</h3>
+          <p><strong>E-mail:</strong> ${email}</p>
+          <p><strong>Categorie:</strong> ${categorie}</p>
+        `;
+
+        // 2️⃣ Statistieken
+        const stats = await apiGet('/requests/stats/overview', token);
+        console.log('🪶 /requests/stats/overview →', stats);
+        if (totalEl) totalEl.textContent = stats.total ?? 0;
+        if (acceptedEl) acceptedEl.textContent = stats.accepted ?? 0;
+        if (rejectedEl) rejectedEl.textContent = stats.rejected ?? 0;
+        if (followedEl) followedEl.textContent = stats.followedUp ?? 0;
+
+        // 3️⃣ Aanvragen ophalen
+        const items = await apiGet('/requests', token);
+        console.log('🪶 /requests →', items);
+
+        let currentItems = Array.isArray(items) ? items.filter(r => r) : [];
+
+        function renderTable(filter = 'Alle') {
+          let filtered = currentItems;
+          if (filter !== 'Alle') filtered = currentItems.filter(r => r.status === filter);
+
+          if (!filtered.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-3 text-gray-500">Geen aanvragen gevonden.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = filtered
+            .filter(r => r.customerName || r.customerEmail)
+            .map(r => {
+              const name = r.customerName?.trim() || '—';
+              const email = r.customerEmail?.trim() || '—';
+              const msg = (r.message || r.customerMessage || '').trim() || '—';
+              const status = r.status?.trim() || 'Nieuw';
+              const created = r.createdAt ? new Date(r.createdAt).toLocaleDateString('nl-NL') : '—';
+
+              return `
+                <tr class="border-b hover:bg-gray-50">
+                  <td class="p-2">${escapeHtml(name)}</td>
+                  <td class="p-2">${escapeHtml(email)}</td>
+                  <td class="p-2">${escapeHtml(msg)}</td>
+                  <td class="p-2">${escapeHtml(status)}</td>
+                  <td class="p-2">${escapeHtml(created)}</td>
+                </tr>
+              `;
+            })
+            .join('');
+        }
+
+        filterSelect.addEventListener('change', e => renderTable(e.target.value));
+        renderTable();
+
+      } catch (err) {
+        console.error('❌ Dashboard fout:', err);
+        userInfoDiv.innerHTML = `<p>⚠️ Fout bij laden: ${err.message || err}</p>`;
+      }
+    }
+
+    async function apiGet(path, token) {
+      const res = await fetch(`${API}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const t = await safeJson(res);
+        throw new Error(t?.message || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    async function safeJson(res) {
+      try { return await res.json(); } catch { return null; }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, s => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;',
+      })[s]);
+    }
+  </script>
+
 </body>
 </html>
