@@ -1,6 +1,6 @@
 // backend/routes/requests.js
 const express = require("express");
-const Company = require("../routes/auth").Company || require("../models/Company");
+const Company = require("../models/Company");
 const Request = require("../models/Request");
 const router = express.Router();
 
