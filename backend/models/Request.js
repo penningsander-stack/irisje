@@ -1,35 +1,47 @@
 // backend/models/Request.js
-const mongoose = require('mongoose');
+// ✅ MongoDB-model voor aanvragen (bedrijven ontvangen klantaanvragen)
 
-const requestSchema = new mongoose.Schema(
+const mongoose = require("mongoose");
+
+const RequestSchema = new mongoose.Schema(
   {
-    customerName: { type: String, required: true },
-    customerEmail: { type: String, required: true },
-    customerPhone: { type: String },
-    // Ondersteun zowel 'message' als oudere 'customerMessage'
-    message: { type: String },
-    customerMessage: { type: String },
-
-    company: { type: mongoose.Schema.Types.ObjectId, ref: 'Company', required: true },
-
+    customerName: {
+      type: String,
+      required: [true, "Naam van klant is verplicht"],
+      trim: true,
+    },
+    customerEmail: {
+      type: String,
+      required: [true, "E-mailadres van klant is verplicht"],
+      trim: true,
+      lowercase: true,
+    },
+    customerPhone: {
+      type: String,
+      trim: true,
+    },
+    message: {
+      type: String,
+      trim: true,
+    },
+    customerMessage: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
-      enum: ['Nieuw', 'Geaccepteerd', 'Afgewezen', 'Opgevolgd'],
-      default: 'Nieuw',
+      enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
+      default: "Nieuw",
+    },
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // maakt automatisch createdAt & updatedAt
+  }
 );
 
-// Zorg dat toJSON altijd één 'message' veld exposeert
-requestSchema.set('toJSON', {
-  virtuals: true,
-  versionKey: false,
-  transform: (_, ret) => {
-    ret.message = ret.message || ret.customerMessage || '';
-    delete ret.customerMessage;
-    return ret;
-  },
-});
-
-module.exports = mongoose.model('Request', requestSchema);
+module.exports = mongoose.model("Request", RequestSchema);
