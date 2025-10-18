@@ -4,52 +4,135 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard – Irisje.nl</title>
+  <title>Bedrijfsdashboard – Irisje.nl</title>
 
+  <!-- Backend-adres -->
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
   </script>
 
   <style>
+    :root {
+      --irisje-primary: #4f46e5;
+      --irisje-bg: #f9fafb;
+      --irisje-text: #1f2937;
+      --irisje-muted: #6b7280;
+      --irisje-border: #e5e7eb;
+      --irisje-card: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #f9fafb;
-      color: #1f2937;
+      background: var(--irisje-bg);
+      color: var(--irisje-text);
       margin: 0;
       padding: 0;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
+
     header {
-      background: white;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      background: var(--irisje-card);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       padding: 1rem 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
+
     header h1 {
-      font-size: 1.2rem;
-      color: #4f46e5;
+      font-size: 1.25rem;
+      color: var(--irisje-primary);
+      font-weight: 600;
       margin: 0;
     }
+
+    header button {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    header button:hover {
+      background: #dc2626;
+    }
+
     main {
       flex: 1;
       max-width: 1000px;
       margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    section {
+      background: var(--irisje-card);
+      border: 1px solid var(--irisje-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    h2, h3 {
+      margin: 0 0 1rem;
+      font-weight: 600;
+      color: var(--irisje-text);
+    }
+
+    .company-info p {
+      margin: 0.2rem 0;
+      color: var(--irisje-muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: var(--irisje-bg);
+      border: 1px solid var(--irisje-border);
+      border-radius: 0.75rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .stat-card span {
+      display: block;
+      font-size: 1.5rem;
+      color: var(--irisje-primary);
+      font-weight: bold;
+      margin-bottom: 0.25rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--irisje-muted);
+      font-size: 0.85rem;
       padding: 1rem;
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>Bedrijf – Dashboard</h1>
+    <h1>Bedrijfsdashboard</h1>
     <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
-    <section>
+    <section class="company-info">
       <h2 data-company-name>Bedrijfsnaam</h2>
       <p data-company-email>info@bedrijf.nl</p>
       <p data-company-category>Categorie</p>
@@ -57,10 +140,50 @@
 
     <section>
       <h3>📊 Statistieken</h3>
-      <p>Totaal aanvragen: <span id="totalRequests">0</span></p>
+      <div class="stats">
+        <div class="stat-card">
+          <span id="totalRequests">0</span>
+          <small>Totaal</small>
+        </div>
+        <div class="stat-card">
+          <span id="acceptedCount">0</span>
+          <small>Geaccepteerd</small>
+        </div>
+        <div class="stat-card">
+          <span id="rejectedCount">0</span>
+          <small>Afgewezen</small>
+        </div>
+        <div class="stat-card">
+          <span id="followedUpCount">0</span>
+          <small>Opgevolgd</small>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>📬 Aanvragen</h3>
+      <table id="requestsTable" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f3f4f6;">
+            <th style="text-align:left; padding:0.5rem;">Naam</th>
+            <th style="text-align:left; padding:0.5rem;">E-mail</th>
+            <th style="text-align:left; padding:0.5rem;">Bericht</th>
+            <th style="text-align:left; padding:0.5rem;">Status</th>
+            <th style="text-align:left; padding:0.5rem;">Datum</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr><td colspan="5" style="padding:0.75rem;">Geen aanvragen gevonden.</td></tr>
+        </tbody>
+      </table>
     </section>
   </main>
 
+  <footer>
+    &copy; 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
   <script src="js/secure.js"></script>
+  <script src="js/dashboard.js"></script>
 </body>
 </html>
