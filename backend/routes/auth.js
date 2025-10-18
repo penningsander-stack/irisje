@@ -32,7 +32,7 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Gebruiker heeft geen wachtwoordveld." });
     }
 
-    const geldig = await bcrypt.compare(password, hash);
+    const geldig = await bcrypt.compare(password.trim(), hash.trim());
     if (!geldig) {
       return res.status(400).json({ error: "Ongeldig wachtwoord." });
     }
