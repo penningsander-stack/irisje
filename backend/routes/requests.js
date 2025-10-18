@@ -1,80 +1,68 @@
 // backend/routes/requests.js
-const express = require("express");
-const Company = require("../models/Company");
-const Request = require("../models/Request");
-const nodemailer = require("nodemailer");
+import express from "express";
+import authMiddleware from "../middleware/authMiddleware.js";
+import Request from "../models/Request.js";
+import Company from "../models/Company.js";
+
 const router = express.Router();
 
-// 📧 e-mailtransport instellen met SMTP (gebruik jouw info@irisje.nl)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true", // true = SSL (poort 465)
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// ✅ Nieuwe aanvraag aanmaken en e-mail sturen
-router.post("/create", async (req, res) => {
+// ✅ Nieuwe aanvraag opslaan (publieke route)
+router.post("/", async (req, res) => {
   try {
-    const { company, name, email, message } = req.body;
+    const { name, email, message, companyId } = req.body;
 
-    // Basisvalidatie
-    if (!company || !name || !email || !message) {
-      return res.status(400).json({ error: "Alle velden zijn verplicht." });
+    if (!companyId) {
+      return res.status(400).json({ error: "companyId is vereist" });
     }
 
-    // Zoek het bedrijf in de database
-    const targetCompany = await Company.findOne({ name: company });
-    if (!targetCompany) {
-      return res.status(404).json({ error: "Bedrijf niet gevonden." });
-    }
-
-    // Aanvraag opslaan
-    const newRequest = await Request.create({
-      companyId: targetCompany._id,
+    const newRequest = new Request({
       name,
       email,
       message,
+      companyId,
       status: "Nieuw",
       date: new Date(),
     });
 
-    console.log(`📩 Nieuwe aanvraag ontvangen voor ${company} van ${name}`);
-
-    // E-mail versturen
-    try {
-      await transporter.sendMail({
-        from: `"Irisje.nl" <${process.env.SMTP_USER}>`,
-        to: targetCompany.email,
-        subject: `Nieuwe aanvraag via Irisje.nl – ${company}`,
-        html: `
-          <h2>Nieuwe aanvraag ontvangen</h2>
-          <p><strong>Bedrijf:</strong> ${company}</p>
-          <p><strong>Naam aanvrager:</strong> ${name}</p>
-          <p><strong>E-mail aanvrager:</strong> ${email}</p>
-          <p><strong>Bericht:</strong><br>${message}</p>
-          <p>Bekijk de aanvraag in je dashboard:<br>
-          <a href="https://irisje-frontend.onrender.com/login.html">Inloggen bij Irisje.nl</a></p>
-        `,
-      });
-
-      console.log(`✅ E-mail verzonden naar ${targetCompany.email}`);
-    } catch (mailErr) {
-      console.error("⚠️ E-mailfout:", mailErr);
-    }
-
-    return res.json({
-      success: true,
-      message: "Aanvraag succesvol verzonden.",
-      id: newRequest._id,
-    });
+    await newRequest.save();
+    res.json({ success: true, message: "Aanvraag verzonden", request: newRequest });
   } catch (err) {
     console.error("❌ Fout bij opslaan aanvraag:", err);
-    res.status(500).json({ error: "Serverfout bij indienen aanvraag." });
+    res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
   }
 });
 
-module.exports = router;
+// ✅ Aanvragen van ingelogd bedrijf ophalen
+router.get("/company", authMiddleware, async (req, res) => {
+  try {
+    const companyId = req.user.companyId || req.user.id;
+
+    if (!companyId) {
+      return res.status(400).json({ error: "Geen bedrijfs-ID gevonden" });
+    }
+
+    const requests = await Request.find({ companyId }).sort({ date: -1 });
+    res.json(requests);
+  } catch (err) {
+    console.error("❌ Fout bij ophalen aanvragen:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
+  }
+});
+
+// ✅ Status van aanvraag wijzigen
+router.put("/:id/status", authMiddleware, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const request = await Request.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    res.json(request);
+  } catch (err) {
+    console.error("❌ Fout bij bijwerken status:", err);
+    res.status(500).json({ error: "Serverfout bij bijwerken status" });
+  }
+});
+
+export default router;
