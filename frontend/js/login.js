@@ -1,18 +1,24 @@
 // frontend/js/login.js
+const API = window.ENV.API_BASE;
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("login-form");
-  const msg = document.getElementById("login-message");
+  const errorBox = document.getElementById("error");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    errorBox.textContent = "";
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
 
-    msg.textContent = "";
+    if (!email || !password) {
+      errorBox.textContent = "Vul alle velden in.";
+      return;
+    }
 
     try {
-      const res = await fetch(`${window.ENV.API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -20,24 +26,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        msg.textContent = data.error || "Fout bij inloggen";
-        msg.style.color = "red";
+      if (!res.ok || !data.token) {
+        errorBox.textContent = data.error || "Ongeldige inloggegevens.";
         return;
       }
 
-      // Token + bedrijfsgegevens opslaan
+      // Token veilig opslaan
       localStorage.setItem("token", data.token);
-      localStorage.setItem("companyName", data.company.name);
-      localStorage.setItem("companyEmail", data.company.email);
-      localStorage.setItem("companyCategory", data.company.category);
 
-      // Naar dashboard
+      // Doorsturen naar dashboard
       window.location.href = "dashboard.html";
     } catch (err) {
-      console.error("❌ Login-fout:", err);
-      msg.textContent = "Serverfout of geen verbinding.";
-      msg.style.color = "red";
+      console.error("Login-fout:", err);
+      errorBox.textContent = "Serverfout of geen verbinding.";
     }
   });
 });
