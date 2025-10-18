@@ -1,17 +1,14 @@
 // frontend/js/login.js
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("loginBtn");
-  const errorMsg = document.getElementById("errorMsg");
+  const form = document.getElementById("loginForm");
+  const errorDiv = document.getElementById("errorMessage");
 
-  btn.addEventListener("click", async () => {
-    errorMsg.textContent = "";
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorDiv.textContent = "";
+
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-
-    if (!email || !password) {
-      errorMsg.textContent = "Vul je e-mail en wachtwoord in.";
-      return;
-    }
 
     try {
       const res = await fetch(`${window.ENV.API_BASE}/api/auth/login`, {
@@ -21,21 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Serverfout");
 
-      if (!res.ok) {
-        errorMsg.textContent = data.error || "Fout bij inloggen.";
-        return;
-      }
-
-      // ✅ Token opslaan
       localStorage.setItem("token", data.token);
-      localStorage.setItem("company", JSON.stringify(data.company));
+      localStorage.setItem("companyName", data.company.name);
+      localStorage.setItem("companyEmail", data.company.email);
+      localStorage.setItem("companyCategory", data.company.category);
 
-      // ✅ Doorsturen naar dashboard
       window.location.href = "dashboard.html";
     } catch (err) {
-      console.error("Login-fout:", err);
-      errorMsg.textContent = "Serverfout of geen verbinding.";
+      console.error(err);
+      errorDiv.textContent = err.message;
     }
   });
 });
