@@ -1,16 +1,15 @@
 // frontend/js/login.js
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("form");
+  const form = document.getElementById("login-form");
+  const msg = document.getElementById("login-message");
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const msg = document.getElementById("login-message");
 
     msg.textContent = "";
-    msg.style.color = "";
 
     try {
       const res = await fetch(`${window.ENV.API_BASE}/api/auth/login`, {
@@ -36,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Naar dashboard
       window.location.href = "dashboard.html";
     } catch (err) {
-      console.error("Login-fout:", err);
+      console.error("❌ Login-fout:", err);
       msg.textContent = "Serverfout of geen verbinding.";
       msg.style.color = "red";
     }
