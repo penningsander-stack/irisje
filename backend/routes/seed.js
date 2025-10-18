@@ -1,45 +1,54 @@
 // backend/routes/seed.js
-const express = require('express');
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const Company = require("../models/Company");
+
 const router = express.Router();
-const Request = require('../models/Request');
-const Company = require('../models/Company');
 
-// Maak twee testaanvragen voor Demo Bedrijf (veilig idempotent)
-router.get('/link-demo', async (_req, res) => {
+/**
+ * GET /api/seed/demo
+ * Maakt een demogebruiker aan (email: demo@irisje.nl, wachtwoord: demo1234)
+ */
+router.get("/demo", async (req, res) => {
   try {
-    const company = await Company.findOne({ email: 'demo@irisje.nl' });
-    if (!company) return res.status(404).json({ message: 'Demo bedrijf niet gevonden' });
+    const email = "demo@irisje.nl";
 
-    await Request.deleteMany({
-      customerEmail: { $in: ['jan.jansen@example.com', 'marieke.deboer@example.com'] },
-      company: company._id,
+    // Controleer of gebruiker al bestaat
+    let user = await User.findOne({ email });
+    if (!user) {
+      const hash = await bcrypt.hash("demo1234", 10);
+      user = new User({
+        email,
+        passwordHash: hash,
+        role: "company",
+        isActive: true,
+      });
+      await user.save();
+      console.log("✅ Gebruiker toegevoegd:", email);
+    }
+
+    // Controleer of bedrijf al bestaat
+    let company = await Company.findOne({ email });
+    if (!company) {
+      company = new Company({
+        name: "Demo Bedrijf",
+        email,
+        category: "Algemeen",
+        user: user._id,
+      });
+      await company.save();
+      console.log("🏢 Bedrijf toegevoegd:", company.name);
+    }
+
+    return res.json({
+      message: "✅ Demo-account succesvol aangemaakt!",
+      email,
+      password: "demo1234",
     });
-
-    const docs = await Request.insertMany([
-      {
-        customerName: 'Jan Jansen',
-        customerEmail: 'jan.jansen@example.com',
-        customerPhone: '0612345678',
-        message: 'Graag offerte voor schilderwerk.',
-        customerMessage: 'Graag offerte voor schilderwerk.',
-        status: 'Nieuw',
-        company: company._id,
-      },
-      {
-        customerName: 'Marieke de Boer',
-        customerEmail: 'marieke.deboer@example.com',
-        customerPhone: '0622334455',
-        message: 'Vraag over onderhoudswerk.',
-        customerMessage: 'Vraag over onderhoudswerk.',
-        status: 'Nieuw',
-        company: company._id,
-      },
-    ]);
-
-    res.json({ message: '✅ Testaanvragen (her)ingevuld', insertedCount: docs.length });
   } catch (err) {
-    console.error('❌ seed/link-demo:', err);
-    res.status(500).json({ message: 'Serverfout bij seeden', error: err.message });
+    console.error("❌ Seed-fout:", err);
+    return res.status(500).json({ error: "Seed-fout: " + err.message });
   }
 });
 
