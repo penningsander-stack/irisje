@@ -1,7 +1,6 @@
 // frontend/js/dashboard.js
 const API = window.ENV.API_BASE;
 const token = localStorage.getItem("token");
-
 if (!token) window.location.href = "login.html";
 
 document.getElementById("logout").addEventListener("click", () => {
@@ -13,6 +12,8 @@ const tableBody = document.querySelector("#requests-table tbody");
 const reviewBody = document.querySelector("#reviews-table tbody");
 const filter = document.getElementById("filter");
 
+let chart;
+
 // === DASHBOARD LADEN ===
 async function loadDashboard() {
   try {
@@ -23,15 +24,13 @@ async function loadDashboard() {
 
     if (!data.success) throw new Error(data.error || "Serverfout");
 
-    document.querySelector("[data-company-name]").textContent = data.company.name;
-    document.querySelector("[data-company-email]").textContent = data.company.email;
-    document.querySelector("[data-company-category]").textContent = data.company.category;
+    const c = data.company;
+    document.querySelector("[data-company-name]").textContent = c.name;
+    document.querySelector("[data-company-email]").textContent = c.email;
+    document.querySelector("[data-company-category]").textContent = c.category;
+    document.getElementById("last-login").textContent = new Date(c.lastLogin).toLocaleString("nl-NL");
 
-    document.getElementById("total").textContent = data.stats.total;
-    document.getElementById("accepted").textContent = data.stats.accepted;
-    document.getElementById("rejected").textContent = data.stats.rejected;
-    document.getElementById("followed").textContent = data.stats.followed;
-
+    renderChart(data.stats);
     renderRequests(data.requests);
     renderReviews(data.reviews);
   } catch (err) {
@@ -40,11 +39,33 @@ async function loadDashboard() {
   }
 }
 
+// === CHART ===
+function renderChart(stats) {
+  const ctx = document.getElementById("statusChart").getContext("2d");
+  const data = {
+    labels: ["Totaal", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
+    datasets: [{
+      label: "Aanvragen",
+      data: [stats.total, stats.accepted, stats.rejected, stats.followed],
+      backgroundColor: ["#6366f1", "#22c55e", "#ef4444", "#f59e0b"]
+    }]
+  };
+
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: "bar",
+    data,
+    options: {
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
 // === AANVRAGEN ===
 function renderRequests(requests) {
   const selected = filter.value;
   const filtered = selected === "Alle" ? requests : requests.filter(r => r.status === selected);
-
   tableBody.innerHTML = filtered.length
     ? filtered.map(r => `
       <tr>
@@ -71,13 +92,12 @@ function renderRequests(requests) {
 
 async function updateStatus(id, status) {
   try {
-    const res = await fetch(`${API}/api/requests/status/${id}`, {
+    await fetch(`${API}/api/requests/status/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status }),
     });
-    const data = await res.json();
-    if (data.success) loadDashboard();
+    loadDashboard();
   } catch (err) {
     console.error("Status-update mislukt:", err);
   }
