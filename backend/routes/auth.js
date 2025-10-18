@@ -10,13 +10,26 @@ const Company = require("../models/Company");
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "E-mailadres en wachtwoord zijn verplicht" });
+    }
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ error: "Ongeldig e-mailadres" });
+    if (!user) {
+      return res.status(401).json({ error: "Onbekend e-mailadres" });
+    }
+
+    if (!user.password) {
+      return res.status(500).json({ error: "Geen wachtwoordveld gevonden in gebruiker" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ error: "Ongeldig wachtwoord" });
+    if (!isMatch) {
+      return res.status(401).json({ error: "Ongeldig wachtwoord" });
+    }
 
-    // Koppel bedrijf
+    // bijbehorend bedrijf zoeken
     const company = await Company.findOne({ user: user._id });
 
     const token = jwt.sign(
@@ -29,14 +42,15 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({
+    return res.json({
+      success: true,
       token,
       companyId: company ? company._id : null,
       message: "Succesvol ingelogd",
     });
   } catch (err) {
     console.error("❌ Login-fout:", err);
-    res.status(500).json({ error: "Serverfout bij inloggen" });
+    return res.status(500).json({ error: "Serverfout bij inloggen" });
   }
 });
 
