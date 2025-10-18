@@ -2,29 +2,39 @@
 const express = require("express");
 const router = express.Router();
 const Request = require("../models/Request");
-const Company = require("../models/Company");
 const auth = require("../middleware/auth");
 
+// Haal aanvragen van ingelogd bedrijf op
 router.get("/company", auth, async (req, res) => {
   try {
     const companyId = req.user.companyId;
+    if (!companyId) return res.json([]);
     const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
-    res.json(requests);
-  } catch (error) {
-    console.error("❌ Fout bij ophalen aanvragen:", error);
-    res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
+    return res.json(requests);
+  } catch (err) {
+    console.error("❌ Fout bij ophalen aanvragen:", err);
+    return res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
   }
 });
 
+// Publieke aanvraag insturen
 router.post("/", async (req, res) => {
   try {
     const { name, email, message, companyId } = req.body;
-    const newReq = new Request({ name, email, message, company: companyId });
+    if (!companyId) return res.status(400).json({ error: "Geen bedrijf opgegeven" });
+
+    const newReq = new Request({
+      name,
+      email,
+      message,
+      company: companyId,
+      status: "Nieuw",
+    });
     await newReq.save();
-    res.json({ success: true, message: "Aanvraag verzonden" });
-  } catch (error) {
-    console.error("❌ Fout bij opslaan aanvraag:", error);
-    res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
+    return res.json({ success: true, message: "Aanvraag verzonden" });
+  } catch (err) {
+    console.error("❌ Fout bij opslaan aanvraag:", err);
+    return res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
   }
 });
 
