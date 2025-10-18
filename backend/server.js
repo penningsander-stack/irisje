@@ -1,19 +1,16 @@
 // backend/server.js
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import dotenv from "dotenv";
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+require("dotenv").config();
 
-import authRoutes from "./routes/auth.js";
-import companyRoutes from "./routes/companies.js";
-import requestRoutes from "./routes/requests.js";
-import reviewRoutes from "./routes/review.js";
-
-dotenv.config();
+const authRoutes = require("./routes/auth");
+const companyRoutes = require("./routes/companies");
+const requestRoutes = require("./routes/requests");
+const reviewRoutes = require("./routes/review");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -27,13 +24,13 @@ app.use("/api/reviews", reviewRoutes);
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Verbonden met MongoDB"))
-  .catch((err) => console.error("❌ Fout bij verbinden MongoDB:", err));
+  .catch((err) => console.error("❌ MongoDB-fout:", err));
 
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server actief op poort ${PORT}`));
 
-// Testroute
+// Test-endpoint
 app.get("/", (req, res) => {
   res.send("Irisje backend actief ✅");
 });
