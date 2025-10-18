@@ -103,6 +103,7 @@
     }
 
     .muted { color: var(--muted); }
+
     footer {
       text-align: center;
       padding: 1rem;
@@ -114,16 +115,16 @@
 <body>
   <header>
     <h1>Bedrijfsdashboard</h1>
-    <button id="logout">Uitloggen</button>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
     <section>
       <h2>Welkom</h2>
-      <p><strong data-company-name></strong></p>
-      <p class="muted" data-company-email></p>
-      <p class="muted" data-company-category></p>
-      <p class="muted">Laatst ingelogd: <span id="last-login">...</span></p>
+      <p><strong id="companyName"></strong></p>
+      <p class="muted" id="companyEmail"></p>
+      <p class="muted" id="category"></p>
+      <p class="muted">Laatst ingelogd: <span id="lastLogin">...</span></p>
     </section>
 
     <section>
@@ -150,10 +151,11 @@
             <th>Bericht</th>
             <th>Status</th>
             <th>Datum</th>
-            <th>Actie</th>
           </tr>
         </thead>
-        <tbody><tr><td colspan="6">Laden...</td></tr></tbody>
+        <tbody id="requestsBody">
+          <tr><td colspan="5">Laden...</td></tr>
+        </tbody>
       </table>
     </section>
 
@@ -166,10 +168,11 @@
             <th>Beoordeling</th>
             <th>Bericht</th>
             <th>Datum</th>
-            <th>Actie</th>
           </tr>
         </thead>
-        <tbody><tr><td colspan="5">Laden...</td></tr></tbody>
+        <tbody id="reviewsBody">
+          <tr><td colspan="4">Laden...</td></tr>
+        </tbody>
       </table>
     </section>
   </main>
