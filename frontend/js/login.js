@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         msg.textContent = data.error || "Fout bij inloggen";
         msg.style.color = "red";
         return;
