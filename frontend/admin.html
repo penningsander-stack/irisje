@@ -3,8 +3,8 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin – Gemelde Reviews | Irisje.nl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin – Irisje.nl</title>
 
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
@@ -17,113 +17,82 @@
       --irisje-text: #1f2937;
       --irisje-muted: #6b7280;
       --irisje-border: #e5e7eb;
+      --irisje-card: #ffffff;
+      --ok: #22c55e;
+      --danger: #ef4444;
     }
-
+    * { box-sizing: border-box; }
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--irisje-bg);
-      color: var(--irisje-text);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      background: var(--irisje-bg); color: var(--irisje-text);
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
     }
-
     header {
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      padding: 1rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: var(--irisje-card); box-shadow: 0 1px 3px rgba(0,0,0,.08);
+      padding: 1rem 1.5rem; display:flex; justify-content:space-between; align-items:center;
     }
+    header h1 { margin:0; color: var(--irisje-primary); font-size:1.2rem; }
+    header button { background: var(--danger); color:#fff; border:0; padding:.5rem 1rem; border-radius:.5rem; cursor:pointer; }
 
-    header h1 {
-      font-size: 1.3rem;
-      color: var(--irisje-primary);
-      margin: 0;
+    main { max-width: 1100px; width:100%; margin:2rem auto; padding:0 1rem; display:grid; gap:1.5rem; }
+    section.card {
+      background: var(--irisje-card); border:1px solid var(--irisje-border); border-radius:1rem; padding:1rem 1.25rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,.05);
     }
-
-    main {
-      flex: 1;
-      max-width: 900px;
-      margin: 2rem auto;
-      background: #fff;
-      border: 1px solid var(--irisje-border);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--irisje-border);
-      text-align: left;
-    }
-
-    th {
-      color: var(--irisje-muted);
-    }
-
-    button {
-      padding: 0.4rem 0.7rem;
-      margin-right: 0.3rem;
-      border: none;
-      border-radius: 0.4rem;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .approve {
-      background: #22c55e;
-      color: #fff;
-    }
-
-    .delete {
-      background: #ef4444;
-      color: #fff;
-    }
-
-    .logout {
-      background: #ef4444;
-      color: #fff;
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-    }
+    h2 { margin:0 0 .75rem; font-size:1.1rem; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding:.65rem; border-bottom:1px solid var(--irisje-border); text-align:left; vertical-align: top; }
+    th { color: var(--irisje-muted); font-weight:600; }
+    .btn { border:0; padding:.4rem .7rem; border-radius:.4rem; cursor:pointer; font-size:.9rem; }
+    .approve { background: var(--ok); color:#fff; }
+    .delete { background: var(--danger); color:#fff; }
+    .block { background:#f59e0b; color:#fff; }
+    .unblock { background:#10b981; color:#fff; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Admin – Gemelde Reviews</h1>
-    <button class="logout" id="logoutBtn">Uitloggen</button>
+    <h1>Admin – Beheer</h1>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
 
   <main>
-    <h2>🚩 Gemelde reviews</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Bedrijf</th>
-          <th>Naam</th>
-          <th>Beoordeling</th>
-          <th>Bericht</th>
-          <th>Datum</th>
-          <th>Acties</th>
-        </tr>
-      </thead>
-      <tbody id="reviewsBody">
-        <tr><td colspan="6">Laden...</td></tr>
-      </tbody>
-    </table>
+    <section class="card">
+      <h2>🏢 Bedrijven</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>E-mail</th>
+            <th>Categorie</th>
+            <th>Blokkade</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody id="companiesBody">
+          <tr><td colspan="5">Laden...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>🚩 Gemelde reviews</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Bedrijf</th>
+            <th>Naam</th>
+            <th>Beoordeling</th>
+            <th>Bericht</th>
+            <th>Datum</th>
+            <th>Acties</th>
+          </tr>
+        </thead>
+        <tbody id="reviewsBody">
+          <tr><td colspan="6">Laden...</td></tr>
+        </tbody>
+      </table>
+    </section>
   </main>
 
   <script src="js/admin.js"></script>
