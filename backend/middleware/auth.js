@@ -9,10 +9,10 @@ module.exports = function (req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // bevat id, email en companyId
+    req.user = decoded;
     next();
   } catch (err) {
-    console.error("❌ JWT-fout:", err);
-    res.status(401).json({ error: "Ongeldige token" });
+    console.error("JWT-fout:", err);
+    return res.status(401).json({ error: "Ongeldige token" });
   }
 };
