@@ -1,40 +1,33 @@
-const express = require('express');
+// backend/routes/reviews.js
+const express = require("express");
 const router = express.Router();
-const Review = require('../models/review');
+const Review = require("../models/review");
+const auth = require("../middleware/auth");
 
-// GET reviews voor bedrijf
-router.get('/:companyId', async (req, res) => {
+// 📋 Reviews ophalen voor ingelogd bedrijf
+router.get("/company", auth, async (req, res) => {
   try {
-    const reviews = await Review.find({ companyId: req.params.companyId });
-    res.json(reviews);
+    const companyId = req.user.companyId;
+    const reviews = await Review.find({ company: companyId }).sort({ date: -1 });
+    res.json({ success: true, reviews });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Fout bij ophalen reviews:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen reviews" });
   }
 });
 
-// POST nieuwe review
-router.post('/:companyId', async (req, res) => {
+// 🚨 Review melden
+router.patch("/report/:id", auth, async (req, res) => {
   try {
-    const review = new Review({
-      companyId: req.params.companyId,
-      reviewer: req.body.reviewer,
-      rating: req.body.rating,
-      comment: req.body.comment
-    });
-    const saved = await review.save();
-    res.json(saved);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+    const review = await Review.findById(req.params.id);
+    if (!review) return res.status(404).json({ error: "Review niet gevonden" });
 
-// DELETE review
-router.delete('/:id', async (req, res) => {
-  try {
-    await Review.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Review verwijderd' });
+    review.reported = true;
+    await review.save();
+    res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("❌ Fout bij melden review:", err);
+    res.status(500).json({ error: "Serverfout bij melden review" });
   }
 });
 
