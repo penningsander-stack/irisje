@@ -1,35 +1,30 @@
 // backend/routes/requests.js
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/auth");
 const Request = require("../models/Request");
+const Company = require("../models/Company");
+const auth = require("../middleware/auth");
 
-// 📬 Alle aanvragen (voor admin of tests)
-router.get("/", async (req, res) => {
-  const all = await Request.find().lean();
-  res.json(all);
+router.get("/company", auth, async (req, res) => {
+  try {
+    const companyId = req.user.companyId;
+    const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (error) {
+    console.error("❌ Fout bij ophalen aanvragen:", error);
+    res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
+  }
 });
 
-// 🧩 Status bijwerken door bedrijf
-router.patch("/status/:id", auth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"].includes(status)) {
-      return res.status(400).json({ error: "Ongeldige statuswaarde" });
-    }
-
-    const request = await Request.findById(id);
-    if (!request) return res.status(404).json({ error: "Aanvraag niet gevonden" });
-
-    request.status = status;
-    await request.save();
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Fout bij status-update:", err);
-    res.status(500).json({ error: "Serverfout bij status-update" });
+    const { name, email, message, companyId } = req.body;
+    const newReq = new Request({ name, email, message, company: companyId });
+    await newReq.save();
+    res.json({ success: true, message: "Aanvraag verzonden" });
+  } catch (error) {
+    console.error("❌ Fout bij opslaan aanvraag:", error);
+    res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
   }
 });
 
