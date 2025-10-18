@@ -13,18 +13,20 @@
     const data = await res.json();
 
     if (!data.valid) {
+      console.warn("⚠️ Ongeldige token, uitloggen...");
       localStorage.removeItem("token");
       window.location.href = "login.html";
       return;
     }
 
-    // Token geldig → bedrijfsinfo vullen
-    document.querySelector("[data-company-name]").textContent =
-      localStorage.getItem("companyName") || "Bedrijf";
-    document.querySelector("[data-company-email]").textContent =
-      localStorage.getItem("companyEmail") || "";
-    document.querySelector("[data-company-category]").textContent =
-      localStorage.getItem("companyCategory") || "";
+    // Token geldig → bedrijfsinfo tonen
+    const nameEl = document.querySelector("[data-company-name]");
+    const emailEl = document.querySelector("[data-company-email]");
+    const catEl = document.querySelector("[data-company-category]");
+
+    if (nameEl) nameEl.textContent = localStorage.getItem("companyName") || "";
+    if (emailEl) emailEl.textContent = localStorage.getItem("companyEmail") || "";
+    if (catEl) catEl.textContent = localStorage.getItem("companyCategory") || "";
   } catch (err) {
     console.error("❌ Secure.js fout:", err);
     localStorage.removeItem("token");
