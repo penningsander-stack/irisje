@@ -1,25 +1,38 @@
 // backend/middleware/auth.js
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const Company = require("../models/Company");
 
-/**
- * JWT auth-middleware
- * - Verwacht header: Authorization: Bearer <token>
- * - Zet req.user = { id, email, role }
- */
-module.exports = function auth(req, res, next) {
-  const header = req.headers.authorization || req.headers.Authorization;
-
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ message: 'Geen token opgegeven' });
-  }
-
-  const token = header.slice(7); // na 'Bearer '
-
+module.exports = async function auth(req, res, next) {
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { id: payload.id, email: payload.email, role: payload.role };
-    return next();
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ error: "Geen token meegegeven" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const companyId = decoded.companyId || decoded.id;
+    if (!companyId) {
+      return res.status(401).json({ error: "Ongeldig token" });
+    }
+
+    const company = await Company.findById(companyId).select("_id email name");
+    if (!company) {
+      return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    }
+
+    // Beschikbaar voor routes
+    req.user = {
+      id: company._id,
+      companyId: company._id,
+      email: company.email,
+      name: company.name,
+    };
+
+    next();
   } catch (err) {
-    return res.status(401).json({ message: 'Ongeldige of verlopen token' });
+    console.error("❌ Auth-middleware fout:", err.message || err);
+    return res.status(401).json({ error: "Ongeldig of verlopen token" });
   }
 };
