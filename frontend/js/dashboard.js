@@ -1,88 +1,106 @@
 // frontend/js/dashboard.js
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
   if (!token) {
     window.location.href = "login.html";
     return;
   }
 
-  const tbody = document.getElementById("requestsBody");
-  const statusFilter = document.getElementById("statusFilter");
+  const headers = { Authorization: `Bearer ${token}` };
 
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.removeItem("token");
-    window.location.href = "login.html";
-  });
-
-  async function loadRequests() {
-    tbody.innerHTML = `<tr><td colspan="5">Laden...</td></tr>`;
+  async function fetchDashboardData() {
     try {
-      const res = await fetch(`${window.ENV.API_BASE}/api/requests/company`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${window.ENV.API_BASE}/api/companies/dashboard`, { headers });
       const data = await res.json();
-      if (!Array.isArray(data)) throw new Error("Ongeldig antwoord");
 
-      renderRequests(data);
-      updateStats(data);
-    } catch (err) {
-      console.error("Fout bij laden aanvragen:", err);
-      tbody.innerHTML = `<tr><td colspan="5">Serverfout bij laden aanvragen.</td></tr>`;
-    }
-  }
+      // Vul statistieken
+      document.getElementById("totalCount").textContent = data.stats.total || 0;
+      document.getElementById("acceptedCount").textContent = data.stats.accepted || 0;
+      document.getElementById("rejectedCount").textContent = data.stats.rejected || 0;
+      document.getElementById("followedCount").textContent = data.stats.followed || 0;
 
-  function renderRequests(data) {
-    const filter = statusFilter.value;
-    const filtered = filter === "Alle" ? data : data.filter(r => r.status === filter);
-
-    if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = "";
-    filtered.forEach(req => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${req.name}</td>
-        <td>${req.email}</td>
-        <td>${req.message}</td>
-        <td>
-          <select class="status-select" data-id="${req._id}">
-            ${["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"]
-              .map(s => `<option value="${s}" ${s === req.status ? "selected" : ""}>${s}</option>`)
-              .join("")}
-          </select>
-        </td>
-        <td>${new Date(req.date).toLocaleDateString()}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.querySelectorAll(".status-select").forEach(select => {
-      select.addEventListener("change", async () => {
-        const id = select.dataset.id;
-        const status = select.value;
-        await fetch(`${window.ENV.API_BASE}/api/requests/status/${id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        });
-        loadRequests();
+      // Pie chart
+      const ctxPie = document.getElementById("pieChart").getContext("2d");
+      new Chart(ctxPie, {
+        type: "pie",
+        data: {
+          labels: ["Geaccepteerd", "Afgewezen", "Opgevolgd"],
+          datasets: [
+            {
+              data: [
+                data.stats.accepted,
+                data.stats.rejected,
+                data.stats.followed,
+              ],
+              backgroundColor: ["#22c55e", "#ef4444", "#3b82f6"],
+            },
+          ],
+        },
       });
-    });
+
+      // Bar chart
+      const ctxBar = document.getElementById("barChart").getContext("2d");
+      new Chart(ctxBar, {
+        type: "bar",
+        data: {
+          labels: ["Totaal", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
+          datasets: [
+            {
+              label: "Aanvragen",
+              data: [
+                data.stats.total,
+                data.stats.accepted,
+                data.stats.rejected,
+                data.stats.followed,
+              ],
+              backgroundColor: ["#6366f1", "#22c55e", "#ef4444", "#3b82f6"],
+            },
+          ],
+        },
+      });
+
+      // Aanvragen tabel
+      const tbody = document.getElementById("requestsBody");
+      tbody.innerHTML = "";
+      if (data.requests.length === 0) {
+        tbody.innerHTML = "<tr><td colspan='5'>Geen aanvragen gevonden.</td></tr>";
+      } else {
+        data.requests.forEach((req) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${req.name}</td>
+            <td>${req.email}</td>
+            <td>${req.message}</td>
+            <td>${req.status}</td>
+            <td>${new Date(req.date).toLocaleDateString()}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Reviews tabel
+      const rBody = document.getElementById("reviewsBody");
+      rBody.innerHTML = "";
+      if (data.reviews.length === 0) {
+        rBody.innerHTML = "<tr><td colspan='4'>Nog geen reviews.</td></tr>";
+      } else {
+        data.reviews.forEach((r) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${r.name}</td>
+            <td>${r.rating} ⭐</td>
+            <td>${r.message}</td>
+            <td>${new Date(r.date).toLocaleDateString()}</td>
+          `;
+          rBody.appendChild(tr);
+        });
+      }
+    } catch (err) {
+      console.error("Dashboard-fout:", err);
+      document.getElementById("requestsBody").innerHTML =
+        "<tr><td colspan='5'>Serverfout bij laden aanvragen.</td></tr>";
+    }
   }
 
-  function updateStats(data) {
-    document.getElementById("totalRequests").textContent = data.length;
-    document.getElementById("acceptedCount").textContent = data.filter(r => r.status === "Geaccepteerd").length;
-    document.getElementById("rejectedCount").textContent = data.filter(r => r.status === "Afgewezen").length;
-    document.getElementById("followedUpCount").textContent = data.filter(r => r.status === "Opgevolgd").length;
-  }
-
-  statusFilter.addEventListener("change", loadRequests);
-  loadRequests();
+  await fetchDashboardData();
 });
