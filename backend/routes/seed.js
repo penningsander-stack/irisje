@@ -7,48 +7,45 @@ const Company = require("../models/Company");
 const router = express.Router();
 
 /**
- * GET /api/seed/demo
- * Maakt een demogebruiker aan (email: demo@irisje.nl, wachtwoord: demo1234)
+ * GET /api/seed/fixdemo
+ * Herstelt de demogebruiker en maakt hem opnieuw aan met het juiste wachtwoord.
  */
-router.get("/demo", async (req, res) => {
+router.get("/fixdemo", async (req, res) => {
   try {
     const email = "demo@irisje.nl";
+    const plainPassword = "demo1234";
 
-    // Controleer of gebruiker al bestaat
-    let user = await User.findOne({ email });
-    if (!user) {
-      const hash = await bcrypt.hash("demo1234", 10);
-      user = new User({
-        email,
-        passwordHash: hash,
-        role: "company",
-        isActive: true,
-      });
-      await user.save();
-      console.log("✅ Gebruiker toegevoegd:", email);
-    }
+    // verwijder eventueel oude versies
+    await User.deleteMany({ email });
+    await Company.deleteMany({ email });
 
-    // Controleer of bedrijf al bestaat
-    let company = await Company.findOne({ email });
-    if (!company) {
-      company = new Company({
-        name: "Demo Bedrijf",
-        email,
-        category: "Algemeen",
-        user: user._id,
-      });
-      await company.save();
-      console.log("🏢 Bedrijf toegevoegd:", company.name);
-    }
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
 
-    return res.json({
-      message: "✅ Demo-account succesvol aangemaakt!",
+    const user = new User({
       email,
-      password: "demo1234",
+      passwordHash,
+      role: "company",
+      isActive: true,
+    });
+    await user.save();
+
+    const company = new Company({
+      name: "Demo Bedrijf",
+      email,
+      category: "Algemeen",
+      user: user._id,
+    });
+    await company.save();
+
+    console.log("✅ Nieuw demo-account aangemaakt");
+    res.json({
+      message: "Demo-account hersteld.",
+      email,
+      password: plainPassword,
     });
   } catch (err) {
     console.error("❌ Seed-fout:", err);
-    return res.status(500).json({ error: "Seed-fout: " + err.message });
+    res.status(500).json({ error: "Seed-fout: " + err.message });
   }
 });
 
