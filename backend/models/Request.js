@@ -2,11 +2,7 @@
 const mongoose = require("mongoose");
 
 const RequestSchema = new mongoose.Schema({
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
-    required: true,
-  },
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
   name: { type: String, required: true },
   email: { type: String, required: true },
   message: { type: String, required: true },
@@ -18,4 +14,5 @@ const RequestSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.models.Request || mongoose.model("Request", RequestSchema);
+module.exports =
+  mongoose.models.Request || mongoose.model("Request", RequestSchema);
