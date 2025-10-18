@@ -4,11 +4,12 @@ const router = express.Router();
 const Request = require("../models/Request");
 const auth = require("../middleware/auth");
 
-// Haal aanvragen van ingelogd bedrijf op
+// Haal alle aanvragen van het ingelogde bedrijf op
 router.get("/company", auth, async (req, res) => {
   try {
     const companyId = req.user.companyId;
     if (!companyId) return res.json([]);
+
     const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
     return res.json(requests);
   } catch (err) {
@@ -30,6 +31,7 @@ router.post("/", async (req, res) => {
       company: companyId,
       status: "Nieuw",
     });
+
     await newReq.save();
     return res.json({ success: true, message: "Aanvraag verzonden" });
   } catch (err) {
