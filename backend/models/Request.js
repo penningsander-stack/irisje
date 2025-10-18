@@ -18,6 +18,4 @@ const RequestSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now },
 });
 
-// Voorkom OverwriteModelError
-module.exports =
-  mongoose.models.Request || mongoose.model("Request", RequestSchema);
+module.exports = mongoose.models.Request || mongoose.model("Request", RequestSchema);
