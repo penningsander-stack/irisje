@@ -7,31 +7,42 @@ const Company = require("../models/Company");
 
 const router = express.Router();
 
-// Inloggen
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ error: "E-mail en wachtwoord zijn verplicht." });
+    }
 
-    // Gebruiker zoeken in 'users'-collectie
     const user = await User.findOne({ email });
-    if (!user)
+    if (!user) {
       return res.status(400).json({ error: "Onbekende gebruiker." });
+    }
 
-    // Wachtwoord vergelijken (passwordHash-veld)
-    const geldig = await bcrypt.compare(password, user.passwordHash);
-    if (!geldig)
+    // Kijk wat er in het document staat (alleen tijdens debug)
+    console.log("Gebruiker gevonden:", {
+      email: user.email,
+      heeftPassword: !!user.password,
+      heeftPasswordHash: !!user.passwordHash
+    });
+
+    // Test beide mogelijke velden
+    const hash = user.passwordHash || user.password;
+    if (!hash) {
+      return res.status(400).json({ error: "Gebruiker heeft geen wachtwoordveld." });
+    }
+
+    const geldig = await bcrypt.compare(password, hash);
+    if (!geldig) {
       return res.status(400).json({ error: "Ongeldig wachtwoord." });
+    }
 
-    // JWT-token genereren
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET || "irisje_secret_key_2025",
       { expiresIn: "2h" }
     );
 
-    // Bijbehorend bedrijf zoeken (optioneel)
     const company = await Company.findOne({ email });
 
     res.json({
@@ -40,37 +51,13 @@ router.post("/login", async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
+        email: user.email
       },
-      company,
+      company
     });
   } catch (err) {
     console.error("Login-fout:", err);
     res.status(500).json({ error: "Serverfout bij inloggen" });
-  }
-});
-
-// Registreren
-router.post("/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const bestaand = await User.findOne({ email });
-    if (bestaand)
-      return res.status(400).json({ error: "E-mail bestaat al." });
-
-    const hashed = await bcrypt.hash(password, 10);
-    const nieuw = await User.create({
-      name,
-      email,
-      passwordHash: hashed,
-      role: "company",
-      isActive: true,
-    });
-
-    res.json({ message: "Gebruiker geregistreerd", user: nieuw });
-  } catch (err) {
-    console.error("Register-fout:", err);
-    res.status(500).json({ error: "Serverfout bij registreren" });
   }
 });
 
