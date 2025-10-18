@@ -4,10 +4,12 @@ const router = express.Router();
 const Review = require("../models/review");
 const auth = require("../middleware/auth");
 
+// Haal reviews van ingelogd bedrijf op
 router.get("/company", auth, async (req, res) => {
   try {
     const companyId = req.user.companyId;
     if (!companyId) return res.json([]);
+
     const reviews = await Review.find({ company: companyId }).sort({ createdAt: -1 });
     return res.json(reviews);
   } catch (err) {
@@ -16,6 +18,7 @@ router.get("/company", auth, async (req, res) => {
   }
 });
 
+// Publieke review insturen
 router.post("/", async (req, res) => {
   try {
     const { name, rating, message, companyId } = req.body;
@@ -27,6 +30,7 @@ router.post("/", async (req, res) => {
       message,
       company: companyId,
     });
+
     await review.save();
     return res.json({ success: true, message: "Review toegevoegd" });
   } catch (err) {
