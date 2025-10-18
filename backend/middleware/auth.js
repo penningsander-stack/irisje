@@ -2,24 +2,20 @@
 const jwt = require("jsonwebtoken");
 const Company = require("../models/Company");
 
-module.exports = async function (req, res, next) {
+module.exports = async function auth(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const authHeader = req.headers.authorization || "";
+    if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({ error: "Geen token meegegeven" });
     }
 
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const company = await Company.findById(decoded.companyId);
-    if (!company) {
-      return res.status(401).json({ error: "Bedrijf niet gevonden" });
-    }
+    const company = await Company.findById(decoded.companyId).select("_id email name");
+    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
 
-    // Zet data voor gebruik in routes
     req.user = {
-      id: decoded.id,
       companyId: company._id,
       email: company.email,
       name: company.name,
@@ -27,7 +23,7 @@ module.exports = async function (req, res, next) {
 
     next();
   } catch (err) {
-    console.error("❌ Fout in auth middleware:", err.message);
-    return res.status(401).json({ error: "Ongeldige of verlopen token" });
+    console.error("❌ Auth-middleware fout:", err.message || err);
+    return res.status(401).json({ error: "Ongeldig of verlopen token" });
   }
 };
