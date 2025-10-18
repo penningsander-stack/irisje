@@ -1,68 +1,95 @@
 // backend/routes/requests.js
-import express from "express";
-import authMiddleware from "../middleware/authMiddleware.js";
-import Request from "../models/Request.js";
-import Company from "../models/Company.js";
+const express = require("express");
+const auth = require("../middleware/auth");
+const Request = require("../models/Request");
+const Company = require("../models/Company");
 
 const router = express.Router();
 
-// ✅ Nieuwe aanvraag opslaan (publieke route)
-router.post("/", async (req, res) => {
+/**
+ * POST /api/requests/create
+ * Publieke route: klant dient een aanvraag in
+ * Body: { company (bedrijfsnaam) of companyId, name, email, message }
+ */
+router.post("/create", async (req, res) => {
   try {
-    const { name, email, message, companyId } = req.body;
+    const { company, companyId, name, email, message } = req.body;
 
-    if (!companyId) {
-      return res.status(400).json({ error: "companyId is vereist" });
+    if (!name || !email || !message || (!company && !companyId)) {
+      return res.status(400).json({ error: "Alle velden zijn verplicht." });
     }
 
-    const newRequest = new Request({
+    let targetCompanyId = companyId;
+
+    // Toestaan op naam (zoals 'Demo Bedrijf')
+    if (!targetCompanyId && company) {
+      const target = await Company.findOne({ name: company }).select("_id");
+      if (!target) {
+        return res.status(404).json({ error: "Bedrijf niet gevonden." });
+      }
+      targetCompanyId = target._id;
+    }
+
+    const doc = await Request.create({
+      companyId: targetCompanyId,
       name,
       email,
       message,
-      companyId,
       status: "Nieuw",
       date: new Date(),
     });
 
-    await newRequest.save();
-    res.json({ success: true, message: "Aanvraag verzonden", request: newRequest });
+    return res.json({ success: true, id: doc._id });
   } catch (err) {
-    console.error("❌ Fout bij opslaan aanvraag:", err);
-    res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
+    console.error("❌ Fout bij indienen aanvraag:", err);
+    return res.status(500).json({ error: "Serverfout bij indienen aanvraag." });
   }
 });
 
-// ✅ Aanvragen van ingelogd bedrijf ophalen
-router.get("/company", authMiddleware, async (req, res) => {
+/**
+ * GET /api/requests/company
+ * Beveiligd: alle aanvragen van het ingelogde bedrijf
+ */
+router.get("/company", auth, async (req, res) => {
   try {
-    const companyId = req.user.companyId || req.user.id;
-
-    if (!companyId) {
-      return res.status(400).json({ error: "Geen bedrijfs-ID gevonden" });
-    }
-
-    const requests = await Request.find({ companyId }).sort({ date: -1 });
-    res.json(requests);
+    const companyId = req.user.companyId;
+    const list = await Request.find({ companyId }).sort({ date: -1 });
+    return res.json(list);
   } catch (err) {
     console.error("❌ Fout bij ophalen aanvragen:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
+    return res.status(500).json({ error: "Serverfout bij ophalen aanvragen." });
   }
 });
 
-// ✅ Status van aanvraag wijzigen
-router.put("/:id/status", authMiddleware, async (req, res) => {
+/**
+ * PUT /api/requests/status/:id
+ * Beveiligd: status wijzigen door ingelogd bedrijf
+ * Body: { status: "Nieuw" | "Geaccepteerd" | "Afgewezen" | "Opgevolgd" }
+ */
+router.put("/status/:id", auth, async (req, res) => {
   try {
     const { status } = req.body;
-    const request = await Request.findByIdAndUpdate(
-      req.params.id,
+    const valid = ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"];
+    if (!valid.includes(status)) {
+      return res.status(400).json({ error: "Ongeldige statuswaarde." });
+    }
+
+    // Optioneel: afdwingen dat de aanvraag bij dit bedrijf hoort
+    const updated = await Request.findOneAndUpdate(
+      { _id: req.params.id, companyId: req.user.companyId },
       { status },
       { new: true }
     );
-    res.json(request);
+
+    if (!updated) {
+      return res.status(404).json({ error: "Aanvraag niet gevonden." });
+    }
+
+    return res.json(updated);
   } catch (err) {
     console.error("❌ Fout bij bijwerken status:", err);
-    res.status(500).json({ error: "Serverfout bij bijwerken status" });
+    return res.status(500).json({ error: "Serverfout bij bijwerken status." });
   }
 });
 
-export default router;
+module.exports = router;
