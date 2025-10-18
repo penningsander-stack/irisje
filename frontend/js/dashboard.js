@@ -1,106 +1,93 @@
 // frontend/js/dashboard.js
-document.addEventListener("DOMContentLoaded", async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "login.html";
+const API = window.ENV.API_BASE;
+const token = localStorage.getItem("token");
+
+document.getElementById("logout").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+});
+
+const tableBody = document.querySelector("#requests-table tbody");
+const filter = document.getElementById("filter");
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/api/companies/dashboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || "Serverfout bij laden dashboard");
+
+    // Statistieken
+    document.getElementById("total").textContent = data.stats.total;
+    document.getElementById("accepted").textContent = data.stats.accepted;
+    document.getElementById("rejected").textContent = data.stats.rejected;
+    document.getElementById("followed").textContent = data.stats.followed;
+
+    renderRequests(data.requests);
+  } catch (err) {
+    console.error(err);
+    tableBody.innerHTML = `<tr><td colspan="6">Serverfout bij laden aanvragen.</td></tr>`;
+  }
+}
+
+function renderRequests(requests) {
+  const selected = filter.value;
+  const filtered =
+    selected === "Alle"
+      ? requests
+      : requests.filter((r) => r.status === selected);
+
+  if (filtered.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="6">Geen aanvragen gevonden.</td></tr>`;
     return;
   }
 
-  const headers = { Authorization: `Bearer ${token}` };
+  tableBody.innerHTML = "";
+  filtered.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.name}</td>
+      <td>${r.email}</td>
+      <td>${r.message}</td>
+      <td>${r.status}</td>
+      <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+      <td>
+        <button class="status-btn" data-id="${r._id}" data-status="Geaccepteerd">✅</button>
+        <button class="status-btn" data-id="${r._id}" data-status="Afgewezen">❌</button>
+        <button class="status-btn" data-id="${r._id}" data-status="Opgevolgd">🔄</button>
+      </td>
+    `;
+    tableBody.appendChild(tr);
+  });
 
-  async function fetchDashboardData() {
-    try {
-      const res = await fetch(`${window.ENV.API_BASE}/api/companies/dashboard`, { headers });
-      const data = await res.json();
+  document.querySelectorAll(".status-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const status = btn.dataset.status;
+      await updateStatus(id, status);
+    });
+  });
+}
 
-      // Vul statistieken
-      document.getElementById("totalCount").textContent = data.stats.total || 0;
-      document.getElementById("acceptedCount").textContent = data.stats.accepted || 0;
-      document.getElementById("rejectedCount").textContent = data.stats.rejected || 0;
-      document.getElementById("followedCount").textContent = data.stats.followed || 0;
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(`${API}/api/requests/status/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    });
 
-      // Pie chart
-      const ctxPie = document.getElementById("pieChart").getContext("2d");
-      new Chart(ctxPie, {
-        type: "pie",
-        data: {
-          labels: ["Geaccepteerd", "Afgewezen", "Opgevolgd"],
-          datasets: [
-            {
-              data: [
-                data.stats.accepted,
-                data.stats.rejected,
-                data.stats.followed,
-              ],
-              backgroundColor: ["#22c55e", "#ef4444", "#3b82f6"],
-            },
-          ],
-        },
-      });
-
-      // Bar chart
-      const ctxBar = document.getElementById("barChart").getContext("2d");
-      new Chart(ctxBar, {
-        type: "bar",
-        data: {
-          labels: ["Totaal", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
-          datasets: [
-            {
-              label: "Aanvragen",
-              data: [
-                data.stats.total,
-                data.stats.accepted,
-                data.stats.rejected,
-                data.stats.followed,
-              ],
-              backgroundColor: ["#6366f1", "#22c55e", "#ef4444", "#3b82f6"],
-            },
-          ],
-        },
-      });
-
-      // Aanvragen tabel
-      const tbody = document.getElementById("requestsBody");
-      tbody.innerHTML = "";
-      if (data.requests.length === 0) {
-        tbody.innerHTML = "<tr><td colspan='5'>Geen aanvragen gevonden.</td></tr>";
-      } else {
-        data.requests.forEach((req) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${req.name}</td>
-            <td>${req.email}</td>
-            <td>${req.message}</td>
-            <td>${req.status}</td>
-            <td>${new Date(req.date).toLocaleDateString()}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-
-      // Reviews tabel
-      const rBody = document.getElementById("reviewsBody");
-      rBody.innerHTML = "";
-      if (data.reviews.length === 0) {
-        rBody.innerHTML = "<tr><td colspan='4'>Nog geen reviews.</td></tr>";
-      } else {
-        data.reviews.forEach((r) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${r.name}</td>
-            <td>${r.rating} ⭐</td>
-            <td>${r.message}</td>
-            <td>${new Date(r.date).toLocaleDateString()}</td>
-          `;
-          rBody.appendChild(tr);
-        });
-      }
-    } catch (err) {
-      console.error("Dashboard-fout:", err);
-      document.getElementById("requestsBody").innerHTML =
-        "<tr><td colspan='5'>Serverfout bij laden aanvragen.</td></tr>";
-    }
+    const data = await res.json();
+    if (data.success) loadDashboard();
+  } catch (err) {
+    console.error("Status-update mislukt:", err);
   }
+}
 
-  await fetchDashboardData();
-});
+filter.addEventListener("change", loadDashboard);
+loadDashboard();
