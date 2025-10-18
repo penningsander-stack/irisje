@@ -7,23 +7,31 @@ const auth = require("../middleware/auth");
 router.get("/company", auth, async (req, res) => {
   try {
     const companyId = req.user.companyId;
+    if (!companyId) return res.json([]);
     const reviews = await Review.find({ company: companyId }).sort({ createdAt: -1 });
-    res.json(reviews);
-  } catch (error) {
-    console.error("❌ Fout bij ophalen reviews:", error);
-    res.status(500).json({ error: "Serverfout bij ophalen reviews" });
+    return res.json(reviews);
+  } catch (err) {
+    console.error("❌ Fout bij ophalen reviews:", err);
+    return res.status(500).json({ error: "Serverfout bij ophalen reviews" });
   }
 });
 
 router.post("/", async (req, res) => {
   try {
     const { name, rating, message, companyId } = req.body;
-    const review = new Review({ name, rating, message, company: companyId });
+    if (!companyId) return res.status(400).json({ error: "Geen bedrijf opgegeven" });
+
+    const review = new Review({
+      name,
+      rating,
+      message,
+      company: companyId,
+    });
     await review.save();
-    res.json({ success: true, message: "Review toegevoegd" });
-  } catch (error) {
-    console.error("❌ Fout bij opslaan review:", error);
-    res.status(500).json({ error: "Serverfout bij opslaan review" });
+    return res.json({ success: true, message: "Review toegevoegd" });
+  } catch (err) {
+    console.error("❌ Fout bij opslaan review:", err);
+    return res.status(500).json({ error: "Serverfout bij opslaan review" });
   }
 });
 
