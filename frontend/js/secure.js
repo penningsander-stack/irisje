@@ -1,49 +1,39 @@
 // frontend/js/secure.js
-document.addEventListener("DOMContentLoaded", () => {
+(async () => {
   const token = localStorage.getItem("token");
   if (!token) {
+    // Geen token? Terug naar login
     window.location.href = "login.html";
     return;
   }
 
-  async function verify() {
-    try {
-      const res = await fetch(`${window.ENV.API_BASE}/api/auth/verify`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("company");
-        window.location.href = "login.html";
-        return;
-      }
-
-      const data = await res.json();
-
-      const nameEl = document.querySelector("[data-company-name]") || document.getElementById("companyName");
-      const emailEl = document.querySelector("[data-company-email]") || document.getElementById("companyEmail");
-      const catEl = document.querySelector("[data-company-category]") || document.getElementById("companyCategory");
-
-      if (nameEl) nameEl.textContent = data.company.name || "";
-      if (emailEl) emailEl.textContent = data.company.email || "";
-      if (catEl) catEl.textContent = data.company.category || "";
-    } catch (err) {
-      console.error("Tokencontrole mislukt:", err);
-      localStorage.removeItem("token");
-      localStorage.removeItem("company");
-      window.location.href = "login.html";
-    }
-  }
-
-  verify();
-
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("token");
-      localStorage.removeItem("company");
-      window.location.href = "login.html";
+  try {
+    const res = await fetch(`${window.ENV.API_BASE}/api/auth/verify`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    const data = await res.json();
+
+    // Token ongeldig → terug naar login
+    if (!data.valid) {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+      return;
+    }
+
+    // Token geldig, laad dashboardgegevens
+    const companyName = localStorage.getItem("companyName") || "Bedrijf";
+    const companyEmail = localStorage.getItem("companyEmail") || "";
+    const companyCategory = localStorage.getItem("companyCategory") || "";
+
+    document.querySelector("[data-company-name]").textContent = companyName;
+    document.querySelector("[data-company-email]").textContent = companyEmail;
+    document.querySelector("[data-company-category]").textContent = companyCategory;
+  } catch (err) {
+    console.error("❌ Secure.js fout:", err);
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
   }
-});
+})();
