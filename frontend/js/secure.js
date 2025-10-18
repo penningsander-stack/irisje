@@ -1,23 +1,18 @@
 // frontend/js/secure.js
 document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("token");
-  const companyData = localStorage.getItem("company");
-
-  // Geen token → uitloggen
   if (!token) {
     window.location.href = "login.html";
     return;
   }
 
-  // Functie: token controleren bij backend
-  async function verifyToken() {
+  async function verify() {
     try {
       const res = await fetch(`${window.ENV.API_BASE}/api/auth/verify`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) {
-        console.warn("Token ongeldig, uitloggen...");
         localStorage.removeItem("token");
         localStorage.removeItem("company");
         window.location.href = "login.html";
@@ -26,11 +21,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      // Bedrijfsgegevens invullen
-      document.querySelector("[data-company-name]").textContent = data.company.name;
-      document.querySelector("[data-company-email]").textContent = data.company.email;
-      document.querySelector("[data-company-category]").textContent = data.company.category;
+      const nameEl = document.querySelector("[data-company-name]") || document.getElementById("companyName");
+      const emailEl = document.querySelector("[data-company-email]") || document.getElementById("companyEmail");
+      const catEl = document.querySelector("[data-company-category]") || document.getElementById("companyCategory");
 
+      if (nameEl) nameEl.textContent = data.company.name || "";
+      if (emailEl) emailEl.textContent = data.company.email || "";
+      if (catEl) catEl.textContent = data.company.category || "";
     } catch (err) {
       console.error("Tokencontrole mislukt:", err);
       localStorage.removeItem("token");
@@ -39,9 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  verifyToken();
+  verify();
 
-  // Uitloggen
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
