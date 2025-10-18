@@ -17,9 +17,7 @@
       --irisje-text: #1f2937;
       --irisje-muted: #6b7280;
       --irisje-border: #e5e7eb;
-      --irisje-card: #ffffff;
-      --ok: #22c55e;
-      --danger: #ef4444;
+      --irisje-card-bg: #fff;
     }
 
     body {
@@ -27,87 +25,126 @@
       background: var(--irisje-bg);
       color: var(--irisje-text);
       margin: 0;
+      padding: 0;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
     }
 
     header {
-      background: var(--irisje-card);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      padding: 1rem 1.5rem;
+      background: var(--irisje-card-bg);
+      border-bottom: 1px solid var(--irisje-border);
+      padding: 1rem 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     header h1 {
-      font-size: 1.25rem;
-      color: var(--irisje-primary);
       margin: 0;
+      color: var(--irisje-primary);
+      font-size: 1.25rem;
+      font-weight: 600;
     }
 
     header button {
-      background: var(--danger);
+      background: #ef4444;
       color: #fff;
       border: none;
       padding: 0.5rem 1rem;
       border-radius: 0.5rem;
       cursor: pointer;
+      font-weight: 500;
     }
 
     main {
       flex: 1;
+      width: 100%;
       max-width: 1100px;
       margin: 2rem auto;
-      padding: 0 1.5rem;
+      padding: 0 1rem;
       display: flex;
       flex-direction: column;
       gap: 2rem;
     }
 
     section {
-      background: var(--irisje-card);
+      background: var(--irisje-card-bg);
       border: 1px solid var(--irisje-border);
       border-radius: 1rem;
       padding: 1.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    .filters {
-      margin-bottom: 1rem;
+    h2 {
+      margin-top: 0;
+      color: var(--irisje-text);
+      font-size: 1.1rem;
+      font-weight: 600;
     }
 
-    select {
-      padding: 0.4rem 0.6rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--irisje-border);
-      font-size: 0.95rem;
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: #eef2ff;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-card h3 {
+      margin: 0;
+      font-size: 2rem;
+      color: var(--irisje-primary);
+    }
+
+    .stat-card p {
+      margin: 0;
+      color: var(--irisje-muted);
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-top: 1rem;
     }
 
     th, td {
-      padding: 0.65rem;
-      border-bottom: 1px solid var(--irisje-border);
       text-align: left;
+      border-bottom: 1px solid var(--irisje-border);
+      padding: 0.75rem 0.5rem;
     }
 
-    .status-select {
-      padding: 0.3rem 0.4rem;
-      border-radius: 0.4rem;
+    th {
+      color: var(--irisje-muted);
+      font-weight: 600;
+      font-size: 0.9rem;
     }
 
     footer {
       text-align: center;
       color: var(--irisje-muted);
-      padding: 1rem;
+      font-size: 0.85rem;
+      padding: 1.5rem 0;
+      margin-top: 2rem;
+    }
+
+    canvas {
+      max-width: 100%;
+      margin-top: 1rem;
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <header>
     <h1>Bedrijfsdashboard</h1>
@@ -116,35 +153,26 @@
 
   <main>
     <section>
-      <h2 id="companyName">Bedrijfsnaam</h2>
-      <p id="companyEmail">info@bedrijf.nl</p>
-      <p id="companyCategory">Categorie</p>
+      <h2>Welkom</h2>
+      <p><strong id="companyName">...</strong><br><span id="companyEmail"></span><br><span id="companyCategory"></span></p>
     </section>
 
     <section>
-      <h3>📊 Statistieken</h3>
-      <div id="statsContainer">
-        <p>Totaal: <strong id="totalRequests">0</strong></p>
-        <p>Geaccepteerd: <strong id="acceptedCount">0</strong></p>
-        <p>Afgewezen: <strong id="rejectedCount">0</strong></p>
-        <p>Opgevolgd: <strong id="followedUpCount">0</strong></p>
+      <h2>📊 Statistieken</h2>
+      <div class="stats-grid">
+        <div class="stat-card"><h3 id="totalCount">0</h3><p>Totaal</p></div>
+        <div class="stat-card"><h3 id="acceptedCount">0</h3><p>Geaccepteerd</p></div>
+        <div class="stat-card"><h3 id="rejectedCount">0</h3><p>Afgewezen</p></div>
+        <div class="stat-card"><h3 id="followedCount">0</h3><p>Opgevolgd</p></div>
       </div>
+
+      <canvas id="pieChart"></canvas>
+      <canvas id="barChart"></canvas>
     </section>
 
     <section>
-      <h3>📬 Aanvragen</h3>
-      <div class="filters">
-        <label for="statusFilter">Filter op status:</label>
-        <select id="statusFilter">
-          <option value="Alle">Alle</option>
-          <option value="Nieuw">Nieuw</option>
-          <option value="Geaccepteerd">Geaccepteerd</option>
-          <option value="Afgewezen">Afgewezen</option>
-          <option value="Opgevolgd">Opgevolgd</option>
-        </select>
-      </div>
-
-      <table>
+      <h2>📬 Aanvragen</h2>
+      <table id="requestsTable">
         <thead>
           <tr>
             <th>Naam</th>
@@ -156,6 +184,23 @@
         </thead>
         <tbody id="requestsBody">
           <tr><td colspan="5">Laden...</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>💬 Reviews</h2>
+      <table id="reviewsTable">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>Beoordeling</th>
+            <th>Bericht</th>
+            <th>Datum</th>
+          </tr>
+        </thead>
+        <tbody id="reviewsBody">
+          <tr><td colspan="4">Laden...</td></tr>
         </tbody>
       </table>
     </section>
