@@ -18,17 +18,18 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Serverfout");
+      if (!res.ok) {
+        errorDiv.textContent = data.error || "Fout bij inloggen.";
+        return;
+      }
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("companyName", data.company.name);
-      localStorage.setItem("companyEmail", data.company.email);
-      localStorage.setItem("companyCategory", data.company.category);
+      localStorage.setItem("company", JSON.stringify(data.company));
 
       window.location.href = "dashboard.html";
     } catch (err) {
-      console.error(err);
-      errorDiv.textContent = err.message;
+      console.error("Login-fout:", err);
+      errorDiv.textContent = "Serverfout of geen verbinding.";
     }
   });
 });
