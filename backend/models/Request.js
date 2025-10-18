@@ -1,7 +1,12 @@
 // backend/models/Request.js
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
-const requestSchema = new mongoose.Schema({
+const RequestSchema = new mongoose.Schema({
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
+  },
   name: { type: String, required: true },
   email: { type: String, required: true },
   message: { type: String, required: true },
@@ -10,13 +15,9 @@ const requestSchema = new mongoose.Schema({
     enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
     default: "Nieuw",
   },
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
-    required: true,
-  },
   date: { type: Date, default: Date.now },
 });
 
-const Request = mongoose.models.Request || mongoose.model("Request", requestSchema);
-export default Request;
+// Voorkom OverwriteModelError
+module.exports =
+  mongoose.models.Request || mongoose.model("Request", RequestSchema);
