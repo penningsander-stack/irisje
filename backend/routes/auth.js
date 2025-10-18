@@ -6,30 +6,21 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Company = require("../models/Company");
 
-// Inloggen
+// POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
+    if (!email || !password)
       return res.status(400).json({ error: "E-mailadres en wachtwoord zijn verplicht" });
-    }
 
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: "Onbekend e-mailadres" });
-    }
+    if (!user) return res.status(401).json({ error: "Onbekend e-mailadres" });
+    if (!user.password)
+      return res.status(500).json({ error: "Gebruiker bevat geen wachtwoordveld in database" });
 
-    if (!user.password) {
-      return res.status(500).json({ error: "Geen wachtwoordveld gevonden in gebruiker" });
-    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: "Ongeldig wachtwoord" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ error: "Ongeldig wachtwoord" });
-    }
-
-    // bijbehorend bedrijf zoeken
     const company = await Company.findOne({ user: user._id });
 
     const token = jwt.sign(
