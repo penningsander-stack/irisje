@@ -35,6 +35,8 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+const seedRoutes = require("./routes/seed");
+app.use("/api/seed", seedRoutes);
 
 // Health/Root
 app.get("/", (_, res) => res.send("Irisje backend actief ✅"));
