@@ -1,52 +1,40 @@
 // backend/routes/requests.js
 const express = require("express");
-const auth = require("../middleware/auth");
-const Request = require("../models/Request");
-const Company = require("../models/Company");
-
 const router = express.Router();
+const Request = require("../models/Request");
+const auth = require("../middleware/auth");
 
-// ✅ Haal aanvragen van het ingelogde bedrijf op
-router.get("/company", auth, async (req, res) => {
+// ✅ Alle aanvragen voor één bedrijf
+router.get("/company/:companyId", auth, async (req, res) => {
   try {
-    const companyId = req.user.companyId;
-    let company = null;
+    const { companyId } = req.params;
+    const filter = { companyId };
 
-    if (companyId) {
-      company = await Company.findById(companyId);
-    } else if (req.user.email) {
-      company = await Company.findOne({ email: req.user.email });
+    if (req.query.status && req.query.status !== "Alle") {
+      filter.status = req.query.status;
     }
 
-    if (!company) {
-      return res.status(200).json([]); // stuur lege lijst, geen fout
-    }
-
-    const requests = await Request.find({ company: company._id })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return res.status(200).json(requests || []);
+    const requests = await Request.find(filter).sort({ createdAt: -1 });
+    res.json(requests);
   } catch (err) {
-    console.error("❌ Fout bij ophalen aanvragen:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
+    console.error("Fout bij aanvragen ophalen:", err);
+    res.status(500).json({ error: "Serverfout bij aanvragen ophalen" });
   }
 });
 
-// ✅ Status van aanvraag wijzigen
+// ✅ Aanvraagstatus bijwerken
 router.put("/:id/status", auth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-    if (!status) return res.status(400).json({ error: "Geen status opgegeven" });
-
-    const updated = await Request.findByIdAndUpdate(id, { status }, { new: true });
-    if (!updated) return res.status(404).json({ error: "Aanvraag niet gevonden" });
-
-    res.json({ message: "Status bijgewerkt", request: updated });
+    const request = await Request.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+    if (!request) return res.status(404).json({ error: "Aanvraag niet gevonden" });
+    res.json(request);
   } catch (err) {
-    console.error("❌ Fout bij status-update:", err);
-    res.status(500).json({ error: "Serverfout bij bijwerken status" });
+    console.error("Fout bij status bijwerken:", err);
+    res.status(500).json({ error: "Serverfout bij status bijwerken" });
   }
 });
 
