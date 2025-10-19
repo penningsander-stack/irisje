@@ -19,6 +19,9 @@ app.use("/api/companies", companyRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+const seedRequestsRoutes = require("./routes/seedRequests");
+app.use("/api/seed", seedRequestsRoutes);
+
 app.use("/api/seed", seedRoutes);
 
 mongoose
