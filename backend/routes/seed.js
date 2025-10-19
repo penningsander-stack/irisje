@@ -1,6 +1,6 @@
+// backend/routes/seed.js
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 
 const Review = require("../models/review");
 const Request = require("../models/Request");
@@ -10,12 +10,14 @@ router.get("/", async (req, res) => {
   try {
     const company = await Company.findOne();
     if (!company) {
-      return res.status(404).json({ error: "Geen bedrijf gevonden om te koppelen." });
+      return res.status(404).json({ error: "Geen bedrijf gevonden om aan te koppelen." });
     }
 
+    // Oude data wissen
     await Review.deleteMany({});
     await Request.deleteMany({});
 
+    // Fake reviews
     const fakeReviews = [
       {
         companyId: company._id,
@@ -31,8 +33,16 @@ router.get("/", async (req, res) => {
         message: "Klantvriendelijk en professioneel.",
         date: new Date(),
       },
+      {
+        companyId: company._id,
+        name: "Tom Willems",
+        rating: 5,
+        message: "Topservice, ik ben erg tevreden.",
+        date: new Date(),
+      },
     ];
 
+    // Fake aanvragen
     const fakeRequests = [
       {
         companyId: company._id,
@@ -50,12 +60,20 @@ router.get("/", async (req, res) => {
         status: "Nieuw",
         date: new Date(),
       },
+      {
+        companyId: company._id,
+        name: "Henk de Groot",
+        email: "henk@example.com",
+        message: "Ik wil graag een offerte ontvangen.",
+        status: "Nieuw",
+        date: new Date(),
+      },
     ];
 
     await Review.insertMany(fakeReviews);
     await Request.insertMany(fakeRequests);
 
-    res.json({ success: true, message: "Fake data succesvol toegevoegd." });
+    res.json({ success: true, message: "Fake data succesvol toegevoegd aan bedrijf", companyId: company._id });
   } catch (err) {
     console.error("Seed-fout:", err);
     res.status(500).json({ error: "Seed-fout", details: err.message });
