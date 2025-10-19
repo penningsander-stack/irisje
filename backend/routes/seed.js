@@ -1,91 +1,61 @@
-// backend/routes/seed.js
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 
-// Gebruik de juiste bestandsnamen zoals jij hebt
-const Company = require("../models/Company");
-const Request = require("../models/Request");
 const Review = require("../models/review");
-const User = require("../models/User");
+const Request = require("../models/Request");
+const Company = require("../models/Company");
 
 router.get("/", async (req, res) => {
   try {
-    // Oude data wissen
-    await Promise.all([
-      Company.deleteMany({}),
-      Request.deleteMany({}),
-      Review.deleteMany({}),
-      User.deleteMany({})
-    ]);
+    const company = await Company.findOne();
+    if (!company) {
+      return res.status(404).json({ error: "Geen bedrijf gevonden om te koppelen." });
+    }
 
-    // Nieuw demoaccount
-    const passwordHash = await bcrypt.hash("demo1234", 10);
-    const user = await User.create({
-      email: "demo@irisje.nl",
-      passwordHash,
-      role: "company",
-      isActive: true,
-    });
+    await Review.deleteMany({});
+    await Request.deleteMany({});
 
-    // Bedrijf koppelen
-    const company = await Company.create({
-      name: "Demo Bedrijf",
-      email: "demo@irisje.nl",
-      category: "Algemeen",
-      phone: "0111-123456",
-      address: "Voorbeeldstraat 1, Burgh-Haamstede",
-      website: "https://irisje.nl",
-      user: user._id,
-    });
-
-    // ✅ Belangrijk: veldnaam aangepast naar companyId
-    const requests = [
+    const fakeReviews = [
       {
-        name: "Jan Jansen",
-        email: "jan@example.com",
-        message: "Ik wil graag een offerte voor mijn klus.",
-        status: "Nieuw",
         companyId: company._id,
-      },
-      {
-        name: "Lisa de Boer",
-        email: "lisa@example.com",
-        message: "Kan ik een afspraak maken voor volgende week?",
-        status: "Geaccepteerd",
-        companyId: company._id,
-      },
-      {
-        name: "Tom Bakker",
-        email: "tom@example.com",
-        message: "Niet meer nodig, bedankt.",
-        status: "Afgewezen",
-        companyId: company._id,
-      },
-    ];
-    await Request.insertMany(requests);
-
-    // Reviews koppelen (zelfde wijziging)
-    const reviews = [
-      {
-        name: "Eva van Dijk",
+        name: "Jan de Vries",
         rating: 5,
-        message: "Snelle reactie en vriendelijk geholpen!",
-        companyId: company._id,
+        message: "Snelle reactie en goed geholpen!",
+        date: new Date(),
       },
       {
-        name: "Pieter K.",
-        rating: 3,
-        message: "Was oké, maar had iets sneller gemogen.",
         companyId: company._id,
+        name: "Sophie Bakker",
+        rating: 4,
+        message: "Klantvriendelijk en professioneel.",
+        date: new Date(),
       },
     ];
-    await Review.insertMany(reviews);
 
-    res.json({
-      message: "✅ Testdata succesvol toegevoegd",
-      login: { email: "demo@irisje.nl", wachtwoord: "demo1234" },
-    });
+    const fakeRequests = [
+      {
+        companyId: company._id,
+        name: "Peter Janssen",
+        email: "peter@example.com",
+        message: "Ik zoek hulp bij mijn tuinproject.",
+        status: "Nieuw",
+        date: new Date(),
+      },
+      {
+        companyId: company._id,
+        name: "Lisa van Dijk",
+        email: "lisa@example.com",
+        message: "Kunnen jullie iets doen aan mijn lekkende dakgoot?",
+        status: "Nieuw",
+        date: new Date(),
+      },
+    ];
+
+    await Review.insertMany(fakeReviews);
+    await Request.insertMany(fakeRequests);
+
+    res.json({ success: true, message: "Fake data succesvol toegevoegd." });
   } catch (err) {
     console.error("Seed-fout:", err);
     res.status(500).json({ error: "Seed-fout", details: err.message });
