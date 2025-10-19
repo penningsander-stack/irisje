@@ -2,15 +2,13 @@
 const mongoose = require("mongoose");
 
 const CompanySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String },
-  category: { type: String },
-  phone: { type: String },
-  address: { type: String },
-  website: { type: String },
-  dateCreated: { type: Date, default: Date.now },
-  blocked: { type: Boolean, default: false },
+  name: String,
+  email: String,
+  category: String,
+  phone: String,
+  address: String,
+  website: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
-module.exports = mongoose.models.Company || mongoose.model("Company", CompanySchema);
+module.exports = mongoose.model("Company", CompanySchema);
