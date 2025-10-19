@@ -1,75 +1,108 @@
 // frontend/js/dashboard.js
-document.addEventListener("DOMContentLoaded", async () => {
-  const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+const API = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+
+// Helper om API-aanroepen met token te doen
+async function apiFetch(url, options = {}) {
   const token = localStorage.getItem("token");
-  if (!token) return (window.location.href = "login.html");
+  if (!token) {
+    window.location.href = "login.html";
+    return;
+  }
 
-  const companyName = document.getElementById("companyName");
-  const companyEmail = document.getElementById("companyEmail");
-  const category = document.getElementById("category");
-  const lastLogin = document.getElementById("lastLogin");
-  const requestsBody = document.getElementById("requestsBody");
-  const reviewsBody = document.getElementById("reviewsBody");
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
 
+  if (res.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+    return;
+  }
+
+  // Probeer JSON te lezen, maar voorkom crash bij HTML- of lege response
+  let data = null;
   try {
-    // bedrijfsgegevens
-    const resCompany = await fetch(`${API_BASE}/api/secure/company`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const company = await resCompany.json();
-    companyName.textContent = company.name ?? "Onbekend bedrijf";
-    companyEmail.textContent = company.email ?? "";
-    category.textContent = company.category ?? "Algemeen";
-    lastLogin.textContent = new Date().toLocaleString("nl-NL");
+    data = await res.json();
+  } catch {
+    data = [];
+  }
+  return data;
+}
 
-    // aanvragen
-    const resRequests = await fetch(`${API_BASE}/api/requests/company`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const requests = await resRequests.json();
-    requestsBody.innerHTML = "";
-    if (Array.isArray(requests) && requests.length > 0) {
-      requests.forEach((r) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.name || "-"}</td>
-          <td>${r.email || "-"}</td>
-          <td>${r.message || "-"}</td>
-          <td>${r.status || "Nieuw"}</td>
-          <td>${r.createdAt ? new Date(r.createdAt).toLocaleDateString("nl-NL") : "-"}</td>`;
-        requestsBody.appendChild(tr);
-      });
-    } else {
-      requestsBody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+// Laad bedrijfsgegevens + aanvragen + reviews
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    // Laad bedrijfsinformatie
+    const me = await apiFetch(`${API}/api/auth/me`);
+    const company = me?.company;
+    if (company) {
+      document.querySelector("[data-company-name]").textContent = company.name || "";
+      document.querySelector("[data-company-email]").textContent = company.email || "";
+      document.querySelector("[data-company-category]").textContent = company.category || "";
     }
 
-    // reviews
-    const resReviews = await fetch(`${API_BASE}/api/reviews/company`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const reviews = await resReviews.json();
-    reviewsBody.innerHTML = "";
-    if (Array.isArray(reviews) && reviews.length > 0) {
-      reviews.forEach((r) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.name || "-"}</td>
-          <td>${r.rating || "-"}</td>
-          <td>${r.message || "-"}</td>
-          <td>${r.createdAt ? new Date(r.createdAt).toLocaleDateString("nl-NL") : "-"}</td>`;
-        reviewsBody.appendChild(tr);
-      });
-    } else {
-      reviewsBody.innerHTML = `<tr><td colspan="4">Nog geen reviews gevonden.</td></tr>`;
-    }
+    // Laad aanvragen
+    const requests = await apiFetch(`${API}/api/requests/company`);
+    renderRequests(requests);
+
+    // Laad reviews
+    const reviews = await apiFetch(`${API}/api/reviews/company`);
+    renderReviews(reviews);
   } catch (err) {
     console.error("Dashboard-fout:", err);
-    requestsBody.innerHTML = `<tr><td colspan="5">Serverfout bij laden aanvragen.</td></tr>`;
-    reviewsBody.innerHTML = `<tr><td colspan="4">Serverfout bij laden reviews.</td></tr>`;
   }
 });
 
-document.getElementById("logoutBtn")?.addEventListener("click", () => {
-  localStorage.removeItem("token");
-  window.location.href = "login.html";
-});
+// ✅ Aanvragen tabel renderen
+function renderRequests(requests = []) {
+  const tbody = document.querySelector("#requests-table tbody");
+  if (!tbody) return;
+
+  if (!requests.length) {
+    tbody.innerHTML = `<tr><td colspan="6">Geen aanvragen gevonden.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = requests
+    .map(
+      (r) => `
+      <tr>
+        <td>${r.name || "-"}</td>
+        <td>${r.email || "-"}</td>
+        <td>${r.message || "-"}</td>
+        <td>${r.status || "Nieuw"}</td>
+        <td>${new Date(r.createdAt).toLocaleDateString("nl-NL")}</td>
+        <td><button class="status-btn" data-id="${r._id}">Bijwerken</button></td>
+      </tr>`
+    )
+    .join("");
+}
+
+// ✅ Reviews tabel renderen
+function renderReviews(reviews = []) {
+  const tbody = document.querySelector("#reviews-table tbody");
+  if (!tbody) return;
+
+  if (!reviews.length) {
+    tbody.innerHTML = `<tr><td colspan="5">Geen reviews gevonden.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = reviews
+    .map(
+      (rev) => `
+      <tr>
+        <td>${rev.name || "-"}</td>
+        <td>${rev.rating || "-"}</td>
+        <td>${rev.message || "-"}</td>
+        <td>${new Date(rev.createdAt).toLocaleDateString("nl-NL")}</td>
+        <td><button class="report-btn" data-id="${rev._id}">Melden</button></td>
+      </tr>`
+    )
+    .join("");
+}
