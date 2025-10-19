@@ -51,6 +51,24 @@
     }
   </style>
 </head>
+
+<script>
+  document.querySelectorAll('script[src]').forEach(script => {
+    const url = new URL(script.src);
+    if (!url.searchParams.has('v')) {
+      url.searchParams.set('v', new Date().toISOString().slice(0,10));
+      const fresh = document.createElement('script');
+      fresh.src = url.toString();
+      fresh.defer = true;
+      document.head.appendChild(fresh);
+      script.remove();
+    }
+  });
+</script>
+
+
+
+  
 <body>
   <div class="card">
     <h2>Registreren</h2>
