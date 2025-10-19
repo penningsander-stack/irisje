@@ -9,7 +9,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const headers = { Authorization: `Bearer ${token}` };
-  const company = JSON.parse(localStorage.getItem("company") || "{}");
+  let company;
+try {
+  company = JSON.parse(localStorage.getItem("company") || "{}");
+  if (!company || typeof company !== "object") company = {};
+} catch {
+  company = {};
+}
 
   const el = (id) => document.getElementById(id);
   const reqBody = el("requestsBody");
