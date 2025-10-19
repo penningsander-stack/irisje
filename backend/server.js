@@ -9,6 +9,9 @@ const companyRoutes = require("./routes/companies");
 const requestRoutes = require("./routes/requests");
 const reviewRoutes = require("./routes/reviews");
 const adminRoutes = require("./routes/admin");
+const seedRoutes = require("./routes/seed");
+app.use("/api/seed", seedRoutes);
+
 
 const app = express();
 
