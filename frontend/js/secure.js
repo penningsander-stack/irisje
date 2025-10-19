@@ -1,50 +1,29 @@
 // frontend/js/secure.js
-const API = window.ENV.API_BASE;
-
-// Controleer token bij laden pagina
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("token");
-  if (!token) {
-    console.warn("🔒 Geen token gevonden – terug naar login.");
+  const companyData = localStorage.getItem("company");
+
+  // ✅ Als token of bedrijfsgegevens ontbreken → terug naar login
+  if (!token || !companyData) {
+    console.warn("Geen geldige sessie gevonden. Doorverwijzen naar login...");
     window.location.href = "login.html";
     return;
   }
 
-  try {
-    const res = await fetch(`${API}/api/auth/verify`, {
-      headers: { Authorization: `Bearer ${token}` },
+  // ✅ Eventueel token checken bij backend (optioneel)
+  // (Je kunt deze fetch uitzetten als je lokaal test)
+  fetch("https://irisje-backend.onrender.com/api/secure/verify", {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+    .then((res) => {
+      if (!res.ok) {
+        console.warn("Token ongeldig — uitloggen.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("company");
+        window.location.href = "login.html";
+      }
+    })
+    .catch(() => {
+      console.log("Verificatie niet gelukt — ga verder met lokale sessie.");
     });
-
-    const data = await res.json();
-    if (!data.valid) {
-      console.warn("⚠️ Ongeldige of verlopen token – uitloggen.");
-      localStorage.removeItem("token");
-      window.location.href = "login.html";
-    }
-  } catch (err) {
-    console.error("Fout bij token-verificatie:", err);
-    localStorage.removeItem("token");
-    window.location.href = "login.html";
-  }
 });
-
-// Hulpfunctie om altijd requests mét token te doen
-async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    window.location.href = "login.html";
-    throw new Error("Geen token beschikbaar");
-  }
-
-  const headers = options.headers || {};
-  headers.Authorization = `Bearer ${token}`;
-  headers["Content-Type"] = headers["Content-Type"] || "application/json";
-
-  const res = await fetch(url, { ...options, headers });
-  if (res.status === 401) {
-    console.warn("⚠️ 401 Unauthorized – uitloggen.");
-    localStorage.removeItem("token");
-    window.location.href = "login.html";
-  }
-  return res;
-}
