@@ -1,17 +1,16 @@
-// backend/routes/reviews.js
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
-const auth = require("../middleware/auth");
+const Company = require("../models/Company");
 
-// ✅ Alle reviews voor één bedrijf
-router.get("/company/:companyId", auth, async (req, res) => {
+router.get("/:companyId", async (req, res) => {
   try {
-    const reviews = await Review.find({ companyId: req.params.companyId }).sort({ createdAt: -1 });
+    const { companyId } = req.params;
+    const reviews = await Review.find({ companyId }).sort({ date: -1 });
     res.json(reviews);
   } catch (err) {
-    console.error("Fout bij reviews ophalen:", err);
-    res.status(500).json({ error: "Serverfout bij reviews ophalen" });
+    console.error("Fout bij ophalen reviews:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen reviews." });
   }
 });
 
