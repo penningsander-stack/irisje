@@ -2,24 +2,39 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 const Request = require("../models/Request");
+const Company = require("../models/Company");
 
 const router = express.Router();
 
 // ✅ Haal aanvragen van het ingelogde bedrijf op
 router.get("/company", auth, async (req, res) => {
   try {
+    // Token bevat mogelijk geen companyId, dan koppelen via e-mail
     const companyId = req.user.companyId;
-    if (!companyId) return res.status(400).json({ error: "Geen bedrijf gekoppeld aan gebruiker" });
+    let company = null;
 
-    const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 }).lean();
+    if (companyId) {
+      company = await Company.findById(companyId);
+    } else if (req.user.email) {
+      company = await Company.findOne({ email: req.user.email });
+    }
+
+    if (!company) {
+      return res.status(404).json({ error: "Geen bedrijf gevonden voor deze gebruiker" });
+    }
+
+    const requests = await Request.find({ company: company._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
     return res.json(requests);
   } catch (err) {
-    console.error("Fout bij ophalen aanvragen:", err);
+    console.error("❌ Fout bij ophalen aanvragen:", err);
     res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
   }
 });
 
-// ✅ Update status van aanvraag
+// ✅ Status van aanvraag wijzigen
 router.put("/:id/status", auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -31,7 +46,7 @@ router.put("/:id/status", auth, async (req, res) => {
 
     res.json({ message: "Status bijgewerkt", request: updated });
   } catch (err) {
-    console.error("Fout bij bijwerken status:", err);
+    console.error("❌ Fout bij status-update:", err);
     res.status(500).json({ error: "Serverfout bij bijwerken status" });
   }
 });
