@@ -9,7 +9,6 @@ const router = express.Router();
 // ✅ Haal aanvragen van het ingelogde bedrijf op
 router.get("/company", auth, async (req, res) => {
   try {
-    // Token bevat mogelijk geen companyId, dan koppelen via e-mail
     const companyId = req.user.companyId;
     let company = null;
 
@@ -20,14 +19,14 @@ router.get("/company", auth, async (req, res) => {
     }
 
     if (!company) {
-      return res.status(404).json({ error: "Geen bedrijf gevonden voor deze gebruiker" });
+      return res.status(200).json([]); // stuur lege lijst, geen fout
     }
 
     const requests = await Request.find({ company: company._id })
       .sort({ createdAt: -1 })
       .lean();
 
-    return res.json(requests);
+    return res.status(200).json(requests || []);
   } catch (err) {
     console.error("❌ Fout bij ophalen aanvragen:", err);
     res.status(500).json({ error: "Serverfout bij ophalen aanvragen" });
