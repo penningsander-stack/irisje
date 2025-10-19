@@ -1,51 +1,93 @@
 // backend/routes/seed.js
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
-const Company = require("../models/Company");
-
 const router = express.Router();
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-/**
- * GET /api/seed/fixdemo
- * Herstelt de demogebruiker en maakt hem opnieuw aan met het juiste wachtwoord.
- */
-router.get("/fixdemo", async (req, res) => {
+const Company = require("../models/Company");
+const Request = require("../models/Request");
+const Review = require("../models/review");
+const User = require("../models/User");
+
+router.get("/", async (req, res) => {
   try {
-    const email = "demo@irisje.nl";
-    const plainPassword = "demo1234";
+    await Company.deleteMany({});
+    await Request.deleteMany({});
+    await Review.deleteMany({});
+    await User.deleteMany({});
 
-    // verwijder eventueel oude versies
-    await User.deleteMany({ email });
-    await Company.deleteMany({ email });
-
-    const passwordHash = await bcrypt.hash(plainPassword, 10);
-
+    // demo-gebruiker aanmaken
+    const passwordHash = await bcrypt.hash("demo1234", 10);
     const user = new User({
-      email,
+      email: "demo@irisje.nl",
       passwordHash,
       role: "company",
       isActive: true,
     });
     await user.save();
 
+    // gekoppeld bedrijf
     const company = new Company({
       name: "Demo Bedrijf",
-      email,
+      email: "demo@irisje.nl",
       category: "Algemeen",
+      phone: "0111-123456",
+      address: "Voorbeeldstraat 1, Burgh-Haamstede",
+      website: "https://irisje.nl",
       user: user._id,
     });
     await company.save();
 
-    console.log("✅ Nieuw demo-account aangemaakt");
+    // testaanvragen
+    const requests = [
+      {
+        name: "Jan Jansen",
+        email: "jan@example.com",
+        message: "Ik wil graag een offerte voor mijn klus.",
+        status: "Nieuw",
+        company: company._id,
+      },
+      {
+        name: "Lisa de Boer",
+        email: "lisa@example.com",
+        message: "Kan ik een afspraak maken voor volgende week?",
+        status: "Geaccepteerd",
+        company: company._id,
+      },
+      {
+        name: "Tom Bakker",
+        email: "tom@example.com",
+        message: "Niet meer nodig, bedankt.",
+        status: "Afgewezen",
+        company: company._id,
+      },
+    ];
+    await Request.insertMany(requests);
+
+    // testreviews
+    const reviews = [
+      {
+        name: "Eva van Dijk",
+        rating: 5,
+        message: "Snelle reactie en vriendelijk geholpen!",
+        company: company._id,
+      },
+      {
+        name: "Pieter K.",
+        rating: 3,
+        message: "Was oké, maar had iets sneller gemogen.",
+        company: company._id,
+      },
+    ];
+    await Review.insertMany(reviews);
+
     res.json({
-      message: "Demo-account hersteld.",
-      email,
-      password: plainPassword,
+      message: "✅ Testdata succesvol toegevoegd",
+      login: { email: "demo@irisje.nl", wachtwoord: "demo1234" },
     });
   } catch (err) {
-    console.error("❌ Seed-fout:", err);
-    res.status(500).json({ error: "Seed-fout: " + err.message });
+    console.error("Seed-fout:", err);
+    res.status(500).json({ error: "Seed-fout" });
   }
 });
 
