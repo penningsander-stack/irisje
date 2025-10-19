@@ -1,24 +1,24 @@
 // frontend/js/login.js
-const API = window.ENV.API_BASE;
-
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("login-form");
-  const errorBox = document.getElementById("error");
+  const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+  const emailEl = document.getElementById("email");
+  const passwordEl = document.getElementById("password");
+  const errorEl = document.getElementById("error");
+  const loginBtn = document.getElementById("login-btn");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorBox.textContent = "";
+  loginBtn.addEventListener("click", async () => {
+    errorEl.textContent = "";
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+    const email = emailEl.value.trim();
+    const password = passwordEl.value.trim();
 
     if (!email || !password) {
-      errorBox.textContent = "Vul alle velden in.";
+      errorEl.textContent = "Vul alle velden in.";
       return;
     }
 
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -26,19 +26,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await res.json();
 
-      if (!res.ok || !data.token) {
-        errorBox.textContent = data.error || "Ongeldige inloggegevens.";
+      if (!res.ok) {
+        errorEl.textContent = data.error || "Ongeldige inloggegevens.";
         return;
       }
 
-      // Token veilig opslaan
+      // ✅ Opslaan in localStorage
       localStorage.setItem("token", data.token);
+      localStorage.setItem("company", JSON.stringify(data.company));
 
-      // Doorsturen naar dashboard
+      // ✅ Doorsturen
       window.location.href = "dashboard.html";
     } catch (err) {
-      console.error("Login-fout:", err);
-      errorBox.textContent = "Serverfout of geen verbinding.";
+      console.error("Inlogfout:", err);
+      errorEl.textContent = "Serverfout of geen verbinding.";
     }
   });
 });
