@@ -2,17 +2,16 @@
 const mongoose = require("mongoose");
 
 const RequestSchema = new mongoose.Schema({
-  companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
-  name: { type: String, required: true },
-  email: { type: String, required: true },
-  message: { type: String, required: true },
-  status: {
-    type: String,
-    enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
-    default: "Nieuw",
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+    required: true,
   },
+  name: String,
+  email: String,
+  message: String,
+  status: { type: String, default: "Nieuw" },
   date: { type: Date, default: Date.now },
 });
 
-module.exports =
-  mongoose.models.Request || mongoose.model("Request", RequestSchema);
+module.exports = mongoose.model("Request", RequestSchema);
