@@ -7,7 +7,7 @@
 (function () {
   document.querySelectorAll("script[src]").forEach((script) => {
     const url = new URL(script.src);
-    // Alleen toepassen op scripts van jouw domein
+    // Alleen toepassen op scripts van jouw frontend-domein
     if (url.origin.includes("irisje-frontend.onrender.com")) {
       if (!url.searchParams.has("v")) {
         url.searchParams.set("v", new Date().toISOString().slice(0, 10));
@@ -21,7 +21,7 @@
   });
 })();
 
-// 2️⃣ Tokencontrole — voorkomt dat ingelogde gebruikers meteen worden uitgelogd
+// 2️⃣ Tokencontrole — voorkomt dat ingelogde gebruikers direct worden uitgelogd
 (function () {
   const token = localStorage.getItem("token");
   const path = window.location.pathname;
@@ -59,7 +59,9 @@
 document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logout");
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      console.log("👋 Uitloggen geklikt, token verwijderd.");
       localStorage.removeItem("token");
       window.location.href = "login.html";
     });
