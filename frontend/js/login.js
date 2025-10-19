@@ -1,10 +1,11 @@
 // frontend/js/login.js
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+
   const emailEl = document.getElementById("email");
   const passwordEl = document.getElementById("password");
-  const errorEl = document.getElementById("error");
   const loginBtn = document.getElementById("login-btn");
+  const errorEl = document.getElementById("error");
 
   loginBtn.addEventListener("click", async () => {
     errorEl.textContent = "";
@@ -25,13 +26,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await res.json();
+      console.log("Login response:", data);
 
       if (!res.ok) {
         errorEl.textContent = data.error || "Ongeldige inloggegevens.";
         return;
       }
 
-      // ✅ Opslaan in localStorage
+      // ✅ Token opslaan
       localStorage.setItem("token", data.token);
       localStorage.setItem("company", JSON.stringify(data.company));
 
