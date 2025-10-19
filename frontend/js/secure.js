@@ -1,69 +1,72 @@
 // frontend/js/secure.js
 // ============================================
-// Centrale beveiliging + automatische cache-forcering
+// Centrale beveiliging + automatische cache-busting + uitloggen
 // ============================================
 
-// 1️⃣ Automatische cache-buster voor alle JS-bestanden
+// 1) Cache-busting voor eigen JS-bestanden (voorkomt oude versies)
 (function () {
-  document.querySelectorAll("script[src]").forEach((script) => {
-    const url = new URL(script.src);
-    // Alleen toepassen op scripts van jouw frontend-domein
-    if (url.origin.includes("irisje-frontend.onrender.com")) {
-      if (!url.searchParams.has("v")) {
-        url.searchParams.set("v", new Date().toISOString().slice(0, 10));
-        const fresh = document.createElement("script");
+  try {
+    document.querySelectorAll('script[src]').forEach((tag) => {
+      const url = new URL(tag.src, window.location.origin);
+      // Alleen je eigen frontend-bestanden voorzien van ?v=
+      const isOwn = url.origin === window.location.origin;
+      if (isOwn && !url.searchParams.has('v')) {
+        url.searchParams.set('v', new Date().toISOString().slice(0, 10));
+        const fresh = document.createElement('script');
         fresh.src = url.toString();
         fresh.defer = true;
         document.head.appendChild(fresh);
-        script.remove();
+        tag.remove();
       }
-    }
-  });
+    });
+  } catch (_) {}
 })();
 
-// 2️⃣ Tokencontrole — voorkomt dat ingelogde gebruikers direct worden uitgelogd
+// 2) Tokencontrole op beveiligde pagina's
 (function () {
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem('token');
   const path = window.location.pathname;
+  const publicPages = ['/login.html', '/register.html', '/index.html', '/'];
 
-  // Toegestane pagina's zonder login
-  const publicPages = ["/login.html", "/register.html", "/index.html"];
-
-  // Als geen token aanwezig is, terug naar login
+  // Geen token en niet op publieke pagina? -> naar login
   if (!token && !publicPages.some((p) => path.endsWith(p))) {
-    window.location.href = "login.html";
+    window.location.href = 'login.html';
     return;
   }
 
-  // Controleer token op beveiligde pagina's
+  // Token basale controle (JWT exp indien aanwezig)
   if (token) {
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const now = Date.now() / 1000;
+      const payload = JSON.parse(atob(token.split('.')[1] || ''));
+      const now = Math.floor(Date.now() / 1000);
       if (payload.exp && payload.exp < now) {
-        console.warn("🔒 Token verlopen, uitloggen...");
-        localStorage.removeItem("token");
-        window.location.href = "login.html";
-      } else {
-        console.log("✅ Token is geldig en behouden");
+        localStorage.removeItem('token');
+        localStorage.removeItem('company');
+        window.location.href = 'login.html';
+        return;
       }
-    } catch (err) {
-      console.error("⚠️ Tokencontrole mislukt:", err);
-      localStorage.removeItem("token");
-      window.location.href = "login.html";
+      console.log('✅ Token is geldig en behouden');
+    } catch (e) {
+      // Geen geldig JWT-formaat -> uitloggen
+      localStorage.removeItem('token');
+      localStorage.removeItem('company');
+      window.location.href = 'login.html';
     }
   }
 })();
 
-// 3️⃣ Logoutknop functionaliteit
-document.addEventListener("DOMContentLoaded", () => {
-  const logoutBtn = document.getElementById("logout");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", (e) => {
+// 3) Uitloggen knop(pen) laten werken (ondersteunt #logoutBtn en #logout)
+document.addEventListener('DOMContentLoaded', () => {
+  const bindLogout = (el) => {
+    if (!el) return;
+    el.addEventListener('click', (e) => {
       e.preventDefault();
-      console.log("👋 Uitloggen geklikt, token verwijderd.");
-      localStorage.removeItem("token");
-      window.location.href = "login.html";
+      localStorage.removeItem('token');
+      localStorage.removeItem('company');
+      window.location.href = 'login.html';
     });
-  }
+  };
+
+  bindLogout(document.getElementById('logoutBtn'));
+  bindLogout(document.getElementById('logout')); // fallback voor oude ID
 });
