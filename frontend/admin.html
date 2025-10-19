@@ -50,6 +50,24 @@
     .unblock { background:#10b981; color:#fff; }
   </style>
 </head>
+
+<script>
+  document.querySelectorAll('script[src]').forEach(script => {
+    const url = new URL(script.src);
+    if (!url.searchParams.has('v')) {
+      url.searchParams.set('v', new Date().toISOString().slice(0,10));
+      const fresh = document.createElement('script');
+      fresh.src = url.toString();
+      fresh.defer = true;
+      document.head.appendChild(fresh);
+      script.remove();
+    }
+  });
+</script>
+
+
+
+  
 <body>
   <header>
     <h1>Admin – Beheer</h1>
