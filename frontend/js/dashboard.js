@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
 
   if (!token) {
-    console.warn("Geen token gevonden – terug naar login.");
     window.location.href = "login.html";
     return;
   }
@@ -12,119 +11,60 @@ document.addEventListener("DOMContentLoaded", async () => {
   const headers = { Authorization: `Bearer ${token}` };
   const company = JSON.parse(localStorage.getItem("company") || "{}");
 
-  // === DOM elementen ===
-  const nameEl = document.getElementById("companyName");
-  const emailEl = document.getElementById("companyEmail");
-  const catEl = document.getElementById("category");
-  const lastLoginEl = document.getElementById("lastLogin");
-  const reqBody = document.getElementById("requestsBody");
-  const revBody = document.getElementById("reviewsBody");
-  const filterEl = document.getElementById("filter");
+  const el = (id) => document.getElementById(id);
+  const reqBody = el("requestsBody");
+  const revBody = el("reviewsBody");
 
-  // === Bedrijfsgegevens tonen ===
-  if (nameEl) nameEl.textContent = company.name || "Demo Bedrijf";
-  if (emailEl) emailEl.textContent = company.email || "demo@irisje.nl";
-  if (catEl) catEl.textContent = company.category || "Algemeen";
-  if (lastLoginEl) lastLoginEl.textContent = new Date().toLocaleString("nl-NL");
+  el("companyName").textContent = company.name || "Demo Bedrijf";
+  el("companyEmail").textContent = company.email || "demo@irisje.nl";
+  el("category").textContent = company.category || "Algemeen";
+  el("lastLogin").textContent = new Date().toLocaleString("nl-NL");
 
-  // === Statistieken-elementen ===
-  const statTotal = document.getElementById("statTotal");
-  const statAccepted = document.getElementById("statAccepted");
-  const statRejected = document.getElementById("statRejected");
-  const statFollowed = document.getElementById("statFollowed");
-
-  // === Data ophalen ===
-  async function loadRequests() {
+  async function safeFetch(url) {
     try {
-      const res = await fetch(`${API_BASE}/api/requests/company`, { headers });
-      const data = await res.json();
-      console.log("📬 Aanvragen:", data);
-
-      if (!Array.isArray(data) || data.length === 0) {
-        reqBody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-        updateStats([]);
-        return [];
-      }
-
-      renderRequests(data);
-      updateStats(data);
-      return data;
-    } catch (err) {
-      console.error("❌ Fout bij aanvragen:", err);
-      reqBody.innerHTML = `<tr><td colspan="5">Serverfout bij laden aanvragen.</td></tr>`;
-      updateStats([]);
+      const res = await fetch(url, { headers });
+      const txt = await res.text();
+      console.log("🔍 Response van", url, "=", txt);
+      if (!res.ok) throw new Error(res.status + " " + res.statusText);
+      return JSON.parse(txt);
+    } catch (e) {
+      console.error("❌ Fout bij ophalen:", e);
       return [];
     }
   }
 
   function renderRequests(data) {
-    reqBody.innerHTML = data
-      .map(
-        (r) => `
-        <tr>
-          <td>${r.name || "-"}</td>
-          <td>${r.email || "-"}</td>
-          <td>${r.message || "-"}</td>
-          <td>${r.status || "Nieuw"}</td>
-          <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-        </tr>`
-      )
-      .join("");
-  }
-
-  function updateStats(requests) {
-    const total = requests.length;
-    const accepted = requests.filter((r) => r.status === "Geaccepteerd").length;
-    const rejected = requests.filter((r) => r.status === "Afgewezen").length;
-    const followed = requests.filter((r) => r.status === "Opgevolgd").length;
-
-    if (statTotal) statTotal.textContent = total;
-    if (statAccepted) statAccepted.textContent = accepted;
-    if (statRejected) statRejected.textContent = rejected;
-    if (statFollowed) statFollowed.textContent = followed;
-  }
-
-  async function loadReviews() {
-    try {
-      const res = await fetch(`${API_BASE}/api/reviews/company`, { headers });
-      const data = await res.json();
-      console.log("💬 Reviews:", data);
-
-      if (!Array.isArray(data) || data.length === 0) {
-        revBody.innerHTML = `<tr><td colspan="4">Geen reviews gevonden.</td></tr>`;
-        return;
-      }
-
-      revBody.innerHTML = data
-        .map(
-          (r) => `
-          <tr>
-            <td>${r.name || "-"}</td>
-            <td>${"⭐".repeat(Number(r.rating) || 0)}</td>
-            <td>${r.message || "-"}</td>
-            <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-          </tr>`
-        )
-        .join("");
-    } catch (err) {
-      console.error("❌ Fout bij laden reviews:", err);
-      revBody.innerHTML = `<tr><td colspan="4">Serverfout bij laden reviews.</td></tr>`;
+    if (!data.length) {
+      reqBody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+      return;
     }
+    reqBody.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.name || "-"}</td>
+        <td>${r.email || "-"}</td>
+        <td>${r.message || "-"}</td>
+        <td>${r.status || "Nieuw"}</td>
+        <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
+      </tr>`).join("");
   }
 
-  // === Filterfunctie ===
-  let allRequests = await loadRequests();
-  await loadReviews();
-
-  if (filterEl) {
-    filterEl.addEventListener("change", (e) => {
-      const selected = e.target.value;
-      if (selected === "Alle") {
-        renderRequests(allRequests);
-      } else {
-        const filtered = allRequests.filter((r) => r.status === selected);
-        renderRequests(filtered);
-      }
-    });
+  function renderReviews(data) {
+    if (!data.length) {
+      revBody.innerHTML = `<tr><td colspan="4">Geen reviews gevonden.</td></tr>`;
+      return;
+    }
+    revBody.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.name || "-"}</td>
+        <td>${"⭐".repeat(Number(r.rating) || 0)}</td>
+        <td>${r.message || "-"}</td>
+        <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
+      </tr>`).join("");
   }
+
+  const requests = await safeFetch(`${API_BASE}/api/requests/company`);
+  const reviews = await safeFetch(`${API_BASE}/api/reviews/company`);
+
+  renderRequests(requests);
+  renderReviews(reviews);
 });
