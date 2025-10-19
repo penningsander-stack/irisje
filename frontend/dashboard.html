@@ -1,3 +1,4 @@
+<!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -5,15 +6,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
 
+  <!-- Backend-adres -->
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
   </script>
 
+  <!-- Chart.js voor grafieken -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="style.css" />
 
+  <!-- Basisstijl (blijft licht, leunt op bestaande style.css als die bestaat) -->
+  <link rel="stylesheet" href="style.css" />
   <style>
+    :root {
+      --primary: #4f46e5;
+      --bg: #f9fafb;
+      --text: #1f2937;
+      --border: #e5e7eb;
+      --muted: #6b7280;
+      --card: #ffffff;
+    }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { margin: 0; font-size: 1.1rem; color: var(--primary); }
+    header button {
+      background: #ef4444; color: #fff; border: none; padding: 0.5rem 1rem;
+      border-radius: 0.5rem; cursor: pointer; font-size: 0.9rem;
+    }
     main {
+      flex: 1;
       max-width: 1100px;
       margin: 2rem auto;
       padding: 0 1.5rem;
@@ -21,74 +57,61 @@
       flex-direction: column;
       gap: 2rem;
     }
-
     section {
-      background: #fff;
-      border: 1px solid #e5e7eb;
+      background: var(--card);
+      border: 1px solid var(--border);
       border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      padding: 1.25rem 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
+    h2 { margin: 0 0 0.75rem; font-size: 1.1rem; color: var(--text); }
+    .muted { color: var(--muted); }
 
-    h2 {
-      margin-top: 0;
-      font-size: 1.1rem;
-      color: #1f2937;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    th, td {
-      padding: 0.6rem;
-      text-align: left;
-      border-bottom: 1px solid #e5e7eb;
-      font-size: 0.9rem;
-    }
-
-    th {
-      background: #f9fafb;
-      color: #374151;
-    }
-
-    footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.85rem;
-      color: #6b7280;
-    }
-
-    .muted { color: #6b7280; }
-
-    select {
-      padding: 0.3rem 0.5rem;
-      border-radius: 0.4rem;
-      border: 1px solid #d1d5db;
-      font-size: 0.85rem;
-    }
-
-    .card-grid {
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.5rem;
     }
-
     .stat-card {
       background: #f9fafb;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--border);
       border-radius: 0.75rem;
-      padding: 1rem;
+      padding: 0.9rem;
       text-align: center;
-      box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .stat-card .label { font-size: 0.9rem; color: var(--muted); }
+    .stat-card .value { font-size: 1.4rem; color: var(--primary); font-weight: 700; margin-top: 0.25rem; }
+
+    .controls { display: flex; align-items: center; gap: 0.5rem; }
+    select {
+      padding: 0.35rem 0.6rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.4rem;
+      font-size: 0.9rem;
+      background: #fff;
     }
 
-    .stat-card h3 {
-      margin: 0.2rem 0;
-      color: #4f46e5;
-      font-size: 1.3rem;
+    table { width: 100%; border-collapse: collapse; margin-top: 0.75rem; }
+    th, td { padding: 0.6rem; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.92rem; }
+    th { background: #f3f4f6; color: #374151; }
+    .status-badge {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.8rem; border: 1px solid transparent;
+    }
+    .status-nieuw { color: #374151; background: #f3f4f6; }
+    .status-geaccepteerd { color: #065f46; background: #d1fae5; border-color: #10b98133; }
+    .status-afgewezen { color: #991b1b; background: #fee2e2; border-color: #ef444433; }
+    .status-opgevolgd { color: #1e3a8a; background: #dbeafe; border-color: #3b82f633; }
+
+    .btn {
+      padding: 0.35rem 0.6rem; font-size: 0.85rem; border-radius: 0.4rem; border: 1px solid #d1d5db; background: #fff; cursor: pointer;
+    }
+    .btn:hover { background: #f9fafb; }
+    .btn-report { border-color: #f59e0b; color: #b45309; }
+    .btn-report[disabled] { opacity: 0.6; cursor: default; }
+
+    footer {
+      text-align: center; padding: 1rem; font-size: 0.85rem; color: var(--muted);
     }
   </style>
 </head>
@@ -99,6 +122,7 @@
   </header>
 
   <main>
+    <!-- Welkom -->
     <section>
       <h2>Welkom</h2>
       <p><strong id="companyName">Bedrijf</strong></p>
@@ -107,38 +131,43 @@
       <p class="muted">Laatst ingelogd: <span id="lastLogin">...</span></p>
     </section>
 
+    <!-- Statistieken -->
     <section>
       <h2>📊 Statistieken</h2>
-      <div class="card-grid">
+      <div class="stats-grid">
         <div class="stat-card">
-          <div class="muted">Totaal</div>
-          <h3 id="statTotal">0</h3>
+          <div class="label">Totaal</div>
+          <div class="value" id="statTotal">0</div>
         </div>
         <div class="stat-card">
-          <div class="muted">Geaccepteerd</div>
-          <h3 id="statAccepted">0</h3>
+          <div class="label">Geaccepteerd</div>
+          <div class="value" id="statAccepted">0</div>
         </div>
         <div class="stat-card">
-          <div class="muted">Afgewezen</div>
-          <h3 id="statRejected">0</h3>
+          <div class="label">Afgewezen</div>
+          <div class="value" id="statRejected">0</div>
         </div>
         <div class="stat-card">
-          <div class="muted">Opgevolgd</div>
-          <h3 id="statFollowed">0</h3>
+          <div class="label">Opgevolgd</div>
+          <div class="value" id="statFollowed">0</div>
         </div>
       </div>
+      <canvas id="statusChart" height="120" style="margin-top: 1rem;"></canvas>
     </section>
 
+    <!-- Aanvragen -->
     <section>
-      <h2>📬 Aanvragen</h2>
-      <label for="filter">Filter op status:</label>
-      <select id="filter">
-        <option value="Alle">Alle</option>
-        <option value="Nieuw">Nieuw</option>
-        <option value="Geaccepteerd">Geaccepteerd</option>
-        <option value="Afgewezen">Afgewezen</option>
-        <option value="Opgevolgd">Opgevolgd</option>
-      </select>
+      <div class="controls">
+        <h2 style="margin-right:auto;">📬 Aanvragen</h2>
+        <label for="filter" class="muted">Filter:</label>
+        <select id="filter">
+          <option value="Alle">Alle</option>
+          <option value="Nieuw">Nieuw</option>
+          <option value="Geaccepteerd">Geaccepteerd</option>
+          <option value="Afgewezen">Afgewezen</option>
+          <option value="Opgevolgd">Opgevolgd</option>
+        </select>
+      </div>
 
       <table id="requests-table">
         <thead>
@@ -156,6 +185,7 @@
       </table>
     </section>
 
+    <!-- Reviews -->
     <section>
       <h2>💬 Reviews</h2>
       <table id="reviews-table">
@@ -165,10 +195,11 @@
             <th>Beoordeling</th>
             <th>Bericht</th>
             <th>Datum</th>
+            <th>Actie</th>
           </tr>
         </thead>
         <tbody id="reviewsBody">
-          <tr><td colspan="4">Laden...</td></tr>
+          <tr><td colspan="5">Laden...</td></tr>
         </tbody>
       </table>
     </section>
@@ -176,8 +207,8 @@
 
   <footer>© 2025 Irisje.nl – Alle rechten voorbehouden</footer>
 
-  <script src="js/secure.js?v=1"></script>
+  <!-- Scripts (cachebuster helpt bij nieuwe versies) -->
+  <script src="js/secure.js?v=2025-10-19"></script>
   <script src="js/dashboard_safe.js?v=2025-10-19"></script>
-
 </body>
 </html>
