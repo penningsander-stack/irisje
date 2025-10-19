@@ -8,41 +8,18 @@ const Company = require("../models/Company");
 
 router.get("/", async (req, res) => {
   try {
-    const company = await Company.findOne();
+    // 1️⃣ Zoek je echte Demo Bedrijf op
+    const company = await Company.findOne({ email: "demo@irisje.nl" });
+
     if (!company) {
-      return res.status(404).json({ error: "Geen bedrijf gevonden om aan te koppelen." });
+      return res.status(404).json({ error: "Demo Bedrijf niet gevonden in database." });
     }
 
-    // Oude data wissen
-    await Review.deleteMany({});
-    await Request.deleteMany({});
+    // 2️⃣ Oude testdata wissen
+    await Review.deleteMany({ companyId: company._id });
+    await Request.deleteMany({ companyId: company._id });
 
-    // Fake reviews
-    const fakeReviews = [
-      {
-        companyId: company._id,
-        name: "Jan de Vries",
-        rating: 5,
-        message: "Snelle reactie en goed geholpen!",
-        date: new Date(),
-      },
-      {
-        companyId: company._id,
-        name: "Sophie Bakker",
-        rating: 4,
-        message: "Klantvriendelijk en professioneel.",
-        date: new Date(),
-      },
-      {
-        companyId: company._id,
-        name: "Tom Willems",
-        rating: 5,
-        message: "Topservice, ik ben erg tevreden.",
-        date: new Date(),
-      },
-    ];
-
-    // Fake aanvragen
+    // 3️⃣ Nieuwe fake aanvragen
     const fakeRequests = [
       {
         companyId: company._id,
@@ -60,20 +37,37 @@ router.get("/", async (req, res) => {
         status: "Nieuw",
         date: new Date(),
       },
+    ];
+
+    // 4️⃣ Nieuwe fake reviews
+    const fakeReviews = [
       {
         companyId: company._id,
-        name: "Henk de Groot",
-        email: "henk@example.com",
-        message: "Ik wil graag een offerte ontvangen.",
-        status: "Nieuw",
+        name: "Jan de Vries",
+        rating: 5,
+        message: "Snelle reactie en goed geholpen!",
+        date: new Date(),
+      },
+      {
+        companyId: company._id,
+        name: "Sophie Bakker",
+        rating: 4,
+        message: "Klantvriendelijk en professioneel.",
         date: new Date(),
       },
     ];
 
-    await Review.insertMany(fakeReviews);
     await Request.insertMany(fakeRequests);
+    await Review.insertMany(fakeReviews);
 
-    res.json({ success: true, message: "Fake data succesvol toegevoegd aan bedrijf", companyId: company._id });
+    res.json({
+      success: true,
+      message: "Fake data toegevoegd aan Demo Bedrijf",
+      company: company.name,
+      companyId: company._id,
+      requests: fakeRequests.length,
+      reviews: fakeReviews.length,
+    });
   } catch (err) {
     console.error("Seed-fout:", err);
     res.status(500).json({ error: "Seed-fout", details: err.message });
