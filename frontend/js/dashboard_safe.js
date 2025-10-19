@@ -1,4 +1,5 @@
 // frontend/js/dashboard_safe.js
+// Stabiele dashboard-versie: toont bedrijfsgegevens + laadt aanvragen & reviews
 console.log("📊 Dashboard Safe Script geladen");
 
 const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
@@ -10,26 +11,50 @@ if (!token) {
   window.location.href = "login.html";
 }
 
-// ✅ Logout knop koppelen
+// ✅ DOM klaar
 document.addEventListener("DOMContentLoaded", () => {
-  const logoutBtn = document.getElementById("logoutBtn");
+  // ---- Bedrijfsgegevens veilig uit localStorage tonen ----
+  let company = {};
+  try {
+    const raw = localStorage.getItem("company");
+    company = raw && raw !== "undefined" ? JSON.parse(raw) : {};
+  } catch {
+    company = {};
+  }
+
+  const byId = (id) => document.getElementById(id);
+
+  const nameEl = byId("companyName");
+  const emailEl = byId("companyEmail");
+  const catEl = byId("category");
+  const lastLoginEl = byId("lastLogin");
+
+  if (nameEl) nameEl.textContent = company.name || "Demo Bedrijf";
+  if (emailEl) emailEl.textContent = company.email || "demo@irisje.nl";
+  if (catEl) catEl.textContent = company.category || "Algemeen";
+  if (lastLoginEl) lastLoginEl.textContent = new Date().toLocaleString("nl-NL");
+
+  // ---- Logout knop ----
+  const logoutBtn = byId("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       localStorage.removeItem("token");
+      localStorage.removeItem("company");
       console.log("👋 Uitgelogd");
       window.location.href = "login.html";
     });
   }
 
+  // ---- Data laden ----
   laadDashboardData();
 });
 
-// ✅ Functie om data op te halen
+// ✅ Data ophalen en renderen
 async function laadDashboardData() {
   try {
     const headers = { Authorization: `Bearer ${token}` };
 
-    // ---- Aanvragen ophalen ----
+    // Aanvragen
     const reqRes = await fetch(`${API_BASE}/api/requests/company`, { headers });
     const reqText = await reqRes.text();
     console.log("📬 Ruwe response aanvragen:", reqText);
@@ -42,7 +67,7 @@ async function laadDashboardData() {
     }
     toonAanvragen(requests);
 
-    // ---- Reviews ophalen ----
+    // Reviews
     const revRes = await fetch(`${API_BASE}/api/reviews/company`, { headers });
     const revText = await revRes.text();
     console.log("💬 Ruwe response reviews:", revText);
@@ -56,7 +81,6 @@ async function laadDashboardData() {
     toonReviews(reviews);
 
     console.log("✅ Dashboard geladen zonder crash");
-
   } catch (error) {
     console.error("💥 Dashboard-fout:", error);
   }
@@ -72,15 +96,18 @@ function toonAanvragen(requests) {
     return;
   }
 
-  tbody.innerHTML = requests.map(r => `
+  tbody.innerHTML = requests
+    .map(
+      (r) => `
     <tr>
       <td>${r.name || "-"}</td>
       <td>${r.email || "-"}</td>
       <td>${r.message || "-"}</td>
       <td>${r.status || "-"}</td>
       <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-    </tr>
-  `).join("");
+    </tr>`
+    )
+    .join("");
 }
 
 // ✅ Reviews vullen
@@ -93,12 +120,15 @@ function toonReviews(reviews) {
     return;
   }
 
-  tbody.innerHTML = reviews.map(r => `
+  tbody.innerHTML = reviews
+    .map(
+      (r) => `
     <tr>
       <td>${r.name || "-"}</td>
       <td>${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
       <td>${r.message || "-"}</td>
       <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-    </tr>
-  `).join("");
+    </tr>`
+    )
+    .join("");
 }
