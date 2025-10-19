@@ -1,9 +1,9 @@
 // backend/routes/seed.js
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+// Import juiste modellen (hoofd-/kleine letters zoals in jouw project)
 const Company = require("../models/Company");
 const Request = require("../models/Request");
 const Review = require("../models/review");
@@ -11,23 +11,25 @@ const User = require("../models/User");
 
 router.get("/", async (req, res) => {
   try {
-    await Company.deleteMany({});
-    await Request.deleteMany({});
-    await Review.deleteMany({});
-    await User.deleteMany({});
+    // Eerst alles opschonen
+    await Promise.all([
+      Company.deleteMany({}),
+      Request.deleteMany({}),
+      Review.deleteMany({}),
+      User.deleteMany({})
+    ]);
 
-    // demo-gebruiker aanmaken
+    // Nieuw testaccount
     const passwordHash = await bcrypt.hash("demo1234", 10);
-    const user = new User({
+    const user = await User.create({
       email: "demo@irisje.nl",
       passwordHash,
       role: "company",
       isActive: true,
     });
-    await user.save();
 
-    // gekoppeld bedrijf
-    const company = new Company({
+    // Koppel bedrijf aan gebruiker
+    const company = await Company.create({
       name: "Demo Bedrijf",
       email: "demo@irisje.nl",
       category: "Algemeen",
@@ -36,9 +38,8 @@ router.get("/", async (req, res) => {
       website: "https://irisje.nl",
       user: user._id,
     });
-    await company.save();
 
-    // testaanvragen
+    // Dummy aanvragen
     const requests = [
       {
         name: "Jan Jansen",
@@ -64,7 +65,7 @@ router.get("/", async (req, res) => {
     ];
     await Request.insertMany(requests);
 
-    // testreviews
+    // Dummy reviews
     const reviews = [
       {
         name: "Eva van Dijk",
@@ -87,7 +88,7 @@ router.get("/", async (req, res) => {
     });
   } catch (err) {
     console.error("Seed-fout:", err);
-    res.status(500).json({ error: "Seed-fout" });
+    res.status(500).json({ error: "Seed-fout", details: err.message });
   }
 });
 
