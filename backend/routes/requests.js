@@ -1,47 +1,70 @@
 // backend/routes/requests.js
 const express = require("express");
 const router = express.Router();
+const Request = require("../models/Request");
+const Company = require("../models/Company");
+const auth = require("../middleware/auth");
+const sendEmail = require("../utils/mailer");
 
-// 🔧 Tijdelijke mock-data om het dashboard zichtbaar te maken
-const demoRequests = [
-  {
-    _id: "req1",
-    name: "Jan de Vries",
-    email: "jan@example.com",
-    message: "Ik heb interesse in jullie diensten.",
-    status: "Nieuw",
-    date: new Date("2025-10-10"),
-  },
-  {
-    _id: "req2",
-    name: "Petra Jansen",
-    email: "petra@example.com",
-    message: "Kunnen jullie mij morgen bellen?",
-    status: "Geaccepteerd",
-    date: new Date("2025-10-12"),
-  },
-];
-
-// 📬 Route: aanvragen per bedrijf ophalen
-router.get("/:companyId", async (req, res) => {
+// 📩 1. Nieuwe aanvraag aanmaken
+router.post("/", async (req, res) => {
   try {
-    // In plaats van database → direct mockdata teruggeven
-    res.json(demoRequests);
+    const { name, email, message, companyId } = req.body;
+
+    if (!name || !email || !message || !companyId) {
+      return res.status(400).json({ error: "Ontbrekende gegevens." });
+    }
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ error: "Bedrijf niet gevonden." });
+    }
+
+    // Aanvraag opslaan
+    const newRequest = new Request({
+      name,
+      email,
+      message,
+      companyId,
+      status: "Nieuw",
+      date: new Date(),
+    });
+    await newRequest.save();
+
+    // 📧 E-mailnotificatie versturen
+    try {
+      await sendEmail({
+        to: company.email,
+        subject: `Nieuwe aanvraag via Irisje.nl van ${name}`,
+        html: `
+          <h2>Nieuwe aanvraag ontvangen</h2>
+          <p><strong>Naam:</strong> ${name}</p>
+          <p><strong>E-mail:</strong> ${email}</p>
+          <p><strong>Bericht:</strong> ${message}</p>
+          <p>Bekijk alle aanvragen in je dashboard op <a href="https://irisje.nl/dashboard.html">Irisje.nl</a>.</p>
+        `,
+      });
+      console.log(`📨 Notificatie verstuurd naar ${company.email}`);
+    } catch (mailErr) {
+      console.error("❌ Fout bij versturen e-mail:", mailErr);
+    }
+
+    res.status(201).json({ message: "Aanvraag opgeslagen en e-mail verzonden." });
   } catch (err) {
-    console.error("Fout bij laden aanvragen:", err);
-    res.status(500).json({ error: "Serverfout bij laden aanvragen" });
+    console.error("❌ Fout bij opslaan aanvraag:", err);
+    res.status(500).json({ error: "Serverfout bij opslaan aanvraag." });
   }
 });
 
-// 📮 Nieuwe aanvraag (alleen voor test)
-router.post("/", async (req, res) => {
+// 🧩 2. Alle aanvragen van het ingelogde bedrijf ophalen
+router.get("/company", auth, async (req, res) => {
   try {
-    const newRequest = { _id: Date.now().toString(), ...req.body };
-    demoRequests.push(newRequest);
-    res.status(201).json(newRequest);
+    const companyId = req.user.id;
+    const requests = await Request.find({ companyId }).sort({ date: -1 });
+    res.json(requests);
   } catch (err) {
-    console.error("Fout bij opslaan aanvraag:", err);
-    res.status(500).json({ error: "Serverfout bij opslaan aanvraag" });
+    console.error("❌ Fout bij ophalen aanvragen:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen aanvragen." });
   }
 });
 
