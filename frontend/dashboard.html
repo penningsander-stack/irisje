@@ -2,156 +2,109 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl — Bedrijfsdashboard</title>
-  <link rel="stylesheet" href="./style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedrijfsdashboard - Irisje.nl</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <h1>Bedrijfsdashboard</h1>
-      <nav>
-        <a href="./index.html">← Terug naar start</a>
-        <button id="logoutBtn" class="btn btn-outline">Uitloggen</button>
-      </nav>
-    </div>
+  <header>
+    <h1>Bedrijfsdashboard</h1>
+    <button id="logoutBtn">Uitloggen</button>
   </header>
 
-  <main class="container">
-    <section class="card">
+  <main>
+    <section class="welcome">
       <h2>Welkom <span id="companyName">Bedrijf</span></h2>
       <p>Laatst ingelogd: <span id="lastLogin">—</span></p>
     </section>
 
-    <!-- Statistieken -->
-    <section class="grid grid-4">
-      <div class="card stat">
-        <div class="stat-title">Totaal</div>
-        <div class="stat-value" id="statTotal">0</div>
-      </div>
-      <div class="card stat">
-        <div class="stat-title">Geaccepteerd</div>
-        <div class="stat-value" id="statAccepted">0</div>
-      </div>
-      <div class="card stat">
-        <div class="stat-title">Afgewezen</div>
-        <div class="stat-value" id="statRejected">0</div>
-      </div>
-      <div class="card stat">
-        <div class="stat-title">Opgevolgd</div>
-        <div class="stat-value" id="statFollowedUp">0</div>
-      </div>
-    </section>
-
-    <!-- Grafiek (veilig – leest de bestaande tellerwaarden uit) -->
-    <section class="card" id="statsChartCard" aria-live="polite">
-      <div class="card-header">
-        <h3>📊 Overzicht status aanvragen</h3>
+    <section class="stats">
+      <h3>📊 Statistieken</h3>
+      <div class="stats-grid">
         <div>
-          <button id="refreshChartBtn" class="btn btn-sm">Grafiek verversen</button>
+          <p>Totaal</p>
+          <span id="statTotal">0</span>
         </div>
-      </div>
-      <div class="card-content">
-        <canvas id="statusChart" width="400" height="200"></canvas>
-      </div>
-    </section>
-
-    <!-- Credits/Betalen – alleen UI, geen backend nodig -->
-    <section class="card">
-      <div class="card-header">
-        <h3>Saldo & betalingen</h3>
-      </div>
-      <div class="card-content">
-        <p>Huidig saldo: <strong id="creditBalance">—</strong></p>
-        <button id="topupBtn" class="btn">Credits opwaarderen</button>
-        <small class="muted">Betaalfunctie wordt stap voor stap geactiveerd; dit is alvast de veilige UI.</small>
-      </div>
-    </section>
-
-    <!-- Aanvragen -->
-    <section class="card">
-      <div class="card-header">
-        <h3>📬 Aanvragen</h3>
-        <label for="filterStatus" class="sr-only">Filter</label>
-        <select id="filterStatus" class="select">
-          <option value="all">Alle</option>
-          <option value="accepted">Geaccepteerd</option>
-          <option value="rejected">Afgewezen</option>
-          <option value="followedUp">Opgevolgd</option>
-        </select>
-      </div>
-      <div class="card-content">
-        <div class="table-responsive">
-          <table class="table" id="requestsTable" aria-live="polite">
-            <thead>
-              <tr>
-                <th>Naam</th>
-                <th>E-mail</th>
-                <th>Bericht</th>
-                <th>Status</th>
-                <th>Datum</th>
-              </tr>
-            </thead>
-            <tbody id="requestsBody">
-              <tr class="empty-row"><td colspan="5">Geen aanvragen gevonden.</td></tr>
-            </tbody>
-          </table>
+        <div>
+          <p>Geaccepteerd</p>
+          <span id="statAccepted">0</span>
+        </div>
+        <div>
+          <p>Afgewezen</p>
+          <span id="statRejected">0</span>
+        </div>
+        <div>
+          <p>Opgevolgd</p>
+          <span id="statFollowedUp">0</span>
         </div>
       </div>
     </section>
 
-    <!-- Reviews -->
-    <section class="card">
-      <div class="card-header">
-        <h3>💬 Reviews</h3>
-      </div>
-      <div class="card-content">
-        <div class="table-responsive">
-          <table class="table" id="reviewsTable">
-            <thead>
-              <tr>
-                <th>Naam</th>
-                <th>Beoordeling</th>
-                <th>Bericht</th>
-                <th>Datum</th>
-                <th>Actie</th>
-              </tr>
-            </thead>
-            <tbody id="reviewsBody">
-              <!-- Voorbeeld fallback; echte data wordt door dashboard_safe.js geladen -->
-              <tr>
-                <td>Klant A</td>
-                <td>⭐⭐⭐⭐⭐</td>
-                <td>Super vriendelijk geholpen!</td>
-                <td>5-10-2025</td>
-                <td><button class="btn btn-sm btn-outline" data-action="report-review" data-review-id="example-1">Meld</button></td>
-              </tr>
-              <tr>
-                <td>Klant B</td>
-                <td>⭐⭐⭐⭐</td>
-                <td>Goede communicatie en snelle service.</td>
-                <td>8-10-2025</td>
-                <td><button class="btn btn-sm btn-outline" data-action="report-review" data-review-id="example-2">Meld</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+    <section class="requests">
+      <h3>📬 Aanvragen</h3>
+      <label for="filterStatus">Filter:</label>
+      <select id="filterStatus">
+        <option value="all">Alle</option>
+        <option value="accepted">Geaccepteerd</option>
+        <option value="rejected">Afgewezen</option>
+        <option value="followedUp">Opgevolgd</option>
+      </select>
+
+      <table id="requestsTable">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>E-mail</th>
+            <th>Bericht</th>
+            <th>Status</th>
+            <th>Datum</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr>
+            <td colspan="5">Geen aanvragen gevonden.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
+    <section class="reviews">
+      <h3>💬 Reviews</h3>
+      <table id="reviewsTable">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>Beoordeling</th>
+            <th>Bericht</th>
+            <th>Datum</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody id="reviewsBody">
+          <tr>
+            <td>Klant A</td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>Super vriendelijk geholpen!</td>
+            <td>5-10-2025</td>
+            <td><button class="report-btn">Meld</button></td>
+          </tr>
+          <tr>
+            <td>Klant B</td>
+            <td>⭐⭐⭐⭐</td>
+            <td>Goede communicatie en snelle service.</td>
+            <td>8-10-2025</td>
+            <td><button class="report-btn">Meld</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
   </main>
 
-  <footer class="footer">
-    <div class="container">
-      © 2025 Irisje.nl – Alle rechten voorbehouden
-    </div>
+  <footer>
+    <p>© 2025 Irisje.nl – Alle rechten voorbehouden</p>
   </footer>
 
-  <!-- Bestaande, stabiele logica eerst -->
   <script src="./js/dashboard_safe.js"></script>
-  <!-- Nieuwe, uitbreidende logica (voegt alleen functionaliteit toe) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9gUqjA6/GvBnzXJx4jD6sF2q3xv+gQ9rjMLvQ8R3j6TnQ0mPAn1o51rU1i5zQK+R" crossorigin="anonymous"></script>
-  <script src="./js/dashboard.js"></script>
 </body>
 </html>
