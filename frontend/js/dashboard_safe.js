@@ -1,8 +1,7 @@
 // frontend/js/dashboard_safe.js
 (function () {
-  const API_BASE = '/api'; // werkt voor Render met dezelfde host; zo niet, vervang met volledige backend-URL
+  const API_BASE = '/api'; // Als je backend een andere host heeft, zet hier de volledige URL neer.
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
-  const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
   const els = {
     companyName: $('#companyName'),
@@ -20,97 +19,75 @@
   const state = {
     requests: [],
     reviews: [],
-    filteredStatus: 'all',
+    filter: 'all',
   };
 
-  // ——— Utils ———
-  function fmtDate(d) {
+  // Helpers
+  function fmtDate(x) {
     try {
-      const dt = typeof d === 'string' || typeof d === 'number' ? new Date(d) : d;
-      return dt.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
-    } catch {
-      return '—';
-    }
+      const d = typeof x === 'string' || typeof x === 'number' ? new Date(x) : (x || new Date());
+      return d.toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch { return '—'; }
   }
+  const esc = (s) => String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  function sanitize(s) {
-    return String(s ?? '')
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
-
-  // ——— Auth / Me ———
+  // Auth / Me
   async function fetchMe() {
     try {
-      const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
-      if (res.status === 401) {
-        // niet ingelogd → naar login
-        window.location.href = './login.html';
-        return null;
-      }
-      if (!res.ok) throw new Error('auth/me failed');
-      return await res.json();
-    } catch {
-      // als /auth/me niet bestaat, ga door met defaults
-      return { name: 'Bedrijf', lastLogin: null };
-    }
+      const r = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+      if (r.status === 401) return redirectLogin();
+      if (!r.ok) throw 0;
+      return await r.json();
+    } catch { return { name: 'Bedrijf', lastLogin: null }; }
   }
-
   function applyMe(me) {
-    if (!me) return;
-    els.companyName.textContent = me.name || 'Bedrijf';
-    const last = me.lastLogin || me.last_login || null;
-    els.lastLogin.textContent = last ? fmtDate(last) : '—';
+    els.companyName.textContent = me?.name || 'Bedrijf';
+    els.lastLogin.textContent = me?.lastLogin ? fmtDate(me.lastLogin) : '—';
   }
+  function redirectLogin() { window.location.href = './login.html'; return null; }
 
-  // ——— Requests ———
+  // Requests
   async function fetchRequests() {
     try {
-      const res = await fetch(`${API_BASE}/requests`, { credentials: 'include' });
-      if (res.status === 401) {
-        window.location.href = './login.html';
-        return [];
-      }
-      if (!res.ok) throw new Error('requests failed');
-      const data = await res.json();
+      const r = await fetch(`${API_BASE}/requests`, { credentials: 'include' });
+      if (r.status === 401) return redirectLogin() || [];
+      if (!r.ok) throw 0;
+      const data = await r.json();
       return Array.isArray(data) ? data : (data.items || []);
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   }
-
-  function computeStats(requests) {
-    const total = requests.length;
+  function computeStats(list) {
+    const total = list.length;
     let accepted = 0, rejected = 0, followedUp = 0;
-    for (const r of requests) {
-      const st = (r.status || '').toLowerCase();
-      if (st === 'accepted' || st === 'geaccepteerd') accepted++;
-      else if (st === 'rejected' || st === 'afgewezen') rejected++;
-      else if (st === 'followedup' || st === 'opgevolgd' || st === 'opgepakt') followedUp++;
+    for (const it of list) {
+      const st = String(it.status || '').toLowerCase();
+      if (st === 'geaccepteerd' || st === 'accepted') accepted++;
+      else if (st === 'afgewezen' || st === 'rejected') rejected++;
+      else if (st === 'opgevolgd' || st === 'followedup' || st === 'opgepakt') followedUp++;
     }
     return { total, accepted, rejected, followedUp };
   }
-
   function renderStats(stats) {
     els.statTotal.textContent = stats.total;
     els.statAccepted.textContent = stats.accepted;
     els.statRejected.textContent = stats.rejected;
     els.statFollowedUp.textContent = stats.followedUp;
   }
-
   function renderRequests() {
     const tbody = els.requestsBody;
     tbody.innerHTML = '';
-    const list = state.filteredStatus === 'all'
-      ? state.requests
-      : state.requests.filter(r => {
-          const st = (r.status || '').toLowerCase();
-          if (state.filteredStatus === 'accepted') return st === 'accepted' || st === 'geaccepteerd';
-          if (state.filteredStatus === 'rejected') return st === 'rejected' || st === 'afgewezen';
-          if (state.filteredStatus === 'followedUp') return st === 'followedup' || st === 'opgevolgd' || st === 'opgepakt';
-          return true;
-        });
-
+    let list = state.requests;
+    if (state.filter !== 'all') {
+      list = list.filter(it => {
+        const st = String(it.status || '').toLowerCase();
+        if (state.filter === 'accepted') return st === 'accepted' || st === 'geaccepteerd';
+        if (state.filter === 'rejected') return st === 'rejected' || st === 'afgewezen';
+        if (state.filter === 'followedUp') return st === 'followedup' || st === 'opgevolgd' || st === 'opgepakt';
+        return true;
+      });
+    }
     if (!list.length) {
       const tr = document.createElement('tr');
       tr.className = 'iris-empty-row';
@@ -118,46 +95,38 @@
       tbody.appendChild(tr);
       return;
     }
-
     for (const r of list) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${sanitize(r.name || r.senderName || '—')}</td>
-        <td>${sanitize(r.email || r.senderEmail || '—')}</td>
-        <td>${sanitize(r.message || r.msg || '—')}</td>
-        <td>${sanitize(r.status || '—')}</td>
-        <td>${sanitize(fmtDate(r.createdAt || r.date || new Date()))}</td>
+        <td>${esc(r.name || r.senderName || '—')}</td>
+        <td>${esc(r.email || r.senderEmail || '—')}</td>
+        <td>${esc(r.message || r.msg || '—')}</td>
+        <td>${esc(r.status || '—')}</td>
+        <td>${esc(fmtDate(r.createdAt || r.date || new Date()))}</td>
       `;
       tbody.appendChild(tr);
     }
   }
 
-  // ——— Reviews ———
+  // Reviews
   async function fetchReviews() {
-    // Probeer generieke endpoint; val desnoods terug op lege lijst (UI blijft werken)
-    const candidates = [
+    const endpoints = [
       `${API_BASE}/reviews/company/me`,
       `${API_BASE}/reviews/my`,
       `${API_BASE}/reviews`,
     ];
-    for (const url of candidates) {
+    for (const url of endpoints) {
       try {
-        const res = await fetch(url, { credentials: 'include' });
-        if (res.status === 401) {
-          window.location.href = './login.html';
-          return [];
-        }
-        if (!res.ok) continue;
-        const data = await res.json();
+        const r = await fetch(url, { credentials: 'include' });
+        if (r.status === 401) return redirectLogin() || [];
+        if (!r.ok) continue;
+        const data = await r.json();
         if (Array.isArray(data)) return data;
         if (Array.isArray(data.items)) return data.items;
-      } catch {
-        // probeer volgende
-      }
+      } catch { /* volgende proberen */ }
     }
     return [];
   }
-
   function renderReviews() {
     const tbody = els.reviewsBody;
     tbody.innerHTML = '';
@@ -168,82 +137,59 @@
       tbody.appendChild(tr);
       return;
     }
-
     for (const rv of state.reviews) {
       const id = rv._id || rv.id || '';
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${sanitize(rv.authorName || rv.name || '—')}</td>
+        <td>${esc(rv.authorName || rv.name || '—')}</td>
         <td>${'⭐'.repeat(Number(rv.rating || 0)) || '—'}</td>
-        <td>${sanitize(rv.message || rv.text || '—')}</td>
-        <td>${sanitize(fmtDate(rv.createdAt || rv.date || new Date()))}</td>
-        <td>
-          <button class="iris-btn iris-btn-sm iris-btn-outline" data-action="report" data-id="${sanitize(id)}">Meld</button>
-        </td>
+        <td>${esc(rv.message || rv.text || '—')}</td>
+        <td>${esc(fmtDate(rv.createdAt || rv.date || new Date()))}</td>
+        <td><button class="iris-btn iris-btn-sm iris-btn-outline" data-action="report" data-id="${esc(id)}">Meld</button></td>
       `;
       tbody.appendChild(tr);
     }
-
     tbody.addEventListener('click', async (e) => {
       const btn = e.target.closest('button[data-action="report"]');
       if (!btn) return;
       const id = btn.getAttribute('data-id');
       if (!id) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Melden…';
+      btn.disabled = true; btn.textContent = 'Melden…';
       try {
-        const res = await fetch(`${API_BASE}/reviews/report/${encodeURIComponent(id)}`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+        const r = await fetch(`${API_BASE}/reviews/report/${encodeURIComponent(id)}`, {
+          method: 'POST', credentials: 'include',
+          headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ reason: 'gemeld_via_dashboard' }),
         });
-        if (!res.ok) throw new Error('report failed');
-        btn.textContent = 'Gemeld';
-        btn.classList.add('is-muted');
+        if (!r.ok) throw 0;
+        btn.textContent = 'Gemeld'; btn.classList.add('is-muted');
       } catch {
-        btn.disabled = false;
-        btn.textContent = 'Meld';
+        btn.disabled = false; btn.textContent = 'Meld';
         alert('Melden van review is mislukt.');
       }
-    }, { once: true });
+    }, { once:true });
   }
 
-  // ——— Events ———
+  // Events
   function setupEvents() {
-    if (els.filterStatus) {
-      els.filterStatus.addEventListener('change', () => {
-        state.filteredStatus = els.filterStatus.value;
-        renderRequests();
-      });
-    }
-
-    if (els.logoutBtn) {
-      els.logoutBtn.addEventListener('click', async () => {
-        try {
-          await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
-        } catch { /* negeren */ }
-        try {
-          localStorage.removeItem('token');
-          sessionStorage.clear();
-        } catch {/* noop */}
-        window.location.href = './login.html';
-      });
-    }
+    els.filterStatus?.addEventListener('change', () => {
+      state.filter = els.filterStatus.value;
+      renderRequests();
+    });
+    els.logoutBtn?.addEventListener('click', async () => {
+      try { await fetch(`${API_BASE}/auth/logout`, { method:'POST', credentials:'include' }); } catch {}
+      try { localStorage.removeItem('token'); sessionStorage.clear(); } catch {}
+      window.location.href = './login.html';
+    });
   }
 
-  // ——— Init ———
+  // Init
   document.addEventListener('DOMContentLoaded', async () => {
     setupEvents();
-
-    const me = await fetchMe();
-    applyMe(me);
-
+    const me = await fetchMe(); if (me) applyMe(me);
     state.requests = await fetchRequests();
     renderStats(computeStats(state.requests));
     renderRequests();
-
     state.reviews = await fetchReviews();
     renderReviews();
   });
