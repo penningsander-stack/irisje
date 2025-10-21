@@ -2,107 +2,105 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bedrijfsdashboard - Irisje.nl</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header>
-    <h1>Bedrijfsdashboard</h1>
-    <button id="logoutBtn">Uitloggen</button>
+  <header class="iris-header">
+    <div class="iris-container header-inner">
+      <h1 class="iris-title">Bedrijfsdashboard</h1>
+      <nav class="iris-nav">
+        <a class="iris-link" href="./index.html">← Terug naar start</a>
+        <button id="logoutBtn" class="iris-btn iris-btn-outline">Uitloggen</button>
+      </nav>
+    </div>
   </header>
 
-  <main>
-    <section class="welcome">
-      <h2>Welkom <span id="companyName">Bedrijf</span></h2>
+  <main class="iris-container">
+    <section class="iris-card">
+      <h2 class="iris-h2">Welkom <span id="companyName">Bedrijf</span></h2>
       <p>Laatst ingelogd: <span id="lastLogin">—</span></p>
     </section>
 
-    <section class="stats">
-      <h3>📊 Statistieken</h3>
-      <div class="stats-grid">
-        <div>
-          <p>Totaal</p>
-          <span id="statTotal">0</span>
-        </div>
-        <div>
-          <p>Geaccepteerd</p>
-          <span id="statAccepted">0</span>
-        </div>
-        <div>
-          <p>Afgewezen</p>
-          <span id="statRejected">0</span>
-        </div>
-        <div>
-          <p>Opgevolgd</p>
-          <span id="statFollowedUp">0</span>
+    <section class="iris-grid iris-grid-4">
+      <div class="iris-card iris-stat">
+        <div class="iris-stat-title">Totaal</div>
+        <div class="iris-stat-value" id="statTotal">0</div>
+      </div>
+      <div class="iris-card iris-stat">
+        <div class="iris-stat-title">Geaccepteerd</div>
+        <div class="iris-stat-value" id="statAccepted">0</div>
+      </div>
+      <div class="iris-card iris-stat">
+        <div class="iris-stat-title">Afgewezen</div>
+        <div class="iris-stat-value" id="statRejected">0</div>
+      </div>
+      <div class="iris-card iris-stat">
+        <div class="iris-stat-title">Opgevolgd</div>
+        <div class="iris-stat-value" id="statFollowedUp">0</div>
+      </div>
+    </section>
+
+    <section class="iris-card">
+      <div class="iris-card-header">
+        <h3 class="iris-h3">📬 Aanvragen</h3>
+        <label for="filterStatus" class="iris-sr-only">Filter</label>
+        <select id="filterStatus" class="iris-select">
+          <option value="all">Alle</option>
+          <option value="accepted">Geaccepteerd</option>
+          <option value="rejected">Afgewezen</option>
+          <option value="followedUp">Opgevolgd</option>
+        </select>
+      </div>
+      <div class="iris-card-content">
+        <div class="iris-table-wrap">
+          <table class="iris-table" id="requestsTable" aria-live="polite">
+            <thead>
+              <tr>
+                <th>Naam</th>
+                <th>E-mail</th>
+                <th>Bericht</th>
+                <th>Status</th>
+                <th>Datum</th>
+              </tr>
+            </thead>
+            <tbody id="requestsBody">
+              <tr class="iris-empty-row"><td colspan="5">Geen aanvragen gevonden.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
 
-    <section class="requests">
-      <h3>📬 Aanvragen</h3>
-      <label for="filterStatus">Filter:</label>
-      <select id="filterStatus">
-        <option value="all">Alle</option>
-        <option value="accepted">Geaccepteerd</option>
-        <option value="rejected">Afgewezen</option>
-        <option value="followedUp">Opgevolgd</option>
-      </select>
-
-      <table id="requestsTable">
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Bericht</th>
-            <th>Status</th>
-            <th>Datum</th>
-          </tr>
-        </thead>
-        <tbody id="requestsBody">
-          <tr>
-            <td colspan="5">Geen aanvragen gevonden.</td>
-          </tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="reviews">
-      <h3>💬 Reviews</h3>
-      <table id="reviewsTable">
-        <thead>
-          <tr>
-            <th>Naam</th>
-            <th>Beoordeling</th>
-            <th>Bericht</th>
-            <th>Datum</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody id="reviewsBody">
-          <tr>
-            <td>Klant A</td>
-            <td>⭐⭐⭐⭐⭐</td>
-            <td>Super vriendelijk geholpen!</td>
-            <td>5-10-2025</td>
-            <td><button class="report-btn">Meld</button></td>
-          </tr>
-          <tr>
-            <td>Klant B</td>
-            <td>⭐⭐⭐⭐</td>
-            <td>Goede communicatie en snelle service.</td>
-            <td>8-10-2025</td>
-            <td><button class="report-btn">Meld</button></td>
-          </tr>
-        </tbody>
-      </table>
+    <section class="iris-card">
+      <div class="iris-card-header">
+        <h3 class="iris-h3">💬 Reviews</h3>
+      </div>
+      <div class="iris-card-content">
+        <div class="iris-table-wrap">
+          <table class="iris-table" id="reviewsTable">
+            <thead>
+              <tr>
+                <th>Naam</th>
+                <th>Beoordeling</th>
+                <th>Bericht</th>
+                <th>Datum</th>
+                <th>Actie</th>
+              </tr>
+            </thead>
+            <tbody id="reviewsBody">
+              <tr class="iris-empty-row"><td colspan="5">Reviews worden geladen…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer>
-    <p>© 2025 Irisje.nl – Alle rechten voorbehouden</p>
+  <footer class="iris-footer">
+    <div class="iris-container">© 2025 Irisje.nl – Alle rechten voorbehouden</div>
   </footer>
 
   <script src="./js/dashboard_safe.js"></script>
