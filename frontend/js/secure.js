@@ -1,40 +1,42 @@
 // frontend/js/secure.js
-document.addEventListener("DOMContentLoaded", () => {
-  const logoutBtn = document.getElementById("logoutBtn") || document.getElementById("logout");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      console.log("👋 Uitloggen...");
-      localStorage.removeItem("token");
-      localStorage.removeItem("company");
-      window.location.href = "login.html";
-    });
-  }
+(function () {
+  const API = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+
+  // Beschermde pagina's: controleer token
+  const protectedPages = [
+    "dashboard.html",
+    "admin.html",
+    "company.html",
+    "ad-company.html",
+  ];
+  const isProtected = protectedPages.some((p) =>
+    window.location.pathname.endsWith(p)
+  );
 
   const token = localStorage.getItem("token");
-  const path = window.location.pathname;
-  const publicPages = ["/login.html", "/register.html", "/index.html", "/"];
-
-  if (!token && !publicPages.some((p) => path.endsWith(p))) {
+  if (isProtected && !token) {
     window.location.href = "login.html";
     return;
   }
 
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const now = Date.now() / 1000;
-      if (payload.exp && payload.exp < now) {
-        console.warn("🔒 Token verlopen");
-        localStorage.removeItem("token");
+  // Uitloggen-knop
+  document.addEventListener("DOMContentLoaded", () => {
+    const logoutBtn =
+      document.getElementById("logoutBtn") || document.getElementById("logout");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("companyId");
+          localStorage.removeItem("companyName");
+          localStorage.removeItem("companyEmail");
+          localStorage.removeItem("companyCategory");
+        } catch {}
         window.location.href = "login.html";
-      } else {
-        console.log("✅ Token is geldig en behouden");
-      }
-    } catch (e) {
-      console.error("⚠️ Tokencontrole mislukt:", e);
-      localStorage.removeItem("token");
-      window.location.href = "login.html";
+      });
     }
-  }
-});
+  });
+
+  // Kleine ping om token te “touch”-en (optioneel)
+  console.log("✅ Token is geldig en behouden");
+})();
