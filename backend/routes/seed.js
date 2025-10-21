@@ -1,75 +1,63 @@
 // backend/routes/seed.js
 const express = require("express");
 const router = express.Router();
-
-const Review = require("../models/review");
 const Request = require("../models/Request");
-const Company = require("../models/Company");
+const Review = require("../models/review");
 
-router.get("/", async (req, res) => {
+router.post("/seed", async (req, res) => {
   try {
-    // 1️⃣ Zoek je echte Demo Bedrijf op
-    const company = await Company.findOne({ email: "demo@irisje.nl" });
+    const companyId = "68f4c355ab9e361a51d29acd";
 
-    if (!company) {
-      return res.status(404).json({ error: "Demo Bedrijf niet gevonden in database." });
-    }
+    // 🧹 Eerst oude testdata verwijderen
+    await Request.deleteMany({ companyId });
+    await Review.deleteMany({ companyId });
 
-    // 2️⃣ Oude testdata wissen
-    await Review.deleteMany({ companyId: company._id });
-    await Request.deleteMany({ companyId: company._id });
-
-    // 3️⃣ Nieuwe fake aanvragen
-    const fakeRequests = [
+    // 📬 Testaanvragen
+    const requests = await Request.insertMany([
       {
-        companyId: company._id,
-        name: "Peter Janssen",
-        email: "peter@example.com",
-        message: "Ik zoek hulp bij mijn tuinproject.",
-        status: "Nieuw",
-        date: new Date(),
-      },
-      {
-        companyId: company._id,
-        name: "Lisa van Dijk",
-        email: "lisa@example.com",
-        message: "Kunnen jullie iets doen aan mijn lekkende dakgoot?",
-        status: "Nieuw",
-        date: new Date(),
-      },
-    ];
-
-    // 4️⃣ Nieuwe fake reviews
-    const fakeReviews = [
-      {
-        companyId: company._id,
+        companyId,
         name: "Jan de Vries",
-        rating: 5,
-        message: "Snelle reactie en goed geholpen!",
-        date: new Date(),
+        email: "jan@example.com",
+        message: "Ik heb interesse in jullie diensten.",
+        status: "Nieuw",
+        date: new Date("2025-10-10"),
       },
       {
-        companyId: company._id,
-        name: "Sophie Bakker",
-        rating: 4,
-        message: "Klantvriendelijk en professioneel.",
-        date: new Date(),
+        companyId,
+        name: "Petra Jansen",
+        email: "petra@example.com",
+        message: "Kunnen jullie mij morgen bellen?",
+        status: "Geaccepteerd",
+        date: new Date("2025-10-12"),
       },
-    ];
+    ]);
 
-    await Request.insertMany(fakeRequests);
-    await Review.insertMany(fakeReviews);
+    // 💬 Testreviews
+    const reviews = await Review.insertMany([
+      {
+        companyId,
+        name: "Klant A",
+        rating: 5,
+        message: "Super vriendelijk geholpen!",
+        date: new Date("2025-10-05"),
+      },
+      {
+        companyId,
+        name: "Klant B",
+        rating: 4,
+        message: "Goede communicatie en snelle service.",
+        date: new Date("2025-10-08"),
+      },
+    ]);
 
     res.json({
       success: true,
-      message: "Fake data toegevoegd aan Demo Bedrijf",
-      company: company.name,
-      companyId: company._id,
-      requests: fakeRequests.length,
-      reviews: fakeReviews.length,
+      requestsCount: requests.length,
+      reviewsCount: reviews.length,
+      message: "✅ Seed succesvol uitgevoerd",
     });
   } catch (err) {
-    console.error("Seed-fout:", err);
+    console.error("❌ Seed-fout:", err);
     res.status(500).json({ error: "Seed-fout", details: err.message });
   }
 });
