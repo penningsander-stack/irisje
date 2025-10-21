@@ -1,48 +1,68 @@
 // backend/server.js
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config();
+const cookieParser = require("cookie-parser");
+const path = require("path");
 
+const app = express();
+
+// ====== DATABASE ======
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB error:", err));
+
+// ====== MIDDLEWARE ======
+const allowedOrigins = [
+  "https://irisje-frontend.onrender.com",
+  "https://irisje.nl"
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
+app.use(express.json());
+app.use(cookieParser());
+
+// ====== ROUTES ======
 const authRoutes = require("./routes/auth");
 const companyRoutes = require("./routes/companies");
 const requestRoutes = require("./routes/requests");
 const reviewRoutes = require("./routes/reviews");
 const adminRoutes = require("./routes/admin");
-const autoSeed = require("./utils/autoSeed"); // 🌱 automatische testdata
+const publicRequestRoutes = require("./routes/publicRequests");
+const emailRoutes = require("./routes/email");
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+// Basis-ping voor frontend-detectie
+app.get("/api/auth/ping", (req, res) => {
+  res.json({ ok: true, service: "auth" });
+});
 
-// API-routes
+// Gebruik alle bestaande routers
 app.use("/api/auth", authRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/publicRequests", publicRequestRoutes);
+app.use("/api/email", emailRoutes);
 
-// Testendpoint
-app.get("/", (_, res) => res.send("Irisje backend actief ✅"));
+// ====== STATIC FRONTEND (optioneel) ======
+const frontendPath = path.join(__dirname, "../frontend");
+app.use(express.static(frontendPath));
 
-// Verbinding met database + server starten
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+// ====== SERVER START ======
 const PORT = process.env.PORT || 3000;
-
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(async () => {
-    console.log("✅ Verbonden met MongoDB");
-
-    // 🌱 Auto-seed uitvoeren
-    await autoSeed().catch((e) =>
-      console.error("❌ Auto-seed crashte:", e)
-    );
-
-    app.listen(PORT, () => {
-      console.log(`🚀 Server actief op poort ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB-fout:", err);
-    process.exit(1);
-  });
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
