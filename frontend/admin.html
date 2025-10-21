@@ -2,9 +2,9 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin – Irisje.nl</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beheerdersdashboard – Irisje.nl</title>
 
   <script>
     window.ENV = { API_BASE: "https://irisje-backend.onrender.com" };
@@ -12,106 +12,116 @@
 
   <style>
     :root {
-      --irisje-primary: #4f46e5;
-      --irisje-bg: #f9fafb;
-      --irisje-text: #1f2937;
-      --irisje-muted: #6b7280;
-      --irisje-border: #e5e7eb;
-      --irisje-card: #ffffff;
-      --ok: #22c55e;
-      --danger: #ef4444;
+      --primary: #4f46e5;
+      --bg: #f9fafb;
+      --text: #1f2937;
+      --border: #e5e7eb;
+      --muted: #6b7280;
     }
-    * { box-sizing: border-box; }
+
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--irisje-bg); color: var(--irisje-text);
-      margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+      background: var(--bg);
+      margin: 0;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-    header {
-      background: var(--irisje-card); box-shadow: 0 1px 3px rgba(0,0,0,.08);
-      padding: 1rem 1.5rem; display:flex; justify-content:space-between; align-items:center;
-    }
-    header h1 { margin:0; color: var(--irisje-primary); font-size:1.2rem; }
-    header button { background: var(--danger); color:#fff; border:0; padding:.5rem 1rem; border-radius:.5rem; cursor:pointer; }
 
-    main { max-width: 1100px; width:100%; margin:2rem auto; padding:0 1rem; display:grid; gap:1.5rem; }
-    section.card {
-      background: var(--irisje-card); border:1px solid var(--irisje-border); border-radius:1rem; padding:1rem 1.25rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    h2 { margin:0 0 .75rem; font-size:1.1rem; }
-    table { width:100%; border-collapse: collapse; }
-    th, td { padding:.65rem; border-bottom:1px solid var(--irisje-border); text-align:left; vertical-align: top; }
-    th { color: var(--irisje-muted); font-weight:600; }
-    .btn { border:0; padding:.4rem .7rem; border-radius:.4rem; cursor:pointer; font-size:.9rem; }
-    .approve { background: var(--ok); color:#fff; }
-    .delete { background: var(--danger); color:#fff; }
-    .block { background:#f59e0b; color:#fff; }
-    .unblock { background:#10b981; color:#fff; }
+
+    header h1 {
+      color: var(--primary);
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    section {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    h2 { font-size: 1.1rem; margin-top: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    button {
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .approve-btn { background: #10b981; color: white; }
+    .delete-btn { background: #ef4444; color: white; }
+    .muted { color: var(--muted); }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
   </style>
 </head>
-
-<script>
-  document.querySelectorAll('script[src]').forEach(script => {
-    const url = new URL(script.src);
-    if (!url.searchParams.has('v')) {
-      url.searchParams.set('v', new Date().toISOString().slice(0,10));
-      const fresh = document.createElement('script');
-      fresh.src = url.toString();
-      fresh.defer = true;
-      document.head.appendChild(fresh);
-      script.remove();
-    }
-  });
-</script>
-
-
-
-  
 <body>
   <header>
-    <h1>Admin – Beheer</h1>
-    <button id="logoutBtn">Uitloggen</button>
+    <h1>Beheerdersdashboard</h1>
+    <a href="index.html">← Terug naar start</a>
   </header>
 
   <main>
-    <section class="card">
-      <h2>🏢 Bedrijven</h2>
-      <table>
+    <section>
+      <h2>💬 Gemelde Reviews</h2>
+      <table id="reportedReviewsTable">
         <thead>
           <tr>
-            <th>Naam</th>
-            <th>E-mail</th>
-            <th>Categorie</th>
-            <th>Blokkade</th>
-            <th>Actie</th>
-          </tr>
-        </thead>
-        <tbody id="companiesBody">
-          <tr><td colspan="5">Laden...</td></tr>
-        </tbody>
-      </table>
-    </section>
-
-    <section class="card">
-      <h2>🚩 Gemelde reviews</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Bedrijf</th>
             <th>Naam</th>
             <th>Beoordeling</th>
             <th>Bericht</th>
             <th>Datum</th>
-            <th>Acties</th>
+            <th>Actie</th>
           </tr>
         </thead>
-        <tbody id="reviewsBody">
-          <tr><td colspan="6">Laden...</td></tr>
+        <tbody>
+          <tr><td colspan="5">Laden...</td></tr>
         </tbody>
       </table>
     </section>
   </main>
+
+  <footer>© 2025 Irisje.nl – Alle rechten voorbehouden</footer>
 
   <script src="js/admin.js"></script>
 </body>
