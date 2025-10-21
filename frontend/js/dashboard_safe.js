@@ -1,9 +1,53 @@
 // frontend/js/dashboard_safe.js
 (function () {
-  const API_BASE = '/api'; // Als je backend een andere host heeft, zet hier de volledige URL neer.
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
+  // —————————————————————————————————————————————
+  // 1) API autodetect: vindt zelf de juiste backend
+  //    Probeert in volgorde en gebruikt de 1e die 200 op /auth/ping geeft
+  //    (Valt terug op /auth/me als /auth/ping niet bestaat)
+  // —————————————————————————————————————————————
+  const sameOrigin = `${location.origin}/api`;
+  const candidates = [
+    // 1) same origin (reverse proxy)
+    sameOrigin,
+    // 2) hoofd-domein (als je frontend subdomein is)
+    'https://irisje.nl/api',
+    // 3) mogelijke backend Render hostnamen
+    'https://irisje-backend.onrender.com/api',
+    'https://irisje.onrender.com/api',
+    'https://irisje-api.onrender.com/api',
+    // 4) fallback: hard same-origin nogmaals
+    '/api'
+  ];
+
+  let API_BASE = null;
+
+  async function probe(base) {
+    try {
+      // Probeer eerst een lichte ping (als die bestaat)
+      const ping = await fetch(`${base}/auth/ping`, { credentials:'include' });
+      if (ping.ok) return true;
+      // Zo niet, probeer /auth/me (kan 200 of 401 geven; 401 betekent wel dat de route bestaat)
+      const me = await fetch(`${base}/auth/me`, { credentials:'include' });
+      if (me.ok || me.status === 401) return true;
+    } catch {}
+    return false;
+  }
+
+  async function detectApiBase() {
+    for (const base of candidates) {
+      const ok = await probe(base);
+      if (ok) { API_BASE = base; return base; }
+    }
+    return null;
+  }
+
+  // —————————————————————————————————————————————
+  // 2) Elementen
+  // —————————————————————————————————————————————
   const els = {
+    debug: $('#debugBanner'),
     companyName: $('#companyName'),
     lastLogin: $('#lastLogin'),
     statTotal: $('#statTotal'),
@@ -22,7 +66,15 @@
     filter: 'all',
   };
 
-  // Helpers
+  // —————————————————————————————————————————————
+  // 3) Helpers
+  // —————————————————————————————————————————————
+  function showDebug(msg) {
+    if (!els.debug) return;
+    els.debug.style.display = 'block';
+    els.debug.innerHTML = msg;
+  }
+
   function fmtDate(x) {
     try {
       const d = typeof x === 'string' || typeof x === 'number' ? new Date(x) : (x || new Date());
@@ -33,31 +85,41 @@
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  // Auth / Me
+  function redirectLogin() { window.location.href = './login.html'; return null; }
+
+  // —————————————————————————————————————————————
+  // 4) API calls (met autodetected API_BASE)
+  // —————————————————————————————————————————————
+  async function apiGet(path) {
+    if (!API_BASE) throw new Error('API_BASE missing');
+    const res = await fetch(`${API_BASE}${path}`, { credentials:'include' });
+    return res;
+  }
+
   async function fetchMe() {
     try {
-      const r = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+      const r = await apiGet('/auth/me');
       if (r.status === 401) return redirectLogin();
       if (!r.ok) throw 0;
       return await r.json();
     } catch { return { name: 'Bedrijf', lastLogin: null }; }
   }
+
   function applyMe(me) {
     els.companyName.textContent = me?.name || 'Bedrijf';
     els.lastLogin.textContent = me?.lastLogin ? fmtDate(me.lastLogin) : '—';
   }
-  function redirectLogin() { window.location.href = './login.html'; return null; }
 
-  // Requests
   async function fetchRequests() {
     try {
-      const r = await fetch(`${API_BASE}/requests`, { credentials: 'include' });
+      const r = await apiGet('/requests');
       if (r.status === 401) return redirectLogin() || [];
       if (!r.ok) throw 0;
       const data = await r.json();
       return Array.isArray(data) ? data : (data.items || []);
     } catch { return []; }
   }
+
   function computeStats(list) {
     const total = list.length;
     let accepted = 0, rejected = 0, followedUp = 0;
@@ -69,12 +131,14 @@
     }
     return { total, accepted, rejected, followedUp };
   }
+
   function renderStats(stats) {
     els.statTotal.textContent = stats.total;
     els.statAccepted.textContent = stats.accepted;
     els.statRejected.textContent = stats.rejected;
     els.statFollowedUp.textContent = stats.followedUp;
   }
+
   function renderRequests() {
     const tbody = els.requestsBody;
     tbody.innerHTML = '';
@@ -108,16 +172,15 @@
     }
   }
 
-  // Reviews
   async function fetchReviews() {
     const endpoints = [
-      `${API_BASE}/reviews/company/me`,
-      `${API_BASE}/reviews/my`,
-      `${API_BASE}/reviews`,
+      '/reviews/company/me',
+      '/reviews/my',
+      '/reviews',
     ];
-    for (const url of endpoints) {
+    for (const path of endpoints) {
       try {
-        const r = await fetch(url, { credentials: 'include' });
+        const r = await apiGet(path);
         if (r.status === 401) return redirectLogin() || [];
         if (!r.ok) continue;
         const data = await r.json();
@@ -127,6 +190,7 @@
     }
     return [];
   }
+
   function renderReviews() {
     const tbody = els.reviewsBody;
     tbody.innerHTML = '';
@@ -149,6 +213,7 @@
       `;
       tbody.appendChild(tr);
     }
+
     tbody.addEventListener('click', async (e) => {
       const btn = e.target.closest('button[data-action="report"]');
       if (!btn) return;
@@ -170,26 +235,47 @@
     }, { once:true });
   }
 
-  // Events
+  // —————————————————————————————————————————————
+  // 5) Events
+  // —————————————————————————————————————————————
   function setupEvents() {
     els.filterStatus?.addEventListener('change', () => {
       state.filter = els.filterStatus.value;
       renderRequests();
     });
     els.logoutBtn?.addEventListener('click', async () => {
-      try { await fetch(`${API_BASE}/auth/logout`, { method:'POST', credentials:'include' }); } catch {}
+      try {
+        await fetch(`${API_BASE}/auth/logout`, { method:'POST', credentials:'include' });
+      } catch {}
       try { localStorage.removeItem('token'); sessionStorage.clear(); } catch {}
       window.location.href = './login.html';
     });
   }
 
-  // Init
+  // —————————————————————————————————————————————
+  // 6) Init flow
+  // —————————————————————————————————————————————
   document.addEventListener('DOMContentLoaded', async () => {
     setupEvents();
+
+    // Detecteer werkende API base
+    const base = await detectApiBase();
+    if (!base) {
+      showDebug(`<strong>API onbereikbaar.</strong> Kon geen werkende /api vinden op: ${candidates.map(esc).join(', ')}`);
+      // Laat de rest van de UI staan; user kan iig uitloggen/terug
+      return;
+    }
+
+    // Toon in debug (alleen tijdelijk zichtbaar als er écht iets misgaat)
+    // showDebug(`API: ${esc(base)}`); // desgewenst uitcommentariëren
+
+    // Laad data
     const me = await fetchMe(); if (me) applyMe(me);
+
     state.requests = await fetchRequests();
     renderStats(computeStats(state.requests));
     renderRequests();
+
     state.reviews = await fetchReviews();
     renderReviews();
   });
