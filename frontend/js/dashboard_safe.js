@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const headers = { Authorization: `Bearer ${token}` };
 
   // 📨 AANVRAGEN LADEN
-  const reqUrl = `${API}/api/requests/company/${companyId}`;
+  const reqUrl = `${API}/api/requests/company`;
   const requests = await safeFetch(reqUrl, { headers });
   console.log("📬 Ruwe response aanvragen:", requests);
 
