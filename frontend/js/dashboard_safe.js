@@ -1,157 +1,102 @@
 // frontend/js/dashboard_safe.js
 console.log("📊 Dashboard Safe Script geladen");
 
-const API = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
-
-// Veilige fetch helper (crasht niet op HTML of lege responses)
-async function safeFetch(url, options = {}) {
-  try {
-    const res = await fetch(url, options);
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      console.warn("❌ Ongeldige JSON:", text);
-      return null;
-    }
-  } catch (err) {
-    console.error("❌ Fetch-fout:", err);
-    return null;
-  }
-}
+const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("token");
-  const companyId =
-    localStorage.getItem("companyId") || "68f4c355ab9e361a51d29acd";
-
   if (!token) {
+    console.warn("❌ Geen token gevonden, uitloggen...");
     window.location.href = "login.html";
     return;
   }
+
   console.log("✅ Token is geldig en behouden");
 
-  // Welkomstgegevens (als beschikbaar)
-  const nameEl = document.getElementById("companyName");
-  const emailEl = document.getElementById("companyEmail");
-  const categoryEl = document.getElementById("category");
-  const lastLoginEl = document.getElementById("lastLogin");
-  if (nameEl) nameEl.textContent = localStorage.getItem("companyName") || "Bedrijf";
-  if (emailEl) emailEl.textContent = localStorage.getItem("companyEmail") || "";
-  if (categoryEl) categoryEl.textContent = localStorage.getItem("companyCategory") || "";
-  if (lastLoginEl) lastLoginEl.textContent = new Date().toLocaleString("nl-NL");
+  // --- 1️⃣ API-hulpfunctie ---
+  async function safeFetch(url, options = {}) {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      const text = await res.text();
+      return text ? JSON.parse(text) : [];
+    } catch (err) {
+      console.error(`❌ safeFetch-fout voor ${url}:`, err);
+      return [];
+    }
+  }
 
-  const headers = { Authorization: `Bearer ${token}` };
-
-  // 📬 Aanvragen laden (server haalt companyId uit token)
-  const requestsUrl = `${API}/api/requests/company`;
-  const requests = (await safeFetch(requestsUrl, { headers })) || [];
+  // --- 2️⃣ Aanvragen ophalen ---
+  const companyId = "68f4c355ab9e361a51d29acd"; // demo bedrijf
+  const requests = await safeFetch(`${API_BASE}/api/requests/company/${companyId}`);
   console.log("📬 Ruwe response aanvragen:", requests);
 
-  const reqBody = document.getElementById("requestsBody");
-  if (reqBody) {
-    if (Array.isArray(requests) && requests.length > 0) {
-      reqBody.innerHTML = requests
-        .map(
-          (r) => `
-        <tr>
-          <td>${r.name || ""}</td>
-          <td>${r.email || ""}</td>
-          <td>${r.message || ""}</td>
-          <td>${r.status || ""}</td>
-          <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : ""}</td>
-        </tr>`
-        )
-        .join("");
-    } else {
-      reqBody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-    }
+  const tbodyReq = document.querySelector("#requestsBody");
+  if (Array.isArray(requests) && requests.length) {
+    tbodyReq.innerHTML = requests
+      .map(
+        (r) => `
+      <tr>
+        <td>${r.name}</td>
+        <td>${r.email}</td>
+        <td>${r.message}</td>
+        <td>${r.status}</td>
+        <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+      </tr>`
+      )
+      .join("");
+  } else {
+    tbodyReq.innerHTML = "<tr><td colspan='5'>Geen aanvragen gevonden.</td></tr>";
   }
 
-  // 💬 Reviews laden (met companyId in pad)
-  const reviewsUrl = `${API}/api/reviews/company/${companyId}`;
-  const reviews = (await safeFetch(reviewsUrl, { headers })) || [];
+  // --- 3️⃣ Reviews ophalen ---
+  const reviews = await safeFetch(`${API_BASE}/api/reviews/company/${companyId}`);
   console.log("💬 Ruwe response reviews:", reviews);
 
-  const revBody = document.getElementById("reviewsBody");
-  if (revBody) {
-    if (Array.isArray(reviews) && reviews.length > 0) {
-      revBody.innerHTML = reviews
-        .map(
-          (r) => `
-        <tr>
-          <td>${r.name || ""}</td>
-          <td>${"⭐".repeat(Number(r.rating) || 0)}</td>
-          <td>${r.message || ""}</td>
-          <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : ""}</td>
-          <td><button class="report-btn" data-id="${r._id}">Meld</button></td>
-        </tr>`
-        )
-        .join("");
-    } else {
-      revBody.innerHTML = `<tr><td colspan="5">Geen reviews gevonden.</td></tr>`;
-    }
+  const tbodyRev = document.querySelector("#reviewsBody");
+  if (Array.isArray(reviews) && reviews.length) {
+    tbodyRev.innerHTML = reviews
+      .map(
+        (r) => `
+      <tr>
+        <td>${r.name}</td>
+        <td>${"⭐".repeat(r.rating)}</td>
+        <td>${r.message}</td>
+        <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+        <td><button class="report-btn" data-id="${r._id}">Meld</button></td>
+      </tr>`
+      )
+      .join("");
+  } else {
+    tbodyRev.innerHTML = "<tr><td colspan='5'>Geen reviews gevonden.</td></tr>";
   }
 
-  // 🎯 Meld-knoppen activeren (POST /api/reviews/report/:id)
+  // --- 4️⃣ “Meld”-knoppen activeren ---
   document.querySelectorAll(".report-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const reviewId = btn.dataset.id;
-      if (!reviewId) return;
+      const id = btn.dataset.id;
+      if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
 
-      const ok = confirm("Weet je zeker dat je deze review wilt melden?");
-      if (!ok) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/reviews/report/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
 
-      const res = await safeFetch(`${API}/api/reviews/report/${reviewId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res?.success) {
-        btn.disabled = true;
-        btn.textContent = "Gemeld";
-        alert("✅ Review gemeld voor controle.");
-      } else {
-        alert(res?.error || "❌ Fout bij melden review.");
+        if (data.success) {
+          alert("✅ Review gemeld!");
+          btn.disabled = true;
+          btn.textContent = "Gemeld";
+        } else {
+          alert("⚠️ Fout bij melden review.");
+        }
+      } catch (err) {
+        console.error("❌ Fout bij melden review:", err);
+        alert("Serverfout bij melden review.");
       }
     });
   });
 
-  // 📈 Eenvoudige donutgrafiek (alleen als Chart.js aanwezig is)
-  try {
-    const ctx = document.getElementById("statusChart");
-    if (ctx && window.Chart && Array.isArray(requests)) {
-      const counts = {
-        Nieuw: requests.filter((r) => r.status === "Nieuw").length,
-        Geaccepteerd: requests.filter((r) => r.status === "Geaccepteerd").length,
-        Afgewezen: requests.filter((r) => r.status === "Afgewezen").length,
-        Opgevolgd: requests.filter((r) => r.status === "Opgevolgd").length,
-      };
-      new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
-          datasets: [
-            {
-              data: [
-                counts.Nieuw,
-                counts.Geaccepteerd,
-                counts.Afgewezen,
-                counts.Opgevolgd,
-              ],
-              backgroundColor: ["#3b82f6", "#10b981", "#ef4444", "#f59e0b"],
-            },
-          ],
-        },
-        options: { plugins: { legend: { position: "bottom" } } },
-      });
-    }
-  } catch (err) {
-    console.warn("Grafiek kon niet worden getekend:", err);
-  }
-
-  console.log("✅ Dashboard geladen met grafiek, filter en meldknoppen (visueel)");
+  console.log("✅ Dashboard geladen met 'Meld review'-functionaliteit");
 });
