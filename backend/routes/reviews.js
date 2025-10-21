@@ -7,32 +7,39 @@ const Review = require("../models/review");
 router.get("/company/:companyId", async (req, res) => {
   try {
     const { companyId } = req.params;
-    const reviews = await Review.find({ companyId }).sort({ date: -1 });
-    return res.json(reviews || []);
+    const reviews = await Review.find({ companyId, reported: false }).sort({ date: -1 });
+    res.json(reviews);
   } catch (err) {
     console.error("❌ Fout bij ophalen reviews:", err);
-    return res.status(500).json({ error: "Serverfout bij ophalen reviews." });
+    res.status(500).json({ error: "Serverfout bij ophalen reviews." });
   }
 });
 
-// Review melden (markeer als reported = true)
+// Review melden (bedrijfskant)
 router.post("/report/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const updated = await Review.findByIdAndUpdate(
-      id,
-      { reported: true },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ error: "Review niet gevonden." });
-    return res.json({ success: true, message: "Review gemeld voor controle." });
+    const review = await Review.findByIdAndUpdate(id, { reported: true }, { new: true });
+    if (!review) return res.status(404).json({ error: "Review niet gevonden." });
+    res.json({ success: true, message: "Review gemeld voor controle." });
   } catch (err) {
     console.error("❌ Fout bij melden review:", err);
-    return res.status(500).json({ error: "Serverfout bij melden review." });
+    res.status(500).json({ error: "Serverfout bij melden review." });
   }
 });
 
-// (Optioneel) seed endpoint voor dummy-reviews
+// Gemelde reviews (beheerder)
+router.get("/reported", async (_req, res) => {
+  try {
+    const reported = await Review.find({ reported: true }).sort({ date: -1 });
+    res.json(reported);
+  } catch (err) {
+    console.error("❌ Fout bij ophalen gemelde reviews:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen gemelde reviews." });
+  }
+});
+
+// (Test) dummy-reviews
 router.get("/seed", async (_req, res) => {
   try {
     const companyId = "68f4c355ab9e361a51d29acd";
@@ -53,10 +60,10 @@ router.get("/seed", async (_req, res) => {
         date: new Date("2025-10-08"),
       },
     ]);
-    return res.json({ success: true, message: "✅ Dummy-reviews toegevoegd" });
+    res.json({ success: true, message: "✅ Dummy-reviews toegevoegd" });
   } catch (err) {
     console.error("❌ Seed-fout reviews:", err);
-    return res.status(500).json({ error: "Seed-fout reviews." });
+    res.status(500).json({ error: "Seed-fout reviews." });
   }
 });
 
