@@ -12,6 +12,7 @@
       --iris-bg:#f6f7fb; --iris-card:#ffffff; --iris-text:#1f2937; --iris-muted:#6b7280;
       --iris-border:#e5e7eb; --iris-primary:#2563eb; --iris-primary-600:#1d4ed8;
       --iris-shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+      --iris-warn:#b91c1c; --iris-warn-bg:#fee2e2; --iris-warn-border:#fecaca;
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;color:var(--iris-text);background:var(--iris-bg)}
@@ -43,6 +44,13 @@
     .iris-btn-sm{padding:6px 10px;font-size:13px}
     .is-muted{opacity:.6;cursor:default}
     .iris-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    /* Debug banner: alleen zichtbaar bij API-probleem */
+    .iris-debug{
+      display:none;margin:16px 0;padding:10px 12px;border:1px solid var(--iris-warn-border);
+      background:var(--iris-warn-bg); color:var(--iris-warn); border-radius:10px;
+      font-size:13px
+    }
+    .iris-debug strong{font-weight:700}
   </style>
 </head>
 <body>
@@ -57,6 +65,9 @@
   </header>
 
   <main class="iris-container">
+    <!-- Debug -->
+    <div id="debugBanner" class="iris-debug"></div>
+
     <section class="iris-card">
       <h2 class="iris-h2">Welkom <span id="companyName">Bedrijf</span></h2>
       <p>Laatst ingelogd: <span id="lastLogin">—</span></p>
