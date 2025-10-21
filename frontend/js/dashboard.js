@@ -1,82 +1,105 @@
 // frontend/js/dashboard.js
-console.log("📊 Dashboard geladen");
+// Doel: uitbreidingen toevoegen ZONDER bestaande logica te breken.
+// - Leest bestaande tellerwaarden en tekent een Chart.js grafiek.
+// - Zorgt voor veilige UI-acties (refresh grafiek, top-up modal).
+// - Laat logout-implementatie ongemoeid (bestaat al en werkt).
 
-const API = window.ENV?.API_BASE || "";
-const token = localStorage.getItem("token");
+(function () {
+  const $ = (sel, ctx = document) => ctx.querySelector(sel);
 
-if (!token) {
-  window.location.href = "login.html";
-}
+  // ——— Grafiek tekenen op basis van tellerwaarden uit de DOM ———
+  let chart;
+  function readStatsFromDOM() {
+    // Tellerwaarden kunnen door dashboard_safe.js worden gezet. We lezen ze uit DOM.
+    const toInt = (el) => {
+      if (!el) return 0;
+      const n = parseInt(el.textContent.trim(), 10);
+      return Number.isFinite(n) ? n : 0;
+    };
+    return {
+      total: toInt($("#statTotal")),
+      accepted: toInt($("#statAccepted")),
+      rejected: toInt($("#statRejected")),
+      followedUp: toInt($("#statFollowedUp")),
+    };
+  }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    console.log("✅ Token is geldig en behouden");
+  function renderChart() {
+    const ctx = $("#statusChart");
+    if (!ctx) return;
 
-    // 🔹 Aanvragen ophalen (fake/test)
-    const reqRes = await fetch(`${API}/api/requests/company`);
-    const requests = await reqRes.json();
-    console.log("📬 Ruwe response aanvragen:", requests);
+    const data = readStatsFromDOM();
 
-    const tbody = document.querySelector("#requestsBody");
-    if (requests && requests.length) {
-      tbody.innerHTML = requests
-        .map(
-          (r) => `
-        <tr>
-          <td>${r.name}</td>
-          <td>${r.email}</td>
-          <td>${r.message}</td>
-          <td>${r.status}</td>
-          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
-        </tr>`
-        )
-        .join("");
-    } else {
-      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
+    // Fallback: als total 0 is maar er wel rijen zijn, blijft grafiek leeg; dat is oké
+    const dataset = [data.accepted, data.rejected, data.followedUp];
+
+    if (chart) {
+      chart.data.datasets[0].data = dataset;
+      chart.update();
+      return;
     }
 
-    // 🔹 Reviews ophalen
-    const revRes = await fetch(`${API}/api/reviews/company`);
-    const reviews = await revRes.json();
-    console.log("💬 Ruwe response reviews:", reviews);
-
-    const revBody = document.querySelector("#reviewsBody");
-    if (reviews && reviews.length) {
-      revBody.innerHTML = reviews
-        .map(
-          (r) => `
-        <tr>
-          <td>${r.name}</td>
-          <td>${"⭐".repeat(r.rating)}</td>
-          <td>${r.message}</td>
-          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
-          <td><button class="report-btn" onclick="reportReview('${r._id}')">Meld review</button></td>
-        </tr>`
-        )
-        .join("");
-    } else {
-      revBody.innerHTML = `<tr><td colspan="5">Geen reviews gevonden.</td></tr>`;
-    }
-  } catch (err) {
-    console.error("Dashboard-fout:", err);
+    chart = new window.Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Geaccepteerd", "Afgewezen", "Opgevolgd"],
+        datasets: [
+          {
+            label: "Aantal",
+            data: dataset,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          title: { display: false },
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+      },
+    });
   }
-});
 
-// ✅ Review melden (PATCH)
-async function reportReview(id) {
-  if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
-  try {
-    const res = await fetch(`${API}/api/reviews/${id}/report`, { method: "PATCH" });
-    const data = await res.json();
-    alert(data.message || "Review gemeld.");
-  } catch (err) {
-    alert("Fout bij melden review.");
-    console.error(err);
+  // ——— Veilige UI: top-up knop zonder backend afhankelijkheid ———
+  function setupTopUp() {
+    const btn = $("#topupBtn");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      alert(
+        "Opwaarderen komt er zo aan.\nWe bereiden de betaalfunctie (Mollie/Stripe) veilig voor zonder iets te breken."
+      );
+    });
   }
-}
 
-// ✅ Uitloggen
-document.querySelector("#logoutBtn")?.addEventListener("click", () => {
-  localStorage.removeItem("token");
-  window.location.href = "login.html";
-});
+  // ——— Refresh-knop voor grafiek ———
+  function setupRefreshChart() {
+    const btn = $("#refreshChartBtn");
+    if (!btn) return;
+    btn.addEventListener("click", renderChart);
+  }
+
+  // ——— Init ———
+  document.addEventListener("DOMContentLoaded", () => {
+    // Wacht heel even zodat dashboard_safe.js eerst de DOM kan vullen
+    setTimeout(() => {
+      renderChart();
+    }, 150);
+
+    setupTopUp();
+    setupRefreshChart();
+
+    // Optioneel: automatische hertekening wanneer dashboard_safe.js cijfers wijzigt
+    const statsContainer = document.body;
+    const mo = new MutationObserver(() => {
+      // throttle
+      if (chart) {
+        setTimeout(() => renderChart(), 50);
+      }
+    });
+    mo.observe(statsContainer, { childList: true, subtree: true, characterData: true });
+  });
+})();
