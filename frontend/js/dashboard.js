@@ -1,76 +1,82 @@
 // frontend/js/dashboard.js
-document.addEventListener("DOMContentLoaded", async () => {
-  const API_BASE = (window.ENV && window.ENV.API_BASE) || "https://irisje-backend.onrender.com";
-  const token = localStorage.getItem("token");
+console.log("📊 Dashboard geladen");
 
-  if (!token) {
-    window.location.href = "login.html";
-    return;
-  }
+const API = window.ENV?.API_BASE || "";
+const token = localStorage.getItem("token");
 
-  const headers = { Authorization: `Bearer ${token}` };
-  let company;
-try {
-  company = JSON.parse(localStorage.getItem("company") || "{}");
-  if (!company || typeof company !== "object") company = {};
-} catch {
-  company = {};
+if (!token) {
+  window.location.href = "login.html";
 }
 
-  const el = (id) => document.getElementById(id);
-  const reqBody = el("requestsBody");
-  const revBody = el("reviewsBody");
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    console.log("✅ Token is geldig en behouden");
 
-  el("companyName").textContent = company.name || "Demo Bedrijf";
-  el("companyEmail").textContent = company.email || "demo@irisje.nl";
-  el("category").textContent = company.category || "Algemeen";
-  el("lastLogin").textContent = new Date().toLocaleString("nl-NL");
+    // 🔹 Aanvragen ophalen (fake/test)
+    const reqRes = await fetch(`${API}/api/requests/company`);
+    const requests = await reqRes.json();
+    console.log("📬 Ruwe response aanvragen:", requests);
 
-  async function safeFetch(url) {
-    try {
-      const res = await fetch(url, { headers });
-      const txt = await res.text();
-      console.log("🔍 Response van", url, "=", txt);
-      if (!res.ok) throw new Error(res.status + " " + res.statusText);
-      return JSON.parse(txt);
-    } catch (e) {
-      console.error("❌ Fout bij ophalen:", e);
-      return [];
+    const tbody = document.querySelector("#requestsBody");
+    if (requests && requests.length) {
+      tbody.innerHTML = requests
+        .map(
+          (r) => `
+        <tr>
+          <td>${r.name}</td>
+          <td>${r.email}</td>
+          <td>${r.message}</td>
+          <td>${r.status}</td>
+          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+        </tr>`
+        )
+        .join("");
+    } else {
+      tbody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
     }
-  }
 
-  function renderRequests(data) {
-    if (!data.length) {
-      reqBody.innerHTML = `<tr><td colspan="5">Geen aanvragen gevonden.</td></tr>`;
-      return;
+    // 🔹 Reviews ophalen
+    const revRes = await fetch(`${API}/api/reviews/company`);
+    const reviews = await revRes.json();
+    console.log("💬 Ruwe response reviews:", reviews);
+
+    const revBody = document.querySelector("#reviewsBody");
+    if (reviews && reviews.length) {
+      revBody.innerHTML = reviews
+        .map(
+          (r) => `
+        <tr>
+          <td>${r.name}</td>
+          <td>${"⭐".repeat(r.rating)}</td>
+          <td>${r.message}</td>
+          <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+          <td><button class="report-btn" onclick="reportReview('${r._id}')">Meld review</button></td>
+        </tr>`
+        )
+        .join("");
+    } else {
+      revBody.innerHTML = `<tr><td colspan="5">Geen reviews gevonden.</td></tr>`;
     }
-    reqBody.innerHTML = data.map(r => `
-      <tr>
-        <td>${r.name || "-"}</td>
-        <td>${r.email || "-"}</td>
-        <td>${r.message || "-"}</td>
-        <td>${r.status || "Nieuw"}</td>
-        <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-      </tr>`).join("");
+  } catch (err) {
+    console.error("Dashboard-fout:", err);
   }
+});
 
-  function renderReviews(data) {
-    if (!data.length) {
-      revBody.innerHTML = `<tr><td colspan="4">Geen reviews gevonden.</td></tr>`;
-      return;
-    }
-    revBody.innerHTML = data.map(r => `
-      <tr>
-        <td>${r.name || "-"}</td>
-        <td>${"⭐".repeat(Number(r.rating) || 0)}</td>
-        <td>${r.message || "-"}</td>
-        <td>${r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "-"}</td>
-      </tr>`).join("");
+// ✅ Review melden (PATCH)
+async function reportReview(id) {
+  if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
+  try {
+    const res = await fetch(`${API}/api/reviews/${id}/report`, { method: "PATCH" });
+    const data = await res.json();
+    alert(data.message || "Review gemeld.");
+  } catch (err) {
+    alert("Fout bij melden review.");
+    console.error(err);
   }
+}
 
-  const requests = await safeFetch(`${API_BASE}/api/requests/company`);
-  const reviews = await safeFetch(`${API_BASE}/api/reviews/company`);
-
-  renderRequests(requests);
-  renderReviews(reviews);
+// ✅ Uitloggen
+document.querySelector("#logoutBtn")?.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
 });
