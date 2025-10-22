@@ -1,6 +1,6 @@
 // frontend/js/dashboard_safe.js
 // ==========================================
-// Irisje.nl - Bedrijfsdashboard (stabiele versie, NL-statusteksten)
+// Irisje.nl - Bedrijfsdashboard (fix voor items[] en NL-statusteksten)
 // ==========================================
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -58,18 +58,20 @@ async function checkAuth() {
 
 async function loadRequests() {
   const data = await apiGet("/requests");
-  if (!data || !Array.isArray(data.requests)) {
+  const list = data?.requests || data?.items || [];
+  if (!Array.isArray(list) || list.length === 0) {
     renderEmpty(requestsBody, 5, "Geen aanvragen gevonden.");
+    renderStats([]);
     return;
   }
 
   const filter = statusFilter.value;
-  const filtered = data.requests.filter(
+  const filtered = list.filter(
     (r) => filter === "all" || r.status === filter
   );
 
   renderRequests(filtered);
-  renderStats(data.requests);
+  renderStats(list);
 }
 
 function renderRequests(requests) {
@@ -95,12 +97,14 @@ function renderRequests(requests) {
 
 async function loadReviews() {
   const data = await apiGet("/reviews/company");
-  if (!data || !Array.isArray(data.reviews)) {
+  const list = data?.reviews || data?.items || [];
+  if (!Array.isArray(list) || list.length === 0) {
     renderEmpty(reviewsBody, 5, "Geen reviews gevonden.");
     return;
   }
+
   reviewsBody.innerHTML = "";
-  for (const r of data.reviews) {
+  for (const r of list) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${r.name || "-"}</td>
