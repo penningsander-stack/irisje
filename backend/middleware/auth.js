@@ -1,19 +1,17 @@
-// backend/middleware/auth.js
 const jwt = require("jsonwebtoken");
 
-module.exports = function auth(req, res, next) {
-  const header = req.header("Authorization");
-  if (!header) return res.status(401).json({ error: "Geen token meegegeven" });
-
-  const token = header.replace("Bearer ", "").trim();
-  if (!token) return res.status(401).json({ error: "Geen token meegegeven" });
+function verifyToken(req, res, next) {
+  const token = req.cookies?.token;
+  if (!token) return res.status(401).json({ ok: false, error: "Geen token – niet ingelogd" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "irisje_secret_key_2025");
-    req.user = decoded; // bevat minstens: id, email (en optioneel companyId)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { id, role }
     next();
   } catch (err) {
-    console.error("JWT verify fout:", err.message);
-    return res.status(401).json({ error: "Ongeldige of verlopen token" });
+    console.error("❌ Ongeldige/verlopen token:", err.message);
+    return res.status(401).json({ ok: false, error: "Ongeldige of verlopen sessie" });
   }
-};
+}
+
+module.exports = { verifyToken };
