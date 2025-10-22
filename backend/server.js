@@ -71,7 +71,10 @@ const adminRoutes = require("./routes/admin");
 const publicRequestRoutes = require("./routes/publicRequests");
 const emailRoutes = require("./routes/email");
 const seedRoutes = require("./routes/seed");
+const fixDemoRoutes = require("./routes/fixDemo");
 
+
+app.use("/api/fix", fixDemoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/requests", requestRoutes);
