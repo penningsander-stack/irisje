@@ -1,4 +1,3 @@
-// backend/server.js
 require("dotenv").config();
 
 const express = require("express");
@@ -9,10 +8,10 @@ const path = require("path");
 
 const app = express();
 
-/* 1) Proxy-instelling (Render gebruikt reverse proxy) */
+/* 1) proxy (secure cookies achter Render) */
 app.set("trust proxy", 1);
 
-/* 2) CORS – alleen frontend-domein toestaan */
+/* 2) CORS */
 const ALLOWED_ORIGINS = ["https://irisje-frontend.onrender.com"];
 app.use(
   cors({
@@ -21,27 +20,25 @@ app.use(
       if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS blocked for origin: ${origin}`));
     },
-    credentials: true,
+    credentials: true
   })
 );
 
-/* 3) Body-parser & cookies */
+/* 3) parsers */
 app.use(express.json());
 app.use(cookieParser());
 
-/* 4) Databaseverbinding */
+/* 4) mongo */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err?.message || err));
 
-/* 5) Health-checks */
+/* 5) health */
 app.get("/api/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
-app.get("/api/auth/ping", (_req, res) =>
-  res.json({ ok: true, service: "auth" })
-);
+app.get("/api/auth/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
 
-/* 6) Routes */
+/* 6) routes */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/reviews", require("./routes/reviews"));
@@ -57,30 +54,22 @@ app.use("/api/seedReviews", require("./routes/seedReviews"));
 app.use("/api/testRequests", require("./routes/testRequests"));
 app.use("/api/secure", require("./routes/secure"));
 
-/* 7) Optioneel: frontend mee-serveren */
+/* 7) optioneel: frontend statisch */
 if (String(process.env.SERVE_FRONTEND || "").toLowerCase() === "true") {
   const frontendPath = path.join(__dirname, "../frontend");
   app.use(express.static(frontendPath));
-  app.get("*", (_req, res) =>
-    res.sendFile(path.join(frontendPath, "index.html"))
-  );
+  app.get("*", (_req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 }
 
-/* 8) Fallback-error-handler */
+/* 8) error handler */
 app.use((err, _req, res, _next) => {
   if (err && /CORS/.test(String(err))) {
-    return res
-      .status(403)
-      .json({ ok: false, error: "CORS", message: err.message });
+    return res.status(403).json({ ok: false, error: "CORS", message: err.message });
   }
   console.error("Server error:", err);
-  return res.status(500).json({
-    ok: false,
-    error: "SERVER",
-    message: err?.message || "Server error",
-  });
+  return res.status(500).json({ ok: false, error: "SERVER", message: err?.message || "Server error" });
 });
 
-/* 9) Server starten */
+/* 9) start */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
