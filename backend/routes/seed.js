@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const router = express.Router();
 const User = require("../models/User");
 
-// /api/seed/demo-user  → maakt demo@irisje.nl / demo1234 als hij niet bestaat
+// Maakt demo@irisje.nl / demo1234 aan als testgebruiker
 router.post("/demo-user", async (req, res) => {
   try {
     const email = "demo@irisje.nl";
@@ -12,6 +12,7 @@ router.post("/demo-user", async (req, res) => {
     if (user) {
       return res.json({ ok: true, message: "Demo user bestaat al", userId: user._id });
     }
+
     const hashed = await bcrypt.hash("demo1234", 10);
     user = await User.create({
       name: "Demo Bedrijf",
@@ -19,9 +20,10 @@ router.post("/demo-user", async (req, res) => {
       password: hashed,
       role: "company"
     });
+
     return res.json({ ok: true, message: "Demo user aangemaakt", userId: user._id });
-  } catch (e) {
-    console.error("Seed error:", e);
+  } catch (err) {
+    console.error("Seed error:", err);
     return res.status(500).json({ error: "Kon demo user niet maken" });
   }
 });
