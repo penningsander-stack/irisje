@@ -30,8 +30,8 @@ router.post("/demo-data", async (_req, res) => {
     }
 
     // 3️⃣ Verwijder oude testdata
-    await Request.deleteMany({ companyId: company._id });
-    await Review.deleteMany({ companyId: company._id });
+    await Request.deleteMany({ company: company._id });
+    await Review.deleteMany({ company: company._id });
 
     // 4️⃣ Voeg voorbeeld-aanvragen toe
     const requests = await Request.insertMany([
@@ -40,21 +40,21 @@ router.post("/demo-data", async (_req, res) => {
         email: "jan@example.com",
         message: "Kunt u mijn tuinhek repareren?",
         status: "Nieuw",
-        companyId: company._id,
+        company: company._id,
       },
       {
         name: "Lisa Jansen",
         email: "lisa@example.com",
         message: "Graag hulp bij een lekkende kraan.",
         status: "Geaccepteerd",
-        companyId: company._id,
+        company: company._id,
       },
       {
         name: "Peter Bos",
         email: "peter@example.com",
         message: "Mijn afvoer is verstopt, kunt u komen kijken?",
         status: "Afgewezen",
-        companyId: company._id,
+        company: company._id,
       },
     ]);
 
@@ -64,19 +64,19 @@ router.post("/demo-data", async (_req, res) => {
         name: "Klant A",
         rating: 5,
         message: "Super vriendelijk geholpen!",
-        companyId: company._id,
+        company: company._id,
       },
       {
         name: "Klant B",
         rating: 4,
         message: "Goede communicatie en snelle service.",
-        companyId: company._id,
+        company: company._id,
       },
       {
         name: "Klant C",
         rating: 3,
         message: "Redelijk tevreden, iets traag met reactie.",
-        companyId: company._id,
+        company: company._id,
       },
     ]);
 
