@@ -1,47 +1,36 @@
 // frontend/js/login.js
+// Vaste backend-URL naar jouw Render backend (geen autodetect)
+const API_BASE = "https://irisje-backend.onrender.com/api";
+
 document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+  const form = document.querySelector("#loginForm");
+  const emailEl = document.querySelector("#email");
+  const passEl = document.querySelector("#password");
+  const errorEl = document.querySelector("#loginError");
 
-  const emailEl = document.getElementById("email");
-  const passwordEl = document.getElementById("password");
-  const loginBtn = document.getElementById("login-btn");
-  const errorEl = document.getElementById("error");
-
-  loginBtn.addEventListener("click", async () => {
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
     errorEl.textContent = "";
 
-    const email = emailEl.value.trim();
-    const password = passwordEl.value.trim();
-
-    if (!email || !password) {
-      errorEl.textContent = "Vul alle velden in.";
-      return;
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
+        credentials: "include", // belangrijk voor cookie
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: emailEl.value.trim(),
+          password: passEl.value
+        })
       });
 
-      const data = await res.json();
-      console.log("Login response:", data);
-
-      if (!res.ok) {
-        errorEl.textContent = data.error || "Ongeldige inloggegevens.";
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.ok) {
+        errorEl.textContent = data?.error || "Serverfout bij inloggen";
         return;
       }
-
-      // ✅ Token opslaan
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("company", JSON.stringify(data.company));
-
-      // ✅ Doorsturen
-      window.location.href = "dashboard.html";
+      window.location.href = "./dashboard.html";
     } catch (err) {
-      console.error("Inlogfout:", err);
-      errorEl.textContent = "Serverfout of geen verbinding.";
+      errorEl.textContent = "Kon niet verbinden met de server.";
     }
   });
 });
