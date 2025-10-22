@@ -1,57 +1,34 @@
 // backend/routes/reviews.js
 const express = require("express");
-const router = express.Router();
 const Review = require("../models/review");
+const { verifyToken } = require("../middleware/auth");
+const router = express.Router();
 
-// ✅ Alle reviews van een bedrijf ophalen
-router.get("/company/:companyId", async (req, res) => {
+// ✅ Reviews van ingelogd bedrijf ophalen
+router.get("/company", verifyToken, async (req, res) => {
   try {
-    const reviews = await Review.find({ companyId: req.params.companyId });
-    res.json(reviews);
+    const companyId = req.user.id;
+    const reviews = await Review.find({ company: companyId }).sort({ createdAt: -1 });
+    res.json({ ok: true, reviews });
   } catch (err) {
-    console.error("❌ Fout bij ophalen reviews:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen reviews." });
+    console.error("Fout bij ophalen reviews:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij ophalen reviews" });
   }
 });
 
 // ✅ Review melden
-router.post("/report/:id", async (req, res) => {
+router.post("/:id/report", verifyToken, async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id);
-    if (!review) {
-      return res.status(404).json({ error: "Review niet gevonden." });
-    }
+    const review = await Review.findOne({ _id: req.params.id, company: req.user.id });
+    if (!review) return res.status(404).json({ ok: false, error: "Review niet gevonden" });
+
     review.reported = true;
     await review.save();
-    res.json({ success: true, message: "Review gemeld." });
-  } catch (err) {
-    console.error("❌ Fout bij melden review:", err);
-    res.status(500).json({ error: "Serverfout bij melden review." });
-  }
-});
 
-// ✅ Gemelde reviews ophalen (voor admin-dashboard)
-router.get("/reported", async (_, res) => {
-  try {
-    const reportedReviews = await Review.find({ reported: true });
-    res.json(reportedReviews);
+    res.json({ ok: true, message: "Review gemeld" });
   } catch (err) {
-    console.error("❌ Fout bij ophalen gemelde reviews:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen gemelde reviews." });
-  }
-});
-
-// ✅ Review verwijderen (door beheerder)
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Review.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: "Review niet gevonden." });
-    }
-    res.json({ success: true, message: "Review verwijderd." });
-  } catch (err) {
-    console.error("❌ Fout bij verwijderen review:", err);
-    res.status(500).json({ error: "Serverfout bij verwijderen review." });
+    console.error("Fout bij melden review:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij melden review" });
   }
 });
 
