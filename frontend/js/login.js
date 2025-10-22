@@ -1,36 +1,85 @@
 // frontend/js/login.js
-// Vaste backend-URL naar jouw Render backend (geen autodetect)
+// ==========================================
+// Irisje.nl - Login (stabiele, robuuste versie)
+// ==========================================
+
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const form = document.querySelector("#loginForm");
-  const emailEl = document.querySelector("#email");
-  const passEl = document.querySelector("#password");
-  const errorEl = document.querySelector("#loginError");
+  const form = document.getElementById("loginForm");
+  const btn = document.getElementById("loginBtn");
 
-  form?.addEventListener("submit", async (e) => {
+  // Zorg dat het message-element bestaat (maak aan indien nodig)
+  let message = document.getElementById("loginMessage");
+  if (!message) {
+    message = document.createElement("p");
+    message.id = "loginMessage";
+    message.className = "error-message";
+    message.style.display = "none";
+    form.appendChild(message);
+  }
+
+  const showMessage = (text) => {
+    message.textContent = text || "";
+    message.style.display = text ? "block" : "none";
+  };
+
+  const setBusy = (busy) => {
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.textContent = busy ? "Inloggen…" : "Inloggen";
+  };
+
+  if (!form) {
+    console.error("Loginform niet gevonden (#loginForm).");
+    return;
+  }
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    errorEl.textContent = "";
+    showMessage("");
+    setBusy(true);
+
+    // Lees waarden veilig uit het formulier
+    const email = (form.email?.value || "").trim();
+    const password = form.password?.value || "";
+
+    if (!email || !password) {
+      showMessage("Vul e-mail en wachtwoord in.");
+      setBusy(false);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
-        credentials: "include", // belangrijk voor cookie
+        credentials: "include", // belangrijk voor sessie-cookie
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: emailEl.value.trim(),
-          password: passEl.value
-        })
+        body: JSON.stringify({ email, password })
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.ok) {
-        errorEl.textContent = data?.error || "Serverfout bij inloggen";
+      // Probeer JSON te lezen, ook bij foutstatus
+      let data = null;
+      try { data = await res.json(); } catch { data = null; }
+
+      if (!res.ok || !data || !data.ok) {
+        // Toon backend-fout of generieke melding
+        const errText =
+          data?.error ||
+          (res.status === 401
+            ? "Onjuiste inloggegevens"
+            : "Serverfout bij inloggen");
+        showMessage(errText);
+        setBusy(false);
         return;
       }
-      window.location.href = "./dashboard.html";
+
+      // Succes → naar dashboard
+      window.location.href = "dashboard.html";
     } catch (err) {
-      errorEl.textContent = "Kon niet verbinden met de server.";
+      console.error("Login request error:", err);
+      showMessage("Kon geen verbinding maken met de server.");
+      setBusy(false);
     }
   });
 });
