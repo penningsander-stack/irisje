@@ -1,17 +1,35 @@
 // backend/models/Request.js
 const mongoose = require("mongoose");
 
-const RequestSchema = new mongoose.Schema({
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
-    required: true,
+const requestSchema = new mongoose.Schema(
+  {
+    company: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
+      default: "Nieuw",
+    },
   },
-  name: String,
-  email: String,
-  message: String,
-  status: { type: String, default: "Nieuw" },
-  date: { type: Date, default: Date.now },
-});
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Request", RequestSchema);
+module.exports = mongoose.model("Request", requestSchema);
