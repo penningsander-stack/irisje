@@ -42,9 +42,10 @@ router.post("/login", async (req, res) => {
     // Cookie zetten
     res.cookie("token", token, COOKIE_OPTIONS);
 
-    // Laatste login bijwerken
-    user.lastLogin = new Date();
-    await user.save();
+    // Laatste login bijwerken (met fallback naam)
+user.lastLogin = new Date();
+if (!user.name) user.name = "Demo Bedrijf";
+await user.save().catch(err => console.warn("Kon gebruiker niet opslaan:", err.message));
 
     res.json({
       ok: true,
