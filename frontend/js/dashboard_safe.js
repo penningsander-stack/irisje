@@ -21,7 +21,9 @@
     '/api'
   ];
 
-  let API_BASE = null;
+ // frontend/js/dashboard_safe.js
+const API_BASE = "https://irisje-backend.onrender.com/api";
+
 
   async function probe(base) {
     try {
