@@ -1,9 +1,8 @@
 // frontend/js/dashboard_safe.js
 // ==========================================
-// Irisje.nl - Bedrijfsdashboard (stabiele versie)
+// Irisje.nl - Bedrijfsdashboard (stabiele versie, NL-statusteksten)
 // ==========================================
 
-// Altijd de juiste backend gebruiken (Render)
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 // -------------------- Hulp functies --------------------
@@ -63,8 +62,12 @@ async function loadRequests() {
     renderEmpty(requestsBody, 5, "Geen aanvragen gevonden.");
     return;
   }
+
   const filter = statusFilter.value;
-  const filtered = data.requests.filter((r) => filter === "all" || r.status === filter);
+  const filtered = data.requests.filter(
+    (r) => filter === "all" || r.status === filter
+  );
+
   renderRequests(filtered);
   renderStats(data.requests);
 }
@@ -133,9 +136,9 @@ async function reportReview(id) {
 
 function renderStats(requests) {
   const total = requests.length;
-  const accepted = requests.filter((r) => r.status === "accepted").length;
-  const rejected = requests.filter((r) => r.status === "rejected").length;
-  const followed = requests.filter((r) => r.status === "followed").length;
+  const accepted = requests.filter((r) => r.status === "Geaccepteerd").length;
+  const rejected = requests.filter((r) => r.status === "Afgewezen").length;
+  const followed = requests.filter((r) => r.status === "Opgevolgd").length;
 
   statTotalEl.textContent = total;
   statAcceptedEl.textContent = accepted;
@@ -159,11 +162,12 @@ function formatDate(dateString) {
 
 function statusLabel(status) {
   const labels = {
-    accepted: '<span class="status-accepted">Geaccepteerd</span>',
-    rejected: '<span class="status-rejected">Afgewezen</span>',
-    followed: '<span class="status-followed">Opgevolgd</span>',
+    Nieuw: '<span class="status-followed">Nieuw</span>',
+    Geaccepteerd: '<span class="status-accepted">Geaccepteerd</span>',
+    Afgewezen: '<span class="status-rejected">Afgewezen</span>',
+    Opgevolgd: '<span class="status-followed">Opgevolgd</span>',
   };
-  return labels[status] || "-";
+  return labels[status] || status || "-";
 }
 
 function renderEmpty(target, cols, text) {
