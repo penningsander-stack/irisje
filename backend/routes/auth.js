@@ -1,29 +1,68 @@
-// backend/middleware/auth.js
+const express = require("express");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-/**
- * 🧩 Middleware: controleert of er een geldige token in de cookies zit.
- * Als de token geldig is → req.user = decoded payload.
- * Anders → 401 fout.
- */
-function verifyToken(req, res, next) {
-  const token = req.cookies.token;
-  if (!token) {
-    return res
-      .status(401)
-      .json({ ok: false, error: "Geen token gevonden – niet ingelogd" });
-  }
+const router = express.Router();
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+  domain: ".onrender.com",
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000
+};
+
+router.post("/login", async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // bevat { id, email, ... }
-    next();
-  } catch (err) {
-    console.error("❌ Ongeldige of verlopen token:", err.message);
-    return res
-      .status(401)
-      .json({ ok: false, error: "Ongeldige of verlopen token" });
-  }
-}
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: "Vul e-mail en wachtwoord in." });
 
-module.exports = { verifyToken };
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ error: "Onjuiste inloggegevens" });
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(401).json({ error: "Onjuiste inloggegevens" });
+
+    const token = jwt.sign({ id: user._id, role: user.role || "company" }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    if (!user.name) user.name = "Bedrijf";
+    user.lastLogin = new Date();
+    await user.save().catch(e => console.warn("Kon user niet opslaan:", e?.message || e));
+
+    res.cookie("token", token, COOKIE_OPTIONS);
+    res.json({
+      ok: true,
+      message: "Inloggen geslaagd",
+      user: { id: user._id, name: user.name, email: user.email, role: user.role || "company", lastLogin: user.lastLogin }
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Serverfout bij inloggen" });
+  }
+});
+
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    if (!token) return res.status(401).json({ error: "Niet ingelogd" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(404).json({ error: "Gebruiker niet gevonden" });
+
+    res.json({ ok: true, user });
+  } catch {
+    res.status(401).json({ error: "Ongeldige of verlopen sessie" });
+  }
+});
+
+router.post("/logout", (req, res) => {
+  res.clearCookie("token", { ...COOKIE_OPTIONS, maxAge: 0 });
+  res.json({ ok: true, message: "Uitgelogd" });
+});
+
+router.get("/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
+
+module.exports = router;
