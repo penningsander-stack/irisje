@@ -1,64 +1,28 @@
 // backend/routes/seed.js
 const express = require("express");
+const bcrypt = require("bcryptjs");
 const router = express.Router();
-const Request = require("../models/Request");
-const Review = require("../models/review");
+const User = require("../models/User");
 
-router.post("/seed", async (req, res) => {
+// /api/seed/demo-user  → maakt demo@irisje.nl / demo1234 als hij niet bestaat
+router.post("/demo-user", async (req, res) => {
   try {
-    const companyId = "68f4c355ab9e361a51d29acd";
-
-    // 🧹 Eerst oude testdata verwijderen
-    await Request.deleteMany({ companyId });
-    await Review.deleteMany({ companyId });
-
-    // 📬 Testaanvragen
-    const requests = await Request.insertMany([
-      {
-        companyId,
-        name: "Jan de Vries",
-        email: "jan@example.com",
-        message: "Ik heb interesse in jullie diensten.",
-        status: "Nieuw",
-        date: new Date("2025-10-10"),
-      },
-      {
-        companyId,
-        name: "Petra Jansen",
-        email: "petra@example.com",
-        message: "Kunnen jullie mij morgen bellen?",
-        status: "Geaccepteerd",
-        date: new Date("2025-10-12"),
-      },
-    ]);
-
-    // 💬 Testreviews
-    const reviews = await Review.insertMany([
-      {
-        companyId,
-        name: "Klant A",
-        rating: 5,
-        message: "Super vriendelijk geholpen!",
-        date: new Date("2025-10-05"),
-      },
-      {
-        companyId,
-        name: "Klant B",
-        rating: 4,
-        message: "Goede communicatie en snelle service.",
-        date: new Date("2025-10-08"),
-      },
-    ]);
-
-    res.json({
-      success: true,
-      requestsCount: requests.length,
-      reviewsCount: reviews.length,
-      message: "✅ Seed succesvol uitgevoerd",
+    const email = "demo@irisje.nl";
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.json({ ok: true, message: "Demo user bestaat al", userId: user._id });
+    }
+    const hashed = await bcrypt.hash("demo1234", 10);
+    user = await User.create({
+      name: "Demo Bedrijf",
+      email,
+      password: hashed,
+      role: "company"
     });
-  } catch (err) {
-    console.error("❌ Seed-fout:", err);
-    res.status(500).json({ error: "Seed-fout", details: err.message });
+    return res.json({ ok: true, message: "Demo user aangemaakt", userId: user._id });
+  } catch (e) {
+    console.error("Seed error:", e);
+    return res.status(500).json({ error: "Kon demo user niet maken" });
   }
 });
 
