@@ -1,14 +1,11 @@
-// backend/models/Company.js
 const mongoose = require("mongoose");
 
-const CompanySchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  category: String,
-  phone: String,
-  address: String,
-  website: String,
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-});
+const companySchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model("Company", CompanySchema);
+module.exports = mongoose.model("Company", companySchema);
