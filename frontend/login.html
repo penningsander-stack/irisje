@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Inloggen – Irisje.nl</title>
   <link rel="stylesheet" href="./style.css" />
-  <!-- Defer zorgt dat de HTML eerst bestaat vóór het script draait -->
   <script defer src="./js/login.js"></script>
 </head>
 <body>
@@ -21,8 +20,8 @@
           type="email"
           id="email"
           name="email"
-          autocomplete="email"
           placeholder="demo@irisje.nl"
+          autocomplete="email"
           required
         />
 
@@ -31,14 +30,13 @@
           type="password"
           id="password"
           name="password"
-          autocomplete="current-password"
           placeholder="••••••••"
+          autocomplete="current-password"
           required
         />
 
         <button id="loginBtn" type="submit">Inloggen</button>
 
-        <!-- Plaats voor fout/succes-berichten -->
         <p id="loginMessage" class="error-message" style="display:none;"></p>
       </form>
     </section>
