@@ -1,174 +1,65 @@
-/* ---------- Algemene basis ---------- */
-:root {
-  --primary: #2563eb;         /* blauw */
-  --primary-light: #dbeafe;
-  --success: #16a34a;         /* groen */
-  --danger: #dc2626;          /* rood */
-  --gray-light: #f5f5f5;
-  --gray-dark: #555;
-  --border-radius: 12px;
-  --shadow: 0 2px 8px rgba(0,0,0,0.08);
-  --font-main: "Segoe UI", Roboto, sans-serif;
-}
-
+/* frontend/style.css */
 body {
-  font-family: var(--font-main);
-  background: var(--gray-light);
-  color: #222;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
   margin: 0;
   padding: 0;
-  line-height: 1.6;
-}
-
-/* ---------- Header ---------- */
-header {
-  background: var(--primary);
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow);
-}
-
-header h1 {
-  font-size: 1.4rem;
-  margin: 0;
-}
-
-#logoutBtn {
-  background: white;
-  color: var(--primary);
-  border: none;
-  border-radius: var(--border-radius);
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-#logoutBtn:hover {
-  background: var(--primary-light);
-}
-
-/* ---------- Layout ---------- */
-main {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 0 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
 }
 
-/* ---------- Cards ---------- */
-.card {
+main {
   background: white;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  padding: 1.5rem;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 400px;
 }
 
-.card h2 {
-  margin-top: 0;
-  color: var(--primary);
-}
-
-/* ---------- Statistieken ---------- */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
+h1 {
   text-align: center;
+  color: #333;
 }
 
-.stat-item {
-  background: var(--primary-light);
-  border-radius: var(--border-radius);
-  padding: 1rem;
-  box-shadow: var(--shadow);
-  font-weight: 600;
-}
-
-.stat-item span {
+label {
+  font-weight: bold;
   display: block;
-  font-size: 1.6rem;
-  color: var(--primary);
+  margin-top: 12px;
 }
 
-/* ---------- Filterbalk ---------- */
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.filter-bar input,
-.filter-bar select {
-  padding: 0.5rem;
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
   border: 1px solid #ccc;
-  border-radius: var(--border-radius);
-  flex: 1;
-  min-width: 180px;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
-.filter-bar button {
-  background: var(--primary);
+button {
+  width: 100%;
+  background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: var(--border-radius);
-  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  margin-top: 20px;
 }
 
-.filter-bar button:hover {
-  background: #1e40af;
+button:hover {
+  background-color: #1e40af;
 }
 
-/* ---------- Tabel ---------- */
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.data-table th,
-.data-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-
-.data-table th {
-  text-align: left;
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.data-table tbody tr:hover {
-  background: #f9fafb;
-}
-
-/* ---------- Footer ---------- */
-footer {
+#loginError {
+  margin-top: 10px;
+  color: #b91c1c;
   text-align: center;
-  padding: 1rem 0;
-  color: var(--gray-dark);
-  font-size: 0.9rem;
-}
-
-/* ---------- Responsief ---------- */
-@media (max-width: 600px) {
-  header {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  main {
-    margin: 1rem;
-  }
-
-  .filter-bar {
-    flex-direction: column;
-  }
+  font-size: 14px;
 }
