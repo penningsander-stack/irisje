@@ -1,10 +1,8 @@
-// backend/routes/reviews.js
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
 const { verifyToken } = require("../middleware/auth");
 
-// ⭐ Reviews ophalen van ingelogd bedrijf
 router.get("/company", verifyToken, async (req, res) => {
   try {
     const companyId = req.user.id;
@@ -16,7 +14,6 @@ router.get("/company", verifyToken, async (req, res) => {
   }
 });
 
-// 🚩 Review melden
 router.post("/:id/report", verifyToken, async (req, res) => {
   try {
     const review = await Review.findOne({ _id: req.params.id, company: req.user.id });
