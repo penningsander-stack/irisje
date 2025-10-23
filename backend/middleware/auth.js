@@ -1,15 +1,19 @@
+// backend/middleware/auth.js
 const jwt = require("jsonwebtoken");
 
+// Verwacht een cookie "token" met een geldige JWT { id, role }
 function verifyToken(req, res, next) {
   const token = req.cookies?.token;
-  if (!token) return res.status(401).json({ ok: false, error: "Geen token – niet ingelogd" });
-
+  if (!token) {
+    return res.status(401).json({ ok: false, error: "Niet ingelogd (geen token)" });
+  }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, role }
+    // decoded bevat { id, role } zoals gezet bij login
+    req.user = decoded;
     next();
   } catch (err) {
-    console.error("❌ Ongeldige/verlopen token:", err.message);
+    console.error("Auth error:", err?.message || err);
     return res.status(401).json({ ok: false, error: "Ongeldige of verlopen sessie" });
   }
 }
