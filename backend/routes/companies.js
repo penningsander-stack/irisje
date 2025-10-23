@@ -7,7 +7,7 @@ const Company = require("../models/Company");
 const Review = require("../models/review");
 const User = require("../models/User");
 
-/* ----------------------- Helper ----------------------- */
+/* Helper: slugify */
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
@@ -15,7 +15,7 @@ function slugify(name) {
     .replace(/(^-|-$)/g, "");
 }
 
-/* ----------------------- Publieke zoekopdracht ----------------------- */
+/* GET /api/companies/search?q=&city=&category=&page=&limit= */
 router.get("/search", async (req, res) => {
   try {
     const { q = "", city = "", category = "", page = "1", limit = "10" } = req.query;
@@ -36,12 +36,12 @@ router.get("/search", async (req, res) => {
 
     res.json({ ok: true, total, page: p, limit: l, items });
   } catch (err) {
-    console.error("❌ companies/search error:", err);
-    res.status(500).json({ ok: false, error: err.message });
+    console.error("companies/search error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij zoeken" });
   }
 });
 
-/* ----------------------- Publiek bedrijfsprofiel ----------------------- */
+/* GET /api/companies/:slug - Publiek bedrijfsprofiel */
 router.get("/:slug", async (req, res) => {
   try {
     const company = await Company.findOne({ slug: req.params.slug });
@@ -54,17 +54,14 @@ router.get("/:slug", async (req, res) => {
 
     res.json({ ok: true, company, reviews });
   } catch (err) {
-    console.error("❌ companies/:slug error:", err);
-    res.status(500).json({ ok: false, error: err.message });
+    console.error("companies/:slug error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij ophalen bedrijfsprofiel" });
   }
 });
 
-/* ----------------------- Demo-seed ----------------------- */
+/* POST /api/companies/seed-demo - Demo-bedrijven aanmaken */
 router.post("/seed-demo", async (_req, res) => {
   try {
-    console.log("🚀 Start seed-demo...");
-
-    // 1️⃣ Demo-user
     let user = await User.findOne({ email: "demo@irisje.nl" });
     if (!user) {
       const hashed = await bcrypt.hash("demo1234", 10);
@@ -75,21 +72,14 @@ router.post("/seed-demo", async (_req, res) => {
         role: "company",
       });
       console.log("✅ Demo-user aangemaakt");
-    } else {
-      console.log("ℹ️ Demo-user al aanwezig:", user.email);
     }
 
-    // 2️⃣ Oude demo-bedrijven verwijderen
-    const demoSlugs = ["loodgieter-jan", "schoonmaak-sterk", "elektricien-nova"];
-    await Company.deleteMany({ slug: { $in: demoSlugs } });
-    console.log("🧹 Oude demo-bedrijven verwijderd");
-
-    // 3️⃣ Nieuwe bedrijven maken
     const seeds = [
       {
         name: "Loodgieter Jan",
+        email: "loodgieter.jan@demo.nl",
         tagline: "Snel geholpen bij lekkages",
-        description: "24/7 service voor spoed en onderhoud.",
+        description: "24/7 service voor spoed en onderhoud. Specialist in lekkages en verstoppingen.",
         categories: ["Loodgieter", "CV"],
         city: "Amsterdam",
         phone: "020-1234567",
@@ -100,8 +90,9 @@ router.post("/seed-demo", async (_req, res) => {
       },
       {
         name: "Schoonmaak Sterk",
+        email: "schoonmaak.sterk@demo.nl",
         tagline: "Glanzend resultaat",
-        description: "Bedrijfsschoonmaak en particuliere schoonmaak.",
+        description: "Bedrijfsschoonmaak en particuliere schoonmaak met oog voor detail.",
         categories: ["Schoonmaak"],
         city: "Utrecht",
         phone: "030-7654321",
@@ -112,8 +103,9 @@ router.post("/seed-demo", async (_req, res) => {
       },
       {
         name: "Elektricien Nova",
+        email: "elektricien.nova@demo.nl",
         tagline: "Veilig en vakkundig",
-        description: "Storingen, groepenkasten en keuringen.",
+        description: "Storingen, groepenkasten en keuringen. Vakkundig en vriendelijk.",
         categories: ["Elektricien"],
         city: "Rotterdam",
         phone: "010-9988776",
@@ -126,23 +118,18 @@ router.post("/seed-demo", async (_req, res) => {
 
     const created = [];
     for (const s of seeds) {
-      const slug = slugify(s.name);
-      const companyData = { ...s, slug, owner: user._id };
-      console.log("➡️ Probeer bedrijf aan te maken:", companyData);
-      const c = await Company.create(companyData);
-      created.push(slug);
-      console.log("✅ Bedrijf toegevoegd:", slug);
+      let c = await Company.findOne({ slug: slugify(s.name) });
+      if (!c) {
+        c = await Company.create({ ...s, slug: slugify(s.name), owner: user._id });
+        console.log("✅ Bedrijf toegevoegd:", s.slug);
+      }
+      created.push(slugify(s.name));
     }
 
-    console.log("🎉 Seed-demo klaar");
-    res.json({ ok: true, created });
+    res.json({ ok: true, message: "Demo-data succesvol aangemaakt", created });
   } catch (err) {
     console.error("❌ companies/seed-demo error VOLLEDIG:", err);
-    res.status(500).json({
-      ok: false,
-      error: err.message,
-      stack: err.stack,
-    });
+    res.status(500).json({ ok: false, error: "Serverfout bij seed-demo" });
   }
 });
 
