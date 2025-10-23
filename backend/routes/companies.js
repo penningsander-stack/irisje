@@ -1,6 +1,8 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
+
 const Company = require("../models/Company");
 const Review = require("../models/review");
 const User = require("../models/User");
@@ -77,12 +79,23 @@ router.get("/:slug", async (req, res) => {
 
 /**
  * POST /api/companies/seed-demo
- * Maakt een paar demo-bedrijven (gekoppeld aan demo-user) als ze nog niet bestaan
+ * Maakt automatisch demo-user én demo-bedrijven als ze nog niet bestaan
  */
 router.post("/seed-demo", async (_req, res) => {
   try {
-    const user = await User.findOne({ email: "demo@irisje.nl" });
-    if (!user) return res.status(404).json({ ok: false, error: "Demo-user niet gevonden" });
+    let user = await User.findOne({ email: "demo@irisje.nl" });
+
+    // Maak de demo-user als die niet bestaat
+    if (!user) {
+      const hashed = await bcrypt.hash("demo1234", 10);
+      user = await User.create({
+        name: "Demo Bedrijf",
+        email: "demo@irisje.nl",
+        password: hashed,
+        role: "company",
+      });
+      console.log("✅ Demo-user aangemaakt");
+    }
 
     const seeds = [
       {
@@ -97,7 +110,6 @@ router.post("/seed-demo", async (_req, res) => {
         avgRating: 4.7,
         reviewCount: 26,
         isVerified: true,
-        images: []
       },
       {
         name: "Schoonmaak Sterk",
@@ -111,7 +123,6 @@ router.post("/seed-demo", async (_req, res) => {
         avgRating: 4.4,
         reviewCount: 14,
         isVerified: false,
-        images: []
       },
       {
         name: "Elektricien Nova",
@@ -125,7 +136,6 @@ router.post("/seed-demo", async (_req, res) => {
         avgRating: 4.8,
         reviewCount: 31,
         isVerified: true,
-        images: []
       }
     ];
 
@@ -134,11 +144,16 @@ router.post("/seed-demo", async (_req, res) => {
       let c = await Company.findOne({ slug: s.slug });
       if (!c) {
         c = await Company.create({ ...s, owner: user._id });
+        console.log("✅ Bedrijf toegevoegd:", s.slug);
       }
       created.push(c.slug);
     }
 
-    res.json({ ok: true, created });
+    res.json({
+      ok: true,
+      message: "Demo-data succesvol aangemaakt",
+      created
+    });
   } catch (err) {
     console.error("companies/seed-demo error:", err);
     res.status(500).json({ ok: false, error: "Serverfout bij seed-demo" });
