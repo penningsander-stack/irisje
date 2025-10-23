@@ -7,7 +7,7 @@ const Company = require("../models/Company");
 const Review = require("../models/review");
 const User = require("../models/User");
 
-/* ----------------------- Hulp: slugify ----------------------- */
+/* ----------------------- Helper ----------------------- */
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
@@ -15,7 +15,7 @@ function slugify(name) {
     .replace(/(^-|-$)/g, "");
 }
 
-/* ----------------------- Zoeken (publiek) ----------------------- */
+/* ----------------------- Publieke zoekopdracht ----------------------- */
 router.get("/search", async (req, res) => {
   try {
     const { q = "", city = "", category = "", page = "1", limit = "10" } = req.query;
@@ -36,8 +36,8 @@ router.get("/search", async (req, res) => {
 
     res.json({ ok: true, total, page: p, limit: l, items });
   } catch (err) {
-    console.error("companies/search error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij zoeken" });
+    console.error("❌ companies/search error:", err);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
@@ -54,17 +54,17 @@ router.get("/:slug", async (req, res) => {
 
     res.json({ ok: true, company, reviews });
   } catch (err) {
-    console.error("companies/:slug error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij ophalen bedrijfsprofiel" });
+    console.error("❌ companies/:slug error:", err);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
 /* ----------------------- Demo-seed ----------------------- */
 router.post("/seed-demo", async (_req, res) => {
   try {
-    console.log("🚀 Start seed-demo");
+    console.log("🚀 Start seed-demo...");
 
-    // 1️⃣ Zorg dat demo-user bestaat
+    // 1️⃣ Demo-user
     let user = await User.findOne({ email: "demo@irisje.nl" });
     if (!user) {
       const hashed = await bcrypt.hash("demo1234", 10);
@@ -76,20 +76,20 @@ router.post("/seed-demo", async (_req, res) => {
       });
       console.log("✅ Demo-user aangemaakt");
     } else {
-      console.log("ℹ️ Demo-user al aanwezig");
+      console.log("ℹ️ Demo-user al aanwezig:", user.email);
     }
 
-    // 2️⃣ Verwijder bestaande demo-bedrijven
+    // 2️⃣ Oude demo-bedrijven verwijderen
     const demoSlugs = ["loodgieter-jan", "schoonmaak-sterk", "elektricien-nova"];
     await Company.deleteMany({ slug: { $in: demoSlugs } });
     console.log("🧹 Oude demo-bedrijven verwijderd");
 
-    // 3️⃣ Voeg nieuwe demo-bedrijven toe
+    // 3️⃣ Nieuwe bedrijven maken
     const seeds = [
       {
         name: "Loodgieter Jan",
         tagline: "Snel geholpen bij lekkages",
-        description: "24/7 service voor spoed en onderhoud. Specialist in lekkages en verstoppingen.",
+        description: "24/7 service voor spoed en onderhoud.",
         categories: ["Loodgieter", "CV"],
         city: "Amsterdam",
         phone: "020-1234567",
@@ -101,7 +101,7 @@ router.post("/seed-demo", async (_req, res) => {
       {
         name: "Schoonmaak Sterk",
         tagline: "Glanzend resultaat",
-        description: "Bedrijfsschoonmaak en particuliere schoonmaak met oog voor detail.",
+        description: "Bedrijfsschoonmaak en particuliere schoonmaak.",
         categories: ["Schoonmaak"],
         city: "Utrecht",
         phone: "030-7654321",
@@ -113,7 +113,7 @@ router.post("/seed-demo", async (_req, res) => {
       {
         name: "Elektricien Nova",
         tagline: "Veilig en vakkundig",
-        description: "Storingen, groepenkasten en keuringen. Vakkundig en vriendelijk.",
+        description: "Storingen, groepenkasten en keuringen.",
         categories: ["Elektricien"],
         city: "Rotterdam",
         phone: "010-9988776",
@@ -127,18 +127,17 @@ router.post("/seed-demo", async (_req, res) => {
     const created = [];
     for (const s of seeds) {
       const slug = slugify(s.name);
-      const c = await Company.create({ ...s, slug, owner: user._id });
+      const companyData = { ...s, slug, owner: user._id };
+      console.log("➡️ Probeer bedrijf aan te maken:", companyData);
+      const c = await Company.create(companyData);
       created.push(slug);
       console.log("✅ Bedrijf toegevoegd:", slug);
     }
 
-    res.json({
-      ok: true,
-      message: "Demo-data succesvol aangemaakt",
-      created,
-    });
+    console.log("🎉 Seed-demo klaar");
+    res.json({ ok: true, created });
   } catch (err) {
-    console.error("❌ companies/seed-demo error:", err);
+    console.error("❌ companies/seed-demo error VOLLEDIG:", err);
     res.status(500).json({
       ok: false,
       error: err.message,
