@@ -5,19 +5,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zoekresultaten – Irisje.nl</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./style.css" />
   <script defer src="./js/results.js"></script>
 </head>
-<body>
-  <header>
-    <a href="index.html" class="iris-link">← Terug</a>
-    <h1>Zoekresultaten</h1>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <header class="bg-indigo-600 text-white py-5 shadow text-center">
+    <a href="index.html" class="absolute left-4 top-5 text-white hover:underline">← Terug</a>
+    <h1 class="text-2xl font-semibold">Zoekresultaten</h1>
   </header>
 
-  <main>
-    <section id="results"></section>
+  <main class="flex-1 px-4 py-8 max-w-4xl mx-auto">
+    <section id="results" class="grid gap-6"></section>
   </main>
 
-  <footer>© 2025 Irisje.nl – Alle rechten voorbehouden</footer>
+  <footer class="text-center text-sm text-gray-500 py-6 border-t">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
 </body>
 </html>
