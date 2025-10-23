@@ -4,17 +4,21 @@ const mongoose = require("mongoose");
 const companySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true },
-    tagline: { type: String },
-    description: { type: String },
-    categories: [String],
-    city: { type: String },
-    phone: { type: String },
-    website: { type: String },
+    slug: { type: String, required: true, unique: true, trim: true },
+    tagline: { type: String, default: "" },
+    description: { type: String, default: "" },
+    categories: [{ type: String }],
+    city: { type: String, default: "" },
+    phone: { type: String, default: "" },
+    website: { type: String, default: "" },
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true }
 );
