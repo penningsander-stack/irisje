@@ -7,7 +7,7 @@ const Company = require("../models/Company");
 const Review = require("../models/review");
 const User = require("../models/User");
 
-/** Helper: simpele slugify */
+/* ----------------------- Hulp: slugify ----------------------- */
 function slugify(name) {
   return String(name || "")
     .toLowerCase()
@@ -15,7 +15,7 @@ function slugify(name) {
     .replace(/(^-|-$)/g, "");
 }
 
-/** GET /api/companies/search?q=&city=&category=&page=&limit= */
+/* ----------------------- Zoeken (publiek) ----------------------- */
 router.get("/search", async (req, res) => {
   try {
     const { q = "", city = "", category = "", page = "1", limit = "10" } = req.query;
@@ -41,7 +41,7 @@ router.get("/search", async (req, res) => {
   }
 });
 
-/** GET /api/companies/:slug */
+/* ----------------------- Publiek bedrijfsprofiel ----------------------- */
 router.get("/:slug", async (req, res) => {
   try {
     const company = await Company.findOne({ slug: req.params.slug });
@@ -59,9 +59,11 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
-/** POST /api/companies/seed-demo */
+/* ----------------------- Demo-seed ----------------------- */
 router.post("/seed-demo", async (_req, res) => {
   try {
+    console.log("🚀 Start seed-demo");
+
     // 1️⃣ Zorg dat demo-user bestaat
     let user = await User.findOne({ email: "demo@irisje.nl" });
     if (!user) {
@@ -73,13 +75,16 @@ router.post("/seed-demo", async (_req, res) => {
         role: "company",
       });
       console.log("✅ Demo-user aangemaakt");
+    } else {
+      console.log("ℹ️ Demo-user al aanwezig");
     }
 
-    // 2️⃣ Verwijder bestaande demo-bedrijven om duplicaten te voorkomen
-    const slugs = ["loodgieter-jan", "schoonmaak-sterk", "elektricien-nova"];
-    await Company.deleteMany({ slug: { $in: slugs } });
+    // 2️⃣ Verwijder bestaande demo-bedrijven
+    const demoSlugs = ["loodgieter-jan", "schoonmaak-sterk", "elektricien-nova"];
+    await Company.deleteMany({ slug: { $in: demoSlugs } });
+    console.log("🧹 Oude demo-bedrijven verwijderd");
 
-    // 3️⃣ Maak nieuwe bedrijven aan
+    // 3️⃣ Voeg nieuwe demo-bedrijven toe
     const seeds = [
       {
         name: "Loodgieter Jan",
@@ -127,10 +132,18 @@ router.post("/seed-demo", async (_req, res) => {
       console.log("✅ Bedrijf toegevoegd:", slug);
     }
 
-    res.json({ ok: true, message: "Demo-data succesvol aangemaakt", created });
+    res.json({
+      ok: true,
+      message: "Demo-data succesvol aangemaakt",
+      created,
+    });
   } catch (err) {
-    console.error("companies/seed-demo error:", err);
-    res.status(500).json({ ok: false, error: err.message });
+    console.error("❌ companies/seed-demo error:", err);
+    res.status(500).json({
+      ok: false,
+      error: err.message,
+      stack: err.stack,
+    });
   }
 });
 
