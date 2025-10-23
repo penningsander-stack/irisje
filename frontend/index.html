@@ -10,36 +10,94 @@
   <script defer src="./js/app.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
-  <header class="bg-indigo-600 text-white text-center py-6 shadow">
-    <h1 class="text-3xl font-semibold">Irisje.nl</h1>
-    <p class="text-sm opacity-90 mt-1">Vind betrouwbare vakmensen bij jou in de buurt</p>
+
+  <!-- ✅ HEADER -->
+  <header class="bg-indigo-600 text-white py-6 shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
+      <h1 class="text-3xl font-semibold tracking-tight">Irisje.nl</h1>
+      <nav class="space-x-6 text-sm font-medium hidden sm:block">
+        <a href="index.html" class="hover:underline">Home</a>
+        <a href="results.html?q=" class="hover:underline">Bedrijven</a>
+        <a href="login.html" class="hover:underline">Inloggen</a>
+      </nav>
+    </div>
+    <p class="text-center text-indigo-100 text-sm mt-2">
+      Vind en vergelijk betrouwbare vakmensen bij jou in de buurt
+    </p>
   </header>
 
-  <main class="flex-1 flex items-center justify-center px-4">
-    <section class="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
-      <h2 class="text-2xl font-semibold mb-6 text-center text-indigo-700">Zoek een bedrijf</h2>
-      <form id="searchForm" class="space-y-5">
-        <div>
-          <label for="q" class="block text-sm font-medium mb-1">Wat zoek je?</label>
-          <input type="text" id="q" name="q" placeholder="Bijv. loodgieter, schilder..."
-                 class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500" required>
-        </div>
+  <!-- ✅ MAIN -->
+  <main class="flex-1">
+    <!-- Hero -->
+    <section class="text-center py-16 bg-gradient-to-b from-indigo-50 to-white">
+      <h2 class="text-3xl sm:text-4xl font-bold text-indigo-700 mb-4">
+        Vind het juiste bedrijf voor jouw klus
+      </h2>
+      <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+        Of het nu gaat om een lekkage, een schoonmaakklus of een reparatie — bij Irisje.nl vind je binnen enkele klikken betrouwbare bedrijven.
+      </p>
 
-        <div>
-          <label for="city" class="block text-sm font-medium mb-1">Plaats</label>
-          <input type="text" id="city" name="city" placeholder="Bijv. Rotterdam"
-                 class="w-full border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500">
-        </div>
-
+      <!-- Zoekformulier -->
+      <form id="searchForm" class="max-w-2xl mx-auto grid sm:grid-cols-[2fr_1fr_auto] gap-3 px-4">
+        <input id="q" name="q" type="text" placeholder="Wat zoek je? (bijv. loodgieter, schilder...)"
+          class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500" required>
+        <input id="city" name="city" type="text" placeholder="Plaats (bijv. Rotterdam)"
+          class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500">
         <button type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-medium transition">
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl px-6 py-3 transition">
           Zoeken
         </button>
       </form>
     </section>
+
+    <!-- Categorieën -->
+    <section class="max-w-6xl mx-auto py-12 px-4">
+      <h3 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Populaire categorieën</h3>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+        <a href="results.html?q=Loodgieter" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/plumber.png" alt="Loodgieter" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Loodgieter</p>
+        </a>
+        <a href="results.html?q=Elektricien" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/electrical.png" alt="Elektricien" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Elektricien</p>
+        </a>
+        <a href="results.html?q=Schoonmaak" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/broom.png" alt="Schoonmaker" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Schoonmaker</p>
+        </a>
+        <a href="results.html?q=Schilder" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/paint-roller.png" alt="Schilder" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Schilder</p>
+        </a>
+        <a href="results.html?q=Hovenier" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/grass.png" alt="Hovenier" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Hovenier</p>
+        </a>
+        <a href="results.html?q=Slotenmaker" class="card hover:shadow-lg">
+          <img src="https://img.icons8.com/color/96/000000/key.png" alt="Slotenmaker" class="mx-auto w-16 mb-2">
+          <p class="font-medium text-gray-700">Slotenmaker</p>
+        </a>
+      </div>
+    </section>
+
+    <!-- Info blok -->
+    <section class="bg-indigo-50 py-12 text-center">
+      <h3 class="text-2xl font-semibold text-indigo-700 mb-3">Waarom kiezen voor Irisje.nl?</h3>
+      <p class="text-gray-600 max-w-3xl mx-auto mb-8">
+        Irisje.nl helpt je bij het vinden van betrouwbare lokale bedrijven.  
+        Vergelijk beoordelingen, neem contact op en ontvang snel offertes — allemaal gratis en eenvoudig.
+      </p>
+      <a href="register.html"
+         class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-medium transition">
+        Bedrijf aanmelden
+      </a>
+    </section>
   </main>
 
-  <footer class="text-center text-sm text-gray-500 py-6 border-t">
+  <!-- ✅ FOOTER -->
+  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 </body>
