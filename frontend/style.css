@@ -1,162 +1,148 @@
-/* frontend/style.css — originele Irisje-stijl */
+/* frontend/style.css */
+/* =====================================================
+   Irisje.nl – Hoofdstylesheet (Frontend + Dashboard)
+   Consistente moderne stijl in combinatie met Tailwind
+   ===================================================== */
 
 /* Algemene basis */
 body {
-  font-family: "Segoe UI", Arial, sans-serif;
-  background-color: #f8fafc;
-  margin: 0;
-  padding: 0;
-  color: #111827;
-}
-
-header, footer {
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  padding: 10px 20px;
-  text-align: center;
-  font-weight: 600;
-  color: #2563eb;
-}
-
-main {
-  max-width: 1100px;
-  margin: 30px auto;
-  background-color: #ffffff;
-  padding: 25px 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+  color: #1f2937; /* gray-800 */
+  background-color: #f9fafb; /* gray-50 */
+  line-height: 1.6;
 }
 
 h1, h2, h3 {
-  color: #2563eb;
-  margin-top: 0;
+  font-weight: 600;
+  color: #111827; /* gray-900 */
 }
 
 a {
-  color: #2563eb;
+  color: #4f46e5; /* indigo-600 */
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
 }
 
-/* Formulieren */
-form {
-  margin-top: 15px;
-}
-label {
-  display: block;
-  font-weight: 600;
-  margin-top: 12px;
-}
-input, select, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 15px;
-  box-sizing: border-box;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
-}
-
-/* Knoppen */
-button {
-  background-color: #2563eb;
-  color: #fff;
+/* ---------- Knoppen ---------- */
+button,
+.iris-btn {
+  display: inline-block;
+  background-color: #4f46e5;
+  color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 15px;
-  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.75rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 16px;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
-button:hover {
-  background-color: #1e40af;
+button:hover,
+.iris-btn:hover {
+  background-color: #4338ca; /* indigo-700 */
+  transform: translateY(-1px);
+}
+.iris-btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
 }
 
-/* Tabellen */
+/* ---------- Cards ---------- */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+/* ---------- Tabellen (Dashboard) ---------- */
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  margin-top: 1rem;
 }
+
 th, td {
-  border: 1px solid #e5e7eb;
-  padding: 10px 12px;
   text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb; /* gray-200 */
 }
+
 th {
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: #f3f4f6; /* gray-100 */
+  color: #374151; /* gray-700 */
+  font-weight: 600;
+  font-size: 0.9rem;
 }
-tr:nth-child(even) {
+
+tr:hover td {
   background-color: #f9fafb;
 }
 
-/* Status-labels */
+/* ---------- Statuslabels ---------- */
 .status-accepted {
-  color: #16a34a;
+  color: #16a34a; /* green-600 */
   font-weight: 600;
 }
 .status-rejected {
-  color: #dc2626;
+  color: #dc2626; /* red-600 */
   font-weight: 600;
 }
 .status-followed {
-  color: #2563eb;
+  color: #2563eb; /* blue-600 */
   font-weight: 600;
 }
 
-/* Kaarten en secties */
-section {
-  margin-bottom: 30px;
+/* ---------- Formulieren ---------- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  background-color: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.card {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
-}
-
-/* Fout- en succesmeldingen */
-.error-message {
-  color: #dc2626;
-  margin-top: 10px;
-  font-size: 14px;
-}
-.success-message {
-  color: #16a34a;
-  margin-top: 10px;
-  font-size: 14px;
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+  outline: none;
 }
 
-/* Footer */
+/* ---------- Debug/lege rijen ---------- */
+.iris-empty-row td {
+  text-align: center;
+  color: #9ca3af; /* gray-400 */
+  padding: 2rem;
+}
+
+/* ---------- Footer ---------- */
 footer {
-  margin-top: 40px;
-  font-size: 14px;
-  color: #6b7280;
-  padding: 15px;
-  box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+  text-align: center;
+  padding: 1.5rem 0;
+  font-size: 0.9rem;
+  color: #6b7280; /* gray-500 */
+  border-top: 1px solid #e5e7eb;
 }
 
-/* Responsive */
+/* ---------- Responsive ---------- */
 @media (max-width: 768px) {
-  main {
-    margin: 15px;
-    padding: 20px;
+  header h1 {
+    font-size: 1.5rem;
   }
-  table, th, td {
-    font-size: 14px;
-  }
-  button {
-    width: 100%;
+  .card {
+    padding: 1.2rem;
   }
 }
