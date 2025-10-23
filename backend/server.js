@@ -1,3 +1,4 @@
+// backend/server.js
 require("dotenv").config();
 
 const express = require("express");
@@ -8,10 +9,10 @@ const path = require("path");
 
 const app = express();
 
-/* 1) proxy (secure cookies achter Render) */
+/* 1️⃣ Proxy vertrouwen (Render gebruikt reverse proxy) */
 app.set("trust proxy", 1);
 
-/* 2) CORS */
+/* 2️⃣ CORS instellen – exact jouw frontend toelaten */
 const ALLOWED_ORIGINS = ["https://irisje-frontend.onrender.com"];
 app.use(
   cors({
@@ -20,25 +21,28 @@ app.use(
       if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS blocked for origin: ${origin}`));
     },
-    credentials: true
+    credentials: true,
   })
 );
 
-/* 3) parsers */
+/* 3️⃣ Middleware */
 app.use(express.json());
 app.use(cookieParser());
 
-/* 4) mongo */
+/* 4️⃣ Database */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err?.message || err));
 
-/* 5) health */
+/* 5️⃣ Basisroutes voor controle */
+app.get("/", (_req, res) => {
+  res.send("✅ Irisje backend draait correct.");
+});
 app.get("/api/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
 app.get("/api/auth/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
 
-/* 6) routes */
+/* 6️⃣ API-routes */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/reviews", require("./routes/reviews"));
@@ -51,25 +55,24 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/seedRequests", require("./routes/seedRequests"));
 app.use("/api/seedReviews", require("./routes/seedReviews"));
-app.use("/api/testRequests", require("./routes/testRequests"));
 app.use("/api/secure", require("./routes/secure"));
 
-/* 7) optioneel: frontend statisch */
+/* 7️⃣ Fallback voor frontend (optioneel) */
 if (String(process.env.SERVE_FRONTEND || "").toLowerCase() === "true") {
   const frontendPath = path.join(__dirname, "../frontend");
   app.use(express.static(frontendPath));
   app.get("*", (_req, res) => res.sendFile(path.join(frontendPath, "index.html")));
 }
 
-/* 8) error handler */
+/* 8️⃣ Fallback error handler */
 app.use((err, _req, res, _next) => {
   if (err && /CORS/.test(String(err))) {
     return res.status(403).json({ ok: false, error: "CORS", message: err.message });
   }
   console.error("Server error:", err);
-  return res.status(500).json({ ok: false, error: "SERVER", message: err?.message || "Server error" });
+  res.status(500).json({ ok: false, error: "SERVER", message: err?.message || "Server error" });
 });
 
-/* 9) start */
+/* 9️⃣ Start server */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
