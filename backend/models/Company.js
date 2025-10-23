@@ -10,6 +10,7 @@ const companySchema = new mongoose.Schema(
     categories: [{ type: String }],
     city: { type: String, default: "" },
     phone: { type: String, default: "" },
+    email: { type: String, default: "" }, // ← toegevoegd, maar NIET uniek
     website: { type: String, default: "" },
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
