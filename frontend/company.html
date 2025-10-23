@@ -1,178 +1,25 @@
 <!-- frontend/company.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="utf-8" />
-  <title>Bedrijfsprofiel – Irisje.nl</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bedrijf – Irisje.nl</title>
   <link rel="stylesheet" href="./style.css" />
+  <script defer src="./js/company.js"></script>
 </head>
 <body>
   <header>
-    <a href="./results.html">← Terug naar resultaten</a> &nbsp; Bedrijfsprofiel
+    <a href="results.html" class="iris-link">← Terug naar resultaten</a>
+    <h1 id="companyName">Bedrijf</h1>
+    <p id="companyTagline"></p>
   </header>
+
   <main>
-    <section class="card">
-      <h1 id="cName">Bedrijf</h1>
-      <p id="cTagline"></p>
-      <p><strong>Plaats:</strong> <span id="cCity">—</span></p>
-      <p><strong>Categorieën:</strong> <span id="cCats">—</span></p>
-      <p><strong>Website:</strong> <a id="cWeb" href="#" target="_blank" rel="noopener">—</a></p>
-      <p><strong>Beoordeling:</strong> <span id="cRating">—</span></p>
-    </section>
-
-    <section class="card">
-      <h2>Vraag een offerte aan</h2>
-      <form id="reqForm">
-        <input type="text" id="rName" placeholder="Uw naam" required />
-        <input type="email" id="rEmail" placeholder="Uw e-mail" required />
-        <textarea id="rMsg" placeholder="Uw bericht" required></textarea>
-        <button type="submit">Verstuur aanvraag</button>
-        <p class="success-message" id="rOk" style="display:none">Aanvraag verzonden!</p>
-        <p class="error-message" id="rErr" style="display:none">Kon aanvraag niet verzenden.</p>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Schrijf een review</h2>
-      <form id="revForm">
-        <input type="text" id="vName" placeholder="Uw naam" required />
-        <select id="vRating" required>
-          <option value="">Kies beoordeling</option>
-          <option value="5">5 – Uitstekend</option>
-          <option value="4">4 – Goed</option>
-          <option value="3">3 – Redelijk</option>
-          <option value="2">2 – Matig</option>
-          <option value="1">1 – Slecht</option>
-        </select>
-        <textarea id="vMsg" placeholder="Uw ervaring" required></textarea>
-        <button type="submit">Plaats review</button>
-        <p class="success-message" id="vOk" style="display:none">Review geplaatst!</p>
-        <p class="error-message" id="vErr" style="display:none">Kon review niet plaatsen.</p>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>Reviews</h2>
-      <div id="reviewsBox">Reviews worden geladen…</div>
-    </section>
+    <section id="companyInfo" class="card"></section>
+    <section id="reviews" class="card"></section>
   </main>
-  <footer>© 2025 Irisje.nl</footer>
 
-  <script>
-    const API = "https://irisje-backend.onrender.com/api";
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get("slug");
-
-    function stars(n) {
-      const s = Math.round(Number(n) || 0);
-      let out = "";
-      for (let i = 0; i < 5; i++) out += i < s ? "⭐" : "☆";
-      return out + (n ? ` (${n})` : "");
-    }
-
-    async function loadCompany() {
-      const res = await fetch(`${API}/companies/${encodeURIComponent(slug)}`);
-      const data = await res.json();
-      if (!data.ok) {
-        document.getElementById("cName").textContent = "Bedrijf niet gevonden";
-        return;
-      }
-      const c = data.company;
-      document.getElementById("cName").textContent = c.name || "Bedrijf";
-      document.getElementById("cTagline").textContent = c.tagline || "";
-      document.getElementById("cCity").textContent = c.city || "—";
-      document.getElementById("cCats").textContent = Array.isArray(c.categories) ? c.categories.join(", ") : "—";
-      document.getElementById("cWeb").textContent = c.website || "—";
-      document.getElementById("cWeb").href = c.website || "#";
-      document.getElementById("cRating").textContent = stars(c.avgRating);
-
-      renderReviews(data.reviews || []);
-    }
-
-    function renderReviews(list) {
-      const box = document.getElementById("reviewsBox");
-      box.innerHTML = "";
-      if (!Array.isArray(list) || list.length === 0) {
-        box.textContent = "Nog geen reviews geplaatst.";
-        return;
-      }
-      for (const r of list) {
-        const div = document.createElement("div");
-        div.className = "card";
-        const d = new Date(r.createdAt);
-        const when = d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
-        div.innerHTML = `
-          <p><strong>${r.name}</strong> – ${"⭐".repeat(r.rating || 0)}</p>
-          <p>${r.message || ""}</p>
-          <p><small>${when}</small></p>
-        `;
-        box.appendChild(div);
-      }
-    }
-
-    // Offerte-aanvraag
-    document.getElementById("reqForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      document.getElementById("rOk").style.display = "none";
-      document.getElementById("rErr").style.display = "none";
-      const payload = {
-        slug,
-        name: document.getElementById("rName").value.trim(),
-        email: document.getElementById("rEmail").value.trim(),
-        message: document.getElementById("rMsg").value.trim()
-      };
-      try {
-        const res = await fetch(`${API}/publicRequests/submit`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.ok) {
-          document.getElementById("rOk").style.display = "block";
-          (e.target).reset();
-        } else {
-          document.getElementById("rErr").style.display = "block";
-        }
-      } catch {
-        document.getElementById("rErr").style.display = "block";
-      }
-    });
-
-    // Review plaatsen
-    document.getElementById("revForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      document.getElementById("vOk").style.display = "none";
-      document.getElementById("vErr").style.display = "none";
-      const payload = {
-        name: document.getElementById("vName").value.trim(),
-        rating: document.getElementById("vRating").value,
-        message: document.getElementById("vMsg").value.trim()
-      };
-      try {
-        const res = await fetch(`${API}/reviews/public/${encodeURIComponent(slug)}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if (data.ok) {
-          document.getElementById("vOk").style.display = "block";
-          (e.target).reset();
-          // herladen van reviews-lijst
-          const res2 = await fetch(`${API}/reviews/public/${encodeURIComponent(slug)}`);
-          const d2 = await res2.json();
-          renderReviews(d2.items || []);
-        } else {
-          document.getElementById("vErr").style.display = "block";
-        }
-      } catch {
-        document.getElementById("vErr").style.display = "block";
-      }
-    });
-
-    loadCompany();
-  </script>
+  <footer>© 2025 Irisje.nl – Alle rechten voorbehouden</footer>
 </body>
 </html>
