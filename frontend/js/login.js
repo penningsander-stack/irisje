@@ -1,24 +1,34 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const apiBase = "https://irisje-backend.onrender.com";
-  const form = document.getElementById("loginForm");
-  const msg = document.getElementById("loginMessage");
+// frontend/js/login.js
+const backendUrl = "https://irisje-backend.onrender.com";
 
-  form.addEventListener("submit", async e => {
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("form");
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = e.target.email.value.trim();
-    const password = e.target.password.value.trim();
-    msg.textContent = "Inloggen...";
+
+    const email = document.querySelector("#email").value.trim();
+    const password = document.querySelector("#password").value.trim();
+    const errorBox = document.querySelector("#error-box");
+
     try {
-      const res = await axios.post(`${apiBase}/api/auth/login`, { email, password }, { withCredentials: true });
-      if (res.data.success) {
-        msg.textContent = "✅ Ingelogd, even geduld...";
-        setTimeout(() => (window.location.href = "dashboard.html"), 1000);
-      } else {
-        msg.textContent = "❌ Onjuiste inloggegevens.";
-      }
+      const res = await fetch(`${backendUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Inloggen mislukt");
+
+      // ✅ Sla e-mailadres en rol op voor dashboard
+      localStorage.setItem("userEmail", data.email || email);
+      localStorage.setItem("userRole", data.role || "bedrijf");
+
+      window.location.href = "dashboard.html";
     } catch (err) {
-      console.error(err);
-      msg.textContent = "❌ Inloggen mislukt.";
+      console.error("❌ Loginfout:", err);
+      errorBox.textContent = "❌ " + err.message;
     }
   });
 });
