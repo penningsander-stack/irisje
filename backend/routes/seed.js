@@ -1,95 +1,31 @@
 // backend/routes/seed.js
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
-
-const Request = require("../models/Request");
-const Review = require("../models/review");
-const Company = require("../models/Company");
+const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
-/**
- * Seed testdata voor demo-bedrijf (via User -> Company)
- * POST /api/seed/demo-data
- */
-router.post("/demo-data", async (_req, res) => {
+router.get("/create-admin", async (req, res) => {
   try {
-    // 1️⃣ Zoek de demo-user
-    const user = await User.findOne({ email: "demo@irisje.nl" });
-    if (!user) {
-      return res.status(404).json({ ok: false, message: "Demo-user niet gevonden" });
+    const existing = await User.findOne({ email: "info@irisje.nl" });
+    if (existing) {
+      return res.json({ message: "Admin bestaat al", user: existing });
     }
 
-    // 2️⃣ Zoek of maak bedrijf gekoppeld aan deze user
-    let company = await Company.findOne({ owner: user._id });
-    if (!company) {
-      company = await Company.create({
-        name: "Demo Bedrijf",
-        owner: user._id,
-      });
-    }
+    const hashedPassword = await bcrypt.hash("Admin1234!", 10);
 
-    // 3️⃣ Verwijder oude testdata
-    await Request.deleteMany({ company: company._id });
-    await Review.deleteMany({ company: company._id });
-
-    // 4️⃣ Voeg voorbeeld-aanvragen toe
-    const requests = await Request.insertMany([
-      {
-        name: "Jan de Vries",
-        email: "jan@example.com",
-        message: "Kunt u mijn tuinhek repareren?",
-        status: "Nieuw",
-        company: company._id,
-      },
-      {
-        name: "Lisa Jansen",
-        email: "lisa@example.com",
-        message: "Graag hulp bij een lekkende kraan.",
-        status: "Geaccepteerd",
-        company: company._id,
-      },
-      {
-        name: "Peter Bos",
-        email: "peter@example.com",
-        message: "Mijn afvoer is verstopt, kunt u komen kijken?",
-        status: "Afgewezen",
-        company: company._id,
-      },
-    ]);
-
-    // 5️⃣ Voeg voorbeeld-reviews toe
-    const reviews = await Review.insertMany([
-      {
-        name: "Klant A",
-        rating: 5,
-        message: "Super vriendelijk geholpen!",
-        company: company._id,
-      },
-      {
-        name: "Klant B",
-        rating: 4,
-        message: "Goede communicatie en snelle service.",
-        company: company._id,
-      },
-      {
-        name: "Klant C",
-        rating: 3,
-        message: "Redelijk tevreden, iets traag met reactie.",
-        company: company._id,
-      },
-    ]);
-
-    return res.json({
-      ok: true,
-      message: "Demo-data succesvol aangemaakt",
-      company: company.name,
-      requestsCount: requests.length,
-      reviewsCount: reviews.length,
+    const adminUser = new User({
+      name: "Irisje Admin",
+      email: "info@irisje.nl",
+      password: hashedPassword,
+      role: "admin",
     });
+
+    await adminUser.save();
+
+    res.json({ message: "✅ Admin aangemaakt", user: adminUser });
   } catch (err) {
-    console.error("❌ Seed error:", err);
-    return res.status(500).json({ ok: false, error: err.message });
+    console.error("❌ Fout bij seed:", err);
+    res.status(500).json({ message: "Fout bij aanmaken admin" });
   }
 });
 
