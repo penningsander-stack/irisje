@@ -101,7 +101,7 @@
       };
 
       try {
-        const res = await fetch(`${API_BASE}/publicRequests`, {
+        const res = await fetch(`${API_BASE}/publicRequests/submit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
