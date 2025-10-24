@@ -7,21 +7,28 @@ const Company = require("../models/Company");
 // 📩 Nieuwe offerteaanvraag ontvangen
 router.post("/", async (req, res) => {
   try {
-    const { companySlug, name, email, message } = req.body;
+    const { companySlug, company, companyId, name, email, message } = req.body;
 
-    if (!companySlug || !name || !email || !message) {
+    if (!name || !email || !message) {
       return res.status(400).json({ message: "Ontbrekende velden" });
     }
 
-    // Zoek het bedrijf op basis van de slug
-    const company = await Company.findOne({ slug: companySlug });
-    if (!company) {
+    // Zoek bedrijf op
+    let companyDoc = null;
+
+    if (companySlug) {
+      companyDoc = await Company.findOne({ slug: companySlug });
+    } else if (company || companyId) {
+      companyDoc = await Company.findById(company || companyId);
+    }
+
+    if (!companyDoc) {
       return res.status(404).json({ message: "Bedrijf niet gevonden" });
     }
 
-    // Maak nieuwe aanvraag aan
+    // Nieuwe aanvraag aanmaken
     const newRequest = new Request({
-      company: company._id,
+      company: companyDoc._id,
       name,
       email,
       message,
@@ -31,7 +38,6 @@ router.post("/", async (req, res) => {
 
     await newRequest.save();
 
-    // Stuur bevestiging terug
     res.json({ message: "✅ Aanvraag succesvol verzonden!", request: newRequest });
   } catch (error) {
     console.error("Fout bij versturen aanvraag:", error);
@@ -39,7 +45,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// 📋 (optioneel) Alle aanvragen ophalen — handig voor test
+// 📋 Alle aanvragen ophalen
 router.get("/", async (req, res) => {
   try {
     const requests = await Request.find().lean();
