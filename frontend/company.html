@@ -1,136 +1,111 @@
-<!-- frontend/company.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bedrijfsprofiel – Irisje.nl</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="./style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script defer src="js/company.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
-
-  <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-5 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
-      <nav class="space-x-6 text-sm font-medium hidden sm:block">
-        <a href="index.html" class="hover:underline">Home</a>
-        <a href="results.html" class="hover:underline">Bedrijven</a>
-        <a href="login.html" class="hover:underline">Inloggen</a>
-      </nav>
-    </div>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-white shadow-md py-4 px-6 flex justify-between items-center">
+    <a href="index.html" class="text-2xl font-bold text-indigo-600">Irisje.nl</a>
+    <nav>
+      <a href="index.html" class="text-gray-700 hover:text-indigo-600 px-3">Home</a>
+      <a href="results.html" class="text-gray-700 hover:text-indigo-600 px-3">Bedrijven</a>
+      <a href="login.html" class="text-gray-700 hover:text-indigo-600 px-3">Inloggen</a>
+    </nav>
   </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-5xl mx-auto px-4 py-10">
-    <div id="companySection" class="hidden">
-      <!-- Bedrijfsinformatie -->
-      <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-        <h1 id="companyName" class="text-3xl font-bold text-indigo-700 mb-2"></h1>
-        <p id="companyTagline" class="text-gray-500 mb-2"></p>
-        <p id="companyCity" class="text-gray-600 mb-1"></p>
-        <p id="companyCategories" class="text-gray-400 text-sm mb-3"></p>
-        <p id="companyDescription" class="text-gray-700 mb-4"></p>
-
-        <div class="flex flex-wrap gap-3 mt-4">
-          <a id="companyWebsite" href="#" target="_blank"
-             class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-5 py-2 font-medium transition hidden">
-            🌐 Website
-          </a>
-          <button id="requestBtn"
-                  class="border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-xl px-5 py-2 font-medium transition">
-            📩 Dien een aanvraag in
-          </button>
+  <!-- Main content -->
+  <main class="flex-grow max-w-5xl mx-auto p-6">
+    <!-- Bedrijfsinfo -->
+    <section id="company-info" class="bg-white rounded-2xl shadow p-6 mb-8">
+      <div class="flex flex-col md:flex-row md:items-center gap-6">
+        <img id="company-logo" src="https://via.placeholder.com/150" alt="Bedrijfslogo" class="w-32 h-32 rounded-xl object-cover shadow">
+        <div>
+          <h1 id="company-name" class="text-3xl font-semibold text-indigo-700">Bedrijfsnaam</h1>
+          <p id="company-tagline" class="text-gray-600 mt-1">Tagline of korte beschrijving</p>
+          <div class="flex items-center gap-1 mt-2">
+            <span id="company-rating" class="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</span>
+            <span id="review-count" class="text-gray-500 text-sm">(0 reviews)</span>
+          </div>
+          <p id="company-city" class="text-gray-600 mt-2">📍 Stad</p>
+          <div id="company-categories" class="mt-2 flex flex-wrap gap-2"></div>
         </div>
       </div>
+      <p id="company-description" class="mt-4 text-gray-700 leading-relaxed">
+        Hier komt de beschrijving van het bedrijf te staan. Deze tekst wordt dynamisch geladen uit de backend.
+      </p>
+    </section>
 
-      <!-- Reviews -->
-      <div class="bg-white rounded-2xl shadow-md p-6">
-        <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Beoordelingen</h2>
-        <div id="reviewsContainer" class="space-y-4"></div>
+    <!-- Reviews -->
+    <section id="reviews" class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Beoordelingen</h2>
+      <div id="review-list" class="space-y-4">
+        <p class="text-gray-500">Nog geen beoordelingen beschikbaar.</p>
       </div>
-    </div>
+    </section>
 
-    <!-- Loader / Foutmelding -->
-    <div id="loader" class="text-center text-gray-500 mt-10">Laden...</div>
-    <div id="errorMsg" class="text-center text-red-600 mt-10 hidden">Bedrijf niet gevonden.</div>
+    <!-- Nieuwe review toevoegen -->
+    <section id="add-review" class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Jouw ervaring</h2>
+      <form id="reviewForm" class="space-y-4">
+        <div>
+          <label for="reviewName" class="block text-sm font-medium text-gray-700">Naam</label>
+          <input type="text" id="reviewName" name="reviewName" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label for="reviewEmail" class="block text-sm font-medium text-gray-700">E-mailadres</label>
+          <input type="email" id="reviewEmail" name="reviewEmail" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label for="reviewRating" class="block text-sm font-medium text-gray-700">Beoordeling</label>
+          <select id="reviewRating" name="reviewRating" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Kies aantal sterren</option>
+            <option value="5">⭐⭐⭐⭐⭐ - Uitstekend</option>
+            <option value="4">⭐⭐⭐⭐ - Goed</option>
+            <option value="3">⭐⭐⭐ - Redelijk</option>
+            <option value="2">⭐⭐ - Matig</option>
+            <option value="1">⭐ - Slecht</option>
+          </select>
+        </div>
+        <div>
+          <label for="reviewMessage" class="block text-sm font-medium text-gray-700">Bericht</label>
+          <textarea id="reviewMessage" name="reviewMessage" rows="4" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <button type="submit" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verstuur beoordeling</button>
+        <p id="reviewMessageInfo" class="text-sm text-gray-600 mt-2"></p>
+      </form>
+    </section>
+
+    <!-- Offerte-aanvraag -->
+    <section id="request-form" class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Vraag een offerte aan</h2>
+      <form id="quoteForm" class="space-y-4">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700">Naam</label>
+          <input type="text" id="name" name="name" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">E-mailadres</label>
+          <input type="email" id="email" name="email" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
+        </div>
+        <div>
+          <label for="message" class="block text-sm font-medium text-gray-700">Bericht</label>
+          <textarea id="message" name="message" rows="4" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        </div>
+        <button type="submit" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verstuur aanvraag</button>
+        <p id="form-message" class="text-sm text-gray-600 mt-2"></p>
+      </form>
+    </section>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto">
+  <!-- Footer -->
+  <footer class="bg-white text-center py-4 text-gray-600 border-t mt-8">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
-
-  <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
-    const slug = new URLSearchParams(window.location.search).get("slug");
-    const companySection = document.getElementById("companySection");
-    const loader = document.getElementById("loader");
-    const errorMsg = document.getElementById("errorMsg");
-
-    async function loadCompany() {
-      if (!slug) {
-        loader.classList.add("hidden");
-        errorMsg.classList.remove("hidden");
-        return;
-      }
-      try {
-        const res = await fetch(`${API_BASE}/companies/${slug}`);
-        const data = await res.json();
-
-        if (!data.ok || !data.company) {
-          throw new Error("Bedrijf niet gevonden");
-        }
-
-        renderCompany(data.company, data.reviews || []);
-      } catch (err) {
-        console.error("Fout bij laden bedrijfsprofiel:", err);
-        loader.classList.add("hidden");
-        errorMsg.classList.remove("hidden");
-      }
-    }
-
-    function renderCompany(c, reviews) {
-      document.getElementById("companyName").textContent = c.name || "Onbekend bedrijf";
-      document.getElementById("companyTagline").textContent = c.tagline || "";
-      document.getElementById("companyCity").textContent = c.city ? `📍 ${c.city}` : "";
-      document.getElementById("companyDescription").textContent = c.description || "";
-      document.getElementById("companyCategories").textContent = (c.categories || []).join(", ");
-
-      const websiteBtn = document.getElementById("companyWebsite");
-      if (c.website) {
-        websiteBtn.href = c.website;
-        websiteBtn.classList.remove("hidden");
-      }
-
-      const container = document.getElementById("reviewsContainer");
-      container.innerHTML = "";
-      if (!reviews.length) {
-        container.innerHTML = "<p class='text-gray-500'>Nog geen reviews.</p>";
-      } else {
-        for (const r of reviews) {
-          const div = document.createElement("div");
-          div.className = "border border-gray-100 rounded-xl p-4 shadow-sm";
-          div.innerHTML = `
-            <p class="font-medium text-indigo-700">${r.name || "Anonieme klant"}</p>
-            <p class="text-yellow-500 text-sm">${"⭐".repeat(r.rating || 0)}</p>
-            <p class="text-gray-700 mt-1">${r.message || ""}</p>
-            <p class="text-gray-400 text-xs mt-1">${new Date(r.createdAt).toLocaleDateString("nl-NL")}</p>
-          `;
-          container.appendChild(div);
-        }
-      }
-
-      loader.classList.add("hidden");
-      companySection.classList.remove("hidden");
-    }
-
-    document.getElementById("requestBtn").addEventListener("click", () => {
-      window.location.href = `request.html?company=${slug}`;
-    });
-
-    loadCompany();
-  </script>
 </body>
 </html>
