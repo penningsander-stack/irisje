@@ -11,85 +11,101 @@
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
   <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-4 shadow-md">
+  <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-xl font-semibold">← Terug naar start</a>
-      <button id="logoutBtn" class="bg-white text-indigo-700 font-semibold px-4 py-2 rounded-xl hover:bg-gray-100 transition">Uitloggen</button>
+      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
+      <nav class="space-x-6 text-sm font-medium hidden sm:block">
+        <a href="index.html" class="hover:underline">← Terug naar start</a>
+        <button id="logoutBtn" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-50">Uitloggen</button>
+      </nav>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-10">
-    <h1 id="welcomeTitle" class="text-2xl font-bold text-indigo-700 mb-2">Welkom</h1>
-    <p id="lastLogin" class="text-gray-600 mb-8">Laatst ingelogd: —</p>
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
 
-    <!-- STATISTIEKEN -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-      <div class="bg-white rounded-xl shadow p-4 text-center">
-        <h2 class="text-gray-500 text-sm font-semibold">Totaal</h2>
-        <p id="total" class="text-2xl font-bold text-indigo-700">0</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-4 text-center">
-        <h2 class="text-gray-500 text-sm font-semibold">Geaccepteerd</h2>
-        <p id="accepted" class="text-2xl font-bold text-green-600">0</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-4 text-center">
-        <h2 class="text-gray-500 text-sm font-semibold">Afgewezen</h2>
-        <p id="rejected" class="text-2xl font-bold text-red-600">0</p>
-      </div>
-      <div class="bg-white rounded-xl shadow p-4 text-center">
-        <h2 class="text-gray-500 text-sm font-semibold">Opgevolgd</h2>
-        <p id="followed-up" class="text-2xl font-bold text-yellow-600">0</p>
+    <!-- Welkomstblok -->
+    <section class="bg-white rounded-2xl shadow-md p-6 text-center">
+      <h1 class="text-2xl font-bold text-indigo-700 mb-2">Welkom <span id="company-name">Bedrijf</span></h1>
+      <p class="text-sm text-gray-500">
+        Laatst ingelogd: <span id="last-login">—</span>
+      </p>
+    </section>
+
+    <!-- Statistieken -->
+    <section>
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">📊 Statistieken</h2>
+      <div class="stats-box">
+        <div class="stat-item">
+          <h3>Totaal</h3>
+          <p id="total">0</p>
+        </div>
+        <div class="stat-item">
+          <h3>Geaccepteerd</h3>
+          <p id="accepted">0</p>
+        </div>
+        <div class="stat-item">
+          <h3>Afgewezen</h3>
+          <p id="rejected">0</p>
+        </div>
+        <div class="stat-item">
+          <h3>Opgevolgd</h3>
+          <p id="followed-up">0</p>
+        </div>
       </div>
     </section>
 
-    <!-- AANVRAGEN -->
-    <section class="bg-white rounded-2xl shadow mb-10">
-      <div class="border-b p-4 flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-indigo-700">📬 Aanvragen</h2>
-        <select id="filterStatus" class="border rounded-lg p-2 text-sm text-gray-700">
-          <option value="alle">Alle</option>
-          <option value="Nieuw">Nieuw</option>
-          <option value="Geaccepteerd">Geaccepteerd</option>
-          <option value="Afgewezen">Afgewezen</option>
-          <option value="Opgevolgd">Opgevolgd</option>
-        </select>
-      </div>
+    <!-- Aanvragen -->
+    <section class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">📬 Aanvragen</h2>
+
+      <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-2">Filter</label>
+      <select id="filterStatus" class="border border-gray-300 rounded-lg p-2 mb-4 focus:ring-2 focus:ring-indigo-500">
+        <option value="alle">Alle</option>
+        <option value="Nieuw">Nieuw</option>
+        <option value="Geaccepteerd">Geaccepteerd</option>
+        <option value="Afgewezen">Afgewezen</option>
+        <option value="Opgevolgd">Opgevolgd</option>
+      </select>
+
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm">
-          <thead class="bg-indigo-100 text-indigo-800">
+        <table class="w-full text-sm">
+          <thead>
             <tr>
-              <th class="border p-2">Naam</th>
-              <th class="border p-2">E-mail</th>
-              <th class="border p-2">Bericht</th>
-              <th class="border p-2">Status</th>
-              <th class="border p-2">Datum</th>
+              <th>Naam</th>
+              <th>E-mail</th>
+              <th>Bericht</th>
+              <th>Status</th>
+              <th>Datum</th>
             </tr>
           </thead>
-          <tbody id="request-table-body"></tbody>
+          <tbody id="request-table-body">
+            <tr><td colspan="5" class="text-center text-gray-500 p-4">Aanvragen worden geladen...</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
 
-    <!-- REVIEWS -->
-    <section class="bg-white rounded-2xl shadow">
-      <div class="border-b p-4">
-        <h2 class="text-xl font-semibold text-indigo-700">💬 Reviews</h2>
-      </div>
+    <!-- Reviews -->
+    <section class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">💬 Reviews</h2>
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-sm">
-          <thead class="bg-indigo-100 text-indigo-800">
+        <table class="w-full text-sm">
+          <thead>
             <tr>
-              <th class="border p-2">Naam</th>
-              <th class="border p-2">Beoordeling</th>
-              <th class="border p-2">Bericht</th>
-              <th class="border p-2">Datum</th>
+              <th>Naam</th>
+              <th>Beoordeling</th>
+              <th>Bericht</th>
+              <th>Datum</th>
             </tr>
           </thead>
-          <tbody id="review-table-body"></tbody>
+          <tbody id="review-table-body">
+            <tr><td colspan="4" class="text-center text-gray-500 p-4">Reviews worden geladen...</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
+
   </main>
 
   <!-- FOOTER -->
@@ -97,26 +113,6 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <script src="js/dashboard.js" defer></script>
-
-  <script>
-    // ✅ Zorgt voor correcte welkomsttekst
-    document.addEventListener("DOMContentLoaded", () => {
-      const email = localStorage.getItem("userEmail");
-      const role = localStorage.getItem("userRole");
-      const welcome = document.getElementById("welcomeTitle");
-      const lastLogin = document.getElementById("lastLogin");
-
-      if (role === "admin") {
-        welcome.textContent = "Welkom Irisje Admin";
-      } else {
-        welcome.textContent = "Welkom " + (email || "Bedrijf");
-      }
-
-      const now = new Date().toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" });
-      lastLogin.textContent = "Laatst ingelogd: " + now;
-    });
-  </script>
-
+  <script src="./js/dashboard.js"></script>
 </body>
 </html>
