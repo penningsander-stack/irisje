@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const Company = require("../models/Company");
 const Request = require("../models/Request");
+const { sendMail } = require("../utils/mailer");
 
 /**
  * POST /api/publicRequests/submit
@@ -17,7 +18,7 @@ router.post("/submit", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Ontbrekende velden" });
     }
 
-    // Vind bedrijf op slug of ID
+    // Zoek bedrijf op slug of ID
     let company = null;
     if (slug) {
       company = await Company.findOne({ slug });
@@ -29,7 +30,7 @@ router.post("/submit", async (req, res) => {
       return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
     }
 
-    // Maak de aanvraag aan
+    // Nieuwe aanvraag opslaan
     const reqDoc = await Request.create({
       company: company._id,
       name,
@@ -38,31 +39,32 @@ router.post("/submit", async (req, res) => {
       status: "Nieuw",
     });
 
-    console.log("✅ Nieuwe aanvraag opgeslagen voor bedrijf:", company.name);
+    // Probeer e-mail te versturen
+    try {
+      if (company && company.website) {
+        await sendMail({
+          to: company.website.includes("@") ? company.website : "info@irisje.nl",
+          subject: `Nieuwe aanvraag via Irisje.nl – ${company.name}`,
+          html: `
+            <h2>Nieuwe aanvraag via Irisje.nl</h2>
+            <p><strong>Bedrijf:</strong> ${company.name}</p>
+            <p><strong>Naam klant:</strong> ${name}</p>
+            <p><strong>E-mail klant:</strong> ${email}</p>
+            <p><strong>Bericht:</strong></p>
+            <p>${message}</p>
+            <hr>
+            <p>Je kunt de aanvraag bekijken in je bedrijfsdashboard.</p>
+          `,
+        });
+      }
+    } catch (mailErr) {
+      console.warn("⚠️ Mailfout bij aanvraagmelding:", mailErr.message);
+    }
 
-    res.json({
-      ok: true,
-      message: "Aanvraag verzonden",
-      id: reqDoc._id,
-      company: company.slug,
-    });
+    res.json({ ok: true, message: "Aanvraag verzonden", id: reqDoc._id });
   } catch (err) {
     console.error("publicRequests/submit error:", err);
     res.status(500).json({ ok: false, error: "Serverfout bij indienen aanvraag" });
-  }
-});
-
-/**
- * GET /api/publicRequests/test
- * Testroute om te controleren of aanvragen bestaan
- */
-router.get("/test", async (_req, res) => {
-  try {
-    const all = await Request.find().populate("company", "name slug");
-    res.json({ ok: true, count: all.length, requests: all });
-  } catch (err) {
-    console.error("publicRequests/test error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij testaanvragen" });
   }
 });
 
