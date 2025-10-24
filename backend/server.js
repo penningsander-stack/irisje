@@ -43,4 +43,10 @@ app.get("/", (req, res) => res.send("🌐 Irisje.nl backend actief"));
 
 // Start server
 const PORT = process.env.PORT || 3000;
+
+app.get("/api/test", (req, res) => {
+  res.json({ ok: true, message: "Server ziet routes correct" });
+});
+
+
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
