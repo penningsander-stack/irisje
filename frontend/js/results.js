@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const apiBase = "https://irisje.nl";
+  const apiBase = "https://irisje-backend.onrender.com";
   const resultsContainer = document.getElementById("results");
   const form = document.getElementById("searchForm");
   const categoryInput = document.getElementById("category");
