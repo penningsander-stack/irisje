@@ -1,102 +1,180 @@
-const API_BASE_URL = 'https://irisje.onrender.com';
+// frontend/script.js
+// Publieke zoekpagina + resultatenlijst
 
-document.addEventListener('DOMContentLoaded', () => {
-  const isAdmin = window.location.pathname.includes('admin.html');
-  if (isAdmin) {
-    const companyList = document.getElementById('companyList');
-    const form = document.getElementById('addCompanyForm');
+(function () {
+  const API_BASE = (window.ENV && window.ENV.API_BASE) || "https://irisje-backend.onrender.com/api";
 
-    if (!companyList) {
-      console.error('companyList element niet gevonden');
+  const form = document.getElementById("searchForm");
+  const inputQ = document.getElementById("q");
+  const inputCity = document.getElementById("city");
+  const resultsContainer = document.getElementById("resultsContainer");
+  const errorBox = document.getElementById("errorBox");
+
+  // Helper: toon foutmelding
+  function showError(msg) {
+    errorBox.textContent = msg || "Er is een fout opgetreden.";
+    errorBox.classList.remove("hidden");
+  }
+
+  function hideError() {
+    errorBox.classList.add("hidden");
+  }
+
+  // Helper: sterren visual
+  function renderStars(avgRating) {
+    if (!avgRating || avgRating <= 0) return "⭐⭐⭐⭐⭐".slice(0, 0); // leeg
+    // we doen het simpel: altijd afgerond op hele sterren omlaag
+    const full = Math.floor(avgRating);
+    return "⭐".repeat(full);
+  }
+
+  // Render bedrijven in resultsContainer
+  function renderCompanies(list) {
+    resultsContainer.innerHTML = "";
+
+    if (!list || list.length === 0) {
+      resultsContainer.innerHTML = `
+        <div class="bg-white rounded-xl shadow p-5 text-gray-500 text-sm border border-gray-200">
+          Geen bedrijven gevonden.
+        </div>
+      `;
       return;
     }
-    if (!form) {
-      console.error('addCompanyForm element niet gevonden');
-      return;
+
+    for (const company of list) {
+      const card = document.createElement("div");
+      card.className =
+        "bg-white rounded-xl shadow p-5 border border-gray-200 flex flex-col md:flex-row md:items-start md:justify-between";
+
+      const name = company.name || "Onbekend bedrijf";
+      const city = company.city || "-";
+      const tagline = company.tagline || "";
+      const categories = (company.categories && company.categories.length > 0)
+        ? company.categories.join(", ")
+        : "";
+      const stars = renderStars(company.avgRating);
+      const ratingText = company.reviewCount
+        ? `(${company.reviewCount} reviews)`
+        : "(geen reviews)";
+      const verified = company.isVerified
+        ? `<span class="inline-block bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 rounded ml-2">Geverifieerd</span>`
+        : "";
+
+      // link naar profielpagina
+      const profileUrl = `company.html?slug=${encodeURIComponent(company.slug)}`;
+
+      // link naar aanvraagpagina
+      const requestUrl = `request.html?company=${encodeURIComponent(company.slug)}`;
+
+      card.innerHTML = `
+        <div class="md:max-w-[70%]">
+          <div class="flex flex-wrap items-center gap-2">
+            <a href="${profileUrl}" class="text-lg font-semibold text-indigo-700 hover:underline">
+              ${name}
+            </a>
+            ${verified}
+          </div>
+
+          <div class="text-yellow-500 text-sm leading-none">
+            ${stars || "⭐⭐⭐⭐⭐"}
+            <span class="text-gray-600 ml-1">${ratingText}</span>
+          </div>
+
+          <div class="text-gray-600 text-sm mt-1">${city}</div>
+
+          <div class="text-gray-800 text-sm mt-3 font-medium">${tagline}</div>
+
+          <div class="text-gray-500 text-xs mt-2">
+            ${categories ? categories : ""}
+          </div>
+        </div>
+
+        <div class="mt-4 md:mt-0 flex flex-col gap-2 text-sm">
+          <a href="${profileUrl}"
+            class="text-center bg-white border border-indigo-600 text-indigo-600 font-semibold rounded-lg px-4 py-2 hover:bg-indigo-50 transition">
+            Bekijk profiel
+          </a>
+          <a href="${requestUrl}"
+            class="text-center bg-indigo-600 text-white font-semibold rounded-lg px-4 py-2 hover:bg-indigo-700 transition">
+            Vraag een offerte aan
+          </a>
+        </div>
+      `;
+
+      resultsContainer.appendChild(card);
     }
+  }
 
-    // Laden bedrijven
-    fetch(`${API_BASE_URL}/api/companies`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        if (!Array.isArray(data)) {
-          console.error('Verwachte array van bedrijven, kreeg:', data);
-          return;
-        }
-        companyList.innerHTML = '';
-        if (data.length === 0) {
-          companyList.innerHTML = '<li>Geen bedrijven gevonden.</li>';
-        } else {
-          data.forEach(company => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              <strong>${company.name}</strong> – ${company.category} – ${company.location}<br>
-              ${company.description}<br>
-              <button data-id="${company._id}" class="btn-delete">Verwijder</button>
-            `;
-            companyList.appendChild(li);
-          });
+  // Laad resultaten vanaf backend
+  async function fetchResults(qVal, cityVal) {
+    hideError();
+    resultsContainer.innerHTML = `
+      <div class="bg-white rounded-xl shadow p-5 border border-gray-200 text-gray-500 text-sm">
+        Zoeken...
+      </div>
+    `;
 
-          document.querySelectorAll('.btn-delete').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const id = btn.getAttribute('data-id');
-              if (confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) {
-                fetch(`${API_BASE_URL}/api/companies/${id}`, { method: 'DELETE' })
-                  .then(r => {
-                    if (!r.ok) throw new Error('Delete mislukt');
-                    return r.json();
-                  })
-                  .then(() => {
-                    alert('Bedrijf verwijderd');
-                    location.reload();
-                  })
-                  .catch(err => {
-                    console.error('Fout bij verwijderen:', err);
-                    alert('Kon bedrijf niet verwijderen');
-                  });
-              }
-            });
-          });
-        }
-      })
-      .catch(err => {
-        console.error('Fout bij fetch bedrijven:', err);
-        companyList.innerHTML = '<li>Fout bij laden bedrijven.</li>';
-      });
+    // Bouw querystring
+    const params = new URLSearchParams();
+    if (qVal) params.set("q", qVal);
+    if (cityVal) params.set("city", cityVal);
 
-    // Formulier toevoegen
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const name = document.getElementById('newName').value.trim();
-      const category = document.getElementById('newCategory').value.trim();
-      const location = document.getElementById('newLocation').value.trim();
-      const description = document.getElementById('newDescription').value.trim();
+    const url = `${API_BASE}/companies/search?${params.toString()}`;
 
-      if (!name || !category || !location || !description) {
-        alert('Vul alle velden in');
+    try {
+      const res = await fetch(url, { method: "GET" });
+      if (!res.ok) {
+        showError("De server gaf een fout terug.");
+        resultsContainer.innerHTML = "";
+        return;
+      }
+      const data = await res.json();
+
+      if (!data.ok) {
+        showError(data.error || "Er is een fout opgetreden.");
+        resultsContainer.innerHTML = "";
         return;
       }
 
-      fetch(`${API_BASE_URL}/api/companies`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, category, location, description })
-      })
-        .then(r => {
-          if (!r.ok) throw new Error('POST mislukt');
-          return r.json();
-        })
-        .then(() => {
-          alert('Bedrijf toegevoegd');
-          location.reload();
-        })
-        .catch(err => {
-          console.error('Fout bij toevoegen:', err);
-          alert('Kon bedrijf niet toevoegen');
-        });
-    });
+      renderCompanies(data.items || []);
+    } catch (err) {
+      console.error("Zoekfout:", err);
+      showError("Kon geen verbinding maken met de server.");
+      resultsContainer.innerHTML = "";
+    }
   }
-});
+
+  // Bij laden pagina:
+  // - Vul velden vanuit de URL (q, city)
+  // - Doe meteen een fetch
+  function initFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const qURL = urlParams.get("q") || "";
+    const cityURL = urlParams.get("city") || "";
+
+    inputQ.value = qURL;
+    inputCity.value = cityURL;
+
+    fetchResults(qURL, cityURL);
+  }
+
+  // Bij verzenden formulier → nieuwe zoekresultaten
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const qVal = inputQ.value.trim();
+    const cityVal = inputCity.value.trim();
+
+    // Update de address bar (zodat je kan kopiëren/plakken de zoekopdracht)
+    const newParams = new URLSearchParams();
+    if (qVal) newParams.set("q", qVal);
+    if (cityVal) newParams.set("city", cityVal);
+
+    const newUrl = `results.html?${newParams.toString()}`;
+    window.history.replaceState({}, "", newUrl);
+
+    fetchResults(qVal, cityVal);
+  });
+
+  // Start
+  initFromURL();
+})();
