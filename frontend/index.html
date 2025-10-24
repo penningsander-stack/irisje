@@ -4,10 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Irisje.nl – Vind betrouwbare vakmensen bij jou in de buurt</title>
+  <title>Irisje.nl – Vind de beste vakmensen bij jou in de buurt</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./style.css" />
-  <script defer src="./js/app.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
@@ -18,101 +17,110 @@
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="results.html" class="hover:underline">Bedrijven</a>
         <a href="login.html" class="hover:underline">Inloggen</a>
-        <a href="register.html" class="hover:underline">Aanmelden bedrijf</a>
+        <a href="register.html" class="hover:underline">Aanmelden</a>
       </nav>
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="bg-white py-16 shadow-sm">
-    <div class="max-w-3xl mx-auto text-center px-6">
-      <h1 class="text-4xl font-extrabold text-indigo-700 mb-4">
-        Vind de beste vakman bij jou in de buurt
-      </h1>
-      <p class="text-gray-600 text-lg mb-8">
-        Vergelijk betrouwbare bedrijven, lees reviews en vraag gratis offertes aan.
-      </p>
+  <!-- HERO / SEARCH -->
+  <main class="flex-1">
+    <section class="bg-white">
+      <div class="max-w-4xl mx-auto px-4 py-12 text-center">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 mb-4">
+          Vind een betrouwbare vakman bij jou in de buurt
+        </h1>
+        <p class="text-gray-600 max-w-2xl mx-auto mb-8">
+          Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan.
+        </p>
 
-      <!-- Zoekbalk -->
-      <form id="searchForm" class="grid sm:grid-cols-[2fr_1fr_auto] gap-3 max-w-2xl mx-auto">
-        <input type="text" id="q" name="q" placeholder="Wat zoek je? (bijv. loodgieter, schilder...)"
-               class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <input type="text" id="city" name="city" placeholder="Plaats"
-               class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <button type="submit"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl px-6 py-3 transition">
-          Zoeken
-        </button>
-      </form>
-    </div>
-  </section>
+        <form id="searchForm" class="bg-white rounded-2xl shadow-md p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="text-left">
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
+              Categorie / zoekwoord
+            </label>
+            <input
+              id="category"
+              type="text"
+              placeholder="bijv. loodgieter"
+              class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              required
+            />
+          </div>
 
-  <!-- CATEGORIEËN -->
-  <section class="max-w-6xl mx-auto px-6 py-16">
-    <h2 class="text-2xl font-bold text-indigo-700 text-center mb-10">Populaire categorieën</h2>
-    <div class="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 text-center">
-      <a href="results.html?q=Loodgieter" class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <img src="https://cdn-icons-png.flaticon.com/512/2933/2933209.png" alt="Loodgieter" class="w-12 mx-auto mb-3">
-        <h3 class="font-semibold text-lg text-indigo-700">Loodgieter</h3>
-      </a>
-      <a href="results.html?q=Schoonmaak" class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" alt="Schoonmaak" class="w-12 mx-auto mb-3">
-        <h3 class="font-semibold text-lg text-indigo-700">Schoonmaak</h3>
-      </a>
-      <a href="results.html?q=Elektricien" class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <img src="https://cdn-icons-png.flaticon.com/512/639/639365.png" alt="Elektricien" class="w-12 mx-auto mb-3">
-        <h3 class="font-semibold text-lg text-indigo-700">Elektricien</h3>
-      </a>
-      <a href="results.html?q=Schilder" class="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-        <img src="https://cdn-icons-png.flaticon.com/512/1048/1048953.png" alt="Schilder" class="w-12 mx-auto mb-3">
-        <h3 class="font-semibold text-lg text-indigo-700">Schilder</h3>
-      </a>
-    </div>
-  </section>
+          <div class="text-left">
+            <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
+              Plaats
+            </label>
+            <input
+              id="city"
+              type="text"
+              placeholder="bijv. Amsterdam"
+              class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              required
+            />
+          </div>
 
-  <!-- HOE HET WERKT -->
-  <section class="bg-white py-16 border-t border-gray-200">
-    <div class="max-w-4xl mx-auto px-6 text-center">
-      <h2 class="text-2xl font-bold text-indigo-700 mb-10">Hoe het werkt</h2>
-      <div class="grid sm:grid-cols-3 gap-8 text-gray-700">
-        <div>
-          <div class="text-indigo-600 text-4xl font-bold mb-3">1</div>
-          <p><strong>Vertel wat je zoekt.</strong><br> Vul kort in wat je nodig hebt en waar.</p>
-        </div>
-        <div>
-          <div class="text-indigo-600 text-4xl font-bold mb-3">2</div>
-          <p><strong>Vergelijk bedrijven.</strong><br> Ontvang reacties van maximaal vijf betrouwbare vakmensen.</p>
-        </div>
-        <div>
-          <div class="text-indigo-600 text-4xl font-bold mb-3">3</div>
-          <p><strong>Kies de beste match.</strong><br> Lees reviews, vergelijk prijzen en maak je keuze.</p>
-        </div>
+          <div class="flex items-end">
+            <button
+              type="submit"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition"
+            >
+              Zoeken
+            </button>
+          </div>
+        </form>
+
+        <p id="searchError" class="text-red-600 text-sm mt-3 text-center"></p>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- CTA -->
-  <section class="bg-indigo-600 text-white text-center py-16 mt-auto">
-    <h2 class="text-2xl font-bold mb-4">Klaar om te beginnen?</h2>
-    <p class="mb-8 text-lg">Vraag nu gratis en vrijblijvend een offerte aan.</p>
-    <a href="request.html" class="bg-white text-indigo-700 font-semibold rounded-xl px-8 py-3 hover:bg-gray-100 transition">
-      Offerte aanvragen
-    </a>
-  </section>
+    <!-- USP / INFO BLOK -->
+    <section class="max-w-6xl mx-auto px-4 py-10 grid gap-6 md:grid-cols-3">
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <div class="text-xl font-bold text-indigo-700 mb-2">✓ Betrouwbaar</div>
+        <p class="text-gray-600 text-sm">
+          Reviews van echte klanten. Zo zie je meteen wie goed werk levert.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <div class="text-xl font-bold text-indigo-700 mb-2">€ Vrijblijvend</div>
+        <p class="text-gray-600 text-sm">
+          Vraag gratis een offerte aan. Geen verplichting.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <div class="text-xl font-bold text-indigo-700 mb-2">⚡ Snel gevonden</div>
+        <p class="text-gray-600 text-sm">
+          Loodgieter met spoed? Elektricien in de buurt? Regel het in 1 minuut.
+        </p>
+      </div>
+    </section>
+  </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-white">
+  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
   <script>
-    document.getElementById("searchForm").addEventListener("submit", (e) => {
+    const searchForm = document.getElementById("searchForm");
+    const searchError = document.getElementById("searchError");
+
+    searchForm.addEventListener("submit", (e) => {
       e.preventDefault();
-      const q = document.getElementById("q").value.trim();
+      const category = document.getElementById("category").value.trim();
       const city = document.getElementById("city").value.trim();
-      window.location.href = `results.html?q=${encodeURIComponent(q)}&city=${encodeURIComponent(city)}`;
+
+      if (!category || !city) {
+        searchError.textContent = "Vul een categorie en plaats in.";
+        return;
+      }
+
+      const url = `results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`;
+      window.location.href = url;
     });
   </script>
-
 </body>
 </html>
