@@ -4,56 +4,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Beheerdersdashboard | Irisje.nl</title>
+  <title>Beheerdersdashboard – Irisje.nl</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css">
-  <script src="js/admin.js" defer></script>
+  <link rel="stylesheet" href="./style.css">
 </head>
-
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
-  <!-- Header -->
-  <header class="bg-white shadow-md">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-      <h1 class="text-2xl font-bold text-indigo-600">Beheerdersdashboard</h1>
-      <a href="index.html" class="text-sm text-indigo-600 hover:underline">← Terug naar start</a>
+
+  <!-- HEADER -->
+  <header class="bg-indigo-600 text-white py-5 shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
+      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
+      <nav class="space-x-6 text-sm font-medium hidden sm:block">
+        <a href="index.html" class="hover:underline">← Terug naar start</a>
+        <button id="logoutBtn" class="bg-white text-indigo-600 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-50">Uitloggen</button>
+      </nav>
     </div>
   </header>
 
-  <!-- Main -->
-  <main class="flex-grow max-w-5xl mx-auto w-full p-6">
-    <section class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-        💬 Gemelde Reviews
-      </h2>
+  <!-- MAIN -->
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
 
-      <div id="admin-message" class="text-sm text-gray-600 mb-4"></div>
+    <!-- Titel -->
+    <section class="bg-white rounded-2xl shadow-md p-6 text-center">
+      <h1 class="text-2xl font-bold text-indigo-700 mb-2">Beheerdersdashboard</h1>
+      <p class="text-sm text-gray-500">Beheer gemelde reviews en controleer activiteiten</p>
+    </section>
+
+    <!-- Gemelde Reviews -->
+    <section class="bg-white rounded-2xl shadow-md p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">💬 Gemelde Reviews</h2>
 
       <div class="overflow-x-auto">
-        <table class="w-full border-collapse">
+        <table class="w-full text-sm">
           <thead>
-            <tr class="bg-indigo-100 text-left">
-              <th class="border p-2">Naam</th>
-              <th class="border p-2">Beoordeling</th>
-              <th class="border p-2">Bericht</th>
-              <th class="border p-2">Datum</th>
-              <th class="border p-2">Actie</th>
+            <tr>
+              <th>Naam</th>
+              <th>Beoordeling</th>
+              <th>Bericht</th>
+              <th>Datum</th>
+              <th>Actie</th>
             </tr>
           </thead>
-          <tbody id="review-table-body">
-            <tr>
-              <td colspan="5" class="text-center text-gray-500 p-4">
-                Bezig met laden...
-              </td>
-            </tr>
+          <tbody id="reported-reviews-body">
+            <tr><td colspan="5" class="text-center text-gray-500 p-4">Gemelde reviews worden geladen...</td></tr>
           </tbody>
         </table>
       </div>
     </section>
+
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-gray-100 text-center text-sm py-6 text-gray-500 border-t mt-8">
+  <!-- FOOTER -->
+  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
+
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
+    async function loadReportedReviews() {
+      const tbody = document.getElementById("reported-reviews-body");
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Laden...</td></tr>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/reported-reviews`);
+        const data = await res.json();
+
+        if (!data || data.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Geen gemelde reviews gevonden.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = data
+          .map(
+            (r) => `
+            <tr>
+              <td>${r.name}</td>
+              <td>⭐`.repeat(r.rating) + `</td>
+              <td>${r.message}</td>
+              <td>${new Date(r.date || r.createdAt).toLocaleDateString("nl-NL")}</td>
+              <td>
+                <button onclick="resolveReview('${r._id}', false)" class="bg-green-600 hover:bg-green-700 text-white rounded-md px-3 py-1 text-sm">Behouden</button>
+                <button onclick="resolveReview('${r._id}', true)" class="bg-red-600 hover:bg-red-700 text-white rounded-md px-3 py-1 text-sm">Verwijderen</button>
+              </td>
+            </tr>`
+          )
+          .join("");
+      } catch (err) {
+        console.error("❌ Fout bij laden reviews:", err);
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 p-4">Fout bij laden reviews.</td></tr>`;
+      }
+    }
+
+    async function resolveReview(id, remove) {
+      try {
+        const res = await fetch(`${API_BASE}/admin/reported-reviews/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remove }),
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          alert(remove ? "Review verwijderd." : "Review behouden.");
+          loadReportedReviews();
+        } else {
+          alert("Er ging iets mis bij het verwerken.");
+        }
+      } catch (err) {
+        console.error("❌ Fout bij verwerken:", err);
+        alert("Er ging iets mis bij de server.");
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.removeItem("companyEmail");
+      localStorage.removeItem("companyName");
+      window.location.href = "login.html";
+    });
+
+    document.addEventListener("DOMContentLoaded", loadReportedReviews);
+  </script>
 </body>
 </html>
