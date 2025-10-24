@@ -80,21 +80,18 @@
           credentials: "include",
           body: JSON.stringify({ email, password })
         });
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Ongeldige inloggegevens");
 
-        // ✅ Bewaar e-mailadres & rol voor dashboard
-        localStorage.setItem("userEmail", data.email || email);
-        localStorage.setItem("userRole", data.role || "bedrijf");
+        // ✅ E-mailadres + rol opslaan
+        const role = email === "info@irisje.nl" ? "admin" : "bedrijf";
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userRole", role);
 
         msgEl.textContent = "✅ Inloggen geslaagd! Even geduld...";
         msgEl.className = "text-green-600 text-center mt-4";
 
-        setTimeout(() => {
-          window.location.href = "dashboard.html";
-        }, 800);
-
+        setTimeout(() => window.location.href = "dashboard.html", 800);
       } catch (err) {
         msgEl.textContent = "❌ " + err.message;
         msgEl.className = "text-red-600 text-center mt-4";
