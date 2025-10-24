@@ -13,12 +13,12 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Ontbrekende velden" });
     }
 
-    // Zoek bedrijf op
+    // Probeer bedrijf op te zoeken met slug of ID
     let companyDoc = null;
-
     if (companySlug) {
       companyDoc = await Company.findOne({ slug: companySlug });
-    } else if (company || companyId) {
+    }
+    if (!companyDoc && (company || companyId)) {
       companyDoc = await Company.findById(company || companyId);
     }
 
@@ -26,7 +26,7 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ message: "Bedrijf niet gevonden" });
     }
 
-    // Nieuwe aanvraag aanmaken
+    // Nieuwe aanvraag opslaan
     const newRequest = new Request({
       company: companyDoc._id,
       name,
@@ -37,7 +37,6 @@ router.post("/", async (req, res) => {
     });
 
     await newRequest.save();
-
     res.json({ message: "✅ Aanvraag succesvol verzonden!", request: newRequest });
   } catch (error) {
     console.error("Fout bij versturen aanvraag:", error);
