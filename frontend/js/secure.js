@@ -1,42 +1,27 @@
-// frontend/js/secure.js
-(function () {
-  const API = window.ENV?.API_BASE || "https://irisje-backend.onrender.com";
+document.addEventListener("DOMContentLoaded", async () => {
+  const apiBase = "https://irisje-backend.onrender.com";
+  const userName = document.getElementById("userName");
+  const logoutBtn = document.getElementById("logoutBtn");
 
-  // Beschermde pagina's: controleer token
-  const protectedPages = [
-    "dashboard.html",
-    "admin.html",
-    "company.html",
-    "ad-company.html",
-  ];
-  const isProtected = protectedPages.some((p) =>
-    window.location.pathname.endsWith(p)
-  );
-
-  const token = localStorage.getItem("token");
-  if (isProtected && !token) {
-    window.location.href = "login.html";
-    return;
+  async function loadProfile() {
+    try {
+      const res = await axios.get(`${apiBase}/api/secure/profile`, { withCredentials: true });
+      const user = res.data;
+      userName.textContent = user.name || "Bedrijf";
+    } catch (err) {
+      console.error(err);
+      userName.textContent = "Onbekend";
+    }
   }
 
-  // Uitloggen-knop
-  document.addEventListener("DOMContentLoaded", () => {
-    const logoutBtn =
-      document.getElementById("logoutBtn") || document.getElementById("logout");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        try {
-          localStorage.removeItem("token");
-          localStorage.removeItem("companyId");
-          localStorage.removeItem("companyName");
-          localStorage.removeItem("companyEmail");
-          localStorage.removeItem("companyCategory");
-        } catch {}
-        window.location.href = "login.html";
-      });
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      await axios.post(`${apiBase}/api/auth/logout`, {}, { withCredentials: true });
+      window.location.href = "login.html";
+    } catch {
+      alert("Uitloggen mislukt.");
     }
   });
 
-  // Kleine ping om token te “touch”-en (optioneel)
-  console.log("✅ Token is geldig en behouden");
-})();
+  await loadProfile();
+});
