@@ -70,30 +70,35 @@
       msgEl.textContent = "Bezig met inloggen...";
       msgEl.className = "text-gray-500 text-center mt-4";
 
-      const body = {
-        email: form.email.value.trim(),
-        password: form.password.value.trim()
-      };
+      const email = form.email.value.trim();
+      const password = form.password.value.trim();
 
       try {
         const res = await fetch(`${API_BASE}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(body)
+          body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
 
-        if (data.ok) {
-          msgEl.textContent = "✅ Inloggen geslaagd! Even geduld...";
-          msgEl.className = "text-green-600 text-center mt-4";
-          setTimeout(() => window.location.href = "dashboard.html", 1000);
-        } else {
-          throw new Error(data.error || "Ongeldige inloggegevens");
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Ongeldige inloggegevens");
+
+        // ✅ Bewaar e-mailadres & rol voor dashboard
+        localStorage.setItem("userEmail", data.email || email);
+        localStorage.setItem("userRole", data.role || "bedrijf");
+
+        msgEl.textContent = "✅ Inloggen geslaagd! Even geduld...";
+        msgEl.className = "text-green-600 text-center mt-4";
+
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 800);
+
       } catch (err) {
         msgEl.textContent = "❌ " + err.message;
         msgEl.className = "text-red-600 text-center mt-4";
+        console.error("Loginfout:", err);
       }
     });
   </script>
