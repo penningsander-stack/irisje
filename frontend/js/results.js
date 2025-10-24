@@ -1,37 +1,83 @@
-// frontend/js/results.js
-const API_BASE = "https://irisje-backend.onrender.com/api";
-const resultsEl = document.getElementById("results");
+document.addEventListener("DOMContentLoaded", () => {
+  const apiBase = "https://irisje.nl";
+  const resultsContainer = document.getElementById("results");
+  const form = document.getElementById("searchForm");
+  const categoryInput = document.getElementById("category");
+  const cityInput = document.getElementById("city");
 
-async function fetchResults() {
+  // Als er parameters in de URL staan, meteen zoeken
   const params = new URLSearchParams(window.location.search);
-  const q = params.get("q") || "";
-  const city = params.get("city") || "";
+  const initialCategory = params.get("category") || "";
+  const initialCity = params.get("city") || "";
 
-  try {
-    const res = await fetch(`${API_BASE}/companies/search?q=${q}&city=${city}`);
-    const data = await res.json();
+  if (initialCategory) categoryInput.value = initialCategory;
+  if (initialCity) cityInput.value = initialCity;
 
-    if (!data.ok || data.items.length === 0) {
-      resultsEl.innerHTML = "<p>Geen bedrijven gevonden.</p>";
-      return;
-    }
-
-    resultsEl.innerHTML = data.items
-      .map(
-        (c) => `
-        <div class="card">
-          <h2>${c.name}</h2>
-          <p>${c.tagline || ""}</p>
-          <p><strong>${c.city}</strong></p>
-          <p>⭐ ${c.avgRating} (${c.reviewCount} reviews)</p>
-          <a href="company.html?slug=${c.slug}">Bekijk profiel →</a>
-        </div>`
-      )
-      .join("");
-  } catch (err) {
-    resultsEl.innerHTML = "<p>Er ging iets mis bij het ophalen van resultaten.</p>";
-    console.error(err);
+  if (initialCategory || initialCity) {
+    searchCompanies(initialCategory, initialCity);
   }
-}
 
-fetchResults();
+  // Zoekformulier verzenden
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const category = categoryInput.value.trim();
+    const city = cityInput.value.trim();
+    searchCompanies(category, city);
+  });
+
+  // Functie: bedrijven ophalen
+  async function searchCompanies(category, city) {
+    resultsContainer.innerHTML = "<p class='text-gray-500'>Zoeken...</p>";
+
+    try {
+      const response = await axios.get(`${apiBase}/api/companies/search`, {
+        params: { category, city }
+      });
+
+      const companies = response.data.items || [];
+
+      if (companies.length === 0) {
+        resultsContainer.innerHTML = "<p class='text-gray-500'>Geen bedrijven gevonden.</p>";
+        return;
+      }
+
+      // Resultaten weergeven
+      resultsContainer.innerHTML = "";
+      companies.forEach(company => {
+        const div = document.createElement("div");
+        div.className = "bg-white p-5 rounded-2xl shadow hover:shadow-lg transition";
+
+        const verifiedBadge = company.isVerified
+          ? `<span class="text-green-600 font-semibold ml-2">✔️ Geverifieerd</span>`
+          : "";
+
+        const avgRating = company.avgRating
+          ? `<span class="text-yellow-400">${"⭐".repeat(Math.round(company.avgRating))}</span>`
+          : "";
+
+        div.innerHTML = `
+          <h2 class="text-xl font-semibold text-indigo-700 mb-1">${company.name} ${verifiedBadge}</h2>
+          <div class="flex items-center gap-2 text-sm text-gray-600 mb-1">
+            ${avgRating}
+            <span>(${company.reviewCount || 0} reviews)</span>
+          </div>
+          <p class="text-gray-700 mb-2">${company.city || ""}</p>
+          <p class="text-gray-600 mb-4">${company.tagline || ""}</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            ${(company.categories || [])
+              .map(cat => `<span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm">${cat}</span>`)
+              .join("")}
+          </div>
+          <a href="company.html?slug=${company.slug}" 
+             class="inline-block bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 transition">
+             Bekijk profiel
+          </a>
+        `;
+        resultsContainer.appendChild(div);
+      });
+    } catch (err) {
+      console.error(err);
+      resultsContainer.innerHTML = "<p class='text-red-600'>Er ging iets mis bij het ophalen van bedrijven.</p>";
+    }
+  }
+});
