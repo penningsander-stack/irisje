@@ -1,55 +1,49 @@
-// frontend/js/admin.js
-console.log("📋 Admin-dashboard geladen");
+document.addEventListener("DOMContentLoaded", async () => {
+  const apiBase = "https://irisje-backend.onrender.com";
+  const table = document.getElementById("reported-reviews");
 
-const API = window.ENV?.API_BASE || "";
-const tableBody = document.querySelector("#reportedReviewsTable tbody");
+  async function loadReported() {
+    try {
+      const res = await axios.get(`${apiBase}/api/admin/reported`, { withCredentials: true });
+      const reviews = res.data || [];
+      renderTable(reviews);
+    } catch (err) {
+      console.error(err);
+      table.innerHTML = "<tr><td colspan='5' class='text-red-600'>Fout bij laden van gemelde reviews.</td></tr>";
+    }
+  }
 
-async function loadReportedReviews() {
-  try {
-    const res = await fetch(`${API}/api/admin/reported-reviews`);
-    const data = await res.json();
-    console.log("💬 Gemelde reviews:", data);
-
-    if (!data.length) {
-      tableBody.innerHTML = `<tr><td colspan="5">Geen gemelde reviews gevonden.</td></tr>`;
+  function renderTable(list) {
+    table.innerHTML = "";
+    if (!list.length) {
+      table.innerHTML = "<tr><td colspan='5' class='text-gray-500'>Geen gemelde reviews gevonden.</td></tr>";
       return;
     }
-
-    tableBody.innerHTML = data
-      .map(
-        (r) => `
-      <tr>
-        <td>${r.name}</td>
-        <td>${"⭐".repeat(r.rating)}</td>
-        <td>${r.message}</td>
-        <td>${new Date(r.date).toLocaleDateString("nl-NL")}</td>
-        <td>
-          <button class="approve-btn" onclick="approveReview('${r._id}')">Goedkeuren</button>
-          <button class="delete-btn" onclick="deleteReview('${r._id}')">Verwijderen</button>
-        </td>
-      </tr>`
-      )
-      .join("");
-  } catch (err) {
-    console.error("Fout bij laden reviews:", err);
-    tableBody.innerHTML = `<tr><td colspan="5">Serverfout bij laden reviews.</td></tr>`;
+    list.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="border px-2 py-1">${r.name}</td>
+        <td class="border px-2 py-1">${"⭐".repeat(r.rating)}</td>
+        <td class="border px-2 py-1">${r.message}</td>
+        <td class="border px-2 py-1">${new Date(r.date).toLocaleDateString("nl-NL")}</td>
+        <td class="border px-2 py-1">
+          <button data-id="${r._id}" class="bg-green-600 text-white px-2 py-1 rounded mark-safe">Beoordeeld</button>
+        </td>`;
+      table.appendChild(tr);
+    });
   }
-}
 
-async function approveReview(id) {
-  if (!confirm("Weet je zeker dat je deze review wilt goedkeuren?")) return;
-  const res = await fetch(`${API}/api/admin/reviews/${id}/approve`, { method: "PATCH" });
-  const data = await res.json();
-  alert(data.message || "Review goedgekeurd.");
-  loadReportedReviews();
-}
+  table.addEventListener("click", async e => {
+    if (e.target.classList.contains("mark-safe")) {
+      const id = e.target.dataset.id;
+      try {
+        await axios.post(`${apiBase}/api/admin/reported/${id}/resolve`, {}, { withCredentials: true });
+        await loadReported();
+      } catch {
+        alert("Fout bij bijwerken reviewstatus");
+      }
+    }
+  });
 
-async function deleteReview(id) {
-  if (!confirm("Weet je zeker dat je deze review wilt verwijderen?")) return;
-  const res = await fetch(`${API}/api/admin/reviews/${id}`, { method: "DELETE" });
-  const data = await res.json();
-  alert(data.message || "Review verwijderd.");
-  loadReportedReviews();
-}
-
-loadReportedReviews();
+  await loadReported();
+});
