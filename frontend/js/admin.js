@@ -1,49 +1,69 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const apiBase = "https://irisje-backend.onrender.com";
-  const table = document.getElementById("reported-reviews");
+// frontend/js/admin.js
+const backendUrl = "https://irisje-backend.onrender.com";
 
-  async function loadReported() {
+document.addEventListener("DOMContentLoaded", () => {
+  const reviewTable = document.querySelector("#review-table-body");
+  const messageDiv = document.querySelector("#admin-message");
+
+  async function loadReportedReviews() {
     try {
-      const res = await axios.get(`${apiBase}/api/admin/reported`, { withCredentials: true });
-      const reviews = res.data || [];
-      renderTable(reviews);
+      const res = await fetch(`${backendUrl}/api/admin/reported-reviews`);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
+      const reviews = await res.json();
+
+      reviewTable.innerHTML = "";
+
+      if (!reviews.length) {
+        reviewTable.innerHTML = `
+          <tr><td colspan="5" class="text-center text-gray-500 p-4">
+          Geen gemelde reviews gevonden.
+          </td></tr>`;
+        return;
+      }
+
+      reviews.forEach((rev) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td class="border p-2">${rev.name || "-"}</td>
+          <td class="border p-2">${"⭐".repeat(rev.rating || 0)}</td>
+          <td class="border p-2">${rev.message || "-"}</td>
+          <td class="border p-2">${new Date(
+            rev.createdAt || rev.date
+          ).toLocaleDateString("nl-NL")}</td>
+          <td class="border p-2">
+            <button data-id="${rev._id}" 
+              class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+              Afgehandeld
+            </button>
+          </td>`;
+        reviewTable.appendChild(row);
+      });
     } catch (err) {
-      console.error(err);
-      table.innerHTML = "<tr><td colspan='5' class='text-red-600'>Fout bij laden van gemelde reviews.</td></tr>";
+      console.error("❌ Fout bij laden reviews:", err);
+      reviewTable.innerHTML = `
+        <tr><td colspan="5" class="text-center text-red-600 p-4">
+        Fout bij laden reviews.
+        </td></tr>`;
     }
   }
 
-  function renderTable(list) {
-    table.innerHTML = "";
-    if (!list.length) {
-      table.innerHTML = "<tr><td colspan='5' class='text-gray-500'>Geen gemelde reviews gevonden.</td></tr>";
-      return;
-    }
-    list.forEach(r => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td class="border px-2 py-1">${r.name}</td>
-        <td class="border px-2 py-1">${"⭐".repeat(r.rating)}</td>
-        <td class="border px-2 py-1">${r.message}</td>
-        <td class="border px-2 py-1">${new Date(r.date).toLocaleDateString("nl-NL")}</td>
-        <td class="border px-2 py-1">
-          <button data-id="${r._id}" class="bg-green-600 text-white px-2 py-1 rounded mark-safe">Beoordeeld</button>
-        </td>`;
-      table.appendChild(tr);
-    });
-  }
-
-  table.addEventListener("click", async e => {
-    if (e.target.classList.contains("mark-safe")) {
-      const id = e.target.dataset.id;
+  // Handeling voor de knop "Afgehandeld"
+  document.addEventListener("click", async (e) => {
+    if (e.target.matches("button[data-id]")) {
+      const id = e.target.getAttribute("data-id");
       try {
-        await axios.post(`${apiBase}/api/admin/reported/${id}/resolve`, {}, { withCredentials: true });
-        await loadReported();
-      } catch {
-        alert("Fout bij bijwerken reviewstatus");
+        const res = await fetch(`${backendUrl}/api/admin/resolve/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        console.log("✅ Review afgehandeld:", data);
+        loadReportedReviews();
+      } catch (err) {
+        console.error("❌ Fout bij afhandelen review:", err);
       }
     }
   });
 
-  await loadReported();
+  loadReportedReviews();
 });
