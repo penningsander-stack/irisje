@@ -10,32 +10,41 @@ document.addEventListener("DOMContentLoaded", () => {
   const followedUpEl = document.querySelector("#followed-up");
 
   const userEmail = localStorage.getItem("userEmail");
+  const userRole = localStorage.getItem("userRole");
+
+  // ✅ Uitloggen knop
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+  }
 
   async function loadRequests() {
     try {
-      if (!userEmail) {
+      let url;
+      if (userRole === "admin") {
+        url = `${backendUrl}/api/requests?email=info@irisje.nl`;
+      } else if (userEmail) {
+        url = `${backendUrl}/api/requests?email=${encodeURIComponent(userEmail)}`;
+      } else {
         console.warn("⚠️ Geen e-mailadres in localStorage gevonden");
         return;
       }
 
-      const res = await fetch(`${backendUrl}/api/requests?email=${encodeURIComponent(userEmail)}`);
-      if (!res.ok) throw new Error(`Serverfout (${res.status})`);
-
+      const res = await fetch(url);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Fout ${res.status}`);
 
-      if (!requestTable) return;
       requestTable.innerHTML = "";
-
       if (!data.length) {
-        requestTable.innerHTML = `
-          <tr><td colspan="5" class="text-center text-gray-500 p-4">
-            Geen aanvragen gevonden.
-          </td></tr>`;
+        requestTable.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Geen aanvragen gevonden.</td></tr>`;
         updateStats([]);
         return;
       }
 
-      data.forEach((req) => {
+      data.forEach(req => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td class="border p-2">${req.name}</td>
@@ -50,12 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateStats(data);
     } catch (err) {
       console.error("❌ Fout bij laden aanvragen:", err);
-      if (requestTable) {
-        requestTable.innerHTML = `
-          <tr><td colspan="5" class="text-center text-red-600 p-4">
-            Fout bij laden aanvragen.
-          </td></tr>`;
-      }
+      requestTable.innerHTML = `<tr><td colspan="5" class="text-center text-red-600 p-4">Fout bij laden aanvragen.</td></tr>`;
     }
   }
 
@@ -69,22 +73,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadReviews() {
     try {
-      const res = await fetch(`${backendUrl}/api/reviews`);
-      if (!res.ok) throw new Error(`Serverfout (${res.status})`);
+      const url = `${backendUrl}/api/reviews`;
+      const res = await fetch(url);
       const reviews = await res.json();
 
-      if (!reviewTable) return;
       reviewTable.innerHTML = "";
-
       if (!reviews.length) {
-        reviewTable.innerHTML = `
-          <tr><td colspan="4" class="text-center text-gray-500 p-4">
-            Geen reviews gevonden.
-          </td></tr>`;
+        reviewTable.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 p-4">Geen reviews gevonden.</td></tr>`;
         return;
       }
 
-      reviews.forEach((rev) => {
+      reviews.forEach(rev => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td class="border p-2">${rev.name}</td>
