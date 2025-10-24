@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
-  const apiBase = "https://irisje.nl";
+  const apiBase = "https://irisje-backend.onrender.com";
+
 
   if (!slug) {
     document.getElementById("company-info").innerHTML = "<p>Geen bedrijf gevonden.</p>";
