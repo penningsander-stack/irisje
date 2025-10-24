@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const slug = params.get("slug");
   const apiBase = "https://irisje-backend.onrender.com";
 
-
   if (!slug) {
     document.getElementById("company-info").innerHTML = "<p>Geen bedrijf gevonden.</p>";
     return;
@@ -19,10 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("company-city").textContent = `📍 ${company.city}`;
       document.getElementById("company-description").textContent = company.description || "";
       document.getElementById("review-count").textContent = `(${company.reviewCount} reviews)`;
-
-      if (company.logoUrl) {
-        document.getElementById("company-logo").src = company.logoUrl;
-      }
+      if (company.logoUrl) document.getElementById("company-logo").src = company.logoUrl;
 
       const catContainer = document.getElementById("company-categories");
       catContainer.innerHTML = "";
@@ -62,7 +58,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await loadCompany();
 
-  // Aanvraagformulier
   document.getElementById("quoteForm").addEventListener("submit", async e => {
     e.preventDefault();
     const name = e.target.name.value.trim();
@@ -78,7 +73,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Reviewformulier
   document.getElementById("reviewForm").addEventListener("submit", async e => {
     e.preventDefault();
     const name = e.target.reviewName.value.trim();
@@ -86,13 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const rating = parseInt(e.target.reviewRating.value);
     const message = e.target.reviewMessage.value.trim();
     const info = document.getElementById("reviewMessageInfo");
-
     try {
       await axios.post(`${apiBase}/api/reviews`, { companySlug: slug, name, email, rating, message });
       info.textContent = "✅ Dank je! Je beoordeling is verzonden.";
       e.target.reset();
-      await loadCompany(); // herlaadt reviews
-    } catch (err) {
+      await loadCompany();
+    } catch {
       info.textContent = "❌ Er ging iets mis bij het versturen van je beoordeling.";
     }
   });
