@@ -1,59 +1,69 @@
 // backend/routes/requests.js
 const express = require("express");
 const router = express.Router();
-const { verifyToken } = require("../middleware/auth");
-
 const Request = require("../models/Request");
-const Company = require("../models/Company");
+const User = require("../models/User");
 
-// --------------------------------------
-// GET /api/requests
-// Haal aanvragen op van het ingelogde bedrijf
-// --------------------------------------
-router.get("/", verifyToken, async (req, res) => {
+// ✅ Alle aanvragen ophalen (bedrijf of admin)
+router.get("/", async (req, res) => {
   try {
-    const userId = req.user.id;
-    const company = await Company.findOne({ owner: userId });
-    if (!company)
-      return res.status(404).json({ ok: false, error: "Geen bedrijf gevonden" });
+    const email = req.query.email; // meegegeven via frontend
+    if (!email) return res.status(400).json({ message: "E-mail ontbreekt" });
 
-    const requests = await Request.find({ company: company._id }).sort({
-      createdAt: -1,
-    });
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Gebruiker niet gevonden" });
 
-    res.json({ ok: true, requests });
+    let requests;
+
+    if (user.role === "admin") {
+      // Admin ziet alle aanvragen
+      requests = await Request.find().sort({ createdAt: -1 });
+    } else {
+      // Bedrijven zien alleen hun eigen aanvragen
+      requests = await Request.find({ company: user.companyId }).sort({ createdAt: -1 });
+    }
+
+    res.json(requests);
   } catch (err) {
-    console.error("requests/ GET error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij ophalen aanvragen" });
+    console.error("❌ Fout bij ophalen aanvragen:", err);
+    res.status(500).json({ message: "Fout bij laden aanvragen" });
   }
 });
 
-// --------------------------------------
-// POST /api/requests/update-status
-// Werk de status bij van een aanvraag
-// --------------------------------------
-router.post("/update-status", verifyToken, async (req, res) => {
+// ✅ Nieuwe aanvraag opslaan (publieke route)
+router.post("/", async (req, res) => {
   try {
-    const { id, status } = req.body;
-    if (!id || !status)
-      return res.status(400).json({ ok: false, error: "Ontbrekende velden" });
+    const { company, name, email, message } = req.body;
+    if (!company || !name || !email || !message) {
+      return res.status(400).json({ message: "Ontbrekende velden" });
+    }
 
-    const userId = req.user.id;
-    const company = await Company.findOne({ owner: userId });
-    if (!company)
-      return res.status(404).json({ ok: false, error: "Geen bedrijf gevonden" });
+    const newRequest = new Request({
+      company,
+      name,
+      email,
+      message,
+      status: "Nieuw",
+    });
 
-    const reqDoc = await Request.findOne({ _id: id, company: company._id });
-    if (!reqDoc)
-      return res.status(404).json({ ok: false, error: "Aanvraag niet gevonden" });
-
-    reqDoc.status = status;
-    await reqDoc.save();
-
-    res.json({ ok: true, message: "Status bijgewerkt" });
+    await newRequest.save();
+    res.status(201).json({ message: "✅ Aanvraag opgeslagen", request: newRequest });
   } catch (err) {
-    console.error("requests/update-status error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij statusupdate" });
+    console.error("❌ Fout bij opslaan aanvraag:", err);
+    res.status(500).json({ message: "Fout bij opslaan aanvraag" });
+  }
+});
+
+// ✅ Status van aanvraag wijzigen
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+    const request = await Request.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    if (!request) return res.status(404).json({ message: "Aanvraag niet gevonden" });
+    res.json({ message: "Status bijgewerkt", request });
+  } catch (err) {
+    console.error("❌ Fout bij wijzigen status:", err);
+    res.status(500).json({ message: "Fout bij wijzigen status" });
   }
 });
 
