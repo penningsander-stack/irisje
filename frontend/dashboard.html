@@ -2,105 +2,121 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bedrijfsdashboard – Irisje.nl</title>
-  <link rel="stylesheet" href="./style.css" />
-  <script src="js/dashboard.js" defer></script>
-
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./style.css">
 </head>
-<body>
-  <header>
-    <h1>Bedrijfsdashboard</h1>
-    <nav>
-      <a href="index.html" class="iris-link">← Terug naar start</a>
-      <button id="logoutBtn">Uitloggen</button>
-    </nav>
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- HEADER -->
+  <header class="bg-indigo-600 text-white py-4 shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
+      <a href="index.html" class="text-xl font-semibold">← Terug naar start</a>
+      <button id="logoutBtn" class="bg-white text-indigo-700 font-semibold px-4 py-2 rounded-xl hover:bg-gray-100 transition">Uitloggen</button>
+    </div>
   </header>
 
-  <main>
-    <section class="card">
-      <h2>Welkom <span id="companyName">Bedrijf</span></h2>
-      <p>Laatst ingelogd: <span id="lastLogin">—</span></p>
-    </section>
+  <!-- MAIN -->
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-10">
+    <h1 id="welcomeTitle" class="text-2xl font-bold text-indigo-700 mb-2">Welkom</h1>
+    <p id="lastLogin" class="text-gray-600 mb-8">Laatst ingelogd: —</p>
 
-    <section class="card">
-      <h2>📊 Statistieken</h2>
-      <div class="iris-grid iris-grid-4">
-        <div class="iris-stat">
-          <div class="iris-stat-title">Totaal</div>
-          <div class="iris-stat-value" id="statTotal">0</div>
-        </div>
-        <div class="iris-stat">
-          <div class="iris-stat-title">Geaccepteerd</div>
-          <div class="iris-stat-value" id="statAccepted">0</div>
-        </div>
-        <div class="iris-stat">
-          <div class="iris-stat-title">Afgewezen</div>
-          <div class="iris-stat-value" id="statRejected">0</div>
-        </div>
-        <div class="iris-stat">
-          <div class="iris-stat-title">Opgevolgd</div>
-          <div class="iris-stat-value" id="statFollowed">0</div>
-        </div>
+    <!-- STATISTIEKEN -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <h2 class="text-gray-500 text-sm font-semibold">Totaal</h2>
+        <p id="total" class="text-2xl font-bold text-indigo-700">0</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <h2 class="text-gray-500 text-sm font-semibold">Geaccepteerd</h2>
+        <p id="accepted" class="text-2xl font-bold text-green-600">0</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <h2 class="text-gray-500 text-sm font-semibold">Afgewezen</h2>
+        <p id="rejected" class="text-2xl font-bold text-red-600">0</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-4 text-center">
+        <h2 class="text-gray-500 text-sm font-semibold">Opgevolgd</h2>
+        <p id="followed-up" class="text-2xl font-bold text-yellow-600">0</p>
       </div>
     </section>
 
-    <section class="card">
-      <h2>📬 Aanvragen</h2>
-      <label for="statusFilter">Filter</label>
-      <select id="statusFilter" class="iris-select">
-        <option value="all">Alle</option>
-        <option value="accepted">Geaccepteerd</option>
-        <option value="rejected">Afgewezen</option>
-        <option value="followed">Opgevolgd</option>
-      </select>
-
-      <div class="iris-table-wrap">
-        <table class="iris-table" id="requestsTable">
-          <thead>
+    <!-- AANVRAGEN -->
+    <section class="bg-white rounded-2xl shadow mb-10">
+      <div class="border-b p-4 flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-indigo-700">📬 Aanvragen</h2>
+        <select id="filterStatus" class="border rounded-lg p-2 text-sm text-gray-700">
+          <option value="alle">Alle</option>
+          <option value="Nieuw">Nieuw</option>
+          <option value="Geaccepteerd">Geaccepteerd</option>
+          <option value="Afgewezen">Afgewezen</option>
+          <option value="Opgevolgd">Opgevolgd</option>
+        </select>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead class="bg-indigo-100 text-indigo-800">
             <tr>
-              <th>Naam</th>
-              <th>E-mail</th>
-              <th>Bericht</th>
-              <th>Status</th>
-              <th>Datum</th>
+              <th class="border p-2">Naam</th>
+              <th class="border p-2">E-mail</th>
+              <th class="border p-2">Bericht</th>
+              <th class="border p-2">Status</th>
+              <th class="border p-2">Datum</th>
             </tr>
           </thead>
-          <tbody id="requestsBody">
-            <tr class="iris-empty-row">
-              <td colspan="5">Geen aanvragen gevonden.</td>
-            </tr>
-          </tbody>
+          <tbody id="request-table-body"></tbody>
         </table>
       </div>
     </section>
 
-    <section class="card">
-      <h2>💬 Reviews</h2>
-      <div class="iris-table-wrap">
-        <table class="iris-table" id="reviewsTable">
-          <thead>
+    <!-- REVIEWS -->
+    <section class="bg-white rounded-2xl shadow">
+      <div class="border-b p-4">
+        <h2 class="text-xl font-semibold text-indigo-700">💬 Reviews</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+          <thead class="bg-indigo-100 text-indigo-800">
             <tr>
-              <th>Naam</th>
-              <th>Beoordeling</th>
-              <th>Bericht</th>
-              <th>Datum</th>
-              <th>Actie</th>
+              <th class="border p-2">Naam</th>
+              <th class="border p-2">Beoordeling</th>
+              <th class="border p-2">Bericht</th>
+              <th class="border p-2">Datum</th>
             </tr>
           </thead>
-          <tbody id="reviewsBody">
-            <tr class="iris-empty-row">
-              <td colspan="5">Geen reviews gevonden.</td>
-            </tr>
-          </tbody>
+          <tbody id="review-table-body"></tbody>
         </table>
       </div>
     </section>
   </main>
 
-  <footer>
+  <!-- FOOTER -->
+  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
+
+  <script src="js/dashboard.js" defer></script>
+
+  <script>
+    // ✅ Zorgt voor correcte welkomsttekst
+    document.addEventListener("DOMContentLoaded", () => {
+      const email = localStorage.getItem("userEmail");
+      const role = localStorage.getItem("userRole");
+      const welcome = document.getElementById("welcomeTitle");
+      const lastLogin = document.getElementById("lastLogin");
+
+      if (role === "admin") {
+        welcome.textContent = "Welkom Irisje Admin";
+      } else {
+        welcome.textContent = "Welkom " + (email || "Bedrijf");
+      }
+
+      const now = new Date().toLocaleString("nl-NL", { dateStyle: "medium", timeStyle: "short" });
+      lastLogin.textContent = "Laatst ingelogd: " + now;
+    });
+  </script>
+
 </body>
 </html>
