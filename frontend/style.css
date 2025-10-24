@@ -79,4 +79,109 @@ select:focus {
 /* === Links === */
 a {
   color: #4f46e5;
-  tex
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* === Tabellen (dashboard / admin / results cards use Tailwind but fallback here) === */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+th {
+  background-color: #eef2ff; /* zacht blauw */
+  color: #4338ca;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px;
+  border-bottom: 2px solid #e5e7eb;
+  font-size: 0.8rem;
+}
+td {
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.8rem;
+  vertical-align: top;
+}
+tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* === Statistieken blok === */
+.stats-box {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-item {
+  background-color: white;
+  border-radius: 16px;
+  text-align: center;
+  padding: 1rem;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  transition: transform 0.1s ease;
+}
+.stat-item:hover {
+  transform: translateY(-2px);
+}
+.stat-item h3 {
+  color: #4f46e5;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+.stat-item p {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #111827;
+}
+
+/* === Fout- en succesmeldingen === */
+.message-error {
+  color: #dc2626;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+.message-success {
+  color: #065f46;
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+/* === Footer === */
+footer {
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  background-color: #fafafa;
+  margin-top: auto;
+}
+
+/* === Responsiviteit === */
+@media (max-width: 640px) {
+  .stats-box {
+    grid-template-columns: 1fr 1fr;
+  }
+  th,
+  td {
+    font-size: 0.75rem;
+  }
+  header nav {
+    display: none;
+  }
+}
