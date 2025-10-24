@@ -1,110 +1,81 @@
+<!-- frontend/company.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bedrijfsprofiel – Irisje.nl</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script defer src="js/company.js"></script>
+  <title>Bedrijf | Irisje.nl</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js" defer></script>
+  <script src="js/company.js" defer></script>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-  <!-- Header -->
-  <header class="bg-white shadow-md py-4 px-6 flex justify-between items-center">
-    <a href="index.html" class="text-2xl font-bold text-indigo-600">Irisje.nl</a>
-    <nav>
-      <a href="index.html" class="text-gray-700 hover:text-indigo-600 px-3">Home</a>
-      <a href="results.html" class="text-gray-700 hover:text-indigo-600 px-3">Bedrijven</a>
-      <a href="login.html" class="text-gray-700 hover:text-indigo-600 px-3">Inloggen</a>
-    </nav>
+<body class="bg-gray-50 text-gray-800">
+  <header class="p-4 bg-white shadow">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h2 class="text-xl font-bold text-indigo-700">Irisje.nl</h2>
+      <nav>
+        <a href="index.html" class="mr-4 hover:underline">Home</a>
+        <a href="results.html" class="mr-4 hover:underline">Bedrijven</a>
+        <a href="login.html" class="hover:underline">Inloggen</a>
+      </nav>
+    </div>
   </header>
 
-  <!-- Main content -->
-  <main class="flex-grow max-w-5xl mx-auto p-6">
-    <!-- Bedrijfsinfo -->
-    <section id="company-info" class="bg-white rounded-2xl shadow p-6 mb-8">
-      <div class="flex flex-col md:flex-row md:items-center gap-6">
-        <img id="company-logo" src="https://via.placeholder.com/150" alt="Bedrijfslogo" class="w-32 h-32 rounded-xl object-cover shadow">
-        <div>
-          <h1 id="company-name" class="text-3xl font-semibold text-indigo-700">Bedrijfsnaam</h1>
-          <p id="company-tagline" class="text-gray-600 mt-1">Tagline of korte beschrijving</p>
-          <div class="flex items-center gap-1 mt-2">
-            <span id="company-rating" class="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</span>
-            <span id="review-count" class="text-gray-500 text-sm">(0 reviews)</span>
-          </div>
-          <p id="company-city" class="text-gray-600 mt-2">📍 Stad</p>
-          <div id="company-categories" class="mt-2 flex flex-wrap gap-2"></div>
-        </div>
+  <main class="max-w-3xl mx-auto p-6">
+    <div class="text-center mb-6">
+      <img id="logo" src="https://via.placeholder.com/100" alt="Bedrijfslogo" class="mx-auto rounded-full shadow mb-3" />
+      <h1 id="companyName" class="text-3xl font-bold"></h1>
+      <p id="tagline" class="text-gray-600"></p>
+
+      <div class="mt-2">
+        <p id="rating" class="text-lg"></p>
+        <p id="reviewCount" class="text-gray-500"></p>
+        <p id="city" class="text-gray-600 mt-1"></p>
       </div>
-      <p id="company-description" class="mt-4 text-gray-700 leading-relaxed">
-        Hier komt de beschrijving van het bedrijf te staan. Deze tekst wordt dynamisch geladen uit de backend.
-      </p>
+
+      <p id="categories" class="text-sm text-gray-500 mt-2"></p>
+      <p id="description" class="text-base mt-4"></p>
+    </div>
+
+    <section class="mb-8">
+      <h3 class="text-xl font-semibold mb-2">Beoordelingen</h3>
+      <div id="review-list" class="bg-white shadow rounded-lg p-4"></div>
     </section>
 
-    <!-- Reviews -->
-    <section id="reviews" class="bg-white rounded-2xl shadow p-6 mb-8">
-      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Beoordelingen</h2>
-      <div id="review-list" class="space-y-4">
-        <p class="text-gray-500">Nog geen beoordelingen beschikbaar.</p>
-      </div>
-    </section>
-
-    <!-- Nieuwe review toevoegen -->
-    <section id="add-review" class="bg-white rounded-2xl shadow p-6 mb-8">
-      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Jouw ervaring</h2>
-      <form id="reviewForm" class="space-y-4">
-        <div>
-          <label for="reviewName" class="block text-sm font-medium text-gray-700">Naam</label>
-          <input type="text" id="reviewName" name="reviewName" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-          <label for="reviewEmail" class="block text-sm font-medium text-gray-700">E-mailadres</label>
-          <input type="email" id="reviewEmail" name="reviewEmail" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-          <label for="reviewRating" class="block text-sm font-medium text-gray-700">Beoordeling</label>
-          <select id="reviewRating" name="reviewRating" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
-            <option value="">Kies aantal sterren</option>
-            <option value="5">⭐⭐⭐⭐⭐ - Uitstekend</option>
-            <option value="4">⭐⭐⭐⭐ - Goed</option>
-            <option value="3">⭐⭐⭐ - Redelijk</option>
-            <option value="2">⭐⭐ - Matig</option>
-            <option value="1">⭐ - Slecht</option>
-          </select>
-        </div>
-        <div>
-          <label for="reviewMessage" class="block text-sm font-medium text-gray-700">Bericht</label>
-          <textarea id="reviewMessage" name="reviewMessage" rows="4" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-        </div>
-        <button type="submit" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verstuur beoordeling</button>
-        <p id="reviewMessageInfo" class="text-sm text-gray-600 mt-2"></p>
+    <section class="mb-8">
+      <h3 class="text-xl font-semibold mb-3">Jouw ervaring</h3>
+      <form id="reviewForm" class="bg-white p-4 shadow rounded-lg space-y-3">
+        <input id="reviewName" type="text" placeholder="Naam" required class="w-full border p-2 rounded" />
+        <input id="reviewEmail" type="email" placeholder="E-mailadres" class="w-full border p-2 rounded" />
+        <select id="reviewRating" required class="w-full border p-2 rounded">
+          <option value="">Kies aantal sterren</option>
+          <option value="5">⭐⭐⭐⭐⭐</option>
+          <option value="4">⭐⭐⭐⭐</option>
+          <option value="3">⭐⭐⭐</option>
+          <option value="2">⭐⭐</option>
+          <option value="1">⭐</option>
+        </select>
+        <textarea id="reviewMessage" placeholder="Bericht" required class="w-full border p-2 rounded"></textarea>
+        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+          Verstuur beoordeling
+        </button>
       </form>
     </section>
 
-    <!-- Offerte-aanvraag -->
-    <section id="request-form" class="bg-white rounded-2xl shadow p-6">
-      <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Vraag een offerte aan</h2>
-      <form id="quoteForm" class="space-y-4">
-        <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">Naam</label>
-          <input type="text" id="name" name="name" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">E-mailadres</label>
-          <input type="email" id="email" name="email" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500">
-        </div>
-        <div>
-          <label for="message" class="block text-sm font-medium text-gray-700">Bericht</label>
-          <textarea id="message" name="message" rows="4" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-        </div>
-        <button type="submit" class="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700">Verstuur aanvraag</button>
-        <p id="form-message" class="text-sm text-gray-600 mt-2"></p>
+    <section class="mb-8">
+      <h3 class="text-xl font-semibold mb-3">Vraag een offerte aan</h3>
+      <form id="requestForm" class="bg-white p-4 shadow rounded-lg space-y-3">
+        <input id="requestName" type="text" placeholder="Naam" required class="w-full border p-2 rounded" />
+        <input id="requestEmail" type="email" placeholder="E-mailadres" required class="w-full border p-2 rounded" />
+        <textarea id="requestMessage" placeholder="Bericht" required class="w-full border p-2 rounded"></textarea>
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+          Verstuur aanvraag
+        </button>
       </form>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white text-center py-4 text-gray-600 border-t mt-8">
+  <footer class="text-center text-sm py-6 text-gray-500 border-t">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 </body>
