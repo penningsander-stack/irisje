@@ -1,50 +1,59 @@
 // backend/routes/requests.js
 const express = require("express");
 const router = express.Router();
-
 const { verifyToken } = require("../middleware/auth");
 const Request = require("../models/Request");
 const Company = require("../models/Company");
 
-// ✅ Alle aanvragen van het ingelogde bedrijf
+/**
+ * GET /api/requests
+ * Haalt alle aanvragen op die horen bij het bedrijf van de ingelogde gebruiker
+ */
 router.get("/", verifyToken, async (req, res) => {
   try {
-    // Vind het bedrijf dat hoort bij de ingelogde user
+    // Vind het bedrijf van de ingelogde gebruiker
     const company = await Company.findOne({ owner: req.user.id });
     if (!company) {
-      // Geen bedrijf gekoppeld aan user → lege lijst terug (dashboard blijft gewoon werken)
-      return res.json({ ok: true, items: [] });
+      return res.status(404).json({ ok: false, error: "Geen bedrijf gevonden voor deze gebruiker" });
     }
 
-    const items = await Request.find({ company: company._id }).sort({ createdAt: -1 });
-    return res.json({ ok: true, items });
+    // Haal alle aanvragen van dat bedrijf op
+    const requests = await Request.find({ company: company._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ ok: true, requests });
   } catch (err) {
-    console.error("Fout bij ophalen aanvragen:", err);
-    return res.status(500).json({ ok: false, error: "Serverfout bij ophalen aanvragen" });
+    console.error("requests GET error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij ophalen aanvragen" });
   }
 });
 
-// ✅ Status van een aanvraag bijwerken (optioneel gebruikt)
-router.put("/:id/status", verifyToken, async (req, res) => {
+/**
+ * POST /api/requests/update-status
+ * Past de status van een aanvraag aan
+ * body: { requestId, status }
+ */
+router.post("/update-status", verifyToken, async (req, res) => {
   try {
-    const { status } = req.body || {};
-    if (!status) return res.status(400).json({ ok: false, error: "Status ontbreekt" });
+    const { requestId, status } = req.body;
+    if (!requestId || !status) {
+      return res.status(400).json({ ok: false, error: "Ontbrekende velden" });
+    }
 
-    // Zekerstellen dat de aanvraag bij dit bedrijf hoort
     const company = await Company.findOne({ owner: req.user.id });
-    if (!company) return res.status(403).json({ ok: false, error: "Geen bedrijf gekoppeld" });
+    if (!company) return res.status(403).json({ ok: false, error: "Geen toegang" });
 
-    const updated = await Request.findOneAndUpdate(
-      { _id: req.params.id, company: company._id },
-      { status },
-      { new: true }
-    );
-    if (!updated) return res.status(404).json({ ok: false, error: "Aanvraag niet gevonden" });
+    const request = await Request.findOne({ _id: requestId, company: company._id });
+    if (!request) return res.status(404).json({ ok: false, error: "Aanvraag niet gevonden" });
 
-    return res.json({ ok: true, item: updated });
+    request.status = status;
+    await request.save();
+
+    res.json({ ok: true, message: "Status bijgewerkt" });
   } catch (err) {
-    console.error("Fout bij updaten status:", err);
-    return res.status(500).json({ ok: false, error: "Serverfout bij updaten status" });
+    console.error("update-status error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij bijwerken status" });
   }
 });
 
