@@ -1,11 +1,14 @@
-<!-- frontend/results.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zoekresultaten – Irisje.nl</title>
+
+  <!-- Tailwind voor snelle layout -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Onze eigen basisstijl (knoppen/typografie die we al hebben) -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -23,26 +26,41 @@
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-10">
-    <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">Zoekresultaten</h1>
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+    <h1 class="text-2xl font-bold text-indigo-700 mb-4">Zoekresultaten</h1>
 
-    <!-- Zoekbalk -->
-    <form id="searchForm" class="grid sm:grid-cols-[2fr_1fr_auto] gap-3 mb-10">
-      <input id="q" name="q" type="text" placeholder="Wat zoek je? (bijv. loodgieter)"
-             class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-      <input id="city" name="city" type="text" placeholder="Plaats"
-             class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-      <button type="submit"
-              class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-6 py-3 font-medium">
-        Zoeken
-      </button>
+    <!-- Zoekfilter -->
+    <form id="searchForm" class="bg-white rounded-xl shadow p-4 mb-6 grid gap-4 md:grid-cols-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="q">Categorie / zoekwoord</label>
+        <input id="q" name="q" type="text" placeholder="bijv. Loodgieter"
+          class="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="city">Plaats</label>
+        <input id="city" name="city" type="text" placeholder="bijv. Rotterdam"
+          class="w-full border border-gray-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+      </div>
+
+      <div class="flex items-end">
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg px-4 py-2.5 transition">
+          Zoeken
+        </button>
+      </div>
     </form>
 
-    <!-- Resultaten -->
-    <div id="resultsContainer" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <!-- Foutmelding -->
+    <div id="errorBox" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+      Er is een fout opgetreden.
+    </div>
 
-    <!-- Loader -->
-    <div id="loader" class="text-center text-gray-500 hidden">Laden...</div>
+    <!-- Resultatenlijst -->
+    <div id="resultsContainer" class="space-y-4">
+      <!-- Result cards komen hier via JS -->
+    </div>
   </main>
 
   <!-- FOOTER -->
@@ -50,93 +68,13 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- Config + script -->
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
-    const resultsContainer = document.getElementById("resultsContainer");
-    const searchForm = document.getElementById("searchForm");
-    const loader = document.getElementById("loader");
-    const qInput = document.getElementById("q");
-    const cityInput = document.getElementById("city");
-
-    const params = new URLSearchParams(window.location.search);
-    qInput.value = params.get("q") || "";
-    cityInput.value = params.get("city") || "";
-
-    function stars(rating) {
-      const rounded = Math.round(rating || 0);
-      return "⭐".repeat(rounded) || "Nog geen reviews";
-    }
-
-    function badgeVerified(isVerified) {
-      return isVerified
-        ? '<span class="ml-2 inline-block text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Geverifieerd</span>'
-        : "";
-    }
-
-    function makeCard(c) {
-      const cats = (c.categories || []).join(", ");
-      return `
-        <div class="card flex flex-col justify-between h-full">
-          <div class="text-center">
-            <h3 class="text-xl font-semibold text-indigo-700 mb-1">
-              ${c.name} ${badgeVerified(c.isVerified)}
-            </h3>
-            <p class="text-yellow-500 mb-1">${stars(c.avgRating)} <span class="text-gray-500 text-sm">(${c.reviewCount || 0} reviews)</span></p>
-            <p class="text-gray-500 text-sm mb-1">${c.city || "Onbekende plaats"}</p>
-            <p class="text-gray-600 text-sm mb-3">${c.tagline || ""}</p>
-            <p class="text-gray-400 text-xs">${cats}</p>
-          </div>
-          <div class="mt-4 flex items-center justify-center gap-3">
-            <a href="company.html?slug=${c.slug}"
-               class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl px-4 py-2 transition">
-              Bekijk profiel
-            </a>
-            ${c.website ? `<a href="${c.website}" target="_blank" rel="noopener"
-               class="border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-medium rounded-xl px-4 py-2 transition">
-               Website
-             </a>` : ""}
-          </div>
-        </div>
-      `;
-    }
-
-    function renderList(items) {
-      if (!items || items.length === 0) {
-        resultsContainer.innerHTML = "<p class='text-gray-500 text-center mt-10'>Geen bedrijven gevonden.</p>";
-        return;
-      }
-      resultsContainer.innerHTML = items.map(makeCard).join("");
-    }
-
-    async function loadResults(query = "", city = "") {
-      loader.classList.remove("hidden");
-      resultsContainer.innerHTML = "";
-      try {
-        const url = `${API_BASE}/companies/search?q=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.ok && Array.isArray(data.items)) renderList(data.items);
-        else renderList([]);
-      } catch (err) {
-        console.error("Fout bij laden resultaten:", err);
-        resultsContainer.innerHTML = "<p class='text-center text-red-600 mt-10'>Er is een fout opgetreden.</p>";
-      } finally {
-        loader.classList.add("hidden");
-      }
-    }
-
-    // Init: laden vanuit URL
-    loadResults(qInput.value, cityInput.value);
-
-    // Zoeken via formulier
-    searchForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const q = qInput.value;
-      const city = cityInput.value;
-      const usp = new URLSearchParams({ q, city });
-      history.replaceState(null, "", `?${usp.toString()}`);
-      loadResults(q, city);
-    });
+    // Dit is de enige plek waar we backend-URL definiëren voor publiek zoeken
+    window.ENV = {
+      API_BASE: "https://irisje-backend.onrender.com/api"
+    };
   </script>
+  <script src="./script.js" defer></script>
 </body>
 </html>
