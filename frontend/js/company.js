@@ -50,7 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       div.innerHTML = `
         <div class="text-yellow-400">${"⭐".repeat(r.rating)}</div>
         <p class="text-gray-800 mt-1">${r.message}</p>
-        <p class="text-sm text-gray-500 mt-1">— ${r.name}, ${new Date(r.date).toLocaleDateString("nl-NL")}</p>
+        <p class="text-sm text-gray-500 mt-1">
+  — ${r.name}${r.date ? ", " + new Date(r.date).toLocaleDateString("nl-NL") : ""}
+</p>
+
       `;
       reviewList.appendChild(div);
     });
