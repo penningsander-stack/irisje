@@ -30,7 +30,7 @@ mongoose
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/companies", require("./routes/companies"));
+app.use("/api/companies", require(__dirname + "/routes/companies.js"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/reviews", require("./routes/reviews"));
