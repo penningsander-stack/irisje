@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
       email,
       rating,
       message,
-      date: new Date()
+      date: new Date(),           // 👈 datum wordt nu altijd toegevoegd
     });
     await newReview.save();
 
