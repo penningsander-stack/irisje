@@ -26,7 +26,7 @@
   <main class="flex-1 max-w-6xl mx-auto px-4 py-10">
     <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">Zoekresultaten</h1>
 
-    <!-- Zoekbalk (filtert de demo-data, geen backend nodig) -->
+    <!-- Zoekbalk -->
     <form id="searchForm" class="grid sm:grid-cols-[2fr_1fr_auto] gap-3 mb-10">
       <input id="q" name="q" type="text" placeholder="Wat zoek je? (bijv. loodgieter)"
              class="border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -40,6 +40,9 @@
 
     <!-- Resultaten -->
     <div id="resultsContainer" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+
+    <!-- Loader -->
+    <div id="loader" class="text-center text-gray-500 hidden">Laden...</div>
   </main>
 
   <!-- FOOTER -->
@@ -48,64 +51,17 @@
   </footer>
 
   <script>
-    // ====== DEMO-DATA (geen backend nodig om te bekijken) ======
-    const DEMO_COMPANIES = [
-      {
-        _id: "c1",
-        name: "Loodgieter Jan",
-        slug: "loodgieter-jan",
-        tagline: "Snel geholpen bij lekkages",
-        description: "24/7 service voor spoed en onderhoud.",
-        categories: ["Loodgieter", "CV"],
-        city: "Amsterdam",
-        phone: "020-1234567",
-        website: "https://voorbeeld.nl/loodgieter-jan",
-        avgRating: 4.7,
-        reviewCount: 26,
-        isVerified: true
-      },
-      {
-        _id: "c2",
-        name: "Schoonmaak Sterk",
-        slug: "schoonmaak-sterk",
-        tagline: "Glanzend resultaat",
-        description: "Bedrijfsschoonmaak en particuliere schoonmaak.",
-        categories: ["Schoonmaak"],
-        city: "Utrecht",
-        phone: "030-7654321",
-        website: "https://voorbeeld.nl/schoonmaak-sterk",
-        avgRating: 4.4,
-        reviewCount: 14,
-        isVerified: false
-      },
-      {
-        _id: "c3",
-        name: "Elektricien Nova",
-        slug: "elektricien-nova",
-        tagline: "Veilig en vakkundig",
-        description: "Storingen, groepenkasten en keuringen.",
-        categories: ["Elektricien"],
-        city: "Rotterdam",
-        phone: "010-9988776",
-        website: "https://voorbeeld.nl/elektricien-nova",
-        avgRating: 4.8,
-        reviewCount: 31,
-        isVerified: true
-      }
-    ];
-
-    // ====== UI-elementen ======
+    const API_BASE = "https://irisje-backend.onrender.com/api";
     const resultsContainer = document.getElementById("resultsContainer");
     const searchForm = document.getElementById("searchForm");
-    const params = new URLSearchParams(window.location.search);
+    const loader = document.getElementById("loader");
     const qInput = document.getElementById("q");
     const cityInput = document.getElementById("city");
 
-    // Prefill vanuit URL (als je via index.html komt)
+    const params = new URLSearchParams(window.location.search);
     qInput.value = params.get("q") || "";
     cityInput.value = params.get("city") || "";
 
-    // ====== Rendering ======
     function stars(rating) {
       const rounded = Math.round(rating || 0);
       return "⭐".repeat(rounded) || "Nog geen reviews";
@@ -119,14 +75,13 @@
 
     function makeCard(c) {
       const cats = (c.categories || []).join(", ");
-      const s = stars(c.avgRating);
       return `
         <div class="card flex flex-col justify-between h-full">
           <div class="text-center">
             <h3 class="text-xl font-semibold text-indigo-700 mb-1">
               ${c.name} ${badgeVerified(c.isVerified)}
             </h3>
-            <p class="text-yellow-500 mb-1">${s} <span class="text-gray-500 text-sm">(${c.reviewCount} reviews)</span></p>
+            <p class="text-yellow-500 mb-1">${stars(c.avgRating)} <span class="text-gray-500 text-sm">(${c.reviewCount || 0} reviews)</span></p>
             <p class="text-gray-500 text-sm mb-1">${c.city || "Onbekende plaats"}</p>
             <p class="text-gray-600 text-sm mb-3">${c.tagline || ""}</p>
             <p class="text-gray-400 text-xs">${cats}</p>
@@ -146,37 +101,41 @@
     }
 
     function renderList(items) {
-      if (!items.length) {
+      if (!items || items.length === 0) {
         resultsContainer.innerHTML = "<p class='text-gray-500 text-center mt-10'>Geen bedrijven gevonden.</p>";
         return;
       }
       resultsContainer.innerHTML = items.map(makeCard).join("");
     }
 
-    // ====== Filtering op demo-data ======
-    function filterDemo(query, city) {
-      const q = (query || "").trim().toLowerCase();
-      const c = (city || "").trim().toLowerCase();
-      return DEMO_COMPANIES.filter(item => {
-        const inName = item.name.toLowerCase().includes(q);
-        const inCats = (item.categories || []).join(" ").toLowerCase().includes(q);
-        const inCity = !c || (item.city || "").toLowerCase().includes(c);
-        return (q ? (inName || inCats) : true) && inCity;
-      });
+    async function loadResults(query = "", city = "") {
+      loader.classList.remove("hidden");
+      resultsContainer.innerHTML = "";
+      try {
+        const url = `${API_BASE}/companies/search?q=${encodeURIComponent(query)}&city=${encodeURIComponent(city)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.items)) renderList(data.items);
+        else renderList([]);
+      } catch (err) {
+        console.error("Fout bij laden resultaten:", err);
+        resultsContainer.innerHTML = "<p class='text-center text-red-600 mt-10'>Er is een fout opgetreden.</p>";
+      } finally {
+        loader.classList.add("hidden");
+      }
     }
 
-    // Init render (op basis van URL-query)
-    renderList(filterDemo(qInput.value, cityInput.value));
+    // Init: laden vanuit URL
+    loadResults(qInput.value, cityInput.value);
 
-    // Zoeken zonder backend, direct op demo-data
+    // Zoeken via formulier
     searchForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const q = qInput.value;
       const city = cityInput.value;
-      renderList(filterDemo(q, city));
-      // Optioneel URL bijwerken zodat je kan delen/verversen:
       const usp = new URLSearchParams({ q, city });
       history.replaceState(null, "", `?${usp.toString()}`);
+      loadResults(q, city);
     });
   </script>
 </body>
