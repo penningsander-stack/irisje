@@ -29,7 +29,7 @@ router.get("/search", async (req, res) => {
       total: companies.length,
       page: 1,
       limit: companies.length,
-      items: companies.map(c => ({
+      items: companies.map((c) => ({
         _id: c._id,
         name: c.name,
         slug: c.slug,
@@ -44,6 +44,43 @@ router.get("/search", async (req, res) => {
   } catch (error) {
     console.error("Fout bij zoeken bedrijven:", error);
     res.status(500).json({ message: "Serverfout" });
+  }
+});
+
+// ✅ Bedrijf ophalen via e-mailadres
+router.get("/byEmail/:email", async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+    const company = await Company.findOne({ email });
+    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    res.json(company);
+  } catch (err) {
+    console.error("Fout bij ophalen bedrijf via e-mail:", err);
+    res.status(500).json({ error: "Serverfout" });
+  }
+});
+
+// ✅ Nieuw: bedrijven ophalen via 'owner'-e-mailadres (beheerfunctie)
+router.get("/byOwner/:email", async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+
+    // Als de gebruiker de beheerder is (info@irisje.nl), toon alle bedrijven
+    if (email === "info@irisje.nl") {
+      const allCompanies = await Company.find().lean();
+      return res.json(allCompanies);
+    }
+
+    // Anders: filter bedrijven die gekoppeld zijn aan deze eigenaar
+    const companies = await Company.find({ ownerEmail: email }).lean();
+    if (!companies.length) {
+      return res.status(404).json({ error: "Geen bedrijven gevonden voor deze eigenaar." });
+    }
+
+    res.json(companies);
+  } catch (err) {
+    console.error("Fout bij ophalen bedrijven via eigenaar:", err);
+    res.status(500).json({ error: "Serverfout" });
   }
 });
 
@@ -69,7 +106,7 @@ router.get("/:slug", async (req, res) => {
       description: company.description || "",
       logoUrl: company.logoUrl || "",
       isVerified: company.isVerified || false,
-      reviews: reviews.map(r => ({
+      reviews: reviews.map((r) => ({
         name: r.name,
         rating: r.rating,
         message: r.message,
@@ -79,19 +116,6 @@ router.get("/:slug", async (req, res) => {
   } catch (error) {
     console.error("Fout bij ophalen bedrijf:", error);
     res.status(500).json({ message: "Serverfout" });
-  }
-});
-
-// 🔹 Nieuw: haal bedrijf op via e-mailadres
-router.get("/byEmail/:email", async (req, res) => {
-  try {
-    const email = decodeURIComponent(req.params.email).toLowerCase();
-    const company = await Company.findOne({ email });
-    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
-    res.json(company);
-  } catch (err) {
-    console.error("Fout bij ophalen bedrijf via e-mail:", err);
-    res.status(500).json({ error: "Serverfout" });
   }
 });
 
