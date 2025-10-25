@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = document.getElementById("password").value.trim();
 
     try {
+      // 🔹 Inloggen
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,18 +26,33 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Ongeldige inloggegevens");
 
-      // ✅ Login geslaagd — gegevens opslaan
+      // ✅ Login geslaagd
       localStorage.setItem("userEmail", email);
       localStorage.setItem("userRole", data.role || "company");
 
-      // 🔍 Ophalen van bedrijf-ID op basis van e-mailadres
-      const companyRes = await fetch(`${API_BASE}/companies/byEmail/${encodeURIComponent(email)}`);
-      const companyData = await companyRes.json();
+      // 🔍 Bedrijf zoeken op e-mail
+      let companyId = "";
+      let companyRes = await fetch(`${API_BASE}/companies/byEmail/${encodeURIComponent(email)}`);
+      let companyData = await companyRes.json();
 
       if (companyRes.ok && companyData && companyData._id) {
-        localStorage.setItem("companyId", companyData._id);
+        companyId = companyData._id;
+        console.log("Bedrijf gevonden via e-mailadres:", companyData.name);
       } else {
-        console.warn("Geen bedrijf gevonden voor dit e-mailadres.");
+        // 🔹 Als geen match — probeer via 'owner'
+        const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
+        const ownerData = await ownerRes.json();
+        if (ownerRes.ok && ownerData.length > 0) {
+          companyId = ownerData[0]._id;
+          console.log("Bedrijf gevonden via eigenaar:", ownerData[0].name);
+        }
+      }
+
+      if (companyId) {
+        localStorage.setItem("companyId", companyId);
+        console.log("CompanyId opgeslagen:", companyId);
+      } else {
+        console.warn("Geen bedrijf gekoppeld aan dit account.");
       }
 
       messageEl.textContent = "✅ Ingelogd! Even geduld...";
