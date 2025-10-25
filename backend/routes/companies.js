@@ -82,4 +82,17 @@ router.get("/:slug", async (req, res) => {
   }
 });
 
+// 🔹 Nieuw: haal bedrijf op via e-mailadres
+router.get("/byEmail/:email", async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).toLowerCase();
+    const company = await Company.findOne({ email });
+    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    res.json(company);
+  } catch (err) {
+    console.error("Fout bij ophalen bedrijf via e-mail:", err);
+    res.status(500).json({ error: "Serverfout" });
+  }
+});
+
 module.exports = router;
