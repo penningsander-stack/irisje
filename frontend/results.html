@@ -1,16 +1,26 @@
+<!-- frontend/results.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>Zoekresultaten – Irisje.nl</title>
-  <meta name="description" content="Bekijk de resultaten van jouw zoektocht naar bedrijven op Irisje.nl." />
+  <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
+  <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
+  <!-- Tailwind -->
+  <script>
+    window.tailwind = { config: { darkMode: 'class' } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="./style.css" />
-  <script src="./js/results.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
       <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
@@ -21,13 +31,160 @@
     </div>
   </header>
 
-  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-10">
-    <h2 class="text-2xl font-bold text-indigo-700 mb-6">Zoekresultaten</h2>
-    <div id="resultsContainer" class="grid gap-6"></div>
+  <!-- MAIN -->
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
+    <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
+      <span class="text-3xl mr-2">🔎</span>
+      Bedrijven in jouw regio
+    </h1>
+
+    <!-- Filters bovenaan -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 mb-8">
+      <form id="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <input
+          id="filterCategory"
+          type="text"
+          placeholder="Categorie (bijv. loodgieter)"
+          class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+        <input
+          id="filterCity"
+          type="text"
+          placeholder="Plaats"
+          class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+        <button
+          type="submit"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-center transition text-sm"
+        >
+          Zoeken
+        </button>
+      </form>
+      <p id="filterMessage" class="text-xs text-gray-500 mt-3"></p>
+    </section>
+
+    <!-- Resultaatlijst -->
+    <section id="resultsContainer" class="grid gap-6">
+      <!-- JS vult dit dynamisch -->
+      <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
+    </section>
   </main>
 
-  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
+  <!-- FOOTER -->
+  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
+
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
+    // hulpfunctie voor sterretjes
+    function stars(rating) {
+      const full = Math.round(rating || 0);
+      return "⭐".repeat(full);
+    }
+
+    async function loadResults(category, city) {
+      const container = document.getElementById("resultsContainer");
+      const msg = document.getElementById("filterMessage");
+
+      container.innerHTML = "<div class='text-gray-500 text-sm'>Resultaten worden geladen...</div>";
+      msg.textContent = "";
+
+      const url =
+        API_BASE +
+        "/companies/search?category=" +
+        encodeURIComponent(category || "") +
+        "&city=" +
+        encodeURIComponent(city || "");
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Kon geen verbinding maken met de server");
+        const data = await res.json();
+
+        if (!data.items || !data.items.length) {
+          container.innerHTML = `
+            <div class="text-gray-500 text-sm bg-white border border-gray-200 rounded-xl p-5 shadow">
+              Geen bedrijven gevonden. Probeer een andere zoekopdracht.
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = data.items
+          .map((c) => {
+            return `
+            <article class="bg-white rounded-2xl border border-gray-200 shadow p-5">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div>
+                  <h2 class="text-lg font-semibold text-indigo-700 leading-tight">
+                    ${c.name || ""}
+                  </h2>
+                  <div class="text-gray-500 text-sm">${c.city || ""}</div>
+                  <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
+                  <p class="text-gray-700 text-sm mt-3">${c.tagline || ""}</p>
+                </div>
+
+                <div class="text-right">
+                  <div class="text-yellow-500 text-sm font-semibold leading-none">
+                    ${stars(c.avgRating)}
+                  </div>
+                  <div class="text-gray-500 text-xs leading-none mt-1">
+                    ${c.reviewCount || 0} reviews
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
+                <a
+                  href="company.html?slug=${encodeURIComponent(c.slug)}"
+                  class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition"
+                >
+                  Bekijk profiel
+                </a>
+                <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
+                  ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
+                </div>
+              </div>
+            </article>
+          `;
+          })
+          .join("");
+
+        msg.textContent = `${data.items.length} resultaat / resultaten gevonden`;
+      } catch (err) {
+        console.error("Zoekfout:", err);
+        container.innerHTML = `
+          <div class="text-red-600 text-sm bg-white border border-red-200 rounded-xl p-5 shadow">
+            ❌ Er ging iets mis bij het laden van resultaten.
+          </div>`;
+      }
+    }
+
+    // querystring uitlezen bij eerste load
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name) || "";
+    }
+
+    document.getElementById("filterForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const category = document.getElementById("filterCategory").value.trim();
+      const city = document.getElementById("filterCity").value.trim();
+      loadResults(category, city);
+    });
+
+    // init load
+    (function init() {
+      const startCategory = getQueryParam("category");
+      const startCity = getQueryParam("city");
+
+      // zet velden gelijk met url parameters
+      document.getElementById("filterCategory").value = startCategory;
+      document.getElementById("filterCity").value = startCity;
+
+      loadResults(startCategory, startCity);
+    })();
+  </script>
 </body>
 </html>
