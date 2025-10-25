@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = document.getElementById("password").value.trim();
 
     try {
-      // 🔹 Inloggen
+      // 🔹 Inloggen bij backend
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -30,37 +30,44 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("userEmail", email);
       localStorage.setItem("userRole", data.role || "company");
 
-      // 🔍 Bedrijf zoeken op e-mail
+      // 🔍 Probeer bedrijf op te halen via e-mailadres
       let companyId = "";
+      let companyName = "";
       let companyRes = await fetch(`${API_BASE}/companies/byEmail/${encodeURIComponent(email)}`);
       let companyData = await companyRes.json();
 
       if (companyRes.ok && companyData && companyData._id) {
         companyId = companyData._id;
-        console.log("Bedrijf gevonden via e-mailadres:", companyData.name);
+        companyName = companyData.name || "Bedrijf";
+        console.log("✅ Bedrijf gevonden via e-mailadres:", companyName);
       } else {
-        // 🔹 Als geen match — probeer via 'owner'
+        // 🔹 Als geen directe match, probeer via 'owner'
         const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
         const ownerData = await ownerRes.json();
-        if (ownerRes.ok && ownerData.length > 0) {
+        if (ownerRes.ok && Array.isArray(ownerData) && ownerData.length > 0) {
           companyId = ownerData[0]._id;
-          console.log("Bedrijf gevonden via eigenaar:", ownerData[0].name);
+          companyName = ownerData[0].name || "Bedrijf";
+          console.log("✅ Bedrijf gevonden via eigenaar:", companyName);
         }
       }
 
+      // 🔹 Resultaten opslaan in localStorage
       if (companyId) {
         localStorage.setItem("companyId", companyId);
-        console.log("CompanyId opgeslagen:", companyId);
+        localStorage.setItem("companyName", companyName);
+        console.log("Company opgeslagen:", companyName, companyId);
       } else {
-        console.warn("Geen bedrijf gekoppeld aan dit account.");
+        console.warn("⚠️ Geen bedrijf gekoppeld aan dit account.");
       }
 
+      // ✅ Succesmelding en doorsturen
       messageEl.textContent = "✅ Ingelogd! Even geduld...";
       messageEl.className = "text-green-600 text-sm";
 
       setTimeout(() => {
         window.location.href = "dashboard.html";
       }, 1000);
+
     } catch (err) {
       console.error("Inlogfout:", err);
       messageEl.textContent = "❌ " + err.message;
