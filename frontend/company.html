@@ -1,14 +1,25 @@
+<!-- frontend/company.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>Bedrijf | Irisje.nl</title>
   <meta name="description" content="Bekijk bedrijfsinformatie, lees reviews en vraag offertes aan bij lokale specialisten op Irisje.nl." />
+  <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- Tailwind -->
+  <script>
+    window.tailwind = { config: { darkMode: 'class' } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
@@ -21,30 +32,25 @@
     </div>
   </header>
 
-  <!-- De rest van je bestaande bedrijfspagina-code (identiek aan de laatste werkende versie) -->
-  <!-- ... -->
-</body>
-</html>
-
-
   <!-- MAIN -->
   <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-10 space-y-10">
 
     <!-- Bedrijfsinfo -->
-    <section class="bg-white rounded-2xl shadow-md p-6 text-center">
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center">
       <img
         id="logo"
         src="https://via.placeholder.com/100"
         alt="Bedrijfslogo"
         class="mx-auto rounded-full shadow mb-3 w-24 h-24 object-cover bg-gray-100"
+        onerror="this.style.display='none'"
       />
 
       <h1 id="companyName" class="text-2xl font-bold text-indigo-700 mb-1"></h1>
-      <p id="tagline" class="text-gray-600 mb-3"></p>
+      <p id="tagline" class="text-gray-600 mb-3 text-sm"></p>
 
       <div class="flex flex-col items-center gap-1 text-sm mb-2">
         <div id="rating" class="text-yellow-500 text-lg leading-none"></div>
-        <div id="reviewCount" class="text-gray-500 leading-none"></div>
+        <div id="reviewCount" class="text-gray-500 leading-none text-xs"></div>
       </div>
 
       <div id="city" class="text-gray-600 text-sm"></div>
@@ -54,21 +60,44 @@
     </section>
 
     <!-- Beoordelingen -->
-    <section class="bg-white rounded-2xl shadow-md p-6">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4">Beoordelingen</h2>
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+        <span class="text-2xl mr-2">💬</span>
+        Beoordelingen
+      </h2>
       <div id="review-list" class="space-y-4 text-left">
         <div class="text-gray-500 text-sm">Reviews worden geladen...</div>
       </div>
     </section>
 
     <!-- Nieuwe review plaatsen -->
-    <section class="bg-white rounded-2xl shadow-md p-6">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4">Jouw ervaring</h2>
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+        <span class="text-2xl mr-2">✍</span>
+        Jouw ervaring
+      </h2>
 
       <form id="reviewForm" class="space-y-4">
-        <input id="reviewName" type="text" placeholder="Naam" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
-        <input id="reviewEmail" type="email" placeholder="E-mailadres (wordt niet getoond)" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
-        <select id="reviewRating" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        <input
+          id="reviewName"
+          type="text"
+          placeholder="Naam"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+
+        <input
+          id="reviewEmail"
+          type="email"
+          placeholder="E-mailadres (wordt niet getoond)"
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+
+        <select
+          id="reviewRating"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        >
           <option value="">Kies aantal sterren</option>
           <option value="5">⭐⭐⭐⭐⭐</option>
           <option value="4">⭐⭐⭐⭐</option>
@@ -76,28 +105,70 @@
           <option value="2">⭐⭐</option>
           <option value="1">⭐</option>
         </select>
-        <textarea id="reviewMessage" placeholder="Bericht" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition">Verstuur beoordeling</button>
+
+        <textarea
+          id="reviewMessage"
+          placeholder="Bericht"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        ></textarea>
+
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition"
+        >
+          Verstuur beoordeling
+        </button>
+
         <p id="reviewStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
 
     <!-- Offerte aanvragen -->
-    <section class="bg-white rounded-2xl shadow-md p-6">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4">Vraag een offerte aan</h2>
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+        <span class="text-2xl mr-2">📬</span>
+        Vraag een offerte aan
+      </h2>
 
       <form id="requestForm" class="space-y-4">
-        <input id="requestName" type="text" placeholder="Naam" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
-        <input id="requestEmail" type="email" placeholder="E-mailadres" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
-        <textarea id="requestMessage" placeholder="Beschrijf je klus of vraag" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 transition">Verstuur aanvraag</button>
+        <input
+          id="requestName"
+          type="text"
+          placeholder="Naam"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+
+        <input
+          id="requestEmail"
+          type="email"
+          placeholder="E-mailadres"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+
+        <textarea
+          id="requestMessage"
+          placeholder="Beschrijf je klus of vraag"
+          required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        ></textarea>
+
+        <button
+          type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition"
+        >
+          Verstuur aanvraag
+        </button>
+
         <p id="requestStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
+  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
@@ -126,6 +197,7 @@
       const logoEl = document.getElementById("logo");
 
       try {
+        // Let op: dit endpoint werkt nu in jouw backend zonder /details
         const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
@@ -158,28 +230,27 @@
           return;
         }
 
+        // meest recent eerst
         const sorted = [...data].sort((a, b) => {
           const da = new Date(a.createdAt || a.date || 0).getTime();
           const db = new Date(b.createdAt || b.date || 0).getTime();
           return db - da;
         });
 
-        listEl.innerHTML = sorted
-          .map((rev) => {
-            const d = new Date(rev.createdAt || rev.date || Date.now()).toLocaleDateString("nl-NL", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            });
-            return `
-              <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
-                <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
-                <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
-              </div>
-            `;
-          })
-          .join("");
+        listEl.innerHTML = sorted.map((rev) => {
+          const d = new Date(rev.createdAt || rev.date || Date.now()).toLocaleDateString("nl-NL", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          });
+          return `
+            <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+              <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
+              <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
+              <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
+            </div>
+          `;
+        }).join("");
       } catch (err) {
         console.error("Fout bij laden reviews:", err);
         listEl.innerHTML = `<div class="text-red-600 text-sm">Fout bij laden reviews.</div>`;
@@ -202,7 +273,13 @@
         const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companySlug: slug, name, email, rating, message })
+          body: JSON.stringify({
+            companySlug: slug,
+            name,
+            email,
+            rating,
+            message
+          })
         });
 
         const data = await res.json();
@@ -210,6 +287,7 @@
 
         msgEl.textContent = "✅ Bedankt voor je beoordeling!";
         msgEl.className = "text-green-600 text-center text-sm";
+
         document.getElementById("reviewForm").reset();
         loadReviews();
       } catch (err) {
@@ -219,7 +297,6 @@
       }
     }
 
-    // ✅ Verbeterde submitRequest-functie
     async function submitRequest(e) {
       e.preventDefault();
       const slug = getSlug();
@@ -231,25 +308,23 @@
       msgEl.textContent = "Bezig met verzenden...";
       msgEl.className = "text-gray-500 text-center text-sm";
 
-      if (!email.includes("@")) {
-        msgEl.textContent = "❌ Ongeldig e-mailadres.";
-        msgEl.className = "text-red-600 text-center text-sm";
-        return;
-      }
-
       try {
+        // Haal bedrijfsinfo zodat we een companyId hebben
         const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
-        if (!companyRes.ok) throw new Error("Kon bedrijfsinformatie niet ophalen.");
         const companyData = await companyRes.json();
+        const companyId =
+          companyData._id ||
+          companyData.id ||
+          companyData.company ||
+          companyData.companyId;
 
-        const res = await fetch(`${API_BASE}/publicRequests`, {
+        const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            company: companyData._id || companyData.id,
-            companySlug: slug,
+            company: companyId,
             name,
-            userEmail: email, // ✅ aangepast veld
+            email,
             message
           })
         });
@@ -259,6 +334,7 @@
 
         msgEl.textContent = "✅ Aanvraag succesvol verzonden!";
         msgEl.className = "text-green-600 text-center text-sm";
+
         document.getElementById("requestForm").reset();
       } catch (err) {
         console.error("Fout bij verzenden aanvraag:", err);
