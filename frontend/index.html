@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <title>Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt</title>
-  <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag direct een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
+  <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
   <meta name="theme-color" content="#4F46E5" />
 
   <!-- Open Graph / social -->
@@ -17,14 +17,13 @@
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Tailwind via CDN (veiligste optie voor jouw huidige setup: GitHub + Render) -->
+  <!-- Tailwind via CDN -->
   <script>
-    /* Heel klein config-blok zodat Tailwind geen donkere modus forceert etc. */
     window.tailwind = { config: { darkMode: 'class' } };
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Eventuele extra custom tweaks -->
+  <!-- Extra CSS (optioneel eigen tweaks) -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 
@@ -49,7 +48,7 @@
     <section class="bg-white border-b border-gray-200">
       <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
 
-        <!-- Tekst links -->
+        <!-- Tekst -->
         <div>
           <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 leading-tight">
             Vind direct een vakman bij jou in de buurt
@@ -59,7 +58,6 @@
             Vergelijk bedrijven, lees echte ervaringen en vraag gratis een offerte aan. Snel, eerlijk en zonder gedoe.
           </p>
 
-          <!-- voordelen bullets -->
           <ul class="mt-6 space-y-2 text-sm text-gray-700">
             <li class="flex items-start">
               <span class="text-green-600 font-bold mr-2">✔</span>
@@ -76,7 +74,7 @@
           </ul>
         </div>
 
-        <!-- Zoekblok rechts -->
+        <!-- Zoekblok -->
         <div class="bg-white shadow-xl rounded-2xl border border-gray-100 p-6">
           <h2 class="text-lg font-semibold text-gray-800 mb-4 text-center">
             Zoek een bedrijf
@@ -89,14 +87,12 @@
               placeholder="Categorie (bijv. loodgieter, schoonmaak, elektricien)"
               class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
-
             <input
               id="cityInput"
               type="text"
               placeholder="Plaats (bijv. Amsterdam)"
               class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
             />
-
             <button
               type="submit"
               class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-center transition text-sm"
@@ -105,12 +101,11 @@
             </button>
           </form>
 
-          <!-- Dynamische melding onder de zoekbalk -->
           <div id="searchResult" class="mt-5 text-sm text-gray-600"></div>
 
-          <!-- Link naar alle resultaten -->
           <p class="text-center text-xs text-gray-500 mt-6">
-            Liever alles bekijken? <a href="results.html" class="text-indigo-600 hover:underline font-medium">Bekijk bedrijven</a>
+            Liever alles bekijken?
+            <a href="results.html" class="text-indigo-600 hover:underline font-medium">Bekijk bedrijven</a>
           </p>
         </div>
 
@@ -145,7 +140,7 @@
           <div class="font-semibold text-gray-800">Slotenmaker</div>
           <div class="text-gray-500 text-xs mt-1">Deur open, inbraakschade</div>
         </a>
-        <a href="results.html?category=Schoonmaak" class="bg-white rounded-xl border border-gray-200 shadow hover:shadow-md p-4 text-center">
+        <a href="results.html?category=Glazenwasser" class="bg-white rounded-xl border border-gray-200 shadow hover:shadow-md p-4 text-center">
           <div class="font-semibold text-gray-800">Glazenwasser</div>
           <div class="text-gray-500 text-xs mt-1">Woning & kantoor</div>
         </a>
@@ -194,7 +189,7 @@
       </div>
     </section>
 
-    <!-- RECENTE ERVARINGEN / REVIEWS (statisch voorbeeld) -->
+    <!-- REVIEWS (statisch voorbeeld) -->
     <section class="max-w-6xl mx-auto px-4 py-12">
       <h2 class="text-xl font-bold text-indigo-700 flex items-center mb-6">
         <span class="text-2xl mr-2">💬</span>
@@ -257,7 +252,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- SCRIPT: zoekfunctie -->
+  <!-- SCRIPT: zoekfunctie koppelen aan backend -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -268,16 +263,15 @@
       const city = document.getElementById("cityInput").value.trim();
       const resultDiv = document.getElementById("searchResult");
 
-      // UI feedback
       resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
 
       try {
         const res = await fetch(
           API_BASE +
-          "/companies/search?category=" +
-          encodeURIComponent(category) +
-          "&city=" +
-          encodeURIComponent(city)
+            "/companies/search?category=" +
+            encodeURIComponent(category) +
+            "&city=" +
+            encodeURIComponent(city)
         );
 
         if (!res.ok) throw new Error("Kon geen verbinding maken met de server.");
@@ -289,7 +283,6 @@
           return;
         }
 
-        // Toon een kleine previewlijst
         resultDiv.innerHTML = data.items
           .slice(0, 3)
           .map(function (c) {
@@ -311,9 +304,9 @@
           .join("") +
           "<div class='text-center mt-4'>" +
             "<a class='inline-block text-indigo-600 text-xs font-semibold hover:underline' href='results.html?category=" +
-             encodeURIComponent(category) +
-             "&city=" +
-             encodeURIComponent(city) +
+              encodeURIComponent(category) +
+              "&city=" +
+              encodeURIComponent(city) +
             "'>Alle resultaten bekijken →</a>" +
           "</div>";
       } catch (err) {
