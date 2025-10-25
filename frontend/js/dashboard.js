@@ -1,162 +1,131 @@
 // frontend/js/dashboard.js
-const backendUrl = "https://irisje-backend.onrender.com";
 
+const API_BASE = "https://irisje-backend.onrender.com/api";
+
+// 🟢 Helper om het ingelogde bedrijf te bepalen
+function getCompanyId() {
+  return localStorage.getItem("companyId") || ""; // wordt tijdens login ingesteld
+}
+
+// 🟢 Formatteer datum naar NL
+function formatDate(dateString) {
+  return new Date(dateString).toLocaleDateString("nl-NL", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// 🟢 Aanvragen laden
+async function loadRequests() {
+  const tableBody = document.getElementById("request-table-body");
+  const filter = document.getElementById("filterStatus").value;
+  const companyId = getCompanyId();
+  if (!companyId) {
+    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 p-4">Geen bedrijf gevonden (log opnieuw in).</td></tr>`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/publicRequests`);
+    if (!res.ok) throw new Error("Kon aanvragen niet laden.");
+    const data = await res.json();
+
+    // Filter alleen aanvragen van dit bedrijf
+    const filtered = data.filter((r) => r.company === companyId);
+    const statusFiltered =
+      filter === "alle" ? filtered : filtered.filter((r) => r.status === filter);
+
+    if (statusFiltered.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Geen aanvragen gevonden.</td></tr>`;
+      updateStats(filtered);
+      return;
+    }
+
+    tableBody.innerHTML = statusFiltered
+      .map(
+        (req) => `
+        <tr class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="p-2">${req.name}</td>
+          <td class="p-2">${req.email}</td>
+          <td class="p-2">${req.message}</td>
+          <td class="p-2">${req.status || "Nieuw"}</td>
+          <td class="p-2">${formatDate(req.createdAt)}</td>
+        </tr>`
+      )
+      .join("");
+
+    updateStats(filtered);
+  } catch (err) {
+    console.error("Fout bij laden aanvragen:", err);
+    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-red-500 p-4">Fout bij laden aanvragen.</td></tr>`;
+  }
+}
+
+// 🟢 Statistieken bijwerken
+function updateStats(requests) {
+  document.getElementById("total").textContent = requests.length;
+  document.getElementById("accepted").textContent = requests.filter(r => r.status === "Geaccepteerd").length;
+  document.getElementById("rejected").textContent = requests.filter(r => r.status === "Afgewezen").length;
+  document.getElementById("followed-up").textContent = requests.filter(r => r.status === "Opgevolgd").length;
+}
+
+// 🟢 Reviews laden
+async function loadReviews() {
+  const tableBody = document.getElementById("review-table-body");
+  const companyId = getCompanyId();
+  if (!companyId) {
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-4">Geen bedrijf gevonden.</td></tr>`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/reviews`);
+    if (!res.ok) throw new Error("Kon reviews niet laden.");
+    const data = await res.json();
+
+    const filtered = data.filter((r) => r.company === companyId);
+
+    if (filtered.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 p-4">Nog geen reviews.</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = filtered
+      .map(
+        (rev) => `
+        <tr class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="p-2">${rev.name}</td>
+          <td class="p-2 text-yellow-500">${"⭐".repeat(rev.rating || 0)}</td>
+          <td class="p-2">${rev.message}</td>
+          <td class="p-2">${formatDate(rev.createdAt || rev.date)}</td>
+        </tr>`
+      )
+      .join("");
+  } catch (err) {
+    console.error("Fout bij laden reviews:", err);
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 p-4">Fout bij laden reviews.</td></tr>`;
+  }
+}
+
+// 🟢 Logout
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+});
+
+// 🟢 Event: filter wijzigen
+document.getElementById("filterStatus").addEventListener("change", loadRequests);
+
+// 🟢 Init
 document.addEventListener("DOMContentLoaded", () => {
-  const requestTable = document.querySelector("#request-table-body");
-  const reviewTable = document.querySelector("#review-table-body");
-  const totalEl = document.querySelector("#total");
-  const acceptedEl = document.querySelector("#accepted");
-  const rejectedEl = document.querySelector("#rejected");
-  const followedUpEl = document.querySelector("#followed-up");
-  const filterSelect = document.getElementById("filterStatus");
+  const email = localStorage.getItem("userEmail");
+  document.getElementById("company-name").textContent = email || "Bedrijf";
+  document.getElementById("last-login").textContent = new Date().toLocaleString("nl-NL", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 
-  const userEmail = localStorage.getItem("userEmail");
-  const userRole = localStorage.getItem("userRole");
-
-  // ✅ Uitloggen
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.clear();
-      window.location.href = "login.html";
-    });
-  }
-
-  // ✅ Datum formatter
-  function formatDate(d) {
-    try {
-      return new Date(d).toLocaleDateString("nl-NL", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-    } catch {
-      return "–";
-    }
-  }
-
-  // ✅ Aanvragen laden
-  async function loadRequests() {
-    try {
-      let url;
-      if (userRole === "admin") {
-        url = `${backendUrl}/api/requests?email=info@irisje.nl`;
-      } else if (userEmail) {
-        url = `${backendUrl}/api/requests?email=${encodeURIComponent(userEmail)}`;
-      } else {
-        console.warn("⚠️ Geen e-mailadres in localStorage gevonden");
-        return;
-      }
-
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Fout ${res.status}`);
-
-      renderRequests(data);
-      updateStats(data);
-    } catch (err) {
-      console.error("❌ Fout bij laden aanvragen:", err);
-      requestTable.innerHTML = `<tr><td colspan="5" class="text-center text-red-600 p-4">Fout bij laden aanvragen.</td></tr>`;
-    }
-  }
-
-  // ✅ Aanvragen renderen
-  function renderRequests(requests) {
-    requestTable.innerHTML = "";
-    if (!requests.length) {
-      requestTable.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Geen aanvragen gevonden.</td></tr>`;
-      return;
-    }
-
-    const statusFilter = filterSelect.value;
-    const filtered =
-      statusFilter === "alle"
-        ? requests
-        : requests.filter((r) => r.status === statusFilter);
-
-    filtered.forEach((req) => {
-      const row = document.createElement("tr");
-      row.classList.add("hover:bg-indigo-50");
-      row.innerHTML = `
-        <td class="border p-2">${req.name}</td>
-        <td class="border p-2">${req.email}</td>
-        <td class="border p-2">${req.message}</td>
-        <td class="border p-2 font-semibold ${
-          req.status === "Geaccepteerd"
-            ? "text-green-600"
-            : req.status === "Afgewezen"
-            ? "text-red-600"
-            : req.status === "Opgevolgd"
-            ? "text-yellow-600"
-            : "text-gray-700"
-        }">${req.status}</td>
-        <td class="border p-2">${formatDate(req.createdAt || req.date || Date.now())}</td>
-      `;
-      requestTable.appendChild(row);
-    });
-
-    if (!filtered.length) {
-      requestTable.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-4">Geen aanvragen met deze status.</td></tr>`;
-    }
-  }
-
-  // ✅ Statistieken bijwerken
-  function updateStats(requests) {
-    totalEl.textContent = requests.length;
-    acceptedEl.textContent = requests.filter((r) => r.status === "Geaccepteerd").length;
-    rejectedEl.textContent = requests.filter((r) => r.status === "Afgewezen").length;
-    followedUpEl.textContent = requests.filter((r) => r.status === "Opgevolgd").length;
-  }
-
-  // ✅ Reviews laden
-  async function loadReviews() {
-    try {
-      const url = `${backendUrl}/api/reviews`;
-      const res = await fetch(url);
-      const reviews = await res.json();
-
-      if (!res.ok) throw new Error("Kon reviews niet laden");
-
-      // Dubbele verwijderen (zelfde naam + bericht)
-      const unique = [];
-      reviews.forEach((r) => {
-        if (!unique.find((u) => u.name === r.name && u.message === r.message)) {
-          unique.push(r);
-        }
-      });
-
-      renderReviews(unique);
-    } catch (err) {
-      console.error("❌ Fout bij laden reviews:", err);
-      reviewTable.innerHTML = `<tr><td colspan="4" class="text-center text-red-600 p-4">Fout bij laden reviews.</td></tr>`;
-    }
-  }
-
-  // ✅ Reviews renderen
-  function renderReviews(reviews) {
-    reviewTable.innerHTML = "";
-    if (!reviews.length) {
-      reviewTable.innerHTML = `<tr><td colspan="4" class="text-center text-gray-500 p-4">Geen reviews gevonden.</td></tr>`;
-      return;
-    }
-
-    reviews.forEach((rev) => {
-      const row = document.createElement("tr");
-      row.classList.add("hover:bg-indigo-50");
-      row.innerHTML = `
-        <td class="border p-2">${rev.name}</td>
-        <td class="border p-2">${"⭐".repeat(rev.rating || 0)}</td>
-        <td class="border p-2">${rev.message}</td>
-        <td class="border p-2">${formatDate(rev.createdAt || rev.date || Date.now())}</td>
-      `;
-      reviewTable.appendChild(row);
-    });
-  }
-
-  // Filter veranderen
-  filterSelect.addEventListener("change", loadRequests);
-
-  // Initieel laden
   loadRequests();
   loadReviews();
 });
