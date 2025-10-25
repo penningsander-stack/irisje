@@ -1,126 +1,38 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Irisje.nl – Vind de beste vakmensen bij jou in de buurt</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Irisje.nl – Vind de beste dienstverleners bij jou in de buurt</title>
+  <meta name="description" content="Vergelijk bedrijven, vraag offertes aan en lees reviews op Irisje.nl." />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
   <link rel="stylesheet" href="./style.css" />
+  <script src="./js/app.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
-
-  <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
+      <h1 class="text-2xl font-semibold tracking-tight">Irisje.nl</h1>
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="results.html" class="hover:underline">Bedrijven</a>
         <a href="login.html" class="hover:underline">Inloggen</a>
-        <a href="register.html" class="hover:underline">Aanmelden</a>
       </nav>
     </div>
   </header>
 
-  <!-- HERO / SEARCH -->
-  <main class="flex-1">
-    <section class="bg-white">
-      <div class="max-w-4xl mx-auto px-4 py-12 text-center">
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 mb-4">
-          Vind een betrouwbare vakman bij jou in de buurt
-        </h1>
-        <p class="text-gray-600 max-w-2xl mx-auto mb-8">
-          Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan.
-        </p>
-
-        <form id="searchForm" class="bg-white rounded-2xl shadow-md p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="text-left">
-            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-              Categorie / zoekwoord
-            </label>
-            <input
-              id="category"
-              type="text"
-              placeholder="bijv. loodgieter"
-              class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          <div class="text-left">
-            <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
-              Plaats
-            </label>
-            <input
-              id="city"
-              type="text"
-              placeholder="bijv. Amsterdam"
-              class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              required
-            />
-          </div>
-
-          <div class="flex items-end">
-            <button
-              type="submit"
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition"
-            >
-              Zoeken
-            </button>
-          </div>
-        </form>
-
-        <p id="searchError" class="text-red-600 text-sm mt-3 text-center"></p>
-      </div>
-    </section>
-
-    <!-- USP / INFO BLOK -->
-    <section class="max-w-6xl mx-auto px-4 py-10 grid gap-6 md:grid-cols-3">
-      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
-        <div class="text-xl font-bold text-indigo-700 mb-2">✓ Betrouwbaar</div>
-        <p class="text-gray-600 text-sm">
-          Reviews van echte klanten. Zo zie je meteen wie goed werk levert.
-        </p>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
-        <div class="text-xl font-bold text-indigo-700 mb-2">€ Vrijblijvend</div>
-        <p class="text-gray-600 text-sm">
-          Vraag gratis een offerte aan. Geen verplichting.
-        </p>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
-        <div class="text-xl font-bold text-indigo-700 mb-2">⚡ Snel gevonden</div>
-        <p class="text-gray-600 text-sm">
-          Loodgieter met spoed? Elektricien in de buurt? Regel het in 1 minuut.
-        </p>
-      </div>
-    </section>
+  <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-16 text-center">
+    <h2 class="text-3xl font-bold text-indigo-700 mb-4">Zoek een bedrijf</h2>
+    <form id="searchForm" class="flex flex-col sm:flex-row gap-4 justify-center">
+      <input id="category" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 flex-1" />
+      <input id="city" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 flex-1" />
+      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-6 py-3 transition">Zoeken</button>
+    </form>
+    <p id="searchMessage" class="mt-4 text-sm text-gray-500"></p>
   </main>
 
-  <!-- FOOTER -->
   <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
-
-  <script>
-    const searchForm = document.getElementById("searchForm");
-    const searchError = document.getElementById("searchError");
-
-    searchForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const category = document.getElementById("category").value.trim();
-      const city = document.getElementById("city").value.trim();
-
-      if (!category || !city) {
-        searchError.textContent = "Vul een categorie en plaats in.";
-        return;
-      }
-
-      const url = `results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`;
-      window.location.href = url;
-    });
-  </script>
 </body>
 </html>
