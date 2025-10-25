@@ -49,4 +49,20 @@ router.post("/", async (req, res) => {
   }
 });
 
+
+// ✅ Reviews ophalen per bedrijf
+router.get("/company/:companyId", async (req, res) => {
+  try {
+    const companyId = req.params.companyId;
+    const reviews = await Review.find({ company: companyId }).sort({ createdAt: -1 });
+    res.json(reviews);
+  } catch (err) {
+    console.error("Fout bij ophalen reviews per bedrijf:", err);
+    res.status(500).json({ error: "Serverfout" });
+  }
+});
+
+
+
+
 module.exports = router;
