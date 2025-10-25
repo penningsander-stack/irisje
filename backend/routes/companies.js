@@ -20,12 +20,10 @@ router.get("/search", async (req, res) => {
   try {
     const { category, city } = req.query;
     const query = {};
-
     if (category) query.categories = { $regex: category, $options: "i" };
     if (city) query.city = { $regex: city, $options: "i" };
 
     const companies = await Company.find(query).lean();
-
     res.json({
       ok: true,
       total: companies.length,
@@ -49,30 +47,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// ✅ Nieuw bedrijf toevoegen (optioneel, voor beheerder)
-router.post("/", async (req, res) => {
-  try {
-    const { name, slug, tagline, categories, city, description, logoUrl } = req.body;
-    const newCompany = new Company({
-      name,
-      slug,
-      tagline,
-      categories,
-      city,
-      description,
-      logoUrl,
-      avgRating: 0,
-      reviewCount: 0,
-      isVerified: false,
-    });
-    await newCompany.save();
-    res.json({ message: "Bedrijf toegevoegd", company: newCompany });
-  } catch (error) {
-    console.error("Fout bij toevoegen bedrijf:", error);
-    res.status(500).json({ message: "Serverfout" });
-  }
-});
-
 // ✅ Bedrijf ophalen via slug + gekoppelde reviews
 router.get("/:slug", async (req, res) => {
   try {
@@ -83,7 +57,6 @@ router.get("/:slug", async (req, res) => {
       return res.status(404).json({ message: "Bedrijf niet gevonden" });
     }
 
-    // Alle reviews ophalen die bij dit bedrijf horen
     const reviews = await Review.find({ company: company._id }).lean();
 
     res.json({
