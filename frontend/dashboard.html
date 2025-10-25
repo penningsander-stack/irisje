@@ -2,12 +2,13 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./style.css" />
 </head>
+
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
   <!-- HEADER -->
@@ -87,7 +88,9 @@
             </tr>
           </thead>
           <tbody id="request-table-body">
-            <tr><td colspan="5" class="text-center text-gray-500 p-4">Aanvragen worden geladen...</td></tr>
+            <tr>
+              <td colspan="5" class="text-center text-gray-500 p-4">Aanvragen worden geladen...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -107,7 +110,9 @@
             </tr>
           </thead>
           <tbody id="review-table-body">
-            <tr><td colspan="4" class="text-center text-gray-500 p-4">Reviews worden geladen...</td></tr>
+            <tr>
+              <td colspan="4" class="text-center text-gray-500 p-4">Reviews worden geladen...</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -119,18 +124,17 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- SCRIPT -->
+  <!-- ✅ Script -->
   <script src="./js/dashboard.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const email = localStorage.getItem("userEmail");
-      const role = localStorage.getItem("userRole");
-      const storedName = localStorage.getItem("companyName");
-
       const companyNameEl = document.getElementById("company-name");
       const lastLoginEl = document.getElementById("last-login");
 
-      // ✅ Toon bedrijfsnaam of fallback
+      const storedName = localStorage.getItem("companyName");
+      const email = localStorage.getItem("userEmail");
+      const role = localStorage.getItem("userRole");
+
       if (role === "admin") {
         companyNameEl.textContent = "Irisje Admin";
       } else if (storedName) {
@@ -141,14 +145,13 @@
         companyNameEl.textContent = "Bedrijf";
       }
 
-      // ✅ Laatst ingelogd
       const now = new Date().toLocaleString("nl-NL", {
         dateStyle: "medium",
-        timeStyle: "short",
+        timeStyle: "short"
       });
       lastLoginEl.textContent = now;
 
-      // ✅ Uitloggen
+      // Uitloggen
       const logoutBtn = document.getElementById("logoutBtn");
       logoutBtn.addEventListener("click", () => {
         localStorage.clear();
