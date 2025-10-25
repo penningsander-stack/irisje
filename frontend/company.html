@@ -112,71 +112,46 @@
 
     async function loadCompany() {
       const slug = getSlug();
-      const nameEl = document.getElementById("companyName");
-      const taglineEl = document.getElementById("tagline");
-      const ratingEl = document.getElementById("rating");
-      const reviewCountEl = document.getElementById("reviewCount");
-      const cityEl = document.getElementById("city");
-      const categoriesEl = document.getElementById("categories");
-      const descEl = document.getElementById("description");
-      const logoEl = document.getElementById("logo");
-
       try {
-        // ✅ Juiste endpoint, geen /details
         const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
-
-        nameEl.textContent = data.name || "";
-        taglineEl.textContent = data.tagline || "";
-        ratingEl.textContent = stars(data.avgRating);
-        reviewCountEl.textContent = `(${data.reviewCount || 0} reviews)`;
-        cityEl.textContent = data.city || "";
-        categoriesEl.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
-        descEl.textContent = data.description || "";
-        if (data.logoUrl) logoEl.src = data.logoUrl;
+        document.getElementById("companyName").textContent = data.name || "";
+        document.getElementById("tagline").textContent = data.tagline || "";
+        document.getElementById("rating").textContent = stars(data.avgRating);
+        document.getElementById("reviewCount").textContent = `(${data.reviewCount || 0} reviews)`;
+        document.getElementById("city").textContent = data.city || "";
+        document.getElementById("categories").textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
+        document.getElementById("description").textContent = data.description || "";
+        if (data.logoUrl) document.getElementById("logo").src = data.logoUrl;
       } catch (err) {
         console.error("Fout bij laden bedrijfsgegevens:", err);
-        nameEl.textContent = "Kon bedrijfsgegevens niet laden.";
+        document.getElementById("companyName").textContent = "Kon bedrijfsgegevens niet laden.";
       }
     }
 
     async function loadReviews() {
       const slug = getSlug();
       const listEl = document.getElementById("review-list");
-
       try {
         const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon reviews niet laden.");
         const data = await res.json();
-
         if (!data.length) {
           listEl.innerHTML = `<div class="text-gray-500 text-sm">Nog geen beoordelingen beschikbaar.</div>`;
           return;
         }
-
-        const sorted = [...data].sort((a, b) => {
-          const da = new Date(a.createdAt || a.date || 0).getTime();
-          const db = new Date(b.createdAt || b.date || 0).getTime();
-          return db - da;
-        });
-
-        listEl.innerHTML = sorted
-          .map((rev) => {
-            const d = new Date(rev.createdAt || rev.date || Date.now()).toLocaleDateString("nl-NL", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            });
-            return `
-              <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
-                <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
-                <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
-                <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
-              </div>
-            `;
-          })
-          .join("");
+        const sorted = [...data].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        listEl.innerHTML = sorted.map(rev => {
+          const d = new Date(rev.createdAt || rev.date || Date.now()).toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"});
+          return `
+            <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+              <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
+              <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
+              <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
+            </div>
+          `;
+        }).join("");
       } catch (err) {
         console.error("Fout bij laden reviews:", err);
         listEl.innerHTML = `<div class="text-red-600 text-sm">Fout bij laden reviews.</div>`;
@@ -191,27 +166,16 @@
       const rating = document.getElementById("reviewRating").value;
       const message = document.getElementById("reviewMessage").value.trim();
       const msgEl = document.getElementById("reviewStatusMsg");
-
       msgEl.textContent = "Bezig met versturen...";
       msgEl.className = "text-gray-500 text-center text-sm";
-
       try {
         const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-  companySlug: slug,
-  name,
-  email,
-  rating,
-  message
-})
-
+          body: JSON.stringify({ companySlug: slug, name, email, rating, message })
         });
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Kon beoordeling niet versturen.");
-
         msgEl.textContent = "✅ Bedankt voor je beoordeling!";
         msgEl.className = "text-green-600 text-center text-sm";
         document.getElementById("reviewForm").reset();
@@ -223,6 +187,7 @@
       }
     }
 
+    // ✅ Verbeterde submitRequest-functie
     async function submitRequest(e) {
       e.preventDefault();
       const slug = getSlug();
@@ -230,25 +195,25 @@
       const email = document.getElementById("requestEmail").value.trim();
       const message = document.getElementById("requestMessage").value.trim();
       const msgEl = document.getElementById("requestStatusMsg");
-
       msgEl.textContent = "Bezig met verzenden...";
       msgEl.className = "text-gray-500 text-center text-sm";
-
       try {
-        // ✅ Ook hier zonder /details
         const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
+        if (!companyRes.ok) throw new Error("Kon bedrijfsinformatie niet ophalen.");
         const companyData = await companyRes.json();
-        const companyId = companyData._id || companyData.id || companyData.company || companyData.companyId;
-
         const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ company: companyId, name, email, message })
+          body: JSON.stringify({
+            company: companyData._id || companyData.id || null,
+            companySlug: slug,
+            name,
+            email,
+            message
+          })
         });
-
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Kon aanvraag niet versturen.");
-
+        if (!res.ok) throw new Error(data.error || data.message || "Kon aanvraag niet versturen.");
         msgEl.textContent = "✅ Aanvraag succesvol verzonden!";
         msgEl.className = "text-green-600 text-center text-sm";
         document.getElementById("requestForm").reset();
