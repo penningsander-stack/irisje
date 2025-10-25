@@ -119,6 +119,42 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- SCRIPT -->
   <script src="./js/dashboard.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const email = localStorage.getItem("userEmail");
+      const role = localStorage.getItem("userRole");
+      const storedName = localStorage.getItem("companyName");
+
+      const companyNameEl = document.getElementById("company-name");
+      const lastLoginEl = document.getElementById("last-login");
+
+      // ✅ Toon bedrijfsnaam of fallback
+      if (role === "admin") {
+        companyNameEl.textContent = "Irisje Admin";
+      } else if (storedName) {
+        companyNameEl.textContent = storedName;
+      } else if (email) {
+        companyNameEl.textContent = email;
+      } else {
+        companyNameEl.textContent = "Bedrijf";
+      }
+
+      // ✅ Laatst ingelogd
+      const now = new Date().toLocaleString("nl-NL", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      lastLoginEl.textContent = now;
+
+      // ✅ Uitloggen
+      const logoutBtn = document.getElementById("logoutBtn");
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "login.html";
+      });
+    });
+  </script>
 </body>
 </html>
