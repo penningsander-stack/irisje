@@ -81,4 +81,17 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
+
+// ✅ Aanvragen ophalen per bedrijf
+router.get("/company/:companyId", async (req, res) => {
+  try {
+    const companyId = req.params.companyId;
+    const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    console.error("Fout bij ophalen aanvragen per bedrijf:", err);
+    res.status(500).json({ error: "Serverfout" });
+  }
+});
+
 module.exports = router;
