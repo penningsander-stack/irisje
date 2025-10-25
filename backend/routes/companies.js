@@ -73,7 +73,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ✅ Bedrijf ophalen via slug (inclusief reviews)
+// ✅ Bedrijf ophalen via slug + gekoppelde reviews
 router.get("/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
@@ -83,10 +83,8 @@ router.get("/:slug", async (req, res) => {
       return res.status(404).json({ message: "Bedrijf niet gevonden" });
     }
 
-    // Haal reviews op die bij dit bedrijf horen
-    const reviews = await Review.find({ company: company._id })
-      .sort({ date: -1 })
-      .lean();
+    // Alle reviews ophalen die bij dit bedrijf horen
+    const reviews = await Review.find({ company: company._id }).lean();
 
     res.json({
       name: company.name,
@@ -94,7 +92,7 @@ router.get("/:slug", async (req, res) => {
       city: company.city,
       categories: company.categories,
       avgRating: company.avgRating || 0,
-      reviewCount: company.reviewCount || 0,
+      reviewCount: company.reviewCount || reviews.length,
       description: company.description || "",
       logoUrl: company.logoUrl || "",
       isVerified: company.isVerified || false,
