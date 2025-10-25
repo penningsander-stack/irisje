@@ -1,19 +1,30 @@
+<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Irisje.nl – Vind de beste dienstverleners bij jou in de buurt</title>
-  <meta name="description" content="Vergelijk bedrijven, vraag offertes aan en lees reviews op Irisje.nl." />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <title>Irisje.nl – Vind snel betrouwbare bedrijven</title>
 
+  <!-- ✅ Tailwind via CDN (veilig en direct werkend) -->
+  <script>
+    window.tailwind = { config: { darkMode: 'class' } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Extra CSS voor consistentie -->
   <link rel="stylesheet" href="./style.css" />
-  <script src="./js/app.js" defer></script>
+
+  <!-- Meta -->
+  <meta name="description" content="Irisje.nl – Vergelijk betrouwbare bedrijven, lees reviews en vraag direct offertes aan.">
+  <meta name="theme-color" content="#4F46E5">
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <h1 class="text-2xl font-semibold tracking-tight">Irisje.nl</h1>
+      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="results.html" class="hover:underline">Bedrijven</a>
         <a href="login.html" class="hover:underline">Inloggen</a>
@@ -21,18 +32,88 @@
     </div>
   </header>
 
-  <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-16 text-center">
-    <h2 class="text-3xl font-bold text-indigo-700 mb-4">Zoek een bedrijf</h2>
-    <form id="searchForm" class="flex flex-col sm:flex-row gap-4 justify-center">
-      <input id="category" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 flex-1" />
-      <input id="city" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 flex-1" />
-      <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-6 py-3 transition">Zoeken</button>
+  <!-- MAIN -->
+  <main class="flex-1 max-w-4xl mx-auto w-full px-4 py-12 text-center">
+
+    <h1 class="text-3xl sm:text-4xl font-bold text-indigo-700 mb-6">
+      Zoek een betrouwbaar bedrijf bij jou in de buurt
+    </h1>
+
+    <p class="text-gray-600 mb-10">
+      Vergelijk bedrijven, lees ervaringen van anderen en vraag direct een vrijblijvende offerte aan.
+    </p>
+
+    <!-- Zoekformulier -->
+    <form id="searchForm" class="bg-white shadow-lg rounded-2xl p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <input
+        id="categoryInput"
+        type="text"
+        placeholder="Categorie (bijv. loodgieter)"
+        class="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+      />
+      <input
+        id="cityInput"
+        type="text"
+        placeholder="Plaats"
+        class="border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+      />
+      <button
+        type="submit"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition"
+      >
+        Zoeken
+      </button>
     </form>
-    <p id="searchMessage" class="mt-4 text-sm text-gray-500"></p>
+
+    <!-- Resultaatcontainer -->
+    <div id="searchResult" class="mt-8 text-gray-600 text-sm"></div>
   </main>
 
+  <!-- FOOTER -->
   <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
+
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
+    document.getElementById("searchForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const category = document.getElementById("categoryInput").value.trim();
+      const city = document.getElementById("cityInput").value.trim();
+      const resultDiv = document.getElementById("searchResult");
+
+      resultDiv.innerHTML = "⏳ Even geduld, resultaten worden geladen...";
+
+      try {
+        const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
+        if (!res.ok) throw new Error("Kon geen verbinding maken met de server.");
+
+        const data = await res.json();
+        if (!data.items || !data.items.length) {
+          resultDiv.innerHTML = "<p class='text-gray-500'>Geen bedrijven gevonden.</p>";
+          return;
+        }
+
+        resultDiv.innerHTML = data.items
+          .map(c => `
+            <div class="bg-white shadow-md rounded-xl p-5 text-left mb-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-indigo-700">${c.name}</h3>
+                <span class="text-yellow-500">${"⭐".repeat(Math.round(c.avgRating || 0))}</span>
+              </div>
+              <p class="text-gray-600 text-sm mb-1">${c.city || ""}</p>
+              <p class="text-gray-500 text-sm mb-2">${c.tagline || ""}</p>
+              <a href="company.html?slug=${encodeURIComponent(c.slug)}" class="text-indigo-600 hover:underline text-sm font-medium">Bekijk profiel</a>
+            </div>
+          `)
+          .join("");
+      } catch (err) {
+        console.error("Zoekfout:", err);
+        resultDiv.innerHTML = "<p class='text-red-600'>❌ Er ging iets mis bij het laden van resultaten.</p>";
+      }
+    });
+  </script>
 </body>
 </html>
