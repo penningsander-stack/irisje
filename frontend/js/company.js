@@ -1,127 +1,124 @@
 // frontend/js/company.js
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-// ✅ Backend-basisadres
-const apiBase = "https://irisje-backend.onrender.com";
-
-// Hulpfunctie: sterren renderen
-function renderStars(rating) {
-  const fullStars = Math.round(rating);
-  return "⭐".repeat(fullStars);
+// Helper om URL-parameters te lezen
+function getSlug() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("slug");
 }
 
-// ✅ Bedrijfsgegevens en reviews laden
 async function loadCompany() {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get("slug");
+  const slug = getSlug();
+  const info = document.getElementById("company-info");
 
   if (!slug) {
-    document.body.innerHTML = "<p>Bedrijf niet gevonden.</p>";
+    info.innerHTML = "<p class='text-red-600'>Geen bedrijfs-slug opgegeven.</p>";
     return;
   }
 
   try {
-    const res = await axios.get(`${apiBase}/api/companies/${slug}`);
+    const res = await axios.get(`${API_BASE}/companies/${slug}`);
     const company = res.data;
 
     // Vul bedrijfsinformatie
-    document.querySelector("h1").textContent = company.name;
-    document.querySelector("#tagline").textContent = company.tagline;
-    document.querySelector("#city").textContent = company.city;
-    document.querySelector("#categories").textContent = company.categories.join(", ");
-    document.querySelector("#description").textContent = company.description;
+    document.getElementById("company-name").textContent = company.name || "Onbekend bedrijf";
+    document.getElementById("company-tagline").textContent = company.tagline || "";
+    document.getElementById("company-city").textContent = company.city || "";
+    document.getElementById("company-description").textContent = company.description || "";
+    document.getElementById("company-logo").src = company.logoUrl || "";
 
-    // Gemiddelde rating en telling
-    document.querySelector("#rating").textContent = renderStars(company.avgRating);
-    document.querySelector("#reviewCount").textContent = `(${company.reviewCount} reviews)`;
-
-    // Reviews renderen
-    const reviewList = document.getElementById("review-list");
-    reviewList.innerHTML = "";
-    if (company.reviews && company.reviews.length > 0) {
-      company.reviews.forEach((r) => {
-        const div = document.createElement("div");
-        div.className = "p-3 border-b";
-        div.innerHTML = `
-          <p>${renderStars(r.rating)}</p>
-          <p class="mt-1">${r.message}</p>
-          <p class="text-sm text-gray-500 mt-1">— ${r.name}${
-            r.date ? ", " + new Date(r.date).toLocaleDateString("nl-NL") : ""
-          }</p>
-        `;
-        reviewList.appendChild(div);
+    const catDiv = document.getElementById("company-categories");
+    catDiv.innerHTML = "";
+    if (company.categories && company.categories.length) {
+      company.categories.forEach(cat => {
+        const span = document.createElement("span");
+        span.className = "bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-sm";
+        span.textContent = cat;
+        catDiv.appendChild(span);
       });
-    } else {
-      reviewList.innerHTML = "<p>Nog geen beoordelingen beschikbaar.</p>";
     }
 
-    // Sla slug op voor formulieren
-    document.getElementById("reviewForm").dataset.slug = slug;
-    document.getElementById("requestForm").dataset.slug = slug;
-
-  } catch (error) {
-    console.error("Fout bij laden bedrijfsgegevens:", error);
-    document.body.innerHTML = "<p>Kon bedrijfsgegevens niet laden.</p>";
+    // Toon reviews
+    renderReviews(company.reviews || []);
+  } catch (err) {
+    console.error("Fout bij laden bedrijf:", err);
+    document.getElementById("company-info").innerHTML =
+      "<p class='text-red-600'>Kon bedrijfsgegevens niet laden.</p>";
   }
 }
 
-// ✅ Review versturen
-async function submitReviewForm(e) {
-  e.preventDefault();
-  const form = e.target;
-  const slug = form.dataset.slug;
-  const name = form.querySelector("#reviewName").value;
-  const email = form.querySelector("#reviewEmail").value;
-  const rating = parseInt(form.querySelector("#reviewRating").value);
-  const message = form.querySelector("#reviewMessage").value;
-
-  try {
-    await axios.post(`${apiBase}/api/reviews`, {
-      companySlug: slug,
-      name,
-      email,
-      rating,
-      message,
-    });
-    alert("✅ Bedankt voor je beoordeling!");
-    form.reset();
-    loadCompany(); // herladen om review direct te tonen
-  } catch (error) {
-    console.error(error);
-    alert("❌ Er ging iets mis bij het verzenden van je review.");
+function renderReviews(reviews) {
+  const reviewList = document.getElementById("review-list");
+  reviewList.innerHTML = "";
+  if (!reviews.length) {
+    reviewList.innerHTML = "<p class='text-gray-500'>Nog geen beoordelingen beschikbaar.</p>";
+    return;
   }
+  reviews.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "border border-gray-200 rounded-lg p-3";
+    const date = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
+    div.innerHTML = `
+      <div class="text-yellow-400">${"⭐".repeat(r.rating || 0)}</div>
+      <p class="text-gray-800 mt-1">${r.message || ""}</p>
+      <p class="text-sm text-gray-500 mt-1">— ${r.name || "Anoniem"}${date ? ", " + date : ""}</p>
+    `;
+    reviewList.appendChild(div);
+  });
 }
 
-// ✅ Offerteaanvraag versturen
-async function submitRequestForm(e) {
-  e.preventDefault();
-  const form = e.target;
-  const slug = form.dataset.slug;
-  const name = form.querySelector("#requestName").value;
-  const email = form.querySelector("#requestEmail").value;
-  const message = form.querySelector("#requestMessage").value;
-
-  try {
-    const res = await axios.post(`${apiBase}/api/publicRequests`, {
-      companySlug: slug,
-      name,
-      email,
-      message,
-    });
-    alert(res.data.message || "✅ Je aanvraag is succesvol verzonden!");
-    form.reset();
-  } catch (error) {
-    console.error("Fout bij verzenden aanvraag:", error);
-    alert("❌ Er ging iets mis bij het verzenden.");
-  }
-}
-
-// ✅ Eventlisteners instellen
+// === Reviewformulier verzenden ===
 document.addEventListener("DOMContentLoaded", () => {
   loadCompany();
 
   const reviewForm = document.getElementById("reviewForm");
-  const requestForm = document.getElementById("requestForm");
+  if (reviewForm) {
+    reviewForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const slug = getSlug();
+      const data = {
+        companySlug: slug,
+        name: e.target.reviewName.value,
+        email: e.target.reviewEmail.value,
+        rating: parseInt(e.target.reviewRating.value),
+        message: e.target.reviewMessage.value,
+      };
+      try {
+        await axios.post(`${API_BASE}/reviews`, data);
+        document.getElementById("reviewMessageInfo").textContent =
+          "✅ Je beoordeling is succesvol verzonden.";
+        e.target.reset();
+        loadCompany(); // herlaad reviews
+      } catch (err) {
+        console.error(err);
+        document.getElementById("reviewMessageInfo").textContent =
+          "❌ Fout bij verzenden van beoordeling.";
+      }
+    });
+  }
 
-  if (reviewForm) reviewForm.addEventListener("submit", submitReviewForm);
-  if (requestForm) requestForm.addEventListener("submit", submitRequestForm);
+  // === Offerteformulier ===
+  const quoteForm = document.getElementById("quoteForm");
+  if (quoteForm) {
+    quoteForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const slug = getSlug();
+      const data = {
+        companySlug: slug,
+        name: e.target.name.value,
+        email: e.target.email.value,
+        message: e.target.message.value,
+      };
+      try {
+        await axios.post(`${API_BASE}/publicRequests`, data);
+        document.getElementById("form-message").textContent =
+          "✅ Je aanvraag is succesvol verzonden!";
+        e.target.reset();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("form-message").textContent =
+          "❌ Er ging iets mis bij het verzenden van je aanvraag.";
+      }
+    });
+  }
 });
