@@ -62,26 +62,9 @@
       <h2 class="text-xl font-semibold text-indigo-700 mb-4">Jouw ervaring</h2>
 
       <form id="reviewForm" class="space-y-4">
-        <input
-          id="reviewName"
-          type="text"
-          placeholder="Naam"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-
-        <input
-          id="reviewEmail"
-          type="email"
-          placeholder="E-mailadres (wordt niet getoond)"
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-
-        <select
-          id="reviewRating"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        >
+        <input id="reviewName" type="text" placeholder="Naam" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
+        <input id="reviewEmail" type="email" placeholder="E-mailadres (wordt niet getoond)" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
+        <select id="reviewRating" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           <option value="">Kies aantal sterren</option>
           <option value="5">⭐⭐⭐⭐⭐</option>
           <option value="4">⭐⭐⭐⭐</option>
@@ -89,21 +72,8 @@
           <option value="2">⭐⭐</option>
           <option value="1">⭐</option>
         </select>
-
-        <textarea
-          id="reviewMessage"
-          placeholder="Bericht"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        ></textarea>
-
-        <button
-          type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition"
-        >
-          Verstuur beoordeling
-        </button>
-
+        <textarea id="reviewMessage" placeholder="Bericht" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 transition">Verstuur beoordeling</button>
         <p id="reviewStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
@@ -113,36 +83,10 @@
       <h2 class="text-xl font-semibold text-indigo-700 mb-4">Vraag een offerte aan</h2>
 
       <form id="requestForm" class="space-y-4">
-        <input
-          id="requestName"
-          type="text"
-          placeholder="Naam"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-
-        <input
-          id="requestEmail"
-          type="email"
-          placeholder="E-mailadres"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-
-        <textarea
-          id="requestMessage"
-          placeholder="Beschrijf je klus of vraag"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        ></textarea>
-
-        <button
-          type="submit"
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 transition"
-        >
-          Verstuur aanvraag
-        </button>
-
+        <input id="requestName" type="text" placeholder="Naam" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
+        <input id="requestEmail" type="email" placeholder="E-mailadres" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"/>
+        <textarea id="requestMessage" placeholder="Beschrijf je klus of vraag" required class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 transition">Verstuur aanvraag</button>
         <p id="requestStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
@@ -178,8 +122,8 @@
       const logoEl = document.getElementById("logo");
 
       try {
-        // GET /api/companies/:slug/details
-        const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}/details`);
+        // ✅ Juiste endpoint, geen /details
+        const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
 
@@ -202,7 +146,6 @@
       const listEl = document.getElementById("review-list");
 
       try {
-        // GET /api/reviews?slug=...
         const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon reviews niet laden.");
         const data = await res.json();
@@ -212,7 +155,6 @@
           return;
         }
 
-        // Toon meest recente eerst
         const sorted = [...data].sort((a, b) => {
           const da = new Date(a.createdAt || a.date || 0).getTime();
           const db = new Date(b.createdAt || b.date || 0).getTime();
@@ -257,13 +199,7 @@
         const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug,
-            name,
-            email,
-            rating,
-            message
-          })
+          body: JSON.stringify({ slug, name, email, rating, message })
         });
 
         const data = await res.json();
@@ -271,7 +207,6 @@
 
         msgEl.textContent = "✅ Bedankt voor je beoordeling!";
         msgEl.className = "text-green-600 text-center text-sm";
-
         document.getElementById("reviewForm").reset();
         loadReviews();
       } catch (err) {
@@ -293,20 +228,15 @@
       msgEl.className = "text-gray-500 text-center text-sm";
 
       try {
-        // Eerst bedrijf ophalen zodat we het company-id hebben
-        const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}/details`);
+        // ✅ Ook hier zonder /details
+        const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         const companyData = await companyRes.json();
-        const companyId = companyData && companyData._id ? companyData._id : companyData.id || companyData.company || companyData.companyId;
+        const companyId = companyData._id || companyData.id || companyData.company || companyData.companyId;
 
         const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            company: companyId,
-            name,
-            email,
-            message
-          })
+          body: JSON.stringify({ company: companyId, name, email, message })
         });
 
         const data = await res.json();
@@ -314,7 +244,6 @@
 
         msgEl.textContent = "✅ Aanvraag succesvol verzonden!";
         msgEl.className = "text-green-600 text-center text-sm";
-
         document.getElementById("requestForm").reset();
       } catch (err) {
         console.error("Fout bij verzenden aanvraag:", err);
