@@ -1,4 +1,5 @@
 // frontend/js/company.js
+// ✅ v2.2 – Definitieve versie zonder /details, gekoppeld aan onrender-backend
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 // Helper om URL-parameters te lezen
@@ -17,15 +18,25 @@ async function loadCompany() {
   }
 
   try {
+    // ✅ juiste endpoint, geen /details
     const res = await axios.get(`${API_BASE}/companies/${slug}`);
     const company = res.data;
+
+    console.log("✅ Bedrijf geladen:", company);
 
     // Vul bedrijfsinformatie
     document.getElementById("company-name").textContent = company.name || "Onbekend bedrijf";
     document.getElementById("company-tagline").textContent = company.tagline || "";
     document.getElementById("company-city").textContent = company.city || "";
     document.getElementById("company-description").textContent = company.description || "";
-    document.getElementById("company-logo").src = company.logoUrl || "";
+
+    const logo = document.getElementById("company-logo");
+    if (company.logoUrl) {
+      logo.src = company.logoUrl;
+      logo.style.display = "block";
+    } else {
+      logo.style.display = "none";
+    }
 
     const catDiv = document.getElementById("company-categories");
     catDiv.innerHTML = "";
@@ -41,7 +52,7 @@ async function loadCompany() {
     // Toon reviews
     renderReviews(company.reviews || []);
   } catch (err) {
-    console.error("Fout bij laden bedrijf:", err);
+    console.error("❌ Fout bij laden bedrijfsgegevens:", err);
     document.getElementById("company-info").innerHTML =
       "<p class='text-red-600'>Kon bedrijfsgegevens niet laden.</p>";
   }
@@ -90,9 +101,9 @@ document.addEventListener("DOMContentLoaded", () => {
         e.target.reset();
         loadCompany(); // herlaad reviews
       } catch (err) {
-        console.error(err);
+        console.error("❌ Fout bij verzenden review:", err);
         document.getElementById("reviewMessageInfo").textContent =
-          "❌ Fout bij verzenden van beoordeling.";
+          "❌ Er ging iets mis bij het verzenden van je beoordeling.";
       }
     });
   }
@@ -115,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "✅ Je aanvraag is succesvol verzonden!";
         e.target.reset();
       } catch (err) {
-        console.error(err);
+        console.error("❌ Fout bij verzenden aanvraag:", err);
         document.getElementById("form-message").textContent =
           "❌ Er ging iets mis bij het verzenden van je aanvraag.";
       }
