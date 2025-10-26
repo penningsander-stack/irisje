@@ -1,3 +1,14 @@
+/* frontend/css/input.css */
+
+/* Basislagen van Tailwind */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Extra baselaag om waarschuwing over text-size-adjust te voorkomen */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+}
