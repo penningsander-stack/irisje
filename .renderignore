@@ -1,0 +1,6 @@
+# bestanden en mappen die geen nieuwe build hoeven te triggeren
+README.md
+LICENSE
+*.md
+*.txt
+/backend/
