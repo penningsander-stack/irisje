@@ -4,17 +4,19 @@ const router = express.Router();
 const Request = require("../models/Request");
 const Company = require("../models/Company");
 
-// 📩 Nieuwe offerteaanvraag ontvangen
+// 📩 Nieuwe offerteaanvraag ontvangen (zowel met als zonder specifiek bedrijf)
 router.post("/", async (req, res) => {
   try {
-    const { companySlug, company, companyId, name, email, message } = req.body;
+    const { companySlug, company, companyId, name, email, message, city } = req.body;
 
+    // Basisvalidatie
     if (!name || !email || !message) {
       return res.status(400).json({ message: "Ontbrekende velden" });
     }
 
-    // Probeer bedrijf op te zoeken met slug of ID
     let companyDoc = null;
+
+    // Probeer bedrijf op te zoeken als er iets is meegegeven
     if (companySlug) {
       companyDoc = await Company.findOne({ slug: companySlug });
     }
@@ -22,22 +24,23 @@ router.post("/", async (req, res) => {
       companyDoc = await Company.findById(company || companyId);
     }
 
-    if (!companyDoc) {
-      return res.status(404).json({ message: "Bedrijf niet gevonden" });
-    }
-
-    // Nieuwe aanvraag opslaan
+    // Nieuwe aanvraag aanmaken, ook als er geen bedrijf is gevonden
     const newRequest = new Request({
-      company: companyDoc._id,
+      company: companyDoc ? companyDoc._id : null,
       name,
       email,
       message,
+      city: city || "",
       status: "Nieuw",
       date: new Date(),
     });
 
     await newRequest.save();
-    res.json({ message: "✅ Aanvraag succesvol verzonden!", request: newRequest });
+
+    res.json({
+      message: "✅ Aanvraag succesvol verzonden!",
+      request: newRequest,
+    });
   } catch (error) {
     console.error("Fout bij versturen aanvraag:", error);
     res.status(500).json({ message: "Serverfout bij versturen aanvraag" });
