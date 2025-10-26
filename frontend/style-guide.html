@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Irisje.nl style guide</title>
+
+  <!-- Tailwind (voor nu via CDN zodat deze pagina er netjes uitziet) -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+
+  <!-- Jouw eigen CSS komt ook mee -->
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto space-y-10">
+
+    <!-- Merk / Header -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">I</div>
+        <div>
+          <div class="text-xl font-bold text-indigo-700 leading-tight">Irisje.nl</div>
+          <div class="text-sm text-gray-500">Merkopmaak / headerstijl</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Knoppen -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Knoppen</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div class="space-y-2">
+          <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Primair (indigo)</div>
+          <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left">
+            Primair call to action
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Secundair (wit met rand)</div>
+          <button class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left">
+            Secundair / minder belangrijk
+          </button>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Status: Succes</div>
+          <div class="bg-green-50 border border-green-200 text-green-800 text-sm rounded-xl px-4 py-3">
+            ✅ Aanvraag succesvol verzonden!
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Status: Fout</div>
+          <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3">
+            ❌ Er ging iets mis bij het verzenden.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulieren -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Formulieren</h2>
+
+      <form class="grid grid-cols-1 gap-4 text-sm max-w-md">
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Naam</label>
+          <input type="text" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Naam" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">E-mailadres</label>
+          <input type="email" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="naam@voorbeeld.nl" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-gray-700 mb-1">Bericht</label>
+          <textarea class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Beschrijf je klus of vraag..."></textarea>
+        </div>
+
+        <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition shadow-sm">
+          Verstuur aanvraag
+        </button>
+      </form>
+    </section>
+
+    <!-- Cards / blokken -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Cards (zoals op de homepage)</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+
+        <!-- Company snippet -->
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="font-semibold text-indigo-700 text-sm leading-snug">Loodgieter Jan</div>
+            <div class="text-yellow-500 text-xs leading-none">⭐⭐⭐⭐</div>
+          </div>
+          <div class="text-gray-600 text-xs mt-1">Amsterdam</div>
+          <div class="text-gray-500 text-xs mt-2 leading-relaxed">
+            24/7 service bij lekkages en verstoppingen.
+          </div>
+          <a href="company.html?slug=loodgieter-jan" class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-3">
+            Bekijk profiel →
+          </a>
+        </div>
+
+        <!-- Review snippet -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold leading-none">⭐⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2 leading-relaxed">
+            “Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”
+          </p>
+          <div class="text-gray-500 text-xs mt-3">— Sanne, Amsterdam</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabellen (zoals dashboard aanvragen/reviews) -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 overflow-x-auto">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Tabel (dashboard)</h2>
+
+      <table class="w-full text-sm border-collapse min-w-[600px]">
+        <thead>
+          <tr class="bg-indigo-50 text-gray-700">
+            <th class="p-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Naam</th>
+            <th class="p-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">E-mail</th>
+            <th class="p-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Bericht</th>
+            <th class="p-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Status</th>
+            <th class="p-2 text-left text-xs font-semibold text-gray-700 uppercase tracking-wide">Datum</th>
+          </tr>
+        </thead>
+        <tbody class="align-top">
+          <tr class="border-b border-gray-200">
+            <td class="p-2 font-medium text-gray-800">Test Offerte</td>
+            <td class="p-2 text-gray-600 text-xs">test@offerte.nl</td>
+            <td class="p-2 text-gray-700 text-xs">Testaanvraag offerteaanvraag</td>
+            <td class="p-2 text-gray-700 text-xs">
+              <span class="inline-block bg-yellow-100 text-yellow-800 text-[11px] font-semibold px-2 py-1 rounded-lg border border-yellow-200">Nieuw</span>
+            </td>
+            <td class="p-2 text-gray-500 text-[11px]">25 okt 2025</td>
+          </tr>
+          <tr class="border-b border-gray-200">
+            <td class="p-2 font-medium text-gray-800">Lisa Jansen</td>
+            <td class="p-2 text-gray-600 text-xs">lisa@example.com</td>
+            <td class="p-2 text-gray-700 text-xs">Graag hulp bij een lekkende kraan.</td>
+            <td class="p-2 text-gray-700 text-xs">
+              <span class="inline-block bg-green-100 text-green-800 text-[11px] font-semibold px-2 py-1 rounded-lg border border-green-200">Geaccepteerd</span>
+            </td>
+            <td class="p-2 text-gray-500 text-[11px]">24 okt 2025</td>
+          </tr>
+          <tr>
+            <td class="p-2 font-medium text-gray-800">Peter Bos</td>
+            <td class="p-2 text-gray-600 text-xs">peter@example.com</td>
+            <td class="p-2 text-gray-700 text-xs">Afvoer verstopt, kunt u komen kijken?</td>
+            <td class="p-2 text-gray-700 text-xs">
+              <span class="inline-block bg-red-100 text-red-700 text-[11px] font-semibold px-2 py-1 rounded-lg border border-red-200">Afgewezen</span>
+            </td>
+            <td class="p-2 text-gray-500 text-[11px]">24 okt 2025</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Footer style -->
+    <section class="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center text-xs text-gray-500">
+      © 2025 Irisje.nl – Alle rechten voorbehouden
+    </section>
+
+  </div>
+</body>
+</html>
