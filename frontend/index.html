@@ -3,91 +3,230 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Irisje.nl – Vind betrouwbare bedrijven</title>
-  <!-- Tailwind altijd laden, ook in productie -->
-<script src="https://cdn.tailwindcss.com/3.4.1"></script>
-<link rel="stylesheet" href="./style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-/>
-<link rel="stylesheet" href="./style.css" />
+  <title>Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt</title>
+  <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
+  <meta name="theme-color" content="#4F46E5" />
 
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <!-- ✅ favicon (komt later) -->
+  <link rel="icon" type="image/png" href="./favicon.png" />
+
+  <!-- ✅ Tailwind stabiele versie via jsdelivr -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.14/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- ✅ Custom styling -->
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- SEO & veiligheid -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="robots" content="index, follow" />
 </head>
+
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
   <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-5 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
-      <nav class="space-x-6 text-sm font-medium hidden sm:block">
-        <a href="results.html" class="hover:underline">Bedrijven</a>
-        <a href="login.html" class="hover:underline">Inloggen</a>
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold leading-none select-none">
+          I
+        </span>
+        <span class="tracking-tight">Irisje.nl</span>
+      </a>
+
+      <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
+        <a href="results.html" class="hover:text-indigo-600">Bedrijven</a>
+        <a href="login.html" class="hover:text-indigo-600">Inloggen</a>
       </nav>
+
+      <a href="login.html" class="sm:hidden text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5">
+        Inloggen
+      </a>
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="flex-1 flex flex-col justify-center items-center text-center py-16 px-4 bg-gradient-to-b from-indigo-50 to-white">
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 mb-4">
-      Zoek een betrouwbaar bedrijf bij jou in de buurt
-    </h1>
-    <p class="text-gray-600 max-w-xl mb-8">
-      Vergelijk bedrijven, lees ervaringen van anderen en vraag direct een vrijblijvende offerte aan.
-    </p>
+  <!-- MAIN -->
+  <main class="flex-1">
+    <!-- HERO + ZOEKFORMULIER -->
+    <section class="bg-white">
+      <div class="max-w-6xl mx-auto px-4 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+        <div class="max-w-xl">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 leading-tight">
+            Vind direct een vakman bij jou in de buurt
+          </h1>
+          <p class="text-gray-600 mt-4 text-base sm:text-lg leading-relaxed">
+            Vergelijk bedrijven, lees eerlijke ervaringen en vraag gratis een offerte aan. Snel geholpen, zonder gedoe.
+          </p>
 
-    <!-- Zoekformulier -->
-    <form id="searchForm" class="bg-white shadow-lg rounded-2xl p-6 w-full max-w-md space-y-4">
-      <div>
-        <label for="category" class="block text-sm font-medium text-gray-700 text-left mb-1">
-          Categorie (bijv. loodgieter)
-        </label>
-        <input
-          type="text"
-          id="category"
-          name="category"
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          placeholder="Bijv. schilder, hovenier..."
-        />
+          <ul class="mt-6 space-y-3 text-sm text-gray-700">
+            <li><span class="text-green-600 font-bold mr-2">✔</span> Betrouwbare bedrijven, handmatig gecontroleerd</li>
+            <li><span class="text-green-600 font-bold mr-2">✔</span> Reviews van echte klanten</li>
+            <li><span class="text-green-600 font-bold mr-2">✔</span> Je aanvraag gaat direct naar de juiste bedrijven</li>
+          </ul>
+        </div>
+
+        <!-- Zoekblok -->
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 lg:p-8 w-full max-w-md lg:ml-auto">
+          <h2 class="text-base font-semibold text-gray-800 mb-4 text-center">Zoek een bedrijf</h2>
+          <form id="searchForm" class="grid grid-cols-1 gap-4">
+            <input id="categoryInput" type="text" placeholder="Categorie (bijv. loodgieter, schilder...)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            <input id="cityInput" type="text" placeholder="Plaats (bijv. Amsterdam)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-center text-sm transition">Zoeken</button>
+          </form>
+          <div id="searchResult" class="mt-5 text-sm text-gray-600 leading-relaxed"></div>
+          <p class="text-center text-xs text-gray-500 mt-6">
+            Liever alles bekijken?
+            <a href="results.html" class="text-indigo-600 hover:text-indigo-700 font-medium">Bekijk bedrijven →</a>
+          </p>
+        </div>
       </div>
+    </section>
 
-      <div>
-        <label for="city" class="block text-sm font-medium text-gray-700 text-left mb-1">
-          Plaats
-        </label>
-        <input
-          type="text"
-          id="city"
-          name="city"
-          class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          placeholder="Bijv. Amsterdam"
-        />
+    <!-- POPULAIRE CATEGORIEËN -->
+    <section class="max-w-6xl mx-auto px-4 py-12">
+      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+        <span class="text-xl mr-2">🔎</span> Populaire categorieën
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+        <a href="results.html?category=Loodgieter" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Loodgieter</div>
+          <div class="text-gray-500 text-xs mt-1">Lekkage, verstopping</div>
+        </a>
+        <a href="results.html?category=CV" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">CV / Verwarming</div>
+          <div class="text-gray-500 text-xs mt-1">Ketel, onderhoud</div>
+        </a>
+        <a href="results.html?category=Elektricien" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Elektricien</div>
+          <div class="text-gray-500 text-xs mt-1">Storingen, groepenkast</div>
+        </a>
+        <a href="results.html?category=Schoonmaak" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Schoonmaak</div>
+          <div class="text-gray-500 text-xs mt-1">Particulier & zakelijk</div>
+        </a>
+        <a href="results.html?category=Slotenmaker" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Slotenmaker</div>
+          <div class="text-gray-500 text-xs mt-1">Deur open, inbraakschade</div>
+        </a>
+        <a href="results.html?category=Glazenwasser" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Glazenwasser</div>
+          <div class="text-gray-500 text-xs mt-1">Woning & kantoor</div>
+        </a>
       </div>
+    </section>
 
-      <button
-        type="submit"
-        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition"
-      >
-        Zoeken
-      </button>
-    </form>
-  </section>
+    <!-- HOE HET WERKT -->
+    <section class="bg-white border-y border-gray-200">
+      <div class="max-w-6xl mx-auto px-4 py-12">
+        <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+          <span class="text-xl mr-2">⚡</span> Hoe het werkt
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <div class="text-indigo-600 font-semibold mb-2 text-sm">1. Vertel wat je nodig hebt</div>
+            <p class="text-gray-700">Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt.</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <div class="text-indigo-600 font-semibold mb-2 text-sm">2. Bedrijven reageren</div>
+            <p class="text-gray-700">Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag.</p>
+          </div>
+          <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <div class="text-indigo-600 font-semibold mb-2 text-sm">3. Jij kiest</div>
+            <p class="text-gray-700">Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt.</p>
+          </div>
+        </div>
+        <div class="text-center mt-10">
+          <a href="request.html" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-6 py-3 text-sm shadow-sm transition">Vraag gratis een offerte aan</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section class="max-w-6xl mx-auto px-4 py-12">
+      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+        <span class="text-xl mr-2">💬</span> Ervaringen van anderen
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold">⭐⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2">“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Sanne, Amsterdam</div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold">⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2">“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Peter, Utrecht</div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold">⭐⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2">“Volgende keer bel ik weer via Irisje in plaats van Googlen.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Linda, Rotterdam</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-indigo-600 text-white">
+      <div class="max-w-6xl mx-auto px-4 py-12 lg:py-14 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div>
+          <h2 class="text-2xl font-bold mb-3">Ben je een bedrijf?</h2>
+          <p class="text-indigo-100 text-sm leading-relaxed max-w-md">
+            Ontvang directe aanvragen van klanten die nú hulp zoeken. Geen dure advertenties, alleen echte leads.
+          </p>
+        </div>
+        <div class="text-left lg:text-right">
+          <a href="register.html" class="inline-block bg-white text-indigo-700 font-semibold rounded-xl px-6 py-3 text-sm shadow-sm hover:bg-indigo-50 transition">
+            Meld je bedrijf aan
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t mt-auto bg-gray-100">
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- SCRIPT -->
   <script>
-    const form = document.getElementById("searchForm");
-    form.addEventListener("submit", (e) => {
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+    document.getElementById("searchForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const category = document.getElementById("category").value.trim();
-      const city = document.getElementById("city").value.trim();
-      const query = new URLSearchParams();
-      if (category) query.append("category", category);
-      if (city) query.append("city", city);
-      window.location.href = `results.html?${query.toString()}`;
+      const category = document.getElementById("categoryInput").value.trim();
+      const city = document.getElementById("cityInput").value.trim();
+      const resultDiv = document.getElementById("searchResult");
+      resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
+      try {
+        const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
+        if (!res.ok) throw new Error("Kon geen verbinding maken met de server.");
+        const data = await res.json();
+        if (!data.items || !data.items.length) {
+          resultDiv.innerHTML = "<p class='text-gray-500 text-sm mt-3 leading-relaxed'>Geen bedrijven gevonden.</p>";
+          return;
+        }
+        resultDiv.innerHTML = data.items
+          .slice(0, 3)
+          .map((c) => {
+            const stars = "⭐".repeat(Math.round(c.avgRating || 0));
+            return `<div class='bg-gray-50 border border-gray-200 rounded-xl p-4 mt-3 shadow-sm'>
+                <div class='flex justify-between'>
+                  <div class='font-semibold text-indigo-700 text-sm'>${c.name || ""}</div>
+                  <div class='text-yellow-500 text-xs'>${stars}</div>
+                </div>
+                <div class='text-gray-600 text-xs mt-1'>${c.city || ""}</div>
+                <div class='text-gray-500 text-xs mt-1'>${c.tagline || ""}</div>
+                <a class='text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2' href='company.html?slug=${encodeURIComponent(c.slug)}'>Bekijk profiel →</a>
+              </div>`;
+          })
+          .join("") + `<div class='text-center mt-4'>
+            <a class='text-indigo-600 hover:text-indigo-700 text-xs font-semibold' href='results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}'>Alle resultaten bekijken →</a>
+          </div>`;
+      } catch (err) {
+        console.error("Zoekfout:", err);
+        resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3'>❌ Er ging iets mis bij het laden van resultaten.</p>";
+      }
     });
   </script>
 </body>
