@@ -3,94 +3,47 @@ const express = require("express");
 const router = express.Router();
 const Request = require("../models/Request");
 const Company = require("../models/Company");
+const { verifyToken } = require("../middleware/auth");
 
-// ✅ GET – aanvragen ophalen
-router.get("/", async (req, res) => {
+// 📋 Aanvragen ophalen (alle, inclusief openbare)
+router.get("/", verifyToken, async (req, res) => {
   try {
-    const email = req.query.email;
+    const companyId = req.user?.id;
 
-    // Controle: geen e-mail opgegeven
-    if (!email) {
-      return res.status(400).json({ error: "E-mailadres ontbreekt" });
-    }
+    // Haal zowel gekoppelde aanvragen (voor dit bedrijf) als niet-gekoppelde (openbare) op
+    const requests = await Request.find({
+      $or: [
+        { company: companyId },    // aanvragen specifiek voor dit bedrijf
+        { company: null },         // openbare aanvragen
+      ],
+    })
+      .sort({ date: -1 })
+      .lean();
 
-    // ✅ Admin mag alle aanvragen zien
-    if (email === "info@irisje.nl") {
-      const allRequests = await Request.find().sort({ createdAt: -1 });
-      return res.json(allRequests);
-    }
-
-    // Zoek het bedrijf bij dit e-mailadres
-    const company = await Company.findOne({ email });
-    if (!company) {
-      return res.status(404).json({ error: "Geen bedrijf gevonden bij dit e-mailadres" });
-    }
-
-    // Zoek aanvragen van dit bedrijf
-    const requests = await Request.find({ company: company._id }).sort({ createdAt: -1 });
     res.json(requests);
-  } catch (err) {
-    console.error("❌ Fout bij ophalen aanvragen:", err);
-    res.status(500).json({ error: "Interne serverfout" });
+  } catch (error) {
+    console.error("Fout bij ophalen aanvragen:", error);
+    res.status(500).json({ message: "Serverfout bij ophalen aanvragen" });
   }
 });
 
-// ✅ POST – nieuwe aanvraag opslaan
-router.post("/", async (req, res) => {
+// 📦 Aanvraagstatus bijwerken
+router.put("/:id/status", verifyToken, async (req, res) => {
   try {
-    const { company, name, email, message } = req.body;
-
-    if (!company || !name || !email || !message) {
-      return res.status(400).json({ error: "Alle velden zijn verplicht" });
-    }
-
-    const newRequest = new Request({
-      company,
-      name,
-      email,
-      message,
-      status: "Nieuw",
-    });
-
-    await newRequest.save();
-    res.status(201).json({ ok: true, message: "Aanvraag opgeslagen", request: newRequest });
-  } catch (err) {
-    console.error("❌ Fout bij opslaan aanvraag:", err);
-    res.status(500).json({ error: "Interne serverfout" });
-  }
-});
-
-// ✅ PATCH – status bijwerken
-router.patch("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
     const { status } = req.body;
+    const request = await Request.findById(req.params.id);
 
-    const request = await Request.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    if (!request) {
+      return res.status(404).json({ message: "Aanvraag niet gevonden" });
+    }
 
-    if (!request) return res.status(404).json({ error: "Aanvraag niet gevonden" });
+    request.status = status;
+    await request.save();
 
-    res.json({ ok: true, message: "Status bijgewerkt", request });
-  } catch (err) {
-    console.error("❌ Fout bij statusupdate:", err);
-    res.status(500).json({ error: "Interne serverfout" });
-  }
-});
-
-
-// ✅ Aanvragen ophalen per bedrijf
-router.get("/company/:companyId", async (req, res) => {
-  try {
-    const companyId = req.params.companyId;
-    const requests = await Request.find({ company: companyId }).sort({ createdAt: -1 });
-    res.json(requests);
-  } catch (err) {
-    console.error("Fout bij ophalen aanvragen per bedrijf:", err);
-    res.status(500).json({ error: "Serverfout" });
+    res.json({ message: "Status bijgewerkt", request });
+  } catch (error) {
+    console.error("Fout bij updaten status:", error);
+    res.status(500).json({ message: "Serverfout bij updaten status" });
   }
 });
 
