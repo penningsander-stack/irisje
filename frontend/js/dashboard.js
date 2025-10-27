@@ -29,8 +29,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   let alleAanvragen = [];
   let gefilterdeAanvragen = [];
 
-  // Laad de dashboarddata
+  // Eerste laadbeurt
   await laadDashboard();
+
+  // === Vernieuwen-knop ===
+  document.getElementById("refreshBtn").addEventListener("click", async () => {
+    toonMelding("🔄 Aanvragen vernieuwen...");
+    await laadDashboard();
+    toonMelding("✅ Aanvragen vernieuwd!");
+  });
 
   // === Uitloggen ===
   document.getElementById("logoutBtn").addEventListener("click", () => {
@@ -147,7 +154,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     body.innerHTML = rows;
 
-    // Dropdowns activeren
     body.querySelectorAll("select[data-id]").forEach((el) => {
       el.addEventListener("change", (e) => {
         const id = e.target.getAttribute("data-id");
@@ -204,7 +210,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       .replace(/'/g, "&#039;");
   }
 
-  // ✅ Kleine melding onderin bij succes of fout
+  // ✅ Melding onderin scherm
   function toonMelding(tekst, isFout = false) {
     let box = document.getElementById("meldingBox");
     if (!box) {
