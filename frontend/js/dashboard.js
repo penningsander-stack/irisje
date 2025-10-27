@@ -37,9 +37,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadRequests() {
     try {
       const res = await fetch(`${API_BASE}/requests`, {
-  credentials: "include",
-});
-
+        credentials: "include",
+      });
       const data = await res.json();
 
       if (!res.ok || !Array.isArray(data) || data.length === 0) {
@@ -49,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const rows = data.map((req) => {
-        const d = new Date(req.createdAt).toLocaleDateString("nl-NL", {
+        const d = new Date(req.date || req.createdAt).toLocaleDateString("nl-NL", {
           day: "2-digit",
           month: "short",
           year: "numeric",
