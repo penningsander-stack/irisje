@@ -3,10 +3,11 @@ const mongoose = require("mongoose");
 
 const requestSchema = new mongoose.Schema(
   {
+    // 👇 niet meer verplicht, zodat openbare aanvragen werken
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
-      required: true,
+      required: false,
     },
     name: { type: String, required: true },
     email: { type: String, required: true },
@@ -17,13 +18,9 @@ const requestSchema = new mongoose.Schema(
       enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
       default: "Nieuw",
     },
-    // ✅ Altijd automatisch ingevulde datum van aanvraag
-    date: {
-      type: Date,
-      default: Date.now,
-    },
+    date: { type: Date, default: Date.now },
   },
-  { timestamps: true } // voegt ook createdAt en updatedAt toe
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Request", requestSchema);
