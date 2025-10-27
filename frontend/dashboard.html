@@ -3,54 +3,114 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>Bedrijfsdashboard – Irisje.nl</title>
+
+  <!-- Tailwind CSS (lokale build) -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Chart.js voor grafieken -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <!-- HEADER -->
   <header class="bg-white border-b border-gray-200 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
       <div class="flex items-center space-x-2">
         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-bold">I</span>
         <h1 class="font-semibold text-indigo-700 text-lg">Bedrijfsdashboard</h1>
       </div>
+
       <div class="flex items-center space-x-3">
-        <button id="refreshBtn" class="text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-100 transition">🔄 Vernieuwen</button>
-        <button id="logoutBtn" class="text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition">Uitloggen</button>
+        <button id="refreshBtn"
+          class="text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-100 transition">
+          🔄 Vernieuwen
+        </button>
+        <button id="logoutBtn"
+          class="text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition">
+          Uitloggen
+        </button>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-8">
-    <section class="mb-8">
+  <!-- MAIN -->
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-8 space-y-10">
+
+    <!-- KAARTEN OVERVIEW -->
+    <section>
       <h2 class="text-xl font-semibold text-indigo-700 mb-4">📊 Statistieken</h2>
+
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-2xl font-bold text-indigo-700" id="total">0</div>
+          <div id="total" class="text-2xl font-bold text-indigo-700">0</div>
           <div class="text-gray-600">Totaal</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-2xl font-bold text-green-600" id="accepted">0</div>
+          <div id="accepted" class="text-2xl font-bold text-green-600">0</div>
           <div class="text-gray-600">Geaccepteerd</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-2xl font-bold text-red-600" id="rejected">0</div>
+          <div id="rejected" class="text-2xl font-bold text-red-600">0</div>
           <div class="text-gray-600">Afgewezen</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-2xl font-bold text-yellow-600" id="followed-up">0</div>
+          <div id="followed-up" class="text-2xl font-bold text-yellow-600">0</div>
           <div class="text-gray-600">Opgevolgd</div>
         </div>
       </div>
     </section>
 
-    <section class="mb-8">
+    <!-- GRAFIEKEN -->
+    <section>
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">📈 Overzicht</h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Aanvragen per maand -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="text-sm font-semibold text-gray-800">Aanvragen per maand</div>
+              <div class="text-xs text-gray-500">Laatste 6 maanden</div>
+            </div>
+            <div class="text-[10px] uppercase bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-2 py-1 font-medium">
+              Trends
+            </div>
+          </div>
+          <div class="w-full">
+            <canvas id="requestsPerMonthChart" height="140"></canvas>
+          </div>
+        </div>
+
+        <!-- Statusverdeling -->
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <div class="text-sm font-semibold text-gray-800">Status verdeling</div>
+              <div class="text-xs text-gray-500">Nieuw / Geaccepteerd / Afgewezen / Opgevolgd</div>
+            </div>
+            <div class="text-[10px] uppercase bg-indigo-50 text-indigo-700 border border-indigo-200 rounded px-2 py-1 font-medium">
+              Nu
+            </div>
+          </div>
+          <div class="w-full flex items-center justify-center">
+            <div class="w-48 h-48">
+              <canvas id="statusPieChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AANVRAGEN -->
+    <section>
       <h2 class="text-xl font-semibold text-indigo-700 mb-4">📬 Aanvragen</h2>
 
       <div class="flex items-center justify-between mb-3">
         <label class="text-sm font-medium text-gray-700">Filter op status:</label>
-        <select id="statusFilter" class="border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-500">
+        <select id="statusFilter"
+          class="border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-500 bg-white">
           <option value="">Alle</option>
           <option value="Nieuw">Nieuw</option>
           <option value="Geaccepteerd">Geaccepteerd</option>
@@ -70,13 +130,17 @@
               <th class="text-left px-4 py-3">Datum</th>
             </tr>
           </thead>
-          <tbody id="request-table-body"></tbody>
+          <tbody id="request-table-body">
+            <tr><td colspan="5" class="px-4 py-4 text-gray-500 text-center">Laden…</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
 
+    <!-- REVIEWS -->
     <section>
       <h2 class="text-xl font-semibold text-indigo-700 mb-4">💬 Reviews</h2>
+
       <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
         <table class="w-full text-sm">
           <thead class="bg-gray-100 border-b text-gray-600">
@@ -87,7 +151,9 @@
               <th class="text-left px-4 py-3">Datum</th>
             </tr>
           </thead>
-          <tbody id="review-table-body"></tbody>
+          <tbody id="review-table-body">
+            <tr><td colspan="4" class="px-4 py-4 text-gray-500 text-center">Laden…</td></tr>
+          </tbody>
         </table>
       </div>
     </section>
@@ -97,6 +163,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- Dashboard logic -->
   <script src="js/dashboard.js"></script>
 </body>
 </html>
