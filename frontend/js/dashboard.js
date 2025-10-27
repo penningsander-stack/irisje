@@ -36,7 +36,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   // === Aanvragen laden ===
   async function loadRequests() {
     try {
-      const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
+      const res = await fetch(`${API_BASE}/requests`, {
+  credentials: "include",
+});
+
       const data = await res.json();
 
       if (!res.ok || !Array.isArray(data) || data.length === 0) {
