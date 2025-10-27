@@ -3,10 +3,9 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const email = localStorage.getItem("userEmail");
-  const role = localStorage.getItem("userRole") || "company";
   let companyId = localStorage.getItem("companyId");
 
-  // Beheerder: bedrijf koppelen via e-mailadres
+  // Beheerder koppelen
   if (email === "info@irisje.nl" && !companyId) {
     try {
       const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
@@ -16,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         localStorage.setItem("companyId", companyId);
       }
     } catch (err) {
-      console.error("Fout bij ophalen bedrijven voor beheerder:", err);
+      console.error("Fout bij ophalen bedrijven:", err);
     }
   }
 
@@ -29,23 +28,29 @@ document.addEventListener("DOMContentLoaded", async () => {
   let alleAanvragen = [];
   let gefilterdeAanvragen = [];
 
-  // Eerste laadbeurt
+  // Initieel laden
   await laadDashboard();
 
-  // === Vernieuwen-knop ===
+  // 🔄 Handmatige verversing
   document.getElementById("refreshBtn").addEventListener("click", async () => {
     toonMelding("🔄 Aanvragen vernieuwen...");
     await laadDashboard();
     toonMelding("✅ Aanvragen vernieuwd!");
   });
 
-  // === Uitloggen ===
+  // 🚀 Automatische verversing elke 5 minuten
+  setInterval(async () => {
+    await laadDashboard();
+    toonMelding("🔄 Automatisch vernieuwd");
+  }, 5 * 60 * 1000); // 5 minuten in ms
+
+  // Uitloggen
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "login.html";
   });
 
-  // === Filter op status ===
+  // Filter
   const statusFilter = document.getElementById("statusFilter");
   statusFilter.addEventListener("change", () => {
     const waarde = statusFilter.value;
@@ -56,10 +61,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateStats(gefilterdeAanvragen);
   });
 
-  // -----------------------
   // Functies
-  // -----------------------
-
   async function laadDashboard() {
     alleAanvragen = await fetchAanvragen();
     const reviews = await fetchReviews(companyId);
@@ -210,7 +212,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       .replace(/'/g, "&#039;");
   }
 
-  // ✅ Melding onderin scherm
   function toonMelding(tekst, isFout = false) {
     let box = document.getElementById("meldingBox");
     if (!box) {
