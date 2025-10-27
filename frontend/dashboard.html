@@ -2,66 +2,55 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Dashboard – Irisje.nl</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bedrijfsdashboard – Irisje.nl</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-  <!-- HEADER -->
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
   <header class="bg-white border-b border-gray-200 shadow-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
       <div class="flex items-center space-x-2">
-        <div class="inline-flex w-8 h-8 items-center justify-center rounded-full bg-indigo-600 text-white font-bold text-sm leading-none select-none">
-          I
-        </div>
-        <div class="font-semibold text-indigo-700 text-lg tracking-tight">
-          Irisje.nl
-        </div>
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-bold">I</span>
+        <h1 class="font-semibold text-indigo-700 text-lg">Bedrijfsdashboard</h1>
       </div>
-
-      <button id="logoutBtn"
-        class="text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50">
-        Uitloggen
-      </button>
+      <div class="flex items-center space-x-3">
+        <button id="refreshBtn" class="text-sm bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-100 transition">🔄 Vernieuwen</button>
+        <button id="logoutBtn" class="text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg px-3 py-1.5 hover:bg-red-100 transition">Uitloggen</button>
+      </div>
     </div>
   </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-8 space-y-10">
-
-    <!-- OVERVIEW CARDS -->
-    <section>
-      <h1 class="text-lg font-semibold text-indigo-700 flex items-center mb-4">
-        <span class="text-xl mr-2">📬</span>
-        Aanvragen
-      </h1>
-
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-8">
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">📊 Statistieken</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-gray-500 text-xs">Totaal</div>
-          <div id="total" class="text-2xl font-semibold text-gray-800">0</div>
+          <div class="text-2xl font-bold text-indigo-700" id="total">0</div>
+          <div class="text-gray-600">Totaal</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-gray-500 text-xs">Geaccepteerd</div>
-          <div id="accepted" class="text-2xl font-semibold text-green-600">0</div>
+          <div class="text-2xl font-bold text-green-600" id="accepted">0</div>
+          <div class="text-gray-600">Geaccepteerd</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-gray-500 text-xs">Afgewezen</div>
-          <div id="rejected" class="text-2xl font-semibold text-red-600">0</div>
+          <div class="text-2xl font-bold text-red-600" id="rejected">0</div>
+          <div class="text-gray-600">Afgewezen</div>
         </div>
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
-          <div class="text-gray-500 text-xs">Opgevolgd</div>
-          <div id="followed-up" class="text-2xl font-semibold text-indigo-600">0</div>
+          <div class="text-2xl font-bold text-yellow-600" id="followed-up">0</div>
+          <div class="text-gray-600">Opgevolgd</div>
         </div>
       </div>
+    </section>
 
-      <!-- Filter UI (werkt zo meteen na stap 2) -->
-      <div class="mt-6 flex flex-wrap items-center gap-3 text-sm">
-        <label class="text-gray-700 font-medium">Filter op status</label>
-        <select id="statusFilter"
-          class="border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">📬 Aanvragen</h2>
+
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-sm font-medium text-gray-700">Filter op status:</label>
+        <select id="statusFilter" class="border border-gray-300 rounded-lg text-sm p-2 focus:ring-2 focus:ring-indigo-500">
           <option value="">Alle</option>
           <option value="Nieuw">Nieuw</option>
           <option value="Geaccepteerd">Geaccepteerd</option>
@@ -70,56 +59,44 @@
         </select>
       </div>
 
-      <!-- TABLE REQUESTS -->
-      <div class="mt-6 overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 text-left text-gray-600 border-b border-gray-200 text-xs uppercase tracking-wide">
-            <tr>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Naam</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">E-mail</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Bericht</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Status</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Datum</th>
-            </tr>
-          </thead>
-          <tbody id="request-table-body" class="align-top text-gray-800">
-            <tr><td class="px-4 py-4 text-gray-500 text-center text-sm" colspan="5">Laden…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- REVIEWS -->
-    <section>
-      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-4">
-        <span class="text-xl mr-2">⭐</span>
-        Reviews
-      </h2>
-
       <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 text-left text-gray-600 border-b border-gray-200 text-xs uppercase tracking-wide">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 border-b text-gray-600">
             <tr>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Naam</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Beoordeling</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Bericht</th>
-              <th class="px-4 py-3 font-medium whitespace-nowrap">Datum</th>
+              <th class="text-left px-4 py-3">Naam</th>
+              <th class="text-left px-4 py-3">E-mail</th>
+              <th class="text-left px-4 py-3">Bericht</th>
+              <th class="text-left px-4 py-3">Status</th>
+              <th class="text-left px-4 py-3">Datum</th>
             </tr>
           </thead>
-          <tbody id="review-table-body" class="align-top text-gray-800">
-            <tr><td class="px-4 py-4 text-gray-500 text-center text-sm" colspan="4">Laden…</td></tr>
-          </tbody>
+          <tbody id="request-table-body"></tbody>
         </table>
       </div>
     </section>
 
+    <section>
+      <h2 class="text-xl font-semibold text-indigo-700 mb-4">💬 Reviews</h2>
+      <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-100 border-b text-gray-600">
+            <tr>
+              <th class="text-left px-4 py-3">Naam</th>
+              <th class="text-left px-4 py-3">Beoordeling</th>
+              <th class="text-left px-4 py-3">Bericht</th>
+              <th class="text-left px-4 py-3">Datum</th>
+            </tr>
+          </thead>
+          <tbody id="review-table-body"></tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
-  <!-- FOOTER -->
   <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <script src="./js/dashboard.js?v=2"></script>
+  <script src="js/dashboard.js"></script>
 </body>
 </html>
