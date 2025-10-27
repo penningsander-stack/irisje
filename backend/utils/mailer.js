@@ -4,18 +4,15 @@ const nodemailer = require("nodemailer");
 async function sendMail({ to, subject, text, html }) {
   try {
     const transporter = nodemailer.createTransport({
-     host: "auth.webreus.nl",   // vervangt mail.webreus.nl
-
-      port: 465,                        // meestal 465 voor SSL
-      secure: true,                     // gebruik SSL
+      service: "gmail",
       auth: {
-        user: "info@irisje.nl",         // jouw e-mailadres
-        pass: process.env.SMTP_PASS,    // wachtwoord in .env opslaan
+        user: "jouwadres@gmail.com",      // vervang dit door je echte Gmail-adres
+        pass: process.env.SMTP_PASS,      // app-wachtwoord uit je .env
       },
     });
 
     await transporter.sendMail({
-      from: '"Irisje.nl" <info@irisje.nl>',
+      from: '"Irisje.nl" <info@irisje.nl>', // naam + afzenderadres
       to,
       subject,
       text,
