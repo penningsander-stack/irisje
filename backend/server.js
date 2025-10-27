@@ -7,16 +7,26 @@ require("dotenv").config();
 
 const app = express();
 
-// === CORS FIX ===
-// Laat frontend (irisje.nl en de fallback onrender) toe
-app.use(cors({
-  origin: [
-    "https://irisje.nl",
-    "https://www.irisje.nl",
-    "https://irisje-frontend.onrender.com"
-  ],
-  credentials: true
-}));
+// === ✅ CORS FIX (betere compatibiliteit met Render + Gmail deploy) ===
+const allowedOrigins = [
+  "https://irisje.nl",
+  "https://www.irisje.nl",
+  "https://irisje-frontend.onrender.com"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn("❌ Geblokkeerde CORS-origin:", origin);
+        callback(new Error("Niet-toegestane bron: " + origin));
+      }
+    },
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(express.json());
@@ -24,7 +34,10 @@ app.use(cookieParser());
 
 // Database connectie
 mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
@@ -39,16 +52,12 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
-
-// Fallback
+// Test- en fallbackroutes
 app.get("/", (req, res) => res.send("🌐 Irisje.nl backend actief"));
-
-// Start server
-const PORT = process.env.PORT || 3000;
-
 app.get("/api/test", (req, res) => {
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
 
-
+// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
