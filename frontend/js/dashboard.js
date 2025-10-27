@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const email = localStorage.getItem("userEmail");
   let companyId = localStorage.getItem("companyId");
 
-  // Koppelen van beheer-account aan bedrijf indien nodig
+  // Beheerder koppelen
   if (email === "info@irisje.nl" && !companyId) {
     try {
       const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
@@ -25,79 +25,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // data buffers
   let alleAanvragen = [];
   let gefilterdeAanvragen = [];
 
-  // grafiek instances (zodat we ze kunnen updaten zonder ze dubbel te maken)
-  let chartRequestsPerMonth = null;
-  let chartStatusPie = null;
-
-  // init load
+  // Initieel laden
   await laadDashboard();
 
-  // handmatig verversen
+  // 🔄 Handmatige verversing
   document.getElementById("refreshBtn").addEventListener("click", async () => {
     toonMelding("🔄 Aanvragen vernieuwen...");
     await laadDashboard();
     toonMelding("✅ Aanvragen vernieuwd!");
   });
 
-  // automatische verversing elke 5 minuten
+  // 🚀 Automatische verversing elke 5 minuten
   setInterval(async () => {
     await laadDashboard();
     toonMelding("🔄 Automatisch vernieuwd");
   }, 5 * 60 * 1000);
 
-  // uitloggen
+  // Uitloggen
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "login.html";
   });
 
-  // filter dropdown
+  // Filter
   const statusFilter = document.getElementById("statusFilter");
   statusFilter.addEventListener("change", () => {
-    const gekozen = statusFilter.value;
-    gefilterdeAanvragen = gekozen
-      ? alleAanvragen.filter((r) => (r.status || "Nieuw") === gekozen)
+    const waarde = statusFilter.value;
+    gefilterdeAanvragen = waarde
+      ? alleAanvragen.filter((r) => (r.status || "Nieuw") === waarde)
       : [...alleAanvragen];
-
     renderAanvragen(gefilterdeAanvragen);
     updateStats(gefilterdeAanvragen);
-    updateStatusPieChart(chartStatusPie, gefilterdeAanvragen);
+    updateCharts(gefilterdeAanvragen);
   });
 
-  // --------- functies ---------
-
+  // Functies
   async function laadDashboard() {
-    // haal actuele data
     alleAanvragen = await fetchAanvragen();
     const reviews = await fetchReviews(companyId);
-
     gefilterdeAanvragen = [...alleAanvragen];
-
-    // render schermdelen
     renderAanvragen(alleAanvragen);
     renderReviews(reviews);
     updateStats(alleAanvragen);
-
-    // grafiekdata berekenen o.b.v. alleAanvragen
-    const perMaandData = berekenAanvragenPerMaand(alleAanvragen);
-    const statusVerdeling = berekenStatusVerdeling(alleAanvragen);
-
-    // grafieken tekenen/bijwerken
-    chartRequestsPerMonth = renderRequestsPerMonthChart(
-      chartRequestsPerMonth,
-      perMaandData.labels,
-      perMaandData.values
-    );
-
-    chartStatusPie = renderStatusPieChart(
-      chartStatusPie,
-      statusVerdeling.labels,
-      statusVerdeling.values
-    );
+    updateCharts(alleAanvragen);
   }
 
   async function fetchAanvragen() {
@@ -133,18 +106,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (res.ok) {
         const aanvraag = alleAanvragen.find((a) => a._id === id);
         if (aanvraag) aanvraag.status = nieuweStatus;
-
         renderAanvragen(gefilterdeAanvragen);
         updateStats(gefilterdeAanvragen);
-
-        // ook grafiek "status verdeling" updaten
-        const statusVerdeling = berekenStatusVerdeling(gefilterdeAanvragen);
-        chartStatusPie = renderStatusPieChart(
-          chartStatusPie,
-          statusVerdeling.labels,
-          statusVerdeling.values
-        );
-
+        updateCharts(gefilterdeAanvragen);
         toonMelding("✅ Status bijgewerkt!");
       } else {
         toonMelding("⚠️ Kon status niet opslaan.", true);
@@ -173,8 +137,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               month: "short",
               year: "numeric",
             });
-        const huidigeStatus = req.status || "Nieuw";
-
+        const status = req.status || "Nieuw";
         return `
           <tr class="border-t text-sm align-top">
             <td class="px-4 py-3 font-medium text-gray-800">${escapeHTML(req.name)}</td>
@@ -183,10 +146,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             <td class="px-4 py-3">
               <select data-id="${req._id}"
                 class="border border-gray-300 rounded-lg p-2 text-xs bg-white focus:ring-2 focus:ring-indigo-500">
-                <option value="Nieuw" ${huidigeStatus === "Nieuw" ? "selected" : ""}>Nieuw</option>
-                <option value="Geaccepteerd" ${huidigeStatus === "Geaccepteerd" ? "selected" : ""}>Geaccepteerd</option>
-                <option value="Afgewezen" ${huidigeStatus === "Afgewezen" ? "selected" : ""}>Afgewezen</option>
-                <option value="Opgevolgd" ${huidigeStatus === "Opgevolgd" ? "selected" : ""}>Opgevolgd</option>
+                <option value="Nieuw" ${status === "Nieuw" ? "selected" : ""}>Nieuw</option>
+                <option value="Geaccepteerd" ${status === "Geaccepteerd" ? "selected" : ""}>Geaccepteerd</option>
+                <option value="Afgewezen" ${status === "Afgewezen" ? "selected" : ""}>Afgewezen</option>
+                <option value="Opgevolgd" ${status === "Opgevolgd" ? "selected" : ""}>Opgevolgd</option>
               </select>
             </td>
             <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">${datum}</td>
@@ -196,7 +159,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     body.innerHTML = rows;
 
-    // status dropdowns actief maken
     body.querySelectorAll("select[data-id]").forEach((el) => {
       el.addEventListener("change", (e) => {
         const id = e.target.getAttribute("data-id");
@@ -224,7 +186,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               month: "short",
               year: "numeric",
             });
-
         return `
           <tr class="border-t text-sm align-top">
             <td class="px-4 py-3 font-medium text-gray-800">${escapeHTML(rev.name)}</td>
@@ -240,156 +201,91 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function updateStats(aanvragen) {
     document.getElementById("total").textContent = aanvragen.length;
-    document.getElementById("accepted").textContent = aanvragen.filter(a => a.status === "Geaccepteerd").length;
-    document.getElementById("rejected").textContent = aanvragen.filter(a => a.status === "Afgewezen").length;
-    document.getElementById("followed-up").textContent = aanvragen.filter(a => a.status === "Opgevolgd").length;
+    document.getElementById("accepted").textContent = aanvragen.filter((a) => a.status === "Geaccepteerd").length;
+    document.getElementById("rejected").textContent = aanvragen.filter((a) => a.status === "Afgewezen").length;
+    document.getElementById("followed-up").textContent = aanvragen.filter((a) => a.status === "Opgevolgd").length;
   }
 
-  // --------- grafiek helpers ---------
+  // =======================
+  // 📊 Chart.js grafieken
+  // =======================
+  let maandChart, statusChart;
 
-  // aantal aanvragen per maand (laatste 6 maanden)
-  function berekenAanvragenPerMaand(aanvragen) {
-    // maak map { "2025-10": 4, "2025-09": 2, ... }
-    const counts = {};
-    aanvragen.forEach((req) => {
-      const d = new Date(req.date || req.createdAt);
-      if (isNaN(d.getTime())) return;
-      const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
-      counts[key] = (counts[key] || 0) + 1;
-    });
+  function updateCharts(aanvragen) {
+    // === Aanvragen per maand ===
+    const maandLabels = [];
+    const maandCounts = [];
 
-    // sorteer keys (chronologisch)
-    const sortedKeys = Object.keys(counts).sort();
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleString("nl-NL", { month: "short" });
+      maandLabels.push(label);
 
-    // pak alleen de laatste 6
-    const lastSix = sortedKeys.slice(-6);
-
-    // maak mooie labels zoals "okt 2025"
-    const labels = lastSix.map((key) => {
-      const [yyyy, mm] = key.split("-");
-      const mIndex = parseInt(mm, 10) - 1;
-      const maandNaam = maandKorteNaam(mIndex);
-      return maandNaam + " " + yyyy;
-    });
-
-    const values = lastSix.map((key) => counts[key]);
-
-    return { labels, values };
-  }
-
-  function maandKorteNaam(idx) {
-    const maanden = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-    return maanden[idx] || "";
-  }
-
-  // status verdeling nu
-  function berekenStatusVerdeling(aanvragen) {
-    const buckets = {
-      Nieuw: 0,
-      Geaccepteerd: 0,
-      Afgewezen: 0,
-      Opgevolgd: 0,
-    };
-    aanvragen.forEach((r) => {
-      const st = r.status || "Nieuw";
-      if (buckets[st] !== undefined) {
-        buckets[st] += 1;
-      }
-    });
-
-    const labels = Object.keys(buckets);
-    const values = Object.values(buckets);
-    return { labels, values };
-  }
-
-  function renderRequestsPerMonthChart(existingChart, labels, values) {
-    const ctx = document.getElementById("requestsPerMonthChart");
-    if (!ctx) return existingChart;
-
-    if (existingChart) {
-      existingChart.data.labels = labels;
-      existingChart.data.datasets[0].data = values;
-      existingChart.update();
-      return existingChart;
+      const count = aanvragen.filter((a) => {
+        const ad = new Date(a.date || a.createdAt);
+        return ad.getMonth() === d.getMonth() && ad.getFullYear() === d.getFullYear();
+      }).length;
+      maandCounts.push(count);
     }
 
-    return new Chart(ctx, {
+    const ctx1 = document.getElementById("requestsPerMonthChart");
+    if (maandChart) maandChart.destroy();
+    maandChart = new Chart(ctx1, {
       type: "bar",
       data: {
-        labels,
+        labels: maandLabels,
         datasets: [
           {
             label: "Aanvragen",
-            data: values,
-            backgroundColor: "rgba(79, 70, 229, 0.2)",    // indigo-600 light
-            borderColor: "rgba(79, 70, 229, 1)",           // indigo-600
-            borderWidth: 1,
+            data: maandCounts,
+            backgroundColor: "#4F46E5",
+            borderRadius: 6,
           },
         ],
       },
       options: {
+        animation: { duration: 800 },
         scales: {
-          y: {
-            ticks: {
-              precision: 0,
-            },
-            beginAtZero: true,
-          },
+          y: { beginAtZero: true, ticks: { precision: 0 } },
+        },
+        plugins: {
+          legend: { display: false },
         },
       },
     });
-  }
 
-  function renderStatusPieChart(existingChart, labels, values) {
-    const ctx = document.getElementById("statusPieChart");
-    if (!ctx) return existingChart;
+    // === Verdeling per status ===
+    const statusData = ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"].map(
+      (s) => aanvragen.filter((a) => a.status === s).length
+    );
 
-    if (existingChart) {
-      existingChart.data.labels = labels;
-      existingChart.data.datasets[0].data = values;
-      existingChart.update();
-      return existingChart;
-    }
-
-    return new Chart(ctx, {
+    const ctx2 = document.getElementById("statusDistributionChart");
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx2, {
       type: "doughnut",
       data: {
-        labels,
+        labels: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
         datasets: [
           {
-            data: values,
-            backgroundColor: [
-              "rgba(37, 99, 235, 0.7)",   // blauw-ish voor Nieuw
-              "rgba(16, 185, 129, 0.7)",  // groen voor Geaccepteerd
-              "rgba(239, 68, 68, 0.7)",   // rood voor Afgewezen
-              "rgba(245, 158, 11, 0.7)",  // geel voor Opgevolgd
-            ],
-            borderColor: [
-              "rgba(37, 99, 235, 1)",
-              "rgba(16, 185, 129, 1)",
-              "rgba(239, 68, 68, 1)",
-              "rgba(245, 158, 11, 1)",
-            ],
+            data: statusData,
+            backgroundColor: ["#6366F1", "#22C55E", "#EF4444", "#F59E0B"],
             borderWidth: 1,
           },
         ],
       },
       options: {
-        cutout: "60%",
+        animation: { duration: 800 },
         plugins: {
           legend: {
             position: "bottom",
-            labels: {
-              font: { size: 11 },
-              color: "#374151",
-            },
+            labels: { color: "#374151" },
           },
         },
       },
     });
   }
 
-  // helpers
   function escapeHTML(str) {
     return String(str || "")
       .replace(/&/g, "&amp;")
