@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let alleAanvragen = [];
   let gefilterdeAanvragen = [];
 
+  // Laad de dashboarddata
   await laadDashboard();
 
   // === Uitloggen ===
@@ -37,7 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.location.href = "login.html";
   });
 
-  // === Filteren op status ===
+  // === Filter op status ===
   const statusFilter = document.getElementById("statusFilter");
   statusFilter.addEventListener("change", () => {
     const waarde = statusFilter.value;
@@ -96,11 +97,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (aanvraag) aanvraag.status = nieuweStatus;
         renderAanvragen(gefilterdeAanvragen);
         updateStats(gefilterdeAanvragen);
+        toonMelding("✅ Status bijgewerkt!");
       } else {
-        console.warn("Kon status niet updaten:", id);
+        toonMelding("⚠️ Kon status niet opslaan.", true);
       }
     } catch (err) {
       console.error("Fout bij status bijwerken:", err);
+      toonMelding("❌ Fout bij status bijwerken.", true);
     }
   }
 
@@ -199,5 +202,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  // ✅ Kleine melding onderin bij succes of fout
+  function toonMelding(tekst, isFout = false) {
+    let box = document.getElementById("meldingBox");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "meldingBox";
+      box.className =
+        "fixed bottom-5 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm font-medium transition opacity-0";
+      document.body.appendChild(box);
+    }
+
+    box.textContent = tekst;
+    box.className =
+      "fixed bottom-5 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg text-sm font-medium " +
+      (isFout ? "bg-red-600 text-white" : "bg-green-600 text-white");
+
+    box.style.opacity = "1";
+    setTimeout(() => {
+      box.style.opacity = "0";
+    }, 2000);
   }
 });
