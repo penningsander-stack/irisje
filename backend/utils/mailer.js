@@ -4,7 +4,8 @@ const nodemailer = require("nodemailer");
 async function sendMail({ to, subject, text, html }) {
   try {
     const transporter = nodemailer.createTransport({
-      host: "mail.webreus.nl",          // ✅ Webreus SMTP-server
+     host: "auth.webreus.nl",   // vervangt mail.webreus.nl
+
       port: 465,                        // meestal 465 voor SSL
       secure: true,                     // gebruik SSL
       auth: {
