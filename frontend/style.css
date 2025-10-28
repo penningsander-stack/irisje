@@ -4,10 +4,24 @@ body {
 }
 
 /* === Fade-in animatie bij laden dashboard === */
-.fade-in {
+.fade-seq section {
   opacity: 0;
   transform: translateY(12px);
   animation: fadeInDashboard 0.9s ease-out forwards;
+}
+
+/* Elke sectie iets later laten verschijnen */
+.fade-seq section:nth-of-type(1) {
+  animation-delay: 0.1s;
+}
+.fade-seq section:nth-of-type(2) {
+  animation-delay: 0.3s;
+}
+.fade-seq section:nth-of-type(3) {
+  animation-delay: 0.5s;
+}
+.fade-seq section:nth-of-type(4) {
+  animation-delay: 0.7s;
 }
 
 /* Keyframes voor zachte fade-in */
