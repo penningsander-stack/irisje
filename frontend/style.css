@@ -55,3 +55,19 @@
     opacity: 1;
   }
 }
+
+/* === Fade-out bij uitloggen === */
+.fade-out {
+  animation: fadeOutDashboard 0.6s ease forwards;
+}
+
+@keyframes fadeOutDashboard {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
