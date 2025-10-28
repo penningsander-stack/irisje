@@ -1,115 +1,81 @@
 /* frontend/style.css */
 
-/* =============== */
-/* 🌐 Basislayout  */
-/* =============== */
-
-@import url("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css");
-
-/* 🟦 Favicon fallback voor Safari & oudere browsers */
-:root {
-  --favicon: url("/favicon.svg");
-}
-
-@supports (-webkit-touch-callout: none) {
-  /* Safari-specifieke fallback */
-  link[rel~="icon"]::after {
-    content: "";
-    background-image: var(--favicon);
-  }
-}
-
-/* =============== */
-/* 📱 Algemene stijl */
-/* =============== */
-
+/* === Basislayout === */
 body {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f9fafb;
   color: #1f2937;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
-header {
-  background-color: #4f46e5;
-  color: white;
+h1, h2, h3 {
+  letter-spacing: -0.01em;
 }
 
-a {
-  color: #4f46e5;
-  text-decoration: none;
+/* === Kaarten en secties === */
+section {
+  transition: box-shadow 0.3s ease, transform 0.1s ease;
 }
-
-a:hover {
-  text-decoration: underline;
-}
-
-/* =============== */
-/* 🧩 Buttons */
-/* =============== */
-
-button {
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-button:hover {
+section:hover {
   transform: translateY(-1px);
 }
 
-button:active {
-  transform: translateY(0);
-}
-
-/* =============== */
-/* 📊 Tabellen */
-/* =============== */
-
+/* === Tabellen === */
 table {
-  width: 100%;
   border-collapse: collapse;
+  width: 100%;
 }
 
 th, td {
-  padding: 8px 10px;
+  padding: 0.75rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-  text-align: left;
-  color: #374151;
+thead th {
   font-weight: 600;
+  color: #374151;
 }
 
-tr:nth-child(even) {
+tbody tr:hover {
   background-color: #f9fafb;
 }
 
-/* =============== */
-/* 🧱 Kaarten en secties */
-/* =============== */
-
-section {
-  border-radius: 0.75rem;
+/* === Grafieken === */
+canvas {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
 }
 
-.shadow {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+/* Maak grafieken visueel groter op desktop */
+@media (min-width: 768px) {
+  #maandChart,
+  #statusChart {
+    max-height: 300px;
+  }
 }
 
-.rounded-2xl {
-  border-radius: 1rem;
+/* Extra witruimte rond grafieken */
+#maandChart, #statusChart {
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
 }
 
-/* =============== */
-/* 🦶 Footer */
-/* =============== */
+/* === Buttons === */
+button {
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
 
+/* === Statistieken kleuren === */
+#total { color: #4F46E5; }
+#accepted { color: #16A34A; }
+#rejected { color: #DC2626; }
+#followed-up { color: #EAB308; }
+
+/* === Footer === */
 footer {
-  font-size: 0.875rem;
-  text-align: center;
-  color: #6b7280;
-  background-color: #f3f4f6;
-  padding: 1.5rem 0;
-  border-top: 1px solid #e5e7eb;
+  margin-top: auto;
 }
