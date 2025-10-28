@@ -6,15 +6,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   const role = localStorage.getItem("userRole") || "company";
   let companyId = localStorage.getItem("companyId");
 
-  // 🟣 Beheerder: bedrijf koppelen
+  // 🟣 Beheerder: bedrijven ophalen via owner
   if (email === "info@irisje.nl" && !companyId) {
     try {
       const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
       const ownerData = await ownerRes.json();
+
       if (ownerRes.ok && ownerData.length > 0) {
         companyId = ownerData[0]._id;
         localStorage.setItem("companyId", companyId);
         console.log("Beheerder gekoppeld aan bedrijf:", ownerData[0].name);
+      } else {
+        console.warn("Geen bedrijven gevonden voor beheerder.");
       }
     } catch (err) {
       console.error("Fout bij ophalen bedrijven voor beheerder:", err);
@@ -38,37 +41,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!res.ok || !Array.isArray(data) || data.length === 0) {
         document.getElementById("request-table-body").innerHTML =
           "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
-        // Statistieken leeg
-        document.getElementById("total").textContent = 0;
-        document.getElementById("accepted").textContent = 0;
-        document.getElementById("rejected").textContent = 0;
-        document.getElementById("followed-up").textContent = 0;
-        // Grafieken met lege data
-        updateCharts([]);
         return;
       }
 
-      const rows = data
-        .map((req) => {
-          const d = new Date(req.createdAt || req.date);
-          const datum = !isNaN(d)
-            ? d.toLocaleDateString("nl-NL", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "-";
-
-          return `
-            <tr class="border-t hover:bg-gray-50 transition">
-              <td>${req.name || ""}</td>
-              <td>${req.email || ""}</td>
-              <td>${req.message || ""}</td>
-              <td>${req.status || "Nieuw"}</td>
-              <td>${datum}</td>
-            </tr>`;
-        })
-        .join("");
+      const rows = data.map((req) => {
+        const d = req.createdAt
+          ? new Date(req.createdAt).toLocaleDateString("nl-NL", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-";
+        return (
+          "<tr class='border-t'>" +
+          "<td>" + (req.name || "") + "</td>" +
+          "<td>" + (req.email || "") + "</td>" +
+          "<td>" + (req.message || "") + "</td>" +
+          "<td>" + (req.status || "Nieuw") + "</td>" +
+          "<td>" + d + "</td>" +
+          "</tr>"
+        );
+      }).join("");
 
       document.getElementById("request-table-body").innerHTML = rows;
 
@@ -78,22 +71,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("rejected").textContent = data.filter(r => r.status === "Afgewezen").length;
       document.getElementById("followed-up").textContent = data.filter(r => r.status === "Opgevolgd").length;
 
-      // Grafieken
+      // === Grafieken updaten ===
       updateCharts(data);
 
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
       document.getElementById("request-table-body").innerHTML =
         "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
-
-      // Statistieken fallback
-      document.getElementById("total").textContent = 0;
-      document.getElementById("accepted").textContent = 0;
-      document.getElementById("rejected").textContent = 0;
-      document.getElementById("followed-up").textContent = 0;
-
-      // Grafieken fallback
-      updateCharts([]);
     }
   }
 
@@ -109,26 +93,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const rows = data
-        .map((rev) => {
-          const d = new Date(rev.createdAt || rev.date);
-          const datum = !isNaN(d)
-            ? d.toLocaleDateString("nl-NL", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
-            : "-";
-
-          return `
-            <tr class="border-t hover:bg-gray-50 transition">
-              <td>${rev.name || ""}</td>
-              <td>${"⭐".repeat(rev.rating || 0)}</td>
-              <td>${rev.message || ""}</td>
-              <td>${datum}</td>
-            </tr>`;
-        })
-        .join("");
+      const rows = data.map((rev) => {
+        const d = rev.createdAt
+          ? new Date(rev.createdAt).toLocaleDateString("nl-NL", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-";
+        return (
+          "<tr class='border-t'>" +
+          "<td>" + (rev.name || "") + "</td>" +
+          "<td>" + "⭐".repeat(rev.rating || 0) + "</td>" +
+          "<td>" + (rev.message || "") + "</td>" +
+          "<td>" + d + "</td>" +
+          "</tr>"
+        );
+      }).join("");
 
       document.getElementById("review-table-body").innerHTML = rows;
     } catch (err) {
@@ -138,61 +119,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // === Grafieken ===
+  // === Grafieken genereren ===
   let maandChart, statusChart;
 
   function updateCharts(data) {
     const ctx1 = document.getElementById("maandChart");
     const ctx2 = document.getElementById("statusChart");
+
     if (!ctx1 || !ctx2) return;
 
-    // Aantal aanvragen per maand
-    const perMaandMap = {}; // { "okt": 5, "nov": 2, ... }
+    const perMaand = {};
     data.forEach((r) => {
-      const d = new Date(r.createdAt || r.date);
-      if (isNaN(d)) return;
-      const maand = d.toLocaleString("nl-NL", { month: "short" });
-      perMaandMap[maand] = (perMaandMap[maand] || 0) + 1;
+      const maand = new Date(r.createdAt).toLocaleString("nl-NL", { month: "short" });
+      perMaand[maand] = (perMaand[maand] || 0) + 1;
     });
 
-    const maandLabels = Object.keys(perMaandMap);
-    const maandValues = Object.values(perMaandMap);
+    const labels = Object.keys(perMaand);
+    const values = Object.values(perMaand);
 
     if (maandChart) maandChart.destroy();
     maandChart = new Chart(ctx1, {
-      type: "bar",
+      type: "line",
       data: {
-        labels: maandLabels,
-        datasets: [
-          {
-            label: "Aanvragen",
-            data: maandValues,
-            backgroundColor: "#4F46E5",
-            borderRadius: 6,
-          },
-        ],
+        labels,
+        datasets: [{
+          label: "Aanvragen",
+          data: values,
+          borderColor: "#4F46E5",
+          backgroundColor: "rgba(79,70,229,0.2)",
+          fill: true,
+          tension: 0.4
+        }]
       },
-      options: {
-        animation: {
-          duration: 800,
-          easing: "easeOutQuart",
-        },
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          x: { grid: { display: false } },
-          y: { beginAtZero: true, ticks: { stepSize: 1 } },
-        },
-      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
     });
 
-    // Verdeling per status
     const statusData = {
-      Nieuw: data.filter(r => r.status === "Nieuw" || !r.status).length,
       Geaccepteerd: data.filter(r => r.status === "Geaccepteerd").length,
       Afgewezen: data.filter(r => r.status === "Afgewezen").length,
-      Opgevolgd: data.filter(r => r.status === "Opgevolgd").length,
+      Nieuw: data.filter(r => !["Geaccepteerd", "Afgewezen"].includes(r.status)).length,
     };
 
     if (statusChart) statusChart.destroy();
@@ -200,24 +165,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       type: "doughnut",
       data: {
         labels: Object.keys(statusData),
-        datasets: [
-          {
-            data: Object.values(statusData),
-            backgroundColor: ["#4F46E5", "#16A34A", "#DC2626", "#EAB308"],
-            borderWidth: 0,
-          },
-        ],
+        datasets: [{
+          data: Object.values(statusData),
+          backgroundColor: ["#22c55e", "#ef4444", "#eab308"]
+        }]
       },
-      options: {
-        cutout: "70%",
-        animation: {
-          duration: 1000,
-          easing: "easeOutBounce",
-        },
-        plugins: {
-          legend: { position: "bottom" },
-        },
-      },
+      options: { responsive: true, plugins: { legend: { position: "bottom" } } }
     });
   }
 
