@@ -12,7 +12,7 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
-  <header class="bg-indigo-600 text-white py-4 shadow-md">
+  <header class="bg-indigo-600 text-white py-4 shadow-md fade-section">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
       <h1 class="text-lg font-semibold">📊 Bedrijfsdashboard</h1>
       <button id="logoutBtn" class="bg-white text-indigo-700 font-medium rounded-lg px-4 py-1 text-sm hover:bg-indigo-50">
@@ -24,7 +24,7 @@
   <main class="flex-1 max-w-6xl mx-auto px-4 py-8 space-y-10">
 
     <!-- STATISTIEKEN -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 fade-section stat-card">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">📈 Statistieken</h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
         <div class="bg-gray-50 rounded-xl p-4 border">
@@ -46,15 +46,15 @@
       </div>
     </section>
 
-    <!-- GRAFIEKEN (met fade-in) -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
+    <!-- GRAFIEKEN -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 fade-section chart-container">
       <h2 class="text-lg font-semibold text-indigo-700 mb-6 flex items-center gap-2">📊 Overzicht</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div class="chart-container bg-white rounded-2xl shadow-inner p-4">
+        <div>
           <h3 class="font-medium text-gray-700 mb-3 text-center">Aanvragen per maand</h3>
           <canvas id="maandChart" height="180"></canvas>
         </div>
-        <div class="chart-container bg-white rounded-2xl shadow-inner p-4">
+        <div>
           <h3 class="font-medium text-gray-700 mb-3 text-center">Verdeling per status</h3>
           <canvas id="statusChart" height="180"></canvas>
         </div>
@@ -62,7 +62,7 @@
     </section>
 
     <!-- AANVRAGEN -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 fade-section table-section">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">📬 Aanvragen</h2>
       <div class="flex justify-between items-center mb-3 text-sm">
         <span>Filter op status</span>
@@ -87,7 +87,7 @@
     </section>
 
     <!-- REVIEWS -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 fade-section table-section">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">💬 Reviews</h2>
       <div class="overflow-x-auto">
         <table class="w-full text-sm border-t">
@@ -106,21 +106,9 @@
 
   </main>
 
-  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100">
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 fade-section">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
-
-  <script>
-    // Zorg dat fade pas zichtbaar wordt na laden
-    document.addEventListener("DOMContentLoaded", () => {
-      setTimeout(() => {
-        document.querySelectorAll(".chart-container").forEach(el => {
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        });
-      }, 300);
-    });
-  </script>
 
   <script src="js/dashboard.js"></script>
 </body>
