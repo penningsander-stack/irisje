@@ -41,20 +41,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         throw new Error("Ongeldig antwoord van server (requests)");
       }
 
-      // Sla alles op zodat we lokaal kunnen filteren
       allRequests = data;
-
-      // Render eerste keer zonder filter (dus ALLE)
       renderRequestsTable(allRequests);
       updateStats(allRequests);
       updateCharts(allRequests);
-
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
       document.getElementById("request-table-body").innerHTML =
         "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
-
-      // fallback statistieken
       updateStats([]);
       updateCharts([]);
     }
@@ -150,7 +144,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const ctx2 = document.getElementById("statusChart");
     if (!ctx1 || !ctx2) return;
 
-    // 1. linechart "Aanvragen per maand"
+    // 1️⃣ Linechart: aanvragen per maand
     const perMaand = {};
     list.forEach((r) => {
       const d = new Date(r.createdAt || r.date);
@@ -171,11 +165,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           {
             label: "Aanvragen",
             data: values,
-            borderColor: "#4F46E5",
-            backgroundColor: "rgba(79,70,229,0.2)",
+            borderColor: "rgba(99,102,241,1)", // indigo-500
+            backgroundColor: "rgba(99,102,241,0.15)", // zachte paarse gloed
             borderWidth: 2,
             fill: true,
-            tension: 0.4,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: "rgba(99,102,241,0.9)",
           },
         ],
       },
@@ -184,12 +180,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false } },
-          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1 },
+            grid: { color: "rgba(0,0,0,0.05)" },
+          },
         },
       },
     });
 
-    // 2. donut "Verdeling per status"
+    // 2️⃣ Donutchart: verdeling per status
     const statusData = {
       Nieuw: list.filter(r => r.status === "Nieuw" || !r.status).length,
       Geaccepteerd: list.filter(r => r.status === "Geaccepteerd").length,
@@ -206,18 +206,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           {
             data: Object.values(statusData),
             backgroundColor: [
-              "#4F46E5", // paars / nieuw
-              "#22c55e", // groen / geaccepteerd
-              "#ef4444", // rood / afgewezen
-              "#eab308", // geel / opgevolgd
+              "rgba(99,102,241,0.85)",  // Nieuw – indigo
+              "rgba(34,197,94,0.8)",    // Geaccepteerd – zacht groen
+              "rgba(239,68,68,0.8)",    // Afgewezen – zacht rood
+              "rgba(250,204,21,0.8)",   // Opgevolgd – warm geel
             ],
-            borderWidth: 0,
+            borderColor: "rgba(255,255,255,1)",
+            borderWidth: 2,
           },
         ],
       },
       options: {
         cutout: "70%",
-        plugins: { legend: { position: "bottom" } },
+        plugins: {
+          legend: { position: "bottom" },
+        },
       },
     });
   }
@@ -226,7 +229,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusSelect = document.getElementById("statusFilter");
   if (statusSelect) {
     statusSelect.addEventListener("change", () => {
-      const value = statusSelect.value; // ALLE, Nieuw, Geaccepteerd...
+      const value = statusSelect.value;
       let filtered = allRequests;
 
       if (value !== "ALLE") {
