@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const role = localStorage.getItem("userRole") || "company";
   let companyId = localStorage.getItem("companyId");
 
-  // 🟣 Beheerder: koppel bedrijf
+  // 🟣 Beheerder: bedrijf koppelen
   if (email === "info@irisje.nl" && !companyId) {
     try {
       const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
@@ -51,38 +51,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data) || data.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
-        return;
+      if (!res.ok || !Array.isArray(data)) {
+        throw new Error("Ongeldig antwoord van server");
       }
 
-      const rows = data.map((req) => {
-        const d = new Date(req.createdAt || req.date).toLocaleDateString("nl-NL", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
-        return `
-          <tr class="border-t hover:bg-gray-50 transition">
-            <td>${req.name || ""}</td>
-            <td>${req.email || ""}</td>
-            <td>${req.message || ""}</td>
-            <td>${req.status || "Nieuw"}</td>
-            <td>${d}</td>
-          </tr>`;
-      }).join("");
+      if (data.length === 0) {
+        tableBody.innerHTML =
+          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
+      } else {
+        const rows = data.map((req) => {
+          const d = new Date(req.createdAt || req.date).toLocaleDateString("nl-NL", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+          return `
+            <tr class="border-t hover:bg-gray-50 transition">
+              <td>${req.name || ""}</td>
+              <td>${req.email || ""}</td>
+              <td>${req.message || ""}</td>
+              <td>${req.status || "Nieuw"}</td>
+              <td>${d}</td>
+            </tr>`;
+        }).join("");
+        tableBody.innerHTML = rows;
+      }
 
-      tableBody.innerHTML = rows;
+      // ✅ Statistieken correct updaten
+      const total = data.length || 0;
+      const accepted = data.filter(r => r.status === "Geaccepteerd").length;
+      const rejected = data.filter(r => r.status === "Afgewezen").length;
+      const followedUp = data.filter(r => r.status === "Opgevolgd").length;
 
-      // Statistieken
-      document.getElementById("total").textContent = data.length;
-      document.getElementById("accepted").textContent = data.filter(r => r.status === "Geaccepteerd").length;
-      document.getElementById("rejected").textContent = data.filter(r => r.status === "Afgewezen").length;
-      document.getElementById("followed-up").textContent = data.filter(r => r.status === "Opgevolgd").length;
+      document.getElementById("total").textContent = total;
+      document.getElementById("accepted").textContent = accepted;
+      document.getElementById("rejected").textContent = rejected;
+      document.getElementById("followed-up").textContent = followedUp;
 
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
-      tableBody.innerHTML = "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
+      tableBody.innerHTML =
+        "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
+
+      // Zorg dat statistieken niet leeg blijven
+      ["total", "accepted", "rejected", "followed-up"].forEach(id => {
+        document.getElementById(id).textContent = "0";
+      });
     }
   }
 
@@ -95,30 +109,32 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data) || data.length === 0) {
-        tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
-        return;
+      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord van server");
+
+      if (data.length === 0) {
+        tableBody.innerHTML =
+          "<tr><td colspan='4' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
+      } else {
+        const rows = data.map((rev) => {
+          const d = new Date(rev.createdAt || rev.date).toLocaleDateString("nl-NL", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+          return `
+            <tr class="border-t hover:bg-gray-50 transition">
+              <td>${rev.name || ""}</td>
+              <td>${"⭐".repeat(rev.rating || 0)}</td>
+              <td>${rev.message || ""}</td>
+              <td>${d}</td>
+            </tr>`;
+        }).join("");
+        tableBody.innerHTML = rows;
       }
-
-      const rows = data.map((rev) => {
-        const d = new Date(rev.createdAt || rev.date).toLocaleDateString("nl-NL", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        });
-        return `
-          <tr class="border-t hover:bg-gray-50 transition">
-            <td>${rev.name || ""}</td>
-            <td>${"⭐".repeat(rev.rating || 0)}</td>
-            <td>${rev.message || ""}</td>
-            <td>${d}</td>
-          </tr>`;
-      }).join("");
-
-      tableBody.innerHTML = rows;
     } catch (err) {
       console.error("Fout bij laden reviews:", err);
-      tableBody.innerHTML = "<tr><td colspan='4' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
+      tableBody.innerHTML =
+        "<tr><td colspan='4' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
     }
   }
 
