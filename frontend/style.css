@@ -1,12 +1,13 @@
 /* === Fade-in animatie bij laden dashboard === */
 .chart-container,
-.stat-card {
+.stat-card,
+.table-section {
   opacity: 0;
   transform: translateY(12px);
   animation: fadeInDashboard 0.9s ease-out forwards;
 }
 
-/* Nette overgang zodra zichtbaar */
+/* Keyframes voor zachte fade-in */
 @keyframes fadeInDashboard {
   from {
     opacity: 0;
@@ -18,10 +19,26 @@
   }
 }
 
-/* Extra: subtiele hover-animatie op grafieken en kaarten */
+/* Hover-animatie op grafieken en statistiekkaarten */
 .chart-container:hover,
 .stat-card:hover {
   transform: translateY(-2px);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Tabellen soepel in beeld laten komen */
+.table-section table {
+  opacity: 0;
+  animation: fadeInTables 1s ease forwards;
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeInTables {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
