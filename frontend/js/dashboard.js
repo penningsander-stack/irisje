@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (ownerRes.ok && ownerData.length > 0) {
         companyId = ownerData[0]._id;
         localStorage.setItem("companyId", companyId);
+        console.log("Beheerder gekoppeld aan bedrijf:", ownerData[0].name);
       }
     } catch (err) {
       console.error("Fout bij ophalen bedrijven voor beheerder:", err);
@@ -28,120 +29,205 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // === Loader-element ===
-  const loaderHTML = `
-    <tr>
-      <td colspan="5" class="text-center p-6">
-        <div class="flex justify-center items-center gap-3 text-gray-500">
-          <svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 010 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
-          </svg>
-          <span>Bezig met laden...</span>
-        </div>
-      </td>
-    </tr>`;
-
   // === Aanvragen laden ===
   async function loadRequests() {
-    const tableBody = document.getElementById("request-table-body");
-    tableBody.innerHTML = loaderHTML;
-
     try {
       const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data)) {
-        throw new Error("Ongeldig antwoord van server");
+      if (!res.ok || !Array.isArray(data) || data.length === 0) {
+        document.getElementById("request-table-body").innerHTML =
+          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
+        // Statistieken leeg
+        document.getElementById("total").textContent = 0;
+        document.getElementById("accepted").textContent = 0;
+        document.getElementById("rejected").textContent = 0;
+        document.getElementById("followed-up").textContent = 0;
+        // Grafieken met lege data
+        updateCharts([]);
+        return;
       }
 
-      if (data.length === 0) {
-        tableBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
-      } else {
-        const rows = data.map((req) => {
-          const d = new Date(req.createdAt || req.date).toLocaleDateString("nl-NL", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          });
+      const rows = data
+        .map((req) => {
+          const d = new Date(req.createdAt || req.date);
+          const datum = !isNaN(d)
+            ? d.toLocaleDateString("nl-NL", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-";
+
           return `
             <tr class="border-t hover:bg-gray-50 transition">
               <td>${req.name || ""}</td>
               <td>${req.email || ""}</td>
               <td>${req.message || ""}</td>
               <td>${req.status || "Nieuw"}</td>
-              <td>${d}</td>
+              <td>${datum}</td>
             </tr>`;
-        }).join("");
-        tableBody.innerHTML = rows;
-      }
+        })
+        .join("");
 
-      // ✅ Statistieken correct updaten
-      const total = data.length || 0;
-      const accepted = data.filter(r => r.status === "Geaccepteerd").length;
-      const rejected = data.filter(r => r.status === "Afgewezen").length;
-      const followedUp = data.filter(r => r.status === "Opgevolgd").length;
+      document.getElementById("request-table-body").innerHTML = rows;
 
-      document.getElementById("total").textContent = total;
-      document.getElementById("accepted").textContent = accepted;
-      document.getElementById("rejected").textContent = rejected;
-      document.getElementById("followed-up").textContent = followedUp;
+      // Statistieken
+      document.getElementById("total").textContent = data.length;
+      document.getElementById("accepted").textContent = data.filter(r => r.status === "Geaccepteerd").length;
+      document.getElementById("rejected").textContent = data.filter(r => r.status === "Afgewezen").length;
+      document.getElementById("followed-up").textContent = data.filter(r => r.status === "Opgevolgd").length;
+
+      // Grafieken
+      updateCharts(data);
 
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
-      tableBody.innerHTML =
+      document.getElementById("request-table-body").innerHTML =
         "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
 
-      // Zorg dat statistieken niet leeg blijven
-      ["total", "accepted", "rejected", "followed-up"].forEach(id => {
-        document.getElementById(id).textContent = "0";
-      });
+      // Statistieken fallback
+      document.getElementById("total").textContent = 0;
+      document.getElementById("accepted").textContent = 0;
+      document.getElementById("rejected").textContent = 0;
+      document.getElementById("followed-up").textContent = 0;
+
+      // Grafieken fallback
+      updateCharts([]);
     }
   }
 
   // === Reviews laden ===
   async function loadReviews() {
-    const tableBody = document.getElementById("review-table-body");
-    tableBody.innerHTML = loaderHTML.replace("colspan=\"5\"", "colspan=\"4\"");
-
     try {
       const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord van server");
-
-      if (data.length === 0) {
-        tableBody.innerHTML =
+      if (!res.ok || !Array.isArray(data) || data.length === 0) {
+        document.getElementById("review-table-body").innerHTML =
           "<tr><td colspan='4' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
-      } else {
-        const rows = data.map((rev) => {
-          const d = new Date(rev.createdAt || rev.date).toLocaleDateString("nl-NL", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          });
+        return;
+      }
+
+      const rows = data
+        .map((rev) => {
+          const d = new Date(rev.createdAt || rev.date);
+          const datum = !isNaN(d)
+            ? d.toLocaleDateString("nl-NL", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-";
+
           return `
             <tr class="border-t hover:bg-gray-50 transition">
               <td>${rev.name || ""}</td>
               <td>${"⭐".repeat(rev.rating || 0)}</td>
               <td>${rev.message || ""}</td>
-              <td>${d}</td>
+              <td>${datum}</td>
             </tr>`;
-        }).join("");
-        tableBody.innerHTML = rows;
-      }
+        })
+        .join("");
+
+      document.getElementById("review-table-body").innerHTML = rows;
     } catch (err) {
       console.error("Fout bij laden reviews:", err);
-      tableBody.innerHTML =
+      document.getElementById("review-table-body").innerHTML =
         "<tr><td colspan='4' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
     }
   }
 
-  // === Uitloggen ===
+  // === Grafieken ===
+  let maandChart, statusChart;
+
+  function updateCharts(data) {
+    const ctx1 = document.getElementById("maandChart");
+    const ctx2 = document.getElementById("statusChart");
+    if (!ctx1 || !ctx2) return;
+
+    // Aantal aanvragen per maand
+    const perMaandMap = {}; // { "okt": 5, "nov": 2, ... }
+    data.forEach((r) => {
+      const d = new Date(r.createdAt || r.date);
+      if (isNaN(d)) return;
+      const maand = d.toLocaleString("nl-NL", { month: "short" });
+      perMaandMap[maand] = (perMaandMap[maand] || 0) + 1;
+    });
+
+    const maandLabels = Object.keys(perMaandMap);
+    const maandValues = Object.values(perMaandMap);
+
+    if (maandChart) maandChart.destroy();
+    maandChart = new Chart(ctx1, {
+      type: "bar",
+      data: {
+        labels: maandLabels,
+        datasets: [
+          {
+            label: "Aanvragen",
+            data: maandValues,
+            backgroundColor: "#4F46E5",
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        animation: {
+          duration: 800,
+          easing: "easeOutQuart",
+        },
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+        },
+      },
+    });
+
+    // Verdeling per status
+    const statusData = {
+      Nieuw: data.filter(r => r.status === "Nieuw" || !r.status).length,
+      Geaccepteerd: data.filter(r => r.status === "Geaccepteerd").length,
+      Afgewezen: data.filter(r => r.status === "Afgewezen").length,
+      Opgevolgd: data.filter(r => r.status === "Opgevolgd").length,
+    };
+
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx2, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(statusData),
+        datasets: [
+          {
+            data: Object.values(statusData),
+            backgroundColor: ["#4F46E5", "#16A34A", "#DC2626", "#EAB308"],
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        cutout: "70%",
+        animation: {
+          duration: 1000,
+          easing: "easeOutBounce",
+        },
+        plugins: {
+          legend: { position: "bottom" },
+        },
+      },
+    });
+  }
+
+  // === Uitloggen met fade-out ===
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    localStorage.clear();
-    window.location.href = "login.html";
+    document.body.classList.add("fade-out");
+    setTimeout(() => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }, 600);
   });
 
   // Init
