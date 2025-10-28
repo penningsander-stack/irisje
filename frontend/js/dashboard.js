@@ -6,27 +6,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   const role = localStorage.getItem("userRole") || "company";
   let companyId = localStorage.getItem("companyId");
 
-  // 🟣 Beheerder koppelen aan bedrijf (fallback)
+  // 🟣 Beheerder: bedrijf koppelen op basis van e-mail
   if (email === "info@irisje.nl" && !companyId) {
     try {
-      const res = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
-      const data = await res.json();
-      if (res.ok && data.length > 0) {
-        companyId = data[0]._id;
+      const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
+      const ownerData = await ownerRes.json();
+
+      if (ownerRes.ok && ownerData.length > 0) {
+        companyId = ownerData[0]._id;
         localStorage.setItem("companyId", companyId);
+        console.log("Beheerder gekoppeld aan bedrijf:", ownerData[0].name);
       }
     } catch (err) {
-      console.error("Fout bij ophalen bedrijven:", err);
+      console.error("Fout bij ophalen bedrijven voor beheerder:", err);
     }
   }
 
   if (!companyId) {
     document.getElementById("request-table-body").innerHTML =
       "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
+    document.getElementById("review-table-body").innerHTML =
+      "<tr><td colspan='4' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
     return;
   }
 
-  // === AANVRAGEN LADEN ===
+  // === Aanvragen laden ===
   async function loadRequests() {
     try {
       const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
@@ -39,13 +43,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // Tabel vullen
       const rows = data.map((req) => {
-        const d = req.createdAt
-          ? new Date(req.createdAt).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
-          : "-";
+        const d = new Date(req.date || req.createdAt).toLocaleDateString("nl-NL", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
         return `
-          <tr class='border-t'>
+          <tr class="border-t">
             <td>${req.name || ""}</td>
             <td>${req.email || ""}</td>
             <td>${req.message || ""}</td>
@@ -53,15 +58,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             <td>${d}</td>
           </tr>`;
       }).join("");
+
       document.getElementById("request-table-body").innerHTML = rows;
 
-      // Statistieken
+      // Statistieken tellen
       document.getElementById("total").textContent = data.length;
       document.getElementById("accepted").textContent = data.filter(r => r.status === "Geaccepteerd").length;
       document.getElementById("rejected").textContent = data.filter(r => r.status === "Afgewezen").length;
       document.getElementById("followed-up").textContent = data.filter(r => r.status === "Opgevolgd").length;
 
-      // Grafieken updaten
       updateCharts(data);
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
@@ -70,7 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // === REVIEWS LADEN ===
+  // === Reviews laden ===
   async function loadReviews() {
     try {
       const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
@@ -83,17 +88,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       const rows = data.map((rev) => {
-        const d = rev.createdAt
-          ? new Date(rev.createdAt).toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
-          : "-";
+        const d = new Date(rev.createdAt || rev.date).toLocaleDateString("nl-NL", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
         return `
-          <tr class='border-t'>
+          <tr class="border-t">
             <td>${rev.name || ""}</td>
             <td>${"⭐".repeat(rev.rating || 0)}</td>
             <td>${rev.message || ""}</td>
             <td>${d}</td>
           </tr>`;
       }).join("");
+
       document.getElementById("review-table-body").innerHTML = rows;
     } catch (err) {
       console.error("Fout bij laden reviews:", err);
@@ -102,130 +110,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // === GRAFIEKEN ===
+  // === Grafieken ===
   let maandChart, statusChart;
 
   function updateCharts(data) {
+    const ctx1 = document.getElementById("maandChart");
+    const ctx2 = document.getElementById("statusChart");
+
+    if (!ctx1 || !ctx2) return;
+
+    const maanden = Array(12).fill(0);
+    data.forEach(r => {
+      const m = new Date(r.date || r.createdAt).getMonth();
+      maanden[m]++;
+    });
+
+    const statusData = {
+      Nieuw: data.filter(r => r.status === "Nieuw").length,
+      Geaccepteerd: data.filter(r => r.status === "Geaccepteerd").length,
+      Afgewezen: data.filter(r => r.status === "Afgewezen").length,
+    };
+
     // Verwijder oude grafieken
     if (maandChart) maandChart.destroy();
     if (statusChart) statusChart.destroy();
 
-    // Aantal per maand
-    const maanden = Array(12).fill(0);
-    data.forEach((r) => {
-      if (r.createdAt) {
-        const m = new Date(r.createdAt).getMonth();
-        maanden[m]++;
-      }
-    });
-    const maandLabels = ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"];
-
-    const ctx1 = document.getElementById("requestsPerMonthChart");
-    if (ctx1) {
-      maandChart = new Chart(ctx1, {
-        type: "bar",
-        data: {
-          labels: maandLabels,
-          datasets: [{
-            label: "Aanvragen",
-            data: maanden,
-            backgroundColor: "rgba(79,70,229,0.5)",
-            borderColor: "rgba(79,70,229,0.9)",
-            borderWidth: 1,
-            borderRadius: 8,
-            barThickness: 18
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-          },
-          scales: {
-            x: {
-              grid: { display: false },
-              ticks: { color: "#555" }
-            },
-            y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1, color: "#555" },
-              grid: { color: "rgba(0,0,0,0.05)" }
-            }
-          },
-          animation: {
-            duration: 800,
-            easing: "easeOutQuart"
-          }
-        }
-      });
-    }
-
-    // Statusverdeling
-    const statusCounts = {
-      Nieuw: 0,
-      Geaccepteerd: 0,
-      Afgewezen: 0,
-      Opgevolgd: 0
-    };
-    data.forEach(r => {
-      if (statusCounts[r.status] !== undefined) statusCounts[r.status]++;
+    // Balkgrafiek (aanvragen per maand)
+    maandChart = new Chart(ctx1, {
+      type: "bar",
+      data: {
+        labels: [
+          "Jan", "Feb", "Mrt", "Apr", "Mei", "Jun",
+          "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"
+        ],
+        datasets: [{
+          label: "Aanvragen per maand",
+          data: maanden,
+          backgroundColor: "rgba(79, 70, 229, 0.7)",
+        }],
+      },
+      options: { scales: { y: { beginAtZero: true } } }
     });
 
-    const ctx2 = document.getElementById("statusDistributionChart");
-    if (ctx2) {
-      statusChart = new Chart(ctx2, {
-        type: "doughnut",
-        data: {
-          labels: Object.keys(statusCounts),
-          datasets: [{
-            data: Object.values(statusCounts),
-            backgroundColor: [
-              "rgba(99,102,241,0.8)", // indigo
-              "rgba(34,197,94,0.8)",  // groen
-              "rgba(239,68,68,0.8)",  // rood
-              "rgba(245,158,11,0.8)"  // oranje
-            ],
-            borderColor: "white",
-            borderWidth: 2
-          }]
-        },
-        options: {
-          cutout: "70%",
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: { color: "#444", boxWidth: 12 }
-            }
-          },
-          animation: {
-            animateScale: true,
-            duration: 900,
-            easing: "easeOutElastic"
-          }
-        }
-      });
-    }
+    // Donutgrafiek (statussen)
+    statusChart = new Chart(ctx2, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(statusData),
+        datasets: [{
+          data: Object.values(statusData),
+          backgroundColor: ["#6b7280", "#22c55e", "#ef4444"],
+        }],
+      },
+      options: { plugins: { legend: { position: "bottom" } } }
+    });
   }
 
-  // === FILTER ===
-  document.getElementById("statusFilter").addEventListener("change", async (e) => {
-    const status = e.target.value;
-    const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
-    const data = await res.json();
-    const filtered = status ? data.filter(r => r.status === status) : data;
-    updateCharts(filtered);
-  });
-
-  // === VERNIEUW ===
-  document.getElementById("refreshBtn").addEventListener("click", loadRequests);
-
-  // === UITLOGGEN ===
+  // === Uitloggen ===
   document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.clear();
     window.location.href = "login.html";
   });
 
-  // INIT
+  // === Initial Load ===
   await loadRequests();
   await loadReviews();
+
+  // Automatisch verversen elke 30 seconden
+  setInterval(loadRequests, 30000);
 });
