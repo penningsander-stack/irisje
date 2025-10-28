@@ -1,72 +1,195 @@
-/* === Fade-in animatie bij laden dashboard === */
-/* Alle hoofdsecties komen rustig van onder in beeld */
-.chart-container,
-.stat-card,
-.table-section {
-  opacity: 0;
-  transform: translateY(14px);
-  animation: fadeInDashboard 0.9s ease-out forwards;
-}
+// frontend/js/dashboard.js
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-/* Vertraging per sectie voor mooi trapsgewijs effect */
-.stat-card {
-  animation-delay: 0.1s;
-}
-.chart-container {
-  animation-delay: 0.3s;
-}
-.table-section {
-  animation-delay: 0.5s;
-}
+document.addEventListener("DOMContentLoaded", async () => {
+  const email = localStorage.getItem("userEmail");
+  let companyId = localStorage.getItem("companyId");
 
-/* Keyframes voor zachte fade-in */
-@keyframes fadeInDashboard {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
+  // 🟣 Beheerder koppelen
+  if (email === "info@irisje.nl" && !companyId) {
+    try {
+      const ownerRes = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
+      const ownerData = await ownerRes.json();
+      if (ownerRes.ok && ownerData.length > 0) {
+        companyId = ownerData[0]._id;
+        localStorage.setItem("companyId", companyId);
+      }
+    } catch (err) {
+      console.error("Fout bij koppelen beheerder:", err);
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
-/* Hover-animatie op grafieken en statistiekkaarten */
-.chart-container:hover,
-.stat-card:hover {
-  transform: translateY(-2px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-/* Tabellen iets later zichtbaar voor subtiele overgang */
-.table-section table {
-  opacity: 0;
-  animation: fadeInTables 1s ease forwards;
-  animation-delay: 0.7s;
-}
-
-@keyframes fadeInTables {
-  from {
-    opacity: 0;
+  if (!companyId) {
+    document.getElementById("request-table-body").innerHTML =
+      "<tr><td colspan='5' class='text-center text-gray-400 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
+    return;
   }
-  to {
-    opacity: 1;
-  }
-}
 
-/* === Fade-out bij uitloggen === */
-.fade-out {
-  animation: fadeOutDashboard 0.6s ease forwards;
-}
+  // === AANVRAGEN LADEN ===
+  async function loadRequests() {
+    try {
+      const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
+      const data = await res.json();
 
-@keyframes fadeOutDashboard {
-  from {
-    opacity: 1;
-    transform: translateY(0);
+      if (!res.ok || !Array.isArray(data)) throw new Error("Fout bij ophalen aanvragen");
+
+      if (data.length === 0) {
+        document.getElementById("request-table-body").innerHTML =
+          "<tr><td colspan='5' class='text-center text-gray-400 p-4'>Nog geen aanvragen gevonden.</td></tr>";
+        updateCharts([]);
+        return;
+      }
+
+      const rows = data.map(req => {
+        const d = new Date(req.createdAt || req.date);
+        const datum = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
+        return `
+          <tr class="border-t hover:bg-indigo-50 transition">
+            <td>${req.name || ""}</td>
+            <td>${req.email || ""}</td>
+            <td>${req.message || ""}</td>
+            <td>${req.status || "Nieuw"}</td>
+            <td>${datum}</td>
+          </tr>`;
+      }).join("");
+
+      document.getElementById("request-table-body").innerHTML = rows;
+
+      // Statistieken
+      document.getElementById("total").textContent = data.length;
+      document.getElementById("accepted").textContent = data.filter(r => r.status === "Geaccepteerd").length;
+      document.getElementById("rejected").textContent = data.filter(r => r.status === "Afgewezen").length;
+      document.getElementById("followed-up").textContent = data.filter(r => r.status === "Opgevolgd").length;
+
+      updateCharts(data);
+
+    } catch (err) {
+      console.error("Fout bij laden aanvragen:", err);
+      document.getElementById("request-table-body").innerHTML =
+        "<tr><td colspan='5' class='text-center text-red-500 p-4'>Fout bij laden aanvragen.</td></tr>";
+      updateCharts([]);
+    }
   }
-  to {
-    opacity: 0;
-    transform: translateY(10px);
+
+  // === REVIEWS LADEN ===
+  async function loadReviews() {
+    try {
+      const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) throw new Error("Fout bij ophalen reviews");
+
+      if (data.length === 0) {
+        document.getElementById("review-table-body").innerHTML =
+          "<tr><td colspan='4' class='text-center text-gray-400 p-4'>Nog geen reviews ontvangen.</td></tr>";
+        return;
+      }
+
+      const rows = data.map(rev => {
+        const d = new Date(rev.createdAt || rev.date);
+        const datum = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
+        return `
+          <tr class="border-t hover:bg-indigo-50 transition">
+            <td>${rev.name || ""}</td>
+            <td>${"⭐".repeat(rev.rating || 0)}</td>
+            <td>${rev.message || ""}</td>
+            <td>${datum}</td>
+          </tr>`;
+      }).join("");
+
+      document.getElementById("review-table-body").innerHTML = rows;
+    } catch (err) {
+      console.error("Fout bij laden reviews:", err);
+      document.getElementById("review-table-body").innerHTML =
+        "<tr><td colspan='4' class='text-center text-red-500 p-4'>Fout bij laden reviews.</td></tr>";
+    }
   }
-}
+
+  // === GRAFIEKEN ===
+  let maandChart, statusChart;
+
+  function updateCharts(data) {
+    const ctx1 = document.getElementById("maandChart");
+    const ctx2 = document.getElementById("statusChart");
+    if (!ctx1 || !ctx2) return;
+
+    // Aantal aanvragen per maand
+    const perMaand = {};
+    data.forEach((r) => {
+      const d = new Date(r.createdAt || r.date);
+      if (isNaN(d)) return;
+      const maand = d.toLocaleString("nl-NL", { month: "short" });
+      perMaand[maand] = (perMaand[maand] || 0) + 1;
+    });
+
+    const maandLabels = Object.keys(perMaand);
+    const maandValues = Object.values(perMaand);
+
+    if (maandChart) maandChart.destroy();
+    maandChart = new Chart(ctx1, {
+      type: "bar",
+      data: {
+        labels: maandLabels,
+        datasets: [{
+          label: "Aanvragen",
+          data: maandValues,
+          backgroundColor: "rgba(79, 70, 229, 0.85)",
+          borderRadius: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 900, easing: "easeOutQuart" },
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+        },
+      },
+    });
+
+    // Verdeling per status
+    const statusData = {
+      Nieuw: data.filter(r => r.status === "Nieuw" || !r.status).length,
+      Geaccepteerd: data.filter(r => r.status === "Geaccepteerd").length,
+      Afgewezen: data.filter(r => r.status === "Afgewezen").length,
+      Opgevolgd: data.filter(r => r.status === "Opgevolgd").length,
+    };
+
+    if (statusChart) statusChart.destroy();
+    statusChart = new Chart(ctx2, {
+      type: "doughnut",
+      data: {
+        labels: Object.keys(statusData),
+        datasets: [{
+          data: Object.values(statusData),
+          backgroundColor: [
+            "#6366F1", // indigo
+            "#16A34A", // groen
+            "#DC2626", // rood
+            "#EAB308", // geel
+          ],
+          borderWidth: 0,
+        }],
+      },
+      options: {
+        cutout: "70%",
+        animation: { duration: 1000, easing: "easeOutBounce" },
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  }
+
+  // === UITLOGGEN met fade ===
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    document.body.classList.add("fade-out");
+    setTimeout(() => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    }, 600);
+  });
+
+  // Init
+  await loadRequests();
+  await loadReviews();
+});
