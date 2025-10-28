@@ -1,17 +1,30 @@
 /* === Fade-in animatie bij laden dashboard === */
+
+/* Alle hoofdsecties komen rustig van onder in beeld */
 .chart-container,
 .stat-card,
 .table-section {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(14px);
   animation: fadeInDashboard 0.9s ease-out forwards;
+}
+
+/* Vertraging per sectie voor mooi trapsgewijs effect */
+.stat-card {
+  animation-delay: 0.1s;
+}
+.chart-container {
+  animation-delay: 0.3s;
+}
+.table-section {
+  animation-delay: 0.5s;
 }
 
 /* Keyframes voor zachte fade-in */
 @keyframes fadeInDashboard {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -27,11 +40,11 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
-/* Tabellen soepel in beeld laten komen */
+/* Tabellen iets later zichtbaar voor subtiele overgang */
 .table-section table {
   opacity: 0;
   animation: fadeInTables 1s ease forwards;
-  animation-delay: 0.2s;
+  animation-delay: 0.7s;
 }
 
 @keyframes fadeInTables {
