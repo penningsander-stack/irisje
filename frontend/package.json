@@ -13,3 +13,6 @@
     "@tailwindcss/typography": "^0.5.15"
   }
 }
+"scripts": {
+  "build:css": "tailwindcss -i ./input.css -o ./style.css --minify"
+}
