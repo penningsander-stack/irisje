@@ -3,30 +3,42 @@ const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
 
-// GET: alle gemelde reviews ophalen
-router.get("/reported-reviews", async (req, res) => {
+/**
+ * ✅ PATCH /api/admin/resolve/:id
+ * Markeer een gemelde review als afgehandeld (reported = false)
+ */
+router.patch("/resolve/:id", async (req, res) => {
   try {
-    const reported = await Review.find({ reported: true }).sort({ createdAt: -1 });
-    res.json(reported);
+    const { id } = req.params;
+    const review = await Review.findById(id);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review niet gevonden" });
+    }
+
+    // Markeer als afgehandeld
+    review.reported = false;
+    await review.save();
+
+    console.log(`✅ Review ${id} gemarkeerd als afgehandeld.`);
+    res.json({ message: "Review afgehandeld", review });
   } catch (err) {
-    console.error("❌ Fout bij ophalen gemelde reviews:", err);
-    res.status(500).json({ message: "Fout bij laden reviews" });
+    console.error("❌ Fout bij afhandelen review:", err);
+    res.status(500).json({ message: "Serverfout bij afhandelen review" });
   }
 });
 
-// PATCH: gemelde review markeren als bekeken (of verwijderen)
-router.patch("/resolve/:id", async (req, res) => {
+/**
+ * ✅ GET /api/admin/reported
+ * Haal alle gemelde reviews op (reported = true)
+ */
+router.get("/reported", async (req, res) => {
   try {
-    const review = await Review.findByIdAndUpdate(
-      req.params.id,
-      { reported: false },
-      { new: true }
-    );
-    if (!review) return res.status(404).json({ message: "Review niet gevonden" });
-    res.json({ message: "Gemelde review afgehandeld", review });
+    const reportedReviews = await Review.find({ reported: true }).sort({ createdAt: -1 }).lean();
+    res.json(reportedReviews);
   } catch (err) {
-    console.error("❌ Fout bij bijwerken review:", err);
-    res.status(500).json({ message: "Fout bij bijwerken review" });
+    console.error("❌ Fout bij ophalen gemelde reviews:", err);
+    res.status(500).json({ message: "Serverfout bij ophalen gemelde reviews" });
   }
 });
 
