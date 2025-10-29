@@ -28,6 +28,10 @@ app.use(
   })
 );
 
+// === ✅ Statische frontend-bestanden serveren ===
+// Hiermee kan Render of Node alle HTML/CSS/JS uit de map 'frontend' direct weergeven
+app.use(express.static("frontend"));
+
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
