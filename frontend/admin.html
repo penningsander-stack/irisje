@@ -7,8 +7,9 @@
   <title>Beheerdersdashboard – Irisje.nl</title>
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="./style.css" />
+
+  <!-- ✅ Gebruik dezelfde lokale Tailwind build als de rest -->
+  <link rel="stylesheet" href="style.css" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -24,10 +25,11 @@
 
   <!-- MAIN -->
   <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
+
     <!-- Titel -->
     <section class="bg-white rounded-2xl shadow-md p-6 text-center">
       <h1 class="text-2xl font-bold text-indigo-700">Beheerdersdashboard</h1>
-      <p class="text-sm text-gray-500 mt-1">Bekijk en beheer gemelde reviews</p>
+      <p class="text-sm text-gray-500 mt-1">Gemelde reviews beoordelen & afhandelen</p>
     </section>
 
     <!-- Gemelde reviews -->
@@ -45,16 +47,17 @@
               <th class="p-2 text-left">Actie</th>
             </tr>
           </thead>
-          <tbody id="review-table-body">
+          <tbody id="reportedReviewsBody">
             <tr>
-              <td colspan="5" class="text-center text-gray-500 p-4">Gemelde reviews worden geladen...</td>
+              <td colspan="5" class="text-center text-gray-500 p-4">
+                Gemelde reviews worden geladen...
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <div id="admin-message" class="mt-4 text-sm text-gray-600"></div>
     </section>
+
   </main>
 
   <!-- FOOTER -->
@@ -63,5 +66,12 @@
   </footer>
 
   <script src="./js/admin.js"></script>
+  <script>
+    // uitloggen
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "login.html";
+    });
+  </script>
 </body>
 </html>
