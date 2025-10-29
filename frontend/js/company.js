@@ -4,6 +4,7 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const companySlug = urlParams.get("slug");
+
   const companyContainer = document.getElementById("company-details");
   const reviewsContainer = document.getElementById("reviews-list");
 
@@ -26,15 +27,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       companyContainer.innerHTML = `
         <div class="bg-white rounded-2xl shadow-md p-6 fade-in">
           <div class="flex flex-col sm:flex-row sm:items-center gap-6">
-            <img src="${company.logoUrl || 'https://via.placeholder.com/100'}" 
-                 alt="${company.name}" 
+            <img src="${company.logoUrl || '/img/default-logo.png'}"
+                 alt="${company.name}"
                  class="w-24 h-24 rounded-xl object-cover border" />
             <div>
               <h1 class="text-2xl font-bold text-indigo-700">${company.name}</h1>
               <p class="text-gray-600">${company.city || ''}</p>
               <p class="text-sm text-gray-500 mt-2">${company.tagline || ''}</p>
               <p class="text-sm text-gray-400 mt-1">${company.categories?.join(', ') || ''}</p>
-              <p class="text-yellow-500 mt-2">⭐ ${company.avgRating?.toFixed(1) || '0.0'} (${company.reviewCount || 0} reviews)</p>
+              <p class="text-yellow-500 mt-2">
+                ⭐ ${company.avgRating?.toFixed(1) || '0.0'} (${company.reviewCount || 0} reviews)
+              </p>
             </div>
           </div>
         </div>`;
@@ -81,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               <p class="text-xs text-gray-400">${datum}</p>
               ${
                 showReportButton
-                  ? `<button 
+                  ? `<button
                       class="mt-2 text-xs text-red-600 hover:text-red-800 font-medium"
                       onclick="reportReview('${r._id}')">
                       🚩 Meld review
@@ -109,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-      alert("✅ Review is gemeld en zichtbaar voor de beheerder.");
+      alert("✅ Review is gemeld en wordt beoordeeld door de beheerder.");
     } catch (err) {
       console.error("❌ Fout bij melden review:", err);
       alert("Er is een fout opgetreden bij het melden van deze review.");
