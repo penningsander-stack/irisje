@@ -76,6 +76,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
 
       console.log(`✅ Review ${id} afgehandeld`);
+      alert("✅ Review succesvol afgehandeld!");
+
       await loadReportedReviews();
     } catch (err) {
       console.error("❌ Fout bij afhandelen review:", err);
