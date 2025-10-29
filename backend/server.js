@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const path = require("path"); // ✅ Nodig voor juiste padbepaling
 require("dotenv").config();
 
 const app = express();
@@ -28,15 +29,15 @@ app.use(
   })
 );
 
-// === ✅ Statische frontend-bestanden serveren ===
-// Hiermee kan Render of Node alle HTML/CSS/JS uit de map 'frontend' direct weergeven
-app.use(express.static("frontend"));
+// === ✅ Statische frontend-bestanden serveren (absolute pad) ===
+// Zo wordt altijd de juiste map gebruikt, ook op Render of andere omgevingen
+app.use(express.static(path.join(__dirname, "../frontend")));
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 
-// Database connectie
+// === ✅ Database connectie ===
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -45,9 +46,9 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err));
 
-// Routes
+// === ✅ Routes ===
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/companies", require(__dirname + "/routes/companies.js"));
+app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/reviews", require("./routes/reviews"));
@@ -56,12 +57,12 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
-// Test- en fallbackroutes
+// === ✅ Test- en fallbackroutes ===
 app.get("/", (req, res) => res.send("🌐 Irisje.nl backend actief"));
 app.get("/api/test", (req, res) => {
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
 
-// Start server
+// === ✅ Start server ===
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
