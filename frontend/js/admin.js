@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // === Gemelde reviews laden ===
   async function loadReportedReviews() {
     try {
-      const res = await fetch(`${API_BASE}/reviews/reported`);
+      const res = await fetch(`${API_BASE}/admin/reported`);
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
 
       const reviews = await res.json();
