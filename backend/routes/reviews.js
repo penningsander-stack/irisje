@@ -4,7 +4,7 @@ const router = express.Router();
 const Review = require("../models/review");
 const Company = require("../models/Company");
 
-// ✅ Alle reviews ophalen (optioneel, voor test)
+// ✅ Alle reviews ophalen (alleen test/doeleinden)
 router.get("/", async (req, res) => {
   try {
     const reviews = await Review.find().lean();
@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
       email,
       rating,
       message,
-      date: new Date(),           // 👈 datum wordt nu altijd toegevoegd
+      date: new Date(),
     });
     await newReview.save();
 
@@ -49,7 +49,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-
 // ✅ Reviews ophalen per bedrijf
 router.get("/company/:companyId", async (req, res) => {
   try {
@@ -62,7 +61,15 @@ router.get("/company/:companyId", async (req, res) => {
   }
 });
 
-
-
+// ✅ Nieuw: Gemelde reviews ophalen (voor adminpagina)
+router.get("/reported", async (req, res) => {
+  try {
+    const reportedReviews = await Review.find({ reported: true }).sort({ createdAt: -1 });
+    res.json(reportedReviews);
+  } catch (err) {
+    console.error("Fout bij ophalen gemelde reviews:", err);
+    res.status(500).json({ message: "Serverfout bij ophalen gemelde reviews" });
+  }
+});
 
 module.exports = router;
