@@ -1,10 +1,11 @@
+// frontend/package.json
 {
   "name": "irisje-frontend",
   "version": "1.0.0",
   "description": "Frontend van Irisje.nl – moderne indigo-stijl met TailwindCSS en animaties",
   "main": "index.html",
   "scripts": {
-    "build:css": "tailwindcss -i ./input.css -o ./style.css --minify",
+    "build:css": "tailwindcss -i ./input.css -o ./dist.css --minify && cat ./dist.css ./custom.css > ./style.css",
     "start": "lite-server"
   },
   "devDependencies": {
