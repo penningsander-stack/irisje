@@ -1,135 +1,122 @@
 // frontend/js/company.js
-// ✅ v2.2 – Definitieve versie zonder /details, gekoppeld aan onrender-backend
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-// Helper om URL-parameters te lezen
-function getSlug() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("slug");
-}
+document.addEventListener("DOMContentLoaded", async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const companySlug = urlParams.get("slug");
+  const companyContainer = document.getElementById("company-details");
+  const reviewsContainer = document.getElementById("reviews-list");
 
-async function loadCompany() {
-  const slug = getSlug();
-  const info = document.getElementById("company-info");
-
-  if (!slug) {
-    info.innerHTML = "<p class='text-red-600'>Geen bedrijfs-slug opgegeven.</p>";
+  if (!companySlug) {
+    companyContainer.innerHTML =
+      "<p class='text-red-600'>Geen bedrijfsprofiel gevonden.</p>";
     return;
   }
 
-  try {
-    // ✅ juiste endpoint, geen /details
-    const res = await axios.get(`${API_BASE}/companies/${slug}`);
-    const company = res.data;
+  const userEmail = localStorage.getItem("userEmail");
+  const userRole = localStorage.getItem("userRole");
 
-    console.log("✅ Bedrijf geladen:", company);
+  // === Bedrijf laden ===
+  async function loadCompany() {
+    try {
+      const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
+      const company = await res.json();
 
-    // Vul bedrijfsinformatie
-    document.getElementById("company-name").textContent = company.name || "Onbekend bedrijf";
-    document.getElementById("company-tagline").textContent = company.tagline || "";
-    document.getElementById("company-city").textContent = company.city || "";
-    document.getElementById("company-description").textContent = company.description || "";
-
-    const logo = document.getElementById("company-logo");
-    if (company.logoUrl) {
-      logo.src = company.logoUrl;
-      logo.style.display = "block";
-    } else {
-      logo.style.display = "none";
+      companyContainer.innerHTML = `
+        <div class="bg-white rounded-2xl shadow-md p-6 fade-in">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-6">
+            <img src="${company.logoUrl || 'https://via.placeholder.com/100'}" 
+                 alt="${company.name}" 
+                 class="w-24 h-24 rounded-xl object-cover border" />
+            <div>
+              <h1 class="text-2xl font-bold text-indigo-700">${company.name}</h1>
+              <p class="text-gray-600">${company.city || ''}</p>
+              <p class="text-sm text-gray-500 mt-2">${company.tagline || ''}</p>
+              <p class="text-sm text-gray-400 mt-1">${company.categories?.join(', ') || ''}</p>
+              <p class="text-yellow-500 mt-2">⭐ ${company.avgRating?.toFixed(1) || '0.0'} (${company.reviewCount || 0} reviews)</p>
+            </div>
+          </div>
+        </div>`;
+    } catch (err) {
+      console.error("❌ Fout bij laden bedrijf:", err);
+      companyContainer.innerHTML =
+        "<p class='text-red-600'>Fout bij laden van het bedrijfsprofiel.</p>";
     }
+  }
 
-    const catDiv = document.getElementById("company-categories");
-    catDiv.innerHTML = "";
-    if (company.categories && company.categories.length) {
-      company.categories.forEach(cat => {
-        const span = document.createElement("span");
-        span.className = "bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-sm";
-        span.textContent = cat;
-        catDiv.appendChild(span);
+  // === Reviews laden ===
+  async function loadReviews() {
+    try {
+      const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
+      const reviews = await res.json();
+
+      if (!Array.isArray(reviews) || reviews.length === 0) {
+        reviewsContainer.innerHTML =
+          "<p class='text-gray-500 text-center p-4'>Nog geen reviews geplaatst.</p>";
+        return;
+      }
+
+      reviewsContainer.innerHTML = reviews
+        .map((r) => {
+          const datum = r.createdAt
+            ? new Date(r.createdAt).toLocaleDateString("nl-NL", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-";
+
+          const showReportButton =
+            userRole === "company" || userEmail === "info@irisje.nl";
+
+          return `
+            <div class="border-b py-4">
+              <div class="flex justify-between items-center mb-1">
+                <h3 class="font-semibold text-gray-800">${r.name || "Anoniem"}</h3>
+                <span class="text-yellow-500">${"⭐".repeat(r.rating || 0)}</span>
+              </div>
+              <p class="text-gray-700 mb-1">${r.message || ""}</p>
+              <p class="text-xs text-gray-400">${datum}</p>
+              ${
+                showReportButton
+                  ? `<button 
+                      class="mt-2 text-xs text-red-600 hover:text-red-800 font-medium"
+                      onclick="reportReview('${r._id}')">
+                      🚩 Meld review
+                    </button>`
+                  : ""
+              }
+            </div>`;
+        })
+        .join("");
+    } catch (err) {
+      console.error("❌ Fout bij laden reviews:", err);
+      reviewsContainer.innerHTML =
+        "<p class='text-red-600 text-center p-4'>Fout bij laden van reviews.</p>";
+    }
+  }
+
+  // === Review melden ===
+  window.reportReview = async function (reviewId) {
+    if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/reviews/report/${reviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
       });
+
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
+      alert("✅ Review is gemeld en zichtbaar voor de beheerder.");
+    } catch (err) {
+      console.error("❌ Fout bij melden review:", err);
+      alert("Er is een fout opgetreden bij het melden van deze review.");
     }
+  };
 
-    // Toon reviews
-    renderReviews(company.reviews || []);
-  } catch (err) {
-    console.error("❌ Fout bij laden bedrijfsgegevens:", err);
-    document.getElementById("company-info").innerHTML =
-      "<p class='text-red-600'>Kon bedrijfsgegevens niet laden.</p>";
-  }
-}
-
-function renderReviews(reviews) {
-  const reviewList = document.getElementById("review-list");
-  reviewList.innerHTML = "";
-  if (!reviews.length) {
-    reviewList.innerHTML = "<p class='text-gray-500'>Nog geen beoordelingen beschikbaar.</p>";
-    return;
-  }
-  reviews.forEach(r => {
-    const div = document.createElement("div");
-    div.className = "border border-gray-200 rounded-lg p-3";
-    const date = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
-    div.innerHTML = `
-      <div class="text-yellow-400">${"⭐".repeat(r.rating || 0)}</div>
-      <p class="text-gray-800 mt-1">${r.message || ""}</p>
-      <p class="text-sm text-gray-500 mt-1">— ${r.name || "Anoniem"}${date ? ", " + date : ""}</p>
-    `;
-    reviewList.appendChild(div);
-  });
-}
-
-// === Reviewformulier verzenden ===
-document.addEventListener("DOMContentLoaded", () => {
-  loadCompany();
-
-  const reviewForm = document.getElementById("reviewForm");
-  if (reviewForm) {
-    reviewForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const slug = getSlug();
-      const data = {
-        companySlug: slug,
-        name: e.target.reviewName.value,
-        email: e.target.reviewEmail.value,
-        rating: parseInt(e.target.reviewRating.value),
-        message: e.target.reviewMessage.value,
-      };
-      try {
-        await axios.post(`${API_BASE}/reviews`, data);
-        document.getElementById("reviewMessageInfo").textContent =
-          "✅ Je beoordeling is succesvol verzonden.";
-        e.target.reset();
-        loadCompany(); // herlaad reviews
-      } catch (err) {
-        console.error("❌ Fout bij verzenden review:", err);
-        document.getElementById("reviewMessageInfo").textContent =
-          "❌ Er ging iets mis bij het verzenden van je beoordeling.";
-      }
-    });
-  }
-
-  // === Offerteformulier ===
-  const quoteForm = document.getElementById("quoteForm");
-  if (quoteForm) {
-    quoteForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      const slug = getSlug();
-      const data = {
-        companySlug: slug,
-        name: e.target.name.value,
-        email: e.target.email.value,
-        message: e.target.message.value,
-      };
-      try {
-        await axios.post(`${API_BASE}/publicRequests`, data);
-        document.getElementById("form-message").textContent =
-          "✅ Je aanvraag is succesvol verzonden!";
-        e.target.reset();
-      } catch (err) {
-        console.error("❌ Fout bij verzenden aanvraag:", err);
-        document.getElementById("form-message").textContent =
-          "❌ Er ging iets mis bij het verzenden van je aanvraag.";
-      }
-    });
-  }
+  // Init
+  await loadCompany();
+  await loadReviews();
 });
