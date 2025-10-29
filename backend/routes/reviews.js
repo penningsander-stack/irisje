@@ -4,7 +4,7 @@ const router = express.Router();
 const Review = require("../models/review");
 const Company = require("../models/Company");
 
-// ✅ Alle reviews ophalen (alleen test/doeleinden)
+/* === Alle reviews ophalen (voor test/doeleinden) === */
 router.get("/", async (req, res) => {
   try {
     const reviews = await Review.find().lean();
@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ✅ Nieuwe review toevoegen
+/* === Nieuwe review toevoegen === */
 router.post("/", async (req, res) => {
   try {
     const { companySlug, name, email, rating, message } = req.body;
@@ -32,10 +32,12 @@ router.post("/", async (req, res) => {
       rating,
       message,
       date: new Date(),
+      reported: false, // standaard niet gemeld
     });
+
     await newReview.save();
 
-    // Update bedrijfsstatistieken
+    // Gemiddelde waardering en aantal reviews bijwerken
     const reviews = await Review.find({ company: company._id });
     const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
     company.avgRating = avg;
@@ -49,7 +51,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ✅ Reviews ophalen per bedrijf
+/* === Reviews ophalen per bedrijf === */
 router.get("/company/:companyId", async (req, res) => {
   try {
     const companyId = req.params.companyId;
@@ -61,7 +63,7 @@ router.get("/company/:companyId", async (req, res) => {
   }
 });
 
-// ✅ Nieuw: Gemelde reviews ophalen (voor adminpagina)
+/* === Gemelde reviews ophalen (voor adminpagina) === */
 router.get("/reported", async (req, res) => {
   try {
     const reportedReviews = await Review.find({ reported: true }).sort({ createdAt: -1 });
@@ -69,6 +71,26 @@ router.get("/reported", async (req, res) => {
   } catch (err) {
     console.error("Fout bij ophalen gemelde reviews:", err);
     res.status(500).json({ message: "Serverfout bij ophalen gemelde reviews" });
+  }
+});
+
+/* === Nieuw: Review melden === */
+router.patch("/report/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const review = await Review.findById(id);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review niet gevonden" });
+    }
+
+    review.reported = true;
+    await review.save();
+
+    res.json({ message: "Review gemeld", review });
+  } catch (err) {
+    console.error("Fout bij melden review:", err);
+    res.status(500).json({ message: "Serverfout bij melden review" });
   }
 });
 
