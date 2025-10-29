@@ -68,3 +68,45 @@ section {
 section:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
 }
+
+/* === Moderne Irisje kleuren === */
+:root {
+  --irisje-indigo: #6366f1;   /* zacht indigo */
+  --irisje-indigo-light: rgba(99,102,241,0.12);
+  --irisje-green: #22c55e;    /* zacht groen */
+  --irisje-red: #ef4444;      /* zacht rood */
+  --irisje-yellow: #eab308;   /* warm geel */
+}
+
+/* Accentkleur voor titels, links en knoppen */
+.text-indigo-700, .text-indigo-600 {
+  color: var(--irisje-indigo) !important;
+}
+.bg-indigo-600 {
+  background-color: var(--irisje-indigo) !important;
+}
+.hover\:bg-indigo-50:hover {
+  background-color: var(--irisje-indigo-light) !important;
+}
+
+/* Statistiekwaarden */
+#accepted { color: var(--irisje-green) !important; }
+#rejected { color: var(--irisje-red) !important; }
+#followed-up { color: var(--irisje-yellow) !important; }
+
+/* Zachte achtergrond en subtiele rand voor secties */
+section.bg-white {
+  background-color: #fff;
+  border: 1px solid rgba(99,102,241,0.08);
+}
+
+/* Tabellen header iets subtieler maken */
+.table-section thead {
+  background-color: var(--irisje-indigo-light);
+  color: var(--irisje-indigo);
+}
+
+/* Hover op rijen */
+.table-section tbody tr:hover {
+  background-color: rgba(99,102,241,0.04);
+}
