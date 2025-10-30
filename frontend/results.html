@@ -10,20 +10,16 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Tailwind -->
-  <script>
-    window.tailwind = { config: { darkMode: 'class' } };
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <link rel="stylesheet" href="./style.css" />
+  <!-- ✅ Lokale Tailwind build (geen CDN) -->
+  <link rel="stylesheet" href="style.css?v=20251030" />
 </head>
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
+      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">Irisje.nl</a>
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="index.html" class="hover:underline">Home</a>
         <a href="login.html" class="hover:underline">Inloggen</a>
@@ -32,14 +28,14 @@
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-8">
     <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
       <span class="text-3xl mr-2">🔎</span>
       Bedrijven in jouw regio
     </h1>
 
-    <!-- Filters bovenaan -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 mb-8">
+    <!-- Filters -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
       <form id="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
           id="filterCategory"
@@ -63,9 +59,8 @@
       <p id="filterMessage" class="text-xs text-gray-500 mt-3"></p>
     </section>
 
-    <!-- Resultaatlijst -->
+    <!-- Resultaten -->
     <section id="resultsContainer" class="grid gap-6">
-      <!-- JS vult dit dynamisch -->
       <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
     </section>
   </main>
@@ -78,7 +73,6 @@
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    // hulpfunctie voor sterretjes
     function stars(rating) {
       const full = Math.round(rating || 0);
       return "⭐".repeat(full);
@@ -87,23 +81,17 @@
     async function loadResults(category, city) {
       const container = document.getElementById("resultsContainer");
       const msg = document.getElementById("filterMessage");
-
       container.innerHTML = "<div class='text-gray-500 text-sm'>Resultaten worden geladen...</div>";
       msg.textContent = "";
 
-      const url =
-        API_BASE +
-        "/companies/search?category=" +
-        encodeURIComponent(category || "") +
-        "&city=" +
-        encodeURIComponent(city || "");
+      const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category || "")}&city=${encodeURIComponent(city || "")}`;
 
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error("Kon geen verbinding maken met de server");
         const data = await res.json();
 
-        if (!data.items || !data.items.length) {
+        if (!data.items?.length) {
           container.innerHTML = `
             <div class="text-gray-500 text-sm bg-white border border-gray-200 rounded-xl p-5 shadow">
               Geen bedrijven gevonden. Probeer een andere zoekopdracht.
@@ -111,45 +99,35 @@
           return;
         }
 
-        container.innerHTML = data.items
-          .map((c) => {
-            return `
-            <article class="bg-white rounded-2xl border border-gray-200 shadow p-5">
-              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                <div>
-                  <h2 class="text-lg font-semibold text-indigo-700 leading-tight">
-                    ${c.name || ""}
-                  </h2>
-                  <div class="text-gray-500 text-sm">${c.city || ""}</div>
-                  <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
-                  <p class="text-gray-700 text-sm mt-3">${c.tagline || ""}</p>
-                </div>
-
-                <div class="text-right">
-                  <div class="text-yellow-500 text-sm font-semibold leading-none">
-                    ${stars(c.avgRating)}
-                  </div>
-                  <div class="text-gray-500 text-xs leading-none mt-1">
-                    ${c.reviewCount || 0} reviews
-                  </div>
-                </div>
+        container.innerHTML = data.items.map(c => `
+          <article class="bg-white rounded-2xl border border-gray-200 shadow p-5 stat-card">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div>
+                <h2 class="text-lg font-semibold text-indigo-700 leading-tight">${c.name || ""}</h2>
+                <div class="text-gray-500 text-sm">${c.city || ""}</div>
+                <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
+                <p class="text-gray-700 text-sm mt-3">${c.tagline || ""}</p>
               </div>
 
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
-                <a
-                  href="company.html?slug=${encodeURIComponent(c.slug)}"
-                  class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition"
-                >
-                  Bekijk profiel
-                </a>
-                <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
-                  ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
-                </div>
+              <div class="text-right">
+                <div class="text-yellow-500 text-sm font-semibold leading-none">${stars(c.avgRating)}</div>
+                <div class="text-gray-500 text-xs leading-none mt-1">${c.reviewCount || 0} reviews</div>
               </div>
-            </article>
-          `;
-          })
-          .join("");
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
+              <a
+                href="company.html?slug=${encodeURIComponent(c.slug)}"
+                class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition"
+              >
+                Bekijk profiel
+              </a>
+              <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
+                ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
+              </div>
+            </div>
+          </article>
+        `).join("");
 
         msg.textContent = `${data.items.length} resultaat / resultaten gevonden`;
       } catch (err) {
@@ -161,30 +139,40 @@
       }
     }
 
-    // querystring uitlezen bij eerste load
     function getQueryParam(name) {
       const params = new URLSearchParams(window.location.search);
       return params.get(name) || "";
     }
 
-    document.getElementById("filterForm").addEventListener("submit", (e) => {
+    document.getElementById("filterForm").addEventListener("submit", e => {
       e.preventDefault();
       const category = document.getElementById("filterCategory").value.trim();
       const city = document.getElementById("filterCity").value.trim();
       loadResults(category, city);
     });
 
-    // init load
+    // Initieel laden
     (function init() {
       const startCategory = getQueryParam("category");
       const startCity = getQueryParam("city");
-
-      // zet velden gelijk met url parameters
       document.getElementById("filterCategory").value = startCategory;
       document.getElementById("filterCity").value = startCity;
-
       loadResults(startCategory, startCity);
     })();
+
+    // Zachte fade-in animatie bij laden
+    document.addEventListener("DOMContentLoaded", () => {
+      const sections = document.querySelectorAll("header, main section, footer");
+      sections.forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        setTimeout(() => {
+          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
+      });
+    });
   </script>
 </body>
 </html>
