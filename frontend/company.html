@@ -10,20 +10,18 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Tailwind -->
-  <script>
-    window.tailwind = { config: { darkMode: 'class' } };
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <link rel="stylesheet" href="./style.css" />
+  <!-- ✅ Lokale Tailwind build (geen CDN meer) -->
+  <link rel="stylesheet" href="style.css?v=20251030" />
 </head>
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight">Irisje.nl</a>
+      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">
+        Irisje.nl
+      </a>
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="index.html" class="hover:underline">Home</a>
         <a href="results.html" class="hover:underline">Bedrijven</a>
@@ -36,7 +34,7 @@
   <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-10 space-y-10">
 
     <!-- Bedrijfsinfo -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center">
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center stat-card">
       <img
         id="logo"
         src="https://via.placeholder.com/100"
@@ -59,45 +57,31 @@
       <p id="description" class="text-gray-700 text-base mt-4"></p>
     </section>
 
-    <!-- Beoordelingen -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+    <!-- Reviews -->
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 table-section">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">💬</span>
-        Beoordelingen
+        <span class="text-2xl mr-2">💬</span> Beoordelingen
       </h2>
       <div id="review-list" class="space-y-4 text-left">
         <div class="text-gray-500 text-sm">Reviews worden geladen...</div>
       </div>
     </section>
 
-    <!-- Nieuwe review plaatsen -->
+    <!-- Nieuwe review -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">✍</span>
-        Jouw ervaring
+        <span class="text-2xl mr-2">✍</span> Jouw ervaring
       </h2>
 
       <form id="reviewForm" class="space-y-4">
-        <input
-          id="reviewName"
-          type="text"
-          placeholder="Naam"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
+        <input id="reviewName" type="text" placeholder="Naam" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
 
-        <input
-          id="reviewEmail"
-          type="email"
-          placeholder="E-mailadres (wordt niet getoond)"
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
+        <input id="reviewEmail" type="email" placeholder="E-mailadres (wordt niet getoond)"
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
 
-        <select
-          id="reviewRating"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        >
+        <select id="reviewRating" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           <option value="">Kies aantal sterren</option>
           <option value="5">⭐⭐⭐⭐⭐</option>
           <option value="4">⭐⭐⭐⭐</option>
@@ -106,17 +90,11 @@
           <option value="1">⭐</option>
         </select>
 
-        <textarea
-          id="reviewMessage"
-          placeholder="Bericht"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        ></textarea>
+        <textarea id="reviewMessage" placeholder="Bericht" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
 
-        <button
-          type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition"
-        >
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur beoordeling
         </button>
 
@@ -127,38 +105,21 @@
     <!-- Offerte aanvragen -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">📬</span>
-        Vraag een offerte aan
+        <span class="text-2xl mr-2">📬</span> Vraag een offerte aan
       </h2>
 
       <form id="requestForm" class="space-y-4">
-        <input
-          id="requestName"
-          type="text"
-          placeholder="Naam"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
+        <input id="requestName" type="text" placeholder="Naam" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none" />
 
-        <input
-          id="requestEmail"
-          type="email"
-          placeholder="E-mailadres"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
+        <input id="requestEmail" type="email" placeholder="E-mailadres" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none" />
 
-        <textarea
-          id="requestMessage"
-          placeholder="Beschrijf je klus of vraag"
-          required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        ></textarea>
+        <textarea id="requestMessage" placeholder="Beschrijf je klus of vraag" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-green-500 focus:outline-none"></textarea>
 
-        <button
-          type="submit"
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition"
-        >
+        <button type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur aanvraag
         </button>
 
@@ -176,13 +137,13 @@
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
     function getSlug() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get("slug") || "";
+      const params = new URLSearchParams(window.location.search);
+      return params.get("slug") || "";
     }
 
-    function stars(rating) {
-      const full = Math.round(rating || 0);
-      return "⭐".repeat(full);
+    function stars(r) {
+      const n = Math.round(r || 0);
+      return "⭐".repeat(n);
     }
 
     async function loadCompany() {
@@ -197,7 +158,6 @@
       const logoEl = document.getElementById("logo");
 
       try {
-        // Let op: dit endpoint werkt nu in jouw backend zonder /details
         const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
@@ -210,8 +170,7 @@
         categoriesEl.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
         descEl.textContent = data.description || "";
         if (data.logoUrl) logoEl.src = data.logoUrl;
-      } catch (err) {
-        console.error("Fout bij laden bedrijfsgegevens:", err);
+      } catch {
         nameEl.textContent = "Kon bedrijfsgegevens niet laden.";
       }
     }
@@ -219,135 +178,99 @@
     async function loadReviews() {
       const slug = getSlug();
       const listEl = document.getElementById("review-list");
-
       try {
         const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
-        if (!res.ok) throw new Error("Kon reviews niet laden.");
+        if (!res.ok) throw new Error();
         const data = await res.json();
-
         if (!data.length) {
-          listEl.innerHTML = `<div class="text-gray-500 text-sm">Nog geen beoordelingen beschikbaar.</div>`;
+          listEl.innerHTML = `<div class='text-gray-500 text-sm'>Nog geen beoordelingen beschikbaar.</div>`;
           return;
         }
-
-        // meest recent eerst
-        const sorted = [...data].sort((a, b) => {
-          const da = new Date(a.createdAt || a.date || 0).getTime();
-          const db = new Date(b.createdAt || b.date || 0).getTime();
-          return db - da;
-        });
-
-        listEl.innerHTML = sorted.map((rev) => {
-          const d = new Date(rev.createdAt || rev.date || Date.now()).toLocaleDateString("nl-NL", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          });
+        const sorted = [...data].sort((a,b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
+        listEl.innerHTML = sorted.map(rev => {
+          const d = new Date(rev.createdAt||rev.date||Date.now()).toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"});
           return `
             <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
               <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
               <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
               <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
-            </div>
-          `;
+            </div>`;
         }).join("");
-      } catch (err) {
-        console.error("Fout bij laden reviews:", err);
-        listEl.innerHTML = `<div class="text-red-600 text-sm">Fout bij laden reviews.</div>`;
+      } catch {
+        listEl.innerHTML = `<div class='text-red-600 text-sm'>Fout bij laden reviews.</div>`;
       }
     }
 
     async function submitReview(e) {
       e.preventDefault();
       const slug = getSlug();
-      const name = document.getElementById("reviewName").value.trim();
-      const email = document.getElementById("reviewEmail").value.trim();
-      const rating = document.getElementById("reviewRating").value;
-      const message = document.getElementById("reviewMessage").value.trim();
-      const msgEl = document.getElementById("reviewStatusMsg");
-
-      msgEl.textContent = "Bezig met versturen...";
-      msgEl.className = "text-gray-500 text-center text-sm";
-
+      const name = reviewName.value.trim();
+      const email = reviewEmail.value.trim();
+      const rating = reviewRating.value;
+      const message = reviewMessage.value.trim();
+      const msg = reviewStatusMsg;
+      msg.textContent = "Bezig met versturen...";
+      msg.className = "text-gray-500 text-center text-sm";
       try {
         const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            companySlug: slug,
-            name,
-            email,
-            rating,
-            message
-          })
+          body: JSON.stringify({ companySlug: slug, name, email, rating, message })
         });
-
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Kon beoordeling niet versturen.");
-
-        msgEl.textContent = "✅ Bedankt voor je beoordeling!";
-        msgEl.className = "text-green-600 text-center text-sm";
-
-        document.getElementById("reviewForm").reset();
+        if (!res.ok) throw new Error(data.message);
+        msg.textContent = "✅ Bedankt voor je beoordeling!";
+        msg.className = "text-green-600 text-center text-sm";
+        reviewForm.reset();
         loadReviews();
-      } catch (err) {
-        console.error("Fout bij versturen review:", err);
-        msgEl.textContent = "❌ Er ging iets mis bij het versturen.";
-        msgEl.className = "text-red-600 text-center text-sm";
+      } catch {
+        msg.textContent = "❌ Er ging iets mis bij het versturen.";
+        msg.className = "text-red-600 text-center text-sm";
       }
     }
 
     async function submitRequest(e) {
       e.preventDefault();
       const slug = getSlug();
-      const name = document.getElementById("requestName").value.trim();
-      const email = document.getElementById("requestEmail").value.trim();
-      const message = document.getElementById("requestMessage").value.trim();
-      const msgEl = document.getElementById("requestStatusMsg");
-
-      msgEl.textContent = "Bezig met verzenden...";
-      msgEl.className = "text-gray-500 text-center text-sm";
-
+      const name = requestName.value.trim();
+      const email = requestEmail.value.trim();
+      const message = requestMessage.value.trim();
+      const msg = requestStatusMsg;
+      msg.textContent = "Bezig met verzenden...";
+      msg.className = "text-gray-500 text-center text-sm";
       try {
-        // Haal bedrijfsinfo zodat we een companyId hebben
         const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         const companyData = await companyRes.json();
-        const companyId =
-          companyData._id ||
-          companyData.id ||
-          companyData.company ||
-          companyData.companyId;
-
+        const companyId = companyData._id || companyData.id;
         const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            company: companyId,
-            name,
-            email,
-            message
-          })
+          body: JSON.stringify({ company: companyId, name, email, message })
         });
-
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Kon aanvraag niet versturen.");
-
-        msgEl.textContent = "✅ Aanvraag succesvol verzonden!";
-        msgEl.className = "text-green-600 text-center text-sm";
-
-        document.getElementById("requestForm").reset();
-      } catch (err) {
-        console.error("Fout bij verzenden aanvraag:", err);
-        msgEl.textContent = "❌ Er ging iets mis bij het verzenden.";
-        msgEl.className = "text-red-600 text-center text-sm";
+        if (!res.ok) throw new Error(data.error);
+        msg.textContent = "✅ Aanvraag succesvol verzonden!";
+        msg.className = "text-green-600 text-center text-sm";
+        requestForm.reset();
+      } catch {
+        msg.textContent = "❌ Er ging iets mis bij het verzenden.";
+        msg.className = "text-red-600 text-center text-sm";
       }
     }
 
-    document.getElementById("reviewForm").addEventListener("submit", submitReview);
-    document.getElementById("requestForm").addEventListener("submit", submitRequest);
-
+    reviewForm.addEventListener("submit", submitReview);
+    requestForm.addEventListener("submit", submitRequest);
     loadCompany();
     loadReviews();
+
+    // Fade-in animatie
+    document.addEventListener("DOMContentLoaded", () => {
+      const el = document.querySelectorAll("header, main section, footer");
+      el.forEach((e,i) => {
+        e.style.opacity="0"; e.style.transform="translateY(12px)";
+        setTimeout(()=>{e.style.transition="opacity .8s, transform .8s"; e.style.opacity="1"; e.style.transform="translateY(0)";},150*i);
+      });
+    });
   </script>
 </body>
 </html>
