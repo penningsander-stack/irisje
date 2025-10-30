@@ -4,17 +4,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl style guide</title>
+  <title>Irisje.nl – Style Guide</title>
 
-  <!-- Tailwind (voor voorbeeldweergave) -->
+  <!-- Tailwind alleen voor deze referentiepagina -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-
-  <!-- Lokale CSS -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 min-h-screen p-6">
-  <div class="max-w-5xl mx-auto space-y-10">
+<body class="bg-gray-50 text-gray-800 min-h-screen p-6 font-[Inter,sans-serif]">
+  <div class="max-w-5xl mx-auto space-y-12">
+
+    <!-- Inleiding / overzicht -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h1 class="text-2xl font-bold text-indigo-700 mb-3">🎨 Irisje.nl – Style Guide</h1>
+      <p class="text-gray-600 text-sm leading-relaxed mb-4">
+        Deze pagina geeft een overzicht van de visuele stijl en standaard Tailwind-classes die gebruikt worden op <strong>Irisje.nl</strong>.
+        Alles is ontworpen met één doel: een moderne, consistente en toegankelijke gebruikerservaring.
+      </p>
+
+      <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 text-sm">
+        <h2 class="font-semibold text-indigo-700 mb-2">🌐 Standaard classes (voor ontwikkelaars)</h2>
+        <ul class="list-disc list-inside text-gray-700 leading-relaxed">
+          <li><strong>Knoppen:</strong> <code>bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl py-3 font-semibold transition</code></li>
+          <li><strong>Secundaire knop:</strong> <code>bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50</code></li>
+          <li><strong>Form-input:</strong> <code>border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500</code></li>
+          <li><strong>Card-sectie:</strong> <code>bg-white rounded-2xl shadow-md border border-gray-100 p-6</code></li>
+          <li><strong>Titel:</strong> <code>text-indigo-700 font-semibold</code></li>
+          <li><strong>Status-labels:</strong> <code>inline-block text-[11px] font-semibold px-2 py-1 rounded-lg border</code></li>
+        </ul>
+      </div>
+    </section>
 
     <!-- Merk / Header -->
     <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
@@ -69,17 +88,17 @@
       <form class="grid grid-cols-1 gap-4 text-sm max-w-md">
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Naam</label>
-          <input type="text" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Naam" />
+          <input type="text" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Naam" />
         </div>
 
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">E-mailadres</label>
-          <input type="email" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="naam@voorbeeld.nl" />
+          <input type="email" class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="naam@voorbeeld.nl" />
         </div>
 
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Bericht</label>
-          <textarea class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Beschrijf je klus of vraag..."></textarea>
+          <textarea class="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Beschrijf je klus of vraag..."></textarea>
         </div>
 
         <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition shadow-sm">
@@ -145,11 +164,10 @@
       </table>
     </section>
 
-    <!-- 🎨 Kleuren & Typografie -->
+    <!-- Kleuren & Typografie -->
     <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
       <h2 class="text-lg font-semibold text-indigo-700 mb-6">🎨 Kleuren & Typografie</h2>
 
-      <!-- Kleuren -->
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-8 text-sm">
         <div class="text-center">
           <div class="w-full h-14 rounded-xl bg-indigo-600 border mb-2"></div>
@@ -183,29 +201,25 @@
         </div>
       </div>
 
-      <!-- Typografie -->
-      <div class="space-y-4">
-        <h3 class="text-lg font-semibold text-indigo-700">Typografie</h3>
-        <p class="text-gray-500 text-sm mb-2">Font: <code>Inter, sans-serif</code></p>
+      <h3 class="text-lg font-semibold text-indigo-700 mb-3">Typografie</h3>
+      <p class="text-gray-500 text-sm mb-2">Font: <code>Inter, sans-serif</code></p>
 
-        <div class="space-y-3">
-          <div class="text-3xl font-bold">Kop 1 – groot en sterk</div>
-          <div class="text-2xl font-semibold">Kop 2 – subsectie</div>
-          <div class="text-lg font-medium">Kop 3 – kleine titel</div>
-          <p class="text-base text-gray-700 leading-relaxed">
-            Paragraaftekst – Dit is het standaard lettertype en gewicht voor lopende tekst op Irisje.nl. De toon is vriendelijk, professioneel en modern.
-          </p>
-          <p class="text-sm text-gray-500 leading-relaxed">
-            Kleine toelichtingstekst – gebruikt bij bijschriften of secundaire informatie.
-          </p>
-        </div>
+      <div class="space-y-3">
+        <div class="text-3xl font-bold">Kop 1 – groot en sterk</div>
+        <div class="text-2xl font-semibold">Kop 2 – subsectie</div>
+        <div class="text-lg font-medium">Kop 3 – kleine titel</div>
+        <p class="text-base text-gray-700 leading-relaxed">
+          Paragraaftekst – Standaard stijl voor lopende tekst op Irisje.nl. Professioneel, vriendelijk en goed leesbaar.
+        </p>
+        <p class="text-sm text-gray-500 leading-relaxed">
+          Kleine toelichtingstekst – gebruikt bij bijschriften of subtiele uitleg.
+        </p>
       </div>
     </section>
 
-    <!-- Footer -->
-    <section class="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center text-xs text-gray-500">
+    <footer class="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center text-xs text-gray-500">
       © 2025 Irisje.nl – Alle rechten voorbehouden
-    </section>
+    </footer>
   </div>
 </body>
 </html>
