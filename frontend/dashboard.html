@@ -1,3 +1,4 @@
+// frontend/dashboard.html
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -7,9 +8,8 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Hoofd-stylesheet + permanente kleurfix -->
+  <!-- Geünificeerde moderne Irisje-stijl -->
   <link rel="stylesheet" href="style.css?v=20251030" />
-  <link rel="stylesheet" href="override.css?v=1" />
 
   <!-- Chart.js voor grafieken -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -42,7 +42,6 @@
       </h2>
 
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
-
         <div class="bg-gray-50 rounded-xl p-4 border">
           <div id="total" class="text-2xl font-bold text-indigo-700">0</div>
           <div class="text-gray-600 mt-1">Totaal</div>
@@ -62,7 +61,6 @@
           <div id="followed-up" class="text-2xl font-bold">0</div>
           <div class="text-gray-600 mt-1">Opgevolgd</div>
         </div>
-
       </div>
     </section>
 
@@ -73,29 +71,19 @@
       </h2>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
         <div class="bg-white rounded-2xl shadow-inner p-4 border border-gray-100">
           <h3 class="font-medium text-gray-700 mb-3 text-center">
             Aanvragen per maand
           </h3>
-          <canvas
-            id="maandChart"
-            height="180"
-            aria-label="Grafiek aanvragen per maand"
-          ></canvas>
+          <canvas id="maandChart" height="180" aria-label="Grafiek aanvragen per maand"></canvas>
         </div>
 
         <div class="bg-white rounded-2xl shadow-inner p-4 border border-gray-100">
           <h3 class="font-medium text-gray-700 mb-3 text-center">
             Verdeling per status
           </h3>
-          <canvas
-            id="statusChart"
-            height="180"
-            aria-label="Grafiek verdeling per status"
-          ></canvas>
+          <canvas id="statusChart" height="180" aria-label="Grafiek verdeling per status"></canvas>
         </div>
-
       </div>
     </section>
 
@@ -106,8 +94,6 @@
       </h2>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 text-sm">
-
-        <!-- Filter dropdown -->
         <div class="flex items-center gap-2">
           <label for="statusFilter" class="text-gray-600 whitespace-nowrap">
             Filter op status
@@ -126,7 +112,6 @@
           </select>
         </div>
 
-        <!-- Vernieuwen knop -->
         <button
           id="refreshBtn"
           class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 self-start sm:self-auto transition"
@@ -180,7 +165,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- Sequentiële fade-in met JS -->
+  <!-- Fade-in animatie -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const blocks = [
@@ -202,8 +187,7 @@
     });
   </script>
 
-  <!-- Dashboard logic (data ophalen, charts tekenen, filter etc.) -->
-  <script src="js/dashboard.js?v=20251029"></script>
-
+  <!-- Dashboard JS -->
+  <script src="js/dashboard.js?v=20251030"></script>
 </body>
 </html>
