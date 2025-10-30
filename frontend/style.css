@@ -1,117 +1,137 @@
-/* frontend/custom.css */
-/* === Basisfont === */
+// frontend/style.css
+
+/* === BASISINSTELLINGEN === */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
   font-family: 'Inter', sans-serif;
+  background-color: #f9fafb;
+  color: #1f2937;
+  line-height: 1.6;
 }
 
-/* === Keyframes voor fade-in === */
+/* === ANIMATIES === */
 @keyframes fadeInDashboard {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-/* Sequentiële fade-in (JS zet inline styles, maar dit houdt de easing consistent) */
 .fade-seq section {
   opacity: 0;
   transform: translateY(12px);
   animation: fadeInDashboard 0.9s ease-out forwards;
 }
-
-/* Kleine delay per blok als fallback */
 .fade-seq section:nth-of-type(1) { animation-delay: 0.1s; }
 .fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
 .fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
 .fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
 
-/* Hover lift op kaarten/grafieken */
-.chart-container:hover,
-.stat-card:hover {
-  transform: translateY(-2px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-}
-
-/* Tabellen zacht laten inkomen */
-.table-section table {
-  opacity: 0;
-  animation: fadeInTables 1s ease forwards;
-  animation-delay: 0.2s;
-}
-
-@keyframes fadeInTables {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-/* Zachte hover shadow voor alle sections */
-section {
-  transition: box-shadow 0.3s ease;
-}
-section:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-}
-
-/* === Moderne Irisje kleuren === */
+/* === KLEUREN Irisje === */
 :root {
---irisje-indigo: #22d3ee; /* testkleur turquoise */
+  --irisje-indigo: #6366f1;          /* indigo 500 */
+  --irisje-indigo-strong: #4f46e5;   /* indigo 600 */
   --irisje-indigo-light: rgba(99,102,241,0.12);
-  --irisje-green: #22c55e;             /* groen */
-  --irisje-red: #ef4444;               /* rood */
-  --irisje-yellow: #eab308;            /* warm geel */
-  --irisje-indigo-text-strong: #4f46e5; /* iets donkerder titel */
+  --irisje-green: #22c55e;
+  --irisje-red: #ef4444;
+  --irisje-yellow: #eab308;
 }
 
-/* Header achtergrond (indigo balk bovenaan) */
-.bg-indigo-600 {
+/* === HEADER & NAV === */
+.bg-indigo-600,
+.bg-indigo-700 {
   background-color: var(--irisje-indigo) !important;
+  color: #fff !important;
 }
-
-/* Tekst in titels etc. */
 .text-indigo-700,
 .text-indigo-600 {
-  color: var(--irisje-indigo-text-strong) !important;
+  color: var(--irisje-indigo-strong) !important;
 }
-
-/* Hover achtergrondje van de Uitloggen-knop etc. */
 .hover\:bg-indigo-50:hover {
   background-color: var(--irisje-indigo-light) !important;
 }
 
-/* Statistiek getallen kleuren */
-#total {
-  color: var(--irisje-indigo-text-strong) !important;
-}
-#accepted {
-  color: var(--irisje-green) !important;
-}
-#rejected {
-  color: var(--irisje-red) !important;
-}
-#followed-up {
-  color: var(--irisje-yellow) !important;
-}
-
-/* Kaarten krijgen subtiele paarse rand */
+/* === SECTIES & KAARTEN === */
 section.bg-white {
   background-color: #fff;
   border: 1px solid rgba(99,102,241,0.08);
   border-radius: 1rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+section.bg-white:hover {
+  box-shadow: 0 8px 24px rgba(99,102,241,0.12);
+  transform: translateY(-2px);
 }
 
-/* Tabellen header in lichte indigo haze */
+/* === STATISTIEK-KAARTEN === */
+.stat-card {
+  border: 1px solid rgba(99,102,241,0.08);
+  background-color: #fff;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+.stat-card:hover {
+  box-shadow: 0 6px 18px rgba(99,102,241,0.15);
+  transform: translateY(-2px);
+}
+#total { color: var(--irisje-indigo-strong) !important; }
+#accepted { color: var(--irisje-green) !important; }
+#rejected { color: var(--irisje-red) !important; }
+#followed-up { color: var(--irisje-yellow) !important; }
+
+/* === TABELLEN === */
+@keyframes fadeInTables {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.table-section table {
+  opacity: 0;
+  animation: fadeInTables 1s ease forwards;
+  animation-delay: 0.25s;
+}
 .table-section thead {
   background-color: var(--irisje-indigo-light);
-  color: var(--irisje-indigo-text-strong);
+  color: var(--irisje-indigo-strong);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.table-section tbody tr:hover {
+  background-color: rgba(99,102,241,0.05);
+  transition: background-color 0.2s ease;
 }
 
-/* Rijen hover zacht paars */
-.table-section tbody tr:hover {
-  background-color: rgba(99,102,241,0.04);
-  transition: background-color 0.15s ease;
+/* === KNOPPEN === */
+button,
+a.button {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+button:hover,
+a.button:hover {
+  transform: translateY(-1px);
+}
+
+/* === SCHADUWEN EN OVERGANGEN === */
+.chart-container:hover,
+.stat-card:hover {
+  transform: translateY(-3px);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(99,102,241,0.15);
+}
+
+/* === FOOTER === */
+footer {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  text-align: center;
+  font-size: 0.8rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* === RESPONSIVE FIXES === */
+@media (max-width: 640px) {
+  main { padding: 1.25rem; }
+  section { padding: 1rem !important; }
+  h1, h2 { font-size: 1rem !important; }
 }
