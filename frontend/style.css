@@ -59,7 +59,7 @@ section:hover {
 
 /* === Moderne Irisje kleuren === */
 :root {
-  --irisje-indigo: #6366f1;            /* indigo-500 vibe */
+--irisje-indigo: #22d3ee; /* testkleur turquoise */
   --irisje-indigo-light: rgba(99,102,241,0.12);
   --irisje-green: #22c55e;             /* groen */
   --irisje-red: #ef4444;               /* rood */
