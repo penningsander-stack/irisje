@@ -1,4 +1,6 @@
 /* frontend/custom.css */
+@layer base, components, utilities;
+
 /* === Basisstijl Irisje.nl Dashboard === */
 
 /* Font en basis */
@@ -54,12 +56,12 @@ body {
 
 /* === Moderne Irisje kleuren === */
 :root {
-  --irisje-indigo: #6366f1;            /* zacht paars-blauw */
+  --irisje-indigo: #6366f1;
   --irisje-indigo-light: rgba(99,102,241,0.12);
-  --irisje-green: #22c55e;             /* fris groen */
-  --irisje-red: #ef4444;               /* warm rood */
-  --irisje-yellow: #eab308;            /* zonnig geel */
-  --irisje-indigo-strong: #4f46e5;     /* sterkere variant voor titels */
+  --irisje-green: #22c55e;
+  --irisje-red: #ef4444;
+  --irisje-yellow: #eab308;
+  --irisje-indigo-strong: #4f46e5;
 }
 
 /* Header en knoppen */
