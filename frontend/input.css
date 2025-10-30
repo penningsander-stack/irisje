@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Extra reset */
+html, body {
+  margin: 0;
+  padding: 0;
+}
