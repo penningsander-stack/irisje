@@ -4,31 +4,20 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl – Style Guide</title>
-  <meta name="description" content="Overzicht van de stijlelementen, kleuren en componenten van Irisje.nl." />
-  <meta name="theme-color" content="#4F46E5" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <title>Irisje.nl style guide</title>
 
-  <!-- ✅ Lokale Tailwind build -->
-  <link rel="stylesheet" href="style.css?v=20251030" />
+  <!-- Tailwind (voor voorbeeldweergave) -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+
+  <!-- Lokale CSS -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
-  <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-5 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">
-        Irisje.nl
-      </a>
-      <span class="text-sm text-indigo-100">Style Guide</span>
-    </div>
-  </header>
+<body class="bg-gray-50 text-gray-800 min-h-screen p-6">
+  <div class="max-w-5xl mx-auto space-y-10">
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-10 space-y-10">
-    
     <!-- Merk / Header -->
-    <section class="bg-white border border-gray-200 rounded-2xl shadow-md p-6">
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold">I</div>
         <div>
@@ -39,20 +28,20 @@
     </section>
 
     <!-- Knoppen -->
-    <section class="bg-white border border-gray-200 rounded-2xl shadow-md p-6">
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4">Knoppen</h2>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
         <div class="space-y-2">
           <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Primair (indigo)</div>
-          <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left transition">
+          <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left">
             Primair call to action
           </button>
         </div>
 
         <div class="space-y-2">
           <div class="text-gray-600 text-xs font-medium uppercase tracking-wide">Secundair (wit met rand)</div>
-          <button class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left transition">
+          <button class="bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold rounded-xl px-4 py-2 shadow-sm w-full text-left">
             Secundair / minder belangrijk
           </button>
         </div>
@@ -74,21 +63,25 @@
     </section>
 
     <!-- Formulieren -->
-    <section class="bg-white border border-gray-200 rounded-2xl shadow-md p-6">
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4">Formulieren</h2>
+
       <form class="grid grid-cols-1 gap-4 text-sm max-w-md">
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Naam</label>
           <input type="text" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Naam" />
         </div>
+
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">E-mailadres</label>
           <input type="email" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="naam@voorbeeld.nl" />
         </div>
+
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">Bericht</label>
           <textarea class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Beschrijf je klus of vraag..."></textarea>
         </div>
+
         <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition shadow-sm">
           Verstuur aanvraag
         </button>
@@ -96,10 +89,11 @@
     </section>
 
     <!-- Cards -->
-    <section class="bg-white border border-gray-200 rounded-2xl shadow-md p-6">
-      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Cards (voorbeeld homepage)</h2>
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4">Cards (zoals op de homepage)</h2>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow transition">
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
           <div class="flex items-start justify-between">
             <div class="font-semibold text-indigo-700 text-sm leading-snug">Loodgieter Jan</div>
             <div class="text-yellow-500 text-xs leading-none">⭐⭐⭐⭐</div>
@@ -113,7 +107,7 @@
           </a>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 hover:shadow transition">
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <div class="text-yellow-500 text-sm font-semibold leading-none">⭐⭐⭐⭐⭐</div>
           <p class="text-gray-800 mt-2 leading-relaxed">
             “Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”
@@ -124,8 +118,9 @@
     </section>
 
     <!-- Tabellen -->
-    <section class="bg-white border border-gray-200 rounded-2xl shadow-md p-6 overflow-x-auto">
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 overflow-x-auto">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4">Tabel (dashboard)</h2>
+
       <table class="w-full text-sm border-collapse min-w-[600px]">
         <thead>
           <tr class="bg-indigo-50 text-gray-700">
@@ -136,7 +131,7 @@
             <th class="p-2 text-left text-xs font-semibold uppercase tracking-wide">Datum</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="align-top">
           <tr class="border-b border-gray-200">
             <td class="p-2 font-medium text-gray-800">Test Offerte</td>
             <td class="p-2 text-gray-600 text-xs">test@offerte.nl</td>
@@ -146,48 +141,71 @@
             </td>
             <td class="p-2 text-gray-500 text-[11px]">25 okt 2025</td>
           </tr>
-          <tr class="border-b border-gray-200">
-            <td class="p-2 font-medium text-gray-800">Lisa Jansen</td>
-            <td class="p-2 text-gray-600 text-xs">lisa@example.com</td>
-            <td class="p-2 text-gray-700 text-xs">Graag hulp bij een lekkende kraan.</td>
-            <td class="p-2 text-gray-700 text-xs">
-              <span class="inline-block bg-green-100 text-green-800 text-[11px] font-semibold px-2 py-1 rounded-lg border border-green-200">Geaccepteerd</span>
-            </td>
-            <td class="p-2 text-gray-500 text-[11px]">24 okt 2025</td>
-          </tr>
-          <tr>
-            <td class="p-2 font-medium text-gray-800">Peter Bos</td>
-            <td class="p-2 text-gray-600 text-xs">peter@example.com</td>
-            <td class="p-2 text-gray-700 text-xs">Afvoer verstopt, kunt u komen kijken?</td>
-            <td class="p-2 text-gray-700 text-xs">
-              <span class="inline-block bg-red-100 text-red-700 text-[11px] font-semibold px-2 py-1 rounded-lg border border-red-200">Afgewezen</span>
-            </td>
-            <td class="p-2 text-gray-500 text-[11px]">24 okt 2025</td>
-          </tr>
         </tbody>
       </table>
     </section>
-  </main>
 
-  <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100 mt-auto">
-    © 2025 Irisje.nl – Alle rechten voorbehouden
-  </footer>
+    <!-- 🎨 Kleuren & Typografie -->
+    <section class="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-6">🎨 Kleuren & Typografie</h2>
 
-  <!-- Fade-in animatie -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const blocks = document.querySelectorAll("header, main section, footer");
-      blocks.forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        setTimeout(() => {
-          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        }, 150 * i);
-      });
-    });
-  </script>
+      <!-- Kleuren -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-8 text-sm">
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-indigo-600 border mb-2"></div>
+          <div class="font-medium text-xs">Indigo</div>
+          <div class="text-gray-500 text-[11px]">#6366f1</div>
+        </div>
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-green-500 border mb-2"></div>
+          <div class="font-medium text-xs">Groen</div>
+          <div class="text-gray-500 text-[11px]">#22c55e</div>
+        </div>
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-red-500 border mb-2"></div>
+          <div class="font-medium text-xs">Rood</div>
+          <div class="text-gray-500 text-[11px]">#ef4444</div>
+        </div>
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-yellow-400 border mb-2"></div>
+          <div class="font-medium text-xs">Geel</div>
+          <div class="text-gray-500 text-[11px]">#eab308</div>
+        </div>
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-gray-100 border mb-2"></div>
+          <div class="font-medium text-xs">Lichtgrijs</div>
+          <div class="text-gray-500 text-[11px]">#f3f4f6</div>
+        </div>
+        <div class="text-center">
+          <div class="w-full h-14 rounded-xl bg-gray-800 border mb-2"></div>
+          <div class="font-medium text-xs text-white">Donkergrijs</div>
+          <div class="text-gray-400 text-[11px]">#1f2937</div>
+        </div>
+      </div>
+
+      <!-- Typografie -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-indigo-700">Typografie</h3>
+        <p class="text-gray-500 text-sm mb-2">Font: <code>Inter, sans-serif</code></p>
+
+        <div class="space-y-3">
+          <div class="text-3xl font-bold">Kop 1 – groot en sterk</div>
+          <div class="text-2xl font-semibold">Kop 2 – subsectie</div>
+          <div class="text-lg font-medium">Kop 3 – kleine titel</div>
+          <p class="text-base text-gray-700 leading-relaxed">
+            Paragraaftekst – Dit is het standaard lettertype en gewicht voor lopende tekst op Irisje.nl. De toon is vriendelijk, professioneel en modern.
+          </p>
+          <p class="text-sm text-gray-500 leading-relaxed">
+            Kleine toelichtingstekst – gebruikt bij bijschriften of secundaire informatie.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <section class="bg-gray-100 border border-gray-200 rounded-xl p-6 text-center text-xs text-gray-500">
+      © 2025 Irisje.nl – Alle rechten voorbehouden
+    </section>
+  </div>
 </body>
 </html>
