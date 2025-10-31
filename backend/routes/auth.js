@@ -1,8 +1,83 @@
-// === Extra routes voor registratie en wachtwoordherstel ===
+// backend/routes/auth.js
+const express = require("express");
+const router = express.Router();
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const User = require("../models/User");
 
-// 📩 SMTP-transporter gebruiken (PHPMailer via jouw SMTP-config)
+// === Inloggen ===
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ ok: false, error: "Onbekende gebruiker" });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ ok: false, error: "Wachtwoord onjuist" });
+
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    user.lastLogin = new Date();
+    await user.save();
+
+    res.json({
+      ok: true,
+      message: "Inloggen geslaagd",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        lastLogin: user.lastLogin,
+      },
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij inloggen" });
+  }
+});
+
+// === Sessies ===
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    if (!token) return res.status(401).json({ ok: false, error: "Geen token" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(404).json({ ok: false, error: "Gebruiker niet gevonden" });
+
+    res.json({ ok: true, user });
+  } catch {
+    res.status(401).json({ ok: false, error: "Ongeldige sessie" });
+  }
+});
+
+router.post("/logout", (_req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None",
+  });
+  res.json({ ok: true, message: "Uitgelogd" });
+});
+
+router.get("/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
+
+// === Extra routes voor registratie en wachtwoordherstel ===
+
+// 📩 SMTP-transporter gebruiken
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
@@ -13,7 +88,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// === 1️⃣ Account registreren ===
+// 1️⃣ Registratie
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -25,7 +100,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ ok: false, message: "E-mailadres is al geregistreerd." });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashed, role: "bedrijf" });
+    const user = new User({ name, email, password: hashed, role: "company" });
     await user.save();
 
     res.json({ ok: true, message: "Account aangemaakt. Controleer je e-mail voor bevestiging." });
@@ -35,7 +110,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// === 2️⃣ Wachtwoord vergeten ===
+// 2️⃣ Wachtwoord vergeten
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -43,23 +118,19 @@ router.post("/forgot-password", async (req, res) => {
     if (!user)
       return res.status(404).json({ ok: false, message: "Geen gebruiker met dit e-mailadres." });
 
-    // 🔑 Token aanmaken
     const token = crypto.randomBytes(32).toString("hex");
     user.resetToken = token;
-    user.resetExpires = Date.now() + 1000 * 60 * 30; // 30 minuten geldig
+    user.resetExpires = Date.now() + 1000 * 60 * 30;
     await user.save();
 
-    // 🔗 Resetlink maken
     const resetLink = `https://irisje.nl/password-reset.html?token=${encodeURIComponent(token)}`;
 
-    // 📧 E-mail verzenden
     await transporter.sendMail({
       from: `"Irisje.nl" <${process.env.SMTP_USER}>`,
       to: user.email,
       subject: "Wachtwoordherstel – Irisje.nl",
       html: `
         <p>Beste ${user.name || "gebruiker"},</p>
-        <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen.</p>
         <p>Klik op onderstaande link om een nieuw wachtwoord in te stellen:</p>
         <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
         <p>Deze link is 30 minuten geldig.</p>
@@ -74,7 +145,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// === 3️⃣ Nieuw wachtwoord instellen ===
+// 3️⃣ Nieuw wachtwoord instellen
 router.post("/reset-password/:token", async (req, res) => {
   try {
     const { token } = req.params;
@@ -100,3 +171,5 @@ router.post("/reset-password/:token", async (req, res) => {
     res.status(500).json({ ok: false, message: "Fout bij wachtwoord wijzigen." });
   }
 });
+
+module.exports = router;
