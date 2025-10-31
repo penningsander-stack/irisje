@@ -3,16 +3,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const path = require("path"); // ✅ Nodig voor juiste padbepaling
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 
-// === ✅ CORS FIX (betere compatibiliteit met Render + Gmail deploy) ===
+// === ✅ CORS FIX (Render + productiecompatibiliteit) ===
 const allowedOrigins = [
   "https://irisje.nl",
   "https://www.irisje.nl",
-  "https://irisje-frontend.onrender.com"
+  "https://irisje-frontend.onrender.com",
 ];
 
 app.use(
@@ -25,16 +25,12 @@ app.use(
         callback(new Error("Niet-toegestane bron: " + origin));
       }
     },
-    credentials: true,
+    credentials: true, // ⬅️ belangrijk voor cookies / sessies
   })
 );
 
-// === ✅ Statische frontend-bestanden serveren (absolute pad) ===
-// Zo wordt altijd de juiste map gebruikt, ook op Render of andere omgevingen
-app.use(express.static(path.join(__dirname, "../frontend")));
-
-// Middleware
-app.use(express.json());
+// === ✅ Middleware ===
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 
 // === ✅ Database connectie ===
@@ -57,12 +53,21 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
-// === ✅ Test- en fallbackroutes ===
-app.get("/", (req, res) => res.send("🌐 Irisje.nl backend actief"));
+// === ✅ Statische frontend-bestanden ===
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+// === ✅ Frontend fallback (voor directe URL’s zoals /company.html) ===
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
+});
+
+// === ✅ Testroute ===
 app.get("/api/test", (req, res) => {
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
 
 // === ✅ Start server ===
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`)
+);
