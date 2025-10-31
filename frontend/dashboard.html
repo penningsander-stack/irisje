@@ -8,10 +8,10 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Geünificeerde moderne Irisje-stijl -->
-  <link rel="stylesheet" href="style.css?v=20251030" />
+  <!-- ✅ Moderne Irisje-stijl -->
+  <link rel="stylesheet" href="style.css?v=20251031" />
 
-  <!-- Chart.js voor grafieken -->
+  <!-- ✅ Chart.js voor grafieken -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
@@ -35,10 +35,39 @@
   <!-- MAIN -->
   <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
 
-    <!-- STATISTIEKEN -->
+    <!-- ✅ NIEUW: MAANDSTATISTIEKEN -->
     <section class="bg-white shadow border border-gray-100 p-6 stat-card rounded-2xl">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">
-        📈 <span>Statistieken</span>
+        📆 <span>Resultaten deze maand</span>
+      </h2>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
+        <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+          <div id="monthTotal" class="text-2xl font-bold text-indigo-700">0</div>
+          <div class="text-gray-700 mt-1">Aanvragen</div>
+        </div>
+
+        <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+          <div id="monthAccepted" class="text-2xl font-bold text-green-700">0</div>
+          <div class="text-gray-700 mt-1">Geaccepteerd</div>
+        </div>
+
+        <div class="bg-yellow-50 rounded-xl p-4 border border-yellow-100">
+          <div id="monthReviews" class="text-2xl font-bold text-yellow-700">0</div>
+          <div class="text-gray-700 mt-1">Nieuwe reviews</div>
+        </div>
+
+        <div class="bg-purple-50 rounded-xl p-4 border border-purple-100">
+          <div id="avgRating" class="text-2xl font-bold text-purple-700">–</div>
+          <div class="text-gray-700 mt-1">Gemiddelde score</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ✅ TOTAALSTATISTIEKEN -->
+    <section class="bg-white shadow border border-gray-100 p-6 stat-card rounded-2xl">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">
+        📈 <span>Statistieken totaal</span>
       </h2>
 
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
@@ -62,19 +91,9 @@
           <div class="text-gray-600 mt-1">Opgevolgd</div>
         </div>
       </div>
-
-      <!-- 🔧 Verborgen testlink, alleen zichtbaar als je deze comments verwijdert -->
-      <!--
-      <div class="text-center mt-4">
-        <a href="components-preview.html"
-           class="inline-block text-xs text-gray-400 hover:text-indigo-600 transition">
-           🔧 Design testpagina openen
-        </a>
-      </div>
-      -->
     </section>
 
-    <!-- GRAFIEKEN -->
+    <!-- ✅ GRAFIEKEN -->
     <section class="bg-white shadow border border-gray-100 p-6 chart-container rounded-2xl">
       <h2 class="text-lg font-semibold text-indigo-700 mb-6 flex items-center gap-2">
         📊 <span>Overzicht</span>
@@ -97,7 +116,7 @@
       </div>
     </section>
 
-    <!-- AANVRAGEN -->
+    <!-- ✅ AANVRAGEN -->
     <section class="bg-white shadow border border-gray-100 p-6 table-section rounded-2xl">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">
         📬 <span>Aanvragen</span>
@@ -147,7 +166,7 @@
       </div>
     </section>
 
-    <!-- REVIEWS -->
+    <!-- ✅ REVIEWS -->
     <section class="bg-white shadow border border-gray-100 p-6 table-section rounded-2xl">
       <h2 class="text-lg font-semibold text-indigo-700 mb-4 flex items-center gap-2">
         💬 <span>Reviews</span>
@@ -175,7 +194,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- Fade-in animatie -->
+  <!-- ✅ Fade-in animatie -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const blocks = [
@@ -197,7 +216,7 @@
     });
   </script>
 
-  <!-- Dashboard JS -->
-  <script src="js/dashboard.js?v=20251030"></script>
+  <!-- ✅ Dashboard logica -->
+  <script src="js/dashboard.js?v=20251031"></script>
 </body>
 </html>
