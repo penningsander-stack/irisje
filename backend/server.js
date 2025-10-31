@@ -25,7 +25,7 @@ app.use(
         callback(new Error("Niet-toegestane bron: " + origin));
       }
     },
-    credentials: true, // ⬅️ belangrijk voor cookies / sessies
+    credentials: true
   })
 );
 
@@ -38,8 +38,6 @@ app.use((req, res, next) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
-
-  // 🛡️ Extra beveiligingsheaders
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -47,14 +45,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// === ✅ Database connectie ===
+// === ✅ Database connectie (zonder verouderde opties) ===
+const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+if (!uri) {
+  console.error("❌ Geen MongoDB URI gevonden in environment variabelen");
+  process.exit(1);
+}
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(uri)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
+  .catch((err) => console.error("❌ MongoDB error:", err.message));
 
 // === ✅ Routes ===
 app.use("/api/auth", require("./routes/auth"));
@@ -70,8 +70,8 @@ app.use("/api/seed", require("./routes/seed"));
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === ✅ Frontend fallback (voor directe URL’s zoals /company.html) ===
-app.get("*", (req, res) => {
+// === ✅ Frontend fallback (Express 5-compatibel) ===
+app.get("/*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
