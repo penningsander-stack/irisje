@@ -23,8 +23,8 @@ router.post("/login", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "None",
+      secure: process.env.COOKIE_SECURE === "true",
+      sameSite: process.env.COOKIE_SAMESITE || "None",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -67,8 +67,8 @@ router.get("/me", async (req, res) => {
 router.post("/logout", (_req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: true,
-    sameSite: "None",
+    secure: process.env.COOKIE_SECURE === "true",
+    sameSite: process.env.COOKIE_SAMESITE || "None",
   });
   res.json({ ok: true, message: "Uitgelogd" });
 });
@@ -77,10 +77,10 @@ router.get("/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
 
 // === Extra routes voor registratie en wachtwoordherstel ===
 
-// 📩 SMTP-transporter gebruiken
+// 📩 SMTP-transporter (volledig compatibel met WebReus)
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
+  port: Number(process.env.SMTP_PORT),
   secure: process.env.SMTP_SECURE === "true",
   auth: {
     user: process.env.SMTP_USER,
@@ -103,7 +103,8 @@ router.post("/register", async (req, res) => {
     const user = new User({ name, email, password: hashed, role: "company" });
     await user.save();
 
-    res.json({ ok: true, message: "Account aangemaakt. Controleer je e-mail voor bevestiging." });
+    // Eventueel later e-mailbevestiging toevoegen
+    res.json({ ok: true, message: "✅ Account aangemaakt. Je kunt nu inloggen." });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ ok: false, message: "Serverfout bij registreren." });
@@ -120,17 +121,18 @@ router.post("/forgot-password", async (req, res) => {
 
     const token = crypto.randomBytes(32).toString("hex");
     user.resetToken = token;
-    user.resetExpires = Date.now() + 1000 * 60 * 30;
+    user.resetExpires = Date.now() + 1000 * 60 * 30; // 30 minuten
     await user.save();
 
     const resetLink = `https://irisje.nl/password-reset.html?token=${encodeURIComponent(token)}`;
 
     await transporter.sendMail({
-      from: `"Irisje.nl" <${process.env.SMTP_USER}>`,
+      from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM}>`,
       to: user.email,
       subject: "Wachtwoordherstel – Irisje.nl",
       html: `
         <p>Beste ${user.name || "gebruiker"},</p>
+        <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen.</p>
         <p>Klik op onderstaande link om een nieuw wachtwoord in te stellen:</p>
         <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
         <p>Deze link is 30 minuten geldig.</p>
@@ -138,7 +140,7 @@ router.post("/forgot-password", async (req, res) => {
       `,
     });
 
-    res.json({ ok: true, message: "E-mail met herstelinstructies verzonden." });
+    res.json({ ok: true, message: "📩 E-mail met herstelinstructies verzonden." });
   } catch (err) {
     console.error("Forgot-password error:", err);
     res.status(500).json({ ok: false, message: "Kon geen e-mail verzenden." });
@@ -165,7 +167,7 @@ router.post("/reset-password/:token", async (req, res) => {
     user.resetExpires = undefined;
     await user.save();
 
-    res.json({ ok: true, message: "Wachtwoord succesvol gewijzigd." });
+    res.json({ ok: true, message: "✅ Wachtwoord succesvol gewijzigd." });
   } catch (err) {
     console.error("Reset-password error:", err);
     res.status(500).json({ ok: false, message: "Fout bij wachtwoord wijzigen." });
