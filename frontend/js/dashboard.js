@@ -175,7 +175,6 @@ async function initDashboard() {
   let maandChart, statusChart;
 
   function updateStatsAndCharts() {
-    // Totale statistieken
     const total = allRequests.length;
     const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
     const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
@@ -186,7 +185,6 @@ async function initDashboard() {
     setText("rejected", rejected);
     setText("followed-up", followedUp);
 
-    // Maandstatistieken
     const now = new Date();
     const thisMonthReqs = allRequests.filter((r) =>
       sameMonthYear(new Date(r.createdAt || r.date), now)
@@ -206,7 +204,6 @@ async function initDashboard() {
     setText("monthReviews", monthReviews);
     setText("avgRating", avgRating);
 
-    // === Grafieken ===
     const ctx1 = byId("maandChart");
     const ctx2 = byId("statusChart");
     if (!ctx1 || !ctx2) return;
@@ -306,7 +303,7 @@ function sameMonthYear(a, b) {
   return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 }
 
-// ✅ Correcte HTML-escapefunctie
+// ✅ Correcte HTML-escape-functie
 function esc(v) {
   if (v == null) return "";
   return String(v).replace(/[&<>"']/g, (s) =>
