@@ -4,13 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>Bedrijf | Irisje.nl</title>
   <meta name="description" content="Bekijk bedrijfsinformatie, lees reviews en vraag offertes aan bij lokale specialisten op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- ✅ Lokale Tailwind build (geen CDN meer) -->
+  <!-- ✅ Lokale Tailwind build -->
   <link rel="stylesheet" href="style.css?v=20251030" />
 </head>
 
@@ -19,9 +18,7 @@
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">
-        Irisje.nl
-      </a>
+      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">Irisje.nl</a>
       <nav class="space-x-6 text-sm font-medium hidden sm:block">
         <a href="index.html" class="hover:underline">Home</a>
         <a href="results.html" class="hover:underline">Bedrijven</a>
@@ -35,13 +32,11 @@
 
     <!-- Bedrijfsinfo -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center stat-card">
-      <img
-        id="logo"
+      <img id="logo"
         src="https://via.placeholder.com/100"
         alt="Bedrijfslogo"
         class="mx-auto rounded-full shadow mb-3 w-24 h-24 object-cover bg-gray-100"
-        onerror="this.style.display='none'"
-      />
+        onerror="this.style.display='none'" />
 
       <h1 id="companyName" class="text-2xl font-bold text-indigo-700 mb-1"></h1>
       <p id="tagline" class="text-gray-600 mb-3 text-sm"></p>
@@ -60,7 +55,7 @@
     <!-- Reviews -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 table-section">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">💬</span> Beoordelingen
+        💬 <span class="ml-2">Beoordelingen</span>
       </h2>
       <div id="review-list" class="space-y-4 text-left">
         <div class="text-gray-500 text-sm">Reviews worden geladen...</div>
@@ -70,7 +65,7 @@
     <!-- Nieuwe review -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">✍</span> Jouw ervaring
+        ✍ <span class="ml-2">Jouw ervaring</span>
       </h2>
 
       <form id="reviewForm" class="space-y-4">
@@ -97,7 +92,6 @@
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur beoordeling
         </button>
-
         <p id="reviewStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
@@ -105,7 +99,7 @@
     <!-- Offerte aanvragen -->
     <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
       <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
-        <span class="text-2xl mr-2">📬</span> Vraag een offerte aan
+        📬 <span class="ml-2">Vraag een offerte aan</span>
       </h2>
 
       <form id="requestForm" class="space-y-4">
@@ -122,10 +116,20 @@
           class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur aanvraag
         </button>
-
         <p id="requestStatusMsg" class="text-center text-sm"></p>
       </form>
     </section>
+
+    <!-- 🔧 Verborgen testlink -->
+    <!--
+    <div class="text-center mt-6">
+      <a href="components-preview.html"
+         class="inline-block text-xs text-gray-400 hover:text-indigo-600 transition">
+         🔧 Design testpagina openen
+      </a>
+    </div>
+    -->
+
   </main>
 
   <!-- FOOTER -->
@@ -136,42 +140,38 @@
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    function getSlug() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("slug") || "";
-    }
-
-    function stars(r) {
-      const n = Math.round(r || 0);
-      return "⭐".repeat(n);
-    }
+    const getSlug = () => new URLSearchParams(window.location.search).get("slug") || "";
+    const stars = r => "⭐".repeat(Math.round(r || 0));
 
     async function loadCompany() {
       const slug = getSlug();
-      const nameEl = document.getElementById("companyName");
-      const taglineEl = document.getElementById("tagline");
-      const ratingEl = document.getElementById("rating");
-      const reviewCountEl = document.getElementById("reviewCount");
-      const cityEl = document.getElementById("city");
-      const categoriesEl = document.getElementById("categories");
-      const descEl = document.getElementById("description");
-      const logoEl = document.getElementById("logo");
+      const els = {
+        name: document.getElementById("companyName"),
+        tagline: document.getElementById("tagline"),
+        rating: document.getElementById("rating"),
+        reviewCount: document.getElementById("reviewCount"),
+        city: document.getElementById("city"),
+        categories: document.getElementById("categories"),
+        desc: document.getElementById("description"),
+        logo: document.getElementById("logo")
+      };
 
       try {
         const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
 
-        nameEl.textContent = data.name || "";
-        taglineEl.textContent = data.tagline || "";
-        ratingEl.textContent = stars(data.avgRating);
-        reviewCountEl.textContent = `(${data.reviewCount || 0} reviews)`;
-        cityEl.textContent = data.city || "";
-        categoriesEl.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
-        descEl.textContent = data.description || "";
-        if (data.logoUrl) logoEl.src = data.logoUrl;
-      } catch {
-        nameEl.textContent = "Kon bedrijfsgegevens niet laden.";
+        els.name.textContent = data.name || "";
+        els.tagline.textContent = data.tagline || "";
+        els.rating.textContent = stars(data.avgRating);
+        els.reviewCount.textContent = `(${data.reviewCount || 0} reviews)`;
+        els.city.textContent = data.city || "";
+        els.categories.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
+        els.desc.textContent = data.description || "";
+        if (data.logoUrl) els.logo.src = data.logoUrl;
+      } catch (err) {
+        els.name.textContent = "Kon bedrijfsgegevens niet laden.";
+        console.error(err);
       }
     }
 
@@ -196,7 +196,8 @@
               <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
             </div>`;
         }).join("");
-      } catch {
+      } catch (err) {
+        console.error(err);
         listEl.innerHTML = `<div class='text-red-600 text-sm'>Fout bij laden reviews.</div>`;
       }
     }
@@ -204,18 +205,20 @@
     async function submitReview(e) {
       e.preventDefault();
       const slug = getSlug();
-      const name = reviewName.value.trim();
-      const email = reviewEmail.value.trim();
-      const rating = reviewRating.value;
-      const message = reviewMessage.value.trim();
-      const msg = reviewStatusMsg;
+      const msg = document.getElementById("reviewStatusMsg");
       msg.textContent = "Bezig met versturen...";
       msg.className = "text-gray-500 text-center text-sm";
       try {
         const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companySlug: slug, name, email, rating, message })
+          body: JSON.stringify({
+            companySlug: slug,
+            name: reviewName.value.trim(),
+            email: reviewEmail.value.trim(),
+            rating: reviewRating.value,
+            message: reviewMessage.value.trim()
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
@@ -223,7 +226,8 @@
         msg.className = "text-green-600 text-center text-sm";
         reviewForm.reset();
         loadReviews();
-      } catch {
+      } catch (err) {
+        console.error(err);
         msg.textContent = "❌ Er ging iets mis bij het versturen.";
         msg.className = "text-red-600 text-center text-sm";
       }
@@ -232,10 +236,7 @@
     async function submitRequest(e) {
       e.preventDefault();
       const slug = getSlug();
-      const name = requestName.value.trim();
-      const email = requestEmail.value.trim();
-      const message = requestMessage.value.trim();
-      const msg = requestStatusMsg;
+      const msg = document.getElementById("requestStatusMsg");
       msg.textContent = "Bezig met verzenden...";
       msg.className = "text-gray-500 text-center text-sm";
       try {
@@ -245,30 +246,42 @@
         const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ company: companyId, name, email, message })
+          body: JSON.stringify({
+            company: companyId,
+            name: requestName.value.trim(),
+            email: requestEmail.value.trim(),
+            message: requestMessage.value.trim()
+          })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         msg.textContent = "✅ Aanvraag succesvol verzonden!";
         msg.className = "text-green-600 text-center text-sm";
         requestForm.reset();
-      } catch {
+      } catch (err) {
+        console.error(err);
         msg.textContent = "❌ Er ging iets mis bij het verzenden.";
         msg.className = "text-red-600 text-center text-sm";
       }
     }
 
-    reviewForm.addEventListener("submit", submitReview);
-    requestForm.addEventListener("submit", submitRequest);
-    loadCompany();
-    loadReviews();
-
-    // Fade-in animatie
     document.addEventListener("DOMContentLoaded", () => {
-      const el = document.querySelectorAll("header, main section, footer");
-      el.forEach((e,i) => {
-        e.style.opacity="0"; e.style.transform="translateY(12px)";
-        setTimeout(()=>{e.style.transition="opacity .8s, transform .8s"; e.style.opacity="1"; e.style.transform="translateY(0)";},150*i);
+      const reviewForm = document.getElementById("reviewForm");
+      const requestForm = document.getElementById("requestForm");
+      if (reviewForm) reviewForm.addEventListener("submit", submitReview);
+      if (requestForm) requestForm.addEventListener("submit", submitRequest);
+      loadCompany();
+      loadReviews();
+
+      // Fade-in animatie
+      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        setTimeout(() => {
+          el.style.transition = "opacity .8s ease, transform .8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
       });
     });
   </script>
