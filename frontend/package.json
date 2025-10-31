@@ -1,18 +1,24 @@
 {
   "name": "irisje-frontend",
-  "version": "1.0.0",
-  "description": "Frontend van Irisje.nl – moderne indigo-stijl met TailwindCSS en animaties",
+  "version": "1.0.1",
+  "description": "Frontend van Irisje.nl – moderne indigo-stijl met TailwindCSS en animaties.",
   "main": "index.html",
   "scripts": {
-    "build:css": "tailwindcss -i ./input.css -o ./dist.css --minify && cat ./dist.css ./custom.css > ./style.css",
-    "start": "lite-server"
+    "build": "npx tailwindcss -i ./input.css -o ./dist.css --minify && cat ./dist.css ./custom.css > ./style.css",
+    "dev": "npx tailwindcss -i ./input.css -o ./style.css --watch",
+    "start": "lite-server",
+    "postinstall": "npx update-browserslist-db@latest || true"
   },
-  "devDependencies": {
+  "dependencies": {
     "tailwindcss": "^3.4.14",
-    "@tailwindcss/forms": "^0.5.9",
-    "@tailwindcss/typography": "^0.5.15",
-    "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
-    "lite-server": "^2.6.1"
-  }
+    "autoprefixer": "^10.4.20",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "author": "Sander Penning",
+  "license": "ISC"
 }
