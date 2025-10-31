@@ -7,7 +7,7 @@ async function initDashboard() {
   const email = localStorage.getItem("userEmail");
   let companyId = localStorage.getItem("companyId");
 
-  // 🟣 Fallback voor beheerder (koppel bedrijf via e-mail)
+  // 🟣 Fallback voor beheerder (bedrijf koppelen via e-mail)
   if (email === "info@irisje.nl" && !companyId) {
     try {
       const r = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
@@ -27,10 +27,12 @@ async function initDashboard() {
   const $statusFilter = byId("statusFilter");
 
   if (!companyId) {
-    if ($reqBody) $reqBody.innerHTML =
-      "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
-    if ($revBody) $revBody.innerHTML =
-      "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
+    if ($reqBody)
+      $reqBody.innerHTML =
+        "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
+    if ($revBody)
+      $revBody.innerHTML =
+        "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
     return;
   }
 
@@ -43,12 +45,15 @@ async function initDashboard() {
       const r = await fetch(`${API_BASE}/requests/company/${companyId}`);
       const j = await r.json();
       if (!r.ok || !Array.isArray(j)) throw new Error("Ongeldig antwoord (requests)");
-      allRequests = [...j].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+      allRequests = [...j].sort(
+        (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+      );
       renderRequestsTable(allRequests);
     } catch (e) {
       console.error("Fout bij laden aanvragen:", e);
-      if ($reqBody) $reqBody.innerHTML =
-        "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
+      if ($reqBody)
+        $reqBody.innerHTML =
+          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
       allRequests = [];
     }
   }
@@ -58,12 +63,15 @@ async function initDashboard() {
       const r = await fetch(`${API_BASE}/reviews/company/${companyId}`);
       const j = await r.json();
       if (!r.ok || !Array.isArray(j)) throw new Error("Ongeldig antwoord (reviews)");
-      allReviews = [...j].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+      allReviews = [...j].sort(
+        (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
+      );
       renderReviewsTable(allReviews);
     } catch (e) {
       console.error("Fout bij laden reviews:", e);
-      if ($revBody) $revBody.innerHTML =
-        "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
+      if ($revBody)
+        $revBody.innerHTML =
+          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
       allReviews = [];
     }
   }
@@ -78,12 +86,17 @@ async function initDashboard() {
       return;
     }
 
-    const rows = list.map(req => {
-      const d = new Date(req.createdAt || req.date);
-      const datum = isNaN(d)
-        ? "-"
-        : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
-      return `
+    const rows = list
+      .map((req) => {
+        const d = new Date(req.createdAt || req.date);
+        const datum = isNaN(d)
+          ? "-"
+          : d.toLocaleDateString("nl-NL", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+        return `
         <tr class="border-t hover:bg-indigo-50 transition">
           <td>${esc(req.name)}</td>
           <td>${esc(req.email)}</td>
@@ -91,7 +104,8 @@ async function initDashboard() {
           <td>${esc(req.status || "Nieuw")}</td>
           <td>${datum}</td>
         </tr>`;
-    }).join("");
+      })
+      .join("");
 
     $reqBody.innerHTML = rows;
     updateStatsAndCharts();
@@ -106,12 +120,17 @@ async function initDashboard() {
       return;
     }
 
-    const rows = list.map(rev => {
-      const d = new Date(rev.createdAt || rev.date);
-      const datum = isNaN(d)
-        ? "-"
-        : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
-      return `
+    const rows = list
+      .map((rev) => {
+        const d = new Date(rev.createdAt || rev.date);
+        const datum = isNaN(d)
+          ? "-"
+          : d.toLocaleDateString("nl-NL", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            });
+        return `
         <tr class="border-t hover:bg-indigo-50 transition">
           <td>${esc(rev.name)}</td>
           <td>${"⭐".repeat(rev.rating || 0)}</td>
@@ -128,7 +147,8 @@ async function initDashboard() {
             }
           </td>
         </tr>`;
-    }).join("");
+      })
+      .join("");
 
     $revBody.innerHTML = rows;
     updateStatsAndCharts();
@@ -153,39 +173,46 @@ async function initDashboard() {
 
   // ====== Statistieken & grafieken ======
   let maandChart, statusChart;
+
   function updateStatsAndCharts() {
+    // Totale statistieken
     const total = allRequests.length;
-    const accepted = allRequests.filter(r => r.status === "Geaccepteerd").length;
-    const rejected = allRequests.filter(r => r.status === "Afgewezen").length;
-    const followedUp = allRequests.filter(r => r.status === "Opgevolgd").length;
+    const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
+    const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
+    const followedUp = allRequests.filter((r) => r.status === "Opgevolgd").length;
 
     setText("total", total);
     setText("accepted", accepted);
     setText("rejected", rejected);
     setText("followed-up", followedUp);
 
+    // Maandstatistieken
     const now = new Date();
-    const thisMonthReqs = allRequests.filter(r => sameMonthYear(new Date(r.createdAt || r.date), now));
+    const thisMonthReqs = allRequests.filter((r) =>
+      sameMonthYear(new Date(r.createdAt || r.date), now)
+    );
     const monthTotal = thisMonthReqs.length;
-    const monthAccepted = thisMonthReqs.filter(r => r.status === "Geaccepteerd").length;
-    const thisMonthReviews = allReviews.filter(rv => sameMonthYear(new Date(rv.createdAt || rv.date), now));
+    const monthAccepted = thisMonthReqs.filter((r) => r.status === "Geaccepteerd").length;
+    const thisMonthReviews = allReviews.filter((rv) =>
+      sameMonthYear(new Date(rv.createdAt || rv.date), now)
+    );
     const monthReviews = thisMonthReviews.length;
-    const avgRating =
-      allReviews.length
-        ? (allReviews.reduce((s, rv) => s + (rv.rating || 0), 0) / allReviews.length).toFixed(1)
-        : "–";
+    const avgRating = allReviews.length
+      ? (allReviews.reduce((s, rv) => s + (rv.rating || 0), 0) / allReviews.length).toFixed(1)
+      : "–";
 
     setText("monthTotal", monthTotal);
     setText("monthAccepted", monthAccepted);
     setText("monthReviews", monthReviews);
     setText("avgRating", avgRating);
 
+    // === Grafieken ===
     const ctx1 = byId("maandChart");
     const ctx2 = byId("statusChart");
     if (!ctx1 || !ctx2) return;
 
     const perMaand = {};
-    allRequests.forEach(r => {
+    allRequests.forEach((r) => {
       const d = new Date(r.createdAt || r.date);
       if (isNaN(d)) return;
       const key = `${d.toLocaleString("nl-NL", { month: "short" })} ${d.getFullYear()}`;
@@ -199,35 +226,40 @@ async function initDashboard() {
       type: "line",
       data: {
         labels,
-        datasets: [{
-          label: "Aanvragen",
-          data: values,
-          borderColor: "#4F46E5",
-          backgroundColor: "rgba(79,70,229,0.2)",
-          fill: true,
-          tension: 0.4
-        }]
+        datasets: [
+          {
+            label: "Aanvragen",
+            data: values,
+            borderColor: "#4F46E5",
+            backgroundColor: "rgba(79,70,229,0.2)",
+            fill: true,
+            tension: 0.4,
+          },
+        ],
       },
-      options: { responsive: true, plugins: { legend: { display: false } } }
+      options: { responsive: true, plugins: { legend: { display: false } } },
     });
 
     const statusData = {
-      Nieuw: allRequests.filter(r => r.status === "Nieuw" || !r.status).length,
+      Nieuw: allRequests.filter((r) => r.status === "Nieuw" || !r.status).length,
       Geaccepteerd: accepted,
       Afgewezen: rejected,
-      Opgevolgd: followedUp
+      Opgevolgd: followedUp,
     };
+
     if (statusChart) statusChart.destroy();
     statusChart = new Chart(ctx2, {
       type: "doughnut",
       data: {
         labels: Object.keys(statusData),
-        datasets: [{
-          data: Object.values(statusData),
-          backgroundColor: ["#4F46E5", "#22c55e", "#ef4444", "#eab308"]
-        }]
+        datasets: [
+          {
+            data: Object.values(statusData),
+            backgroundColor: ["#4F46E5", "#22c55e", "#ef4444", "#eab308"],
+          },
+        ],
       },
-      options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+      options: { responsive: true, plugins: { legend: { position: "bottom" } } },
     });
   }
 
@@ -238,7 +270,7 @@ async function initDashboard() {
       const list =
         val === "ALLE"
           ? allRequests
-          : allRequests.filter(r => (r.status || "Nieuw") === val);
+          : allRequests.filter((r) => (r.status || "Nieuw") === val);
       renderRequestsTable(list);
     });
   }
@@ -260,15 +292,30 @@ async function initDashboard() {
 }
 
 // ====== Helpers ======
-function byId(id) { return document.getElementById(id); }
-function setText(id, val) { const el = byId(id); if (el) el.textContent = val; }
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function setText(id, val) {
+  const el = byId(id);
+  if (el) el.textContent = val;
+}
+
 function sameMonthYear(a, b) {
   if (!(a instanceof Date) || isNaN(a)) return false;
   return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 }
+
+// ✅ Correcte HTML-escapefunctie
 function esc(v) {
   if (v == null) return "";
-  return String(v).replace(/[&<>"']/g, s =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[s])
+  return String(v).replace(/[&<>"']/g, (s) =>
+    ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }[s])
   );
 }
