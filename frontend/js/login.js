@@ -3,6 +3,12 @@
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", () => {
+// Als al ingelogd → direct doorsturen
+if (localStorage.getItem("userEmail")) {
+  window.location.href = "dashboard.html";
+  return;
+}
+  
   const form = document.getElementById("loginForm");
   const messageEl = document.getElementById("loginMessage");
 
