@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>E-mailbevestiging – Irisje.nl</title>
-  <meta name="description" content="Bevestig je e-mailadres om je Irisje.nl-account te activeren en toegang te krijgen tot je dashboard." />
+  <meta name="description" content="Bevestig je e-mailadres om je Irisje.nl-account te activeren en toegang te krijgen tot je bedrijfsdashboard." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
@@ -14,10 +14,11 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-5 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">
+      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600 rounded-lg">
         Irisje.nl
       </a>
     </div>
@@ -25,14 +26,22 @@
 
   <!-- MAIN -->
   <main class="flex-1 flex items-center justify-center px-4 py-10">
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 w-full max-w-md text-center">
-      <h1 class="text-2xl font-bold text-indigo-700 mb-4">Bevestig je e-mail</h1>
-      <p class="text-gray-600 mb-6">
-        Bedankt voor je registratie! Controleer je mailbox en klik op de link om je account te activeren.
+    <section
+      class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 w-full max-w-md text-center"
+      role="status"
+      aria-live="polite"
+    >
+      <h1 class="text-2xl font-bold text-indigo-700 mb-4">Bevestig je e-mailadres</h1>
+      <p class="text-gray-600 mb-6 leading-relaxed">
+        Bedankt voor je registratie! Controleer je mailbox en klik op de link
+        om je account te activeren. Heb je de mail niet ontvangen?
+        Controleer dan ook je spam- of ongewenste map.
       </p>
+
       <a
         href="login.html"
-        class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 px-6 text-sm transition"
+        class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 px-6 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        aria-label="Ga naar de inlogpagina"
       >
         Naar inloggen
       </a>
