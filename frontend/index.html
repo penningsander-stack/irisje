@@ -53,9 +53,9 @@
           </ul>
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 lg:p-8 w-full max-w-md lg:ml-auto">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 lg:py-8 lg:px-8 w-full max-w-md lg:ml-auto">
           <h2 class="text-base font-semibold text-gray-800 mb-4 text-center">Zoek een bedrijf</h2>
-          <form id="searchForm" class="grid gap-4">
+          <form id="searchForm" class="grid gap-4" novalidate>
             <input id="categoryInput" type="text" placeholder="Categorie (bijv. loodgieter, schilder...)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
             <input id="cityInput" type="text" placeholder="Plaats (bijv. Amsterdam)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
@@ -73,21 +73,43 @@
 
     <!-- POPULAIRE CATEGORIEËN -->
     <section class="max-w-6xl mx-auto px-4 py-12">
-      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6"><span class="text-xl mr-2">🔎</span> Populaire categorieën</h2>
+      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+        <span class="text-xl mr-2">🔎</span> Populaire categorieën
+      </h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-        ${["Loodgieter","CV","Elektricien","Schoonmaak","Slotenmaker","Glazenwasser"].map(c => `
-        <a href="results.html?category=${encodeURIComponent(c)}"
-           class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
-          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${c}</div>
-          <div class="text-gray-500 text-xs mt-1">Bekijk bedrijven</div>
-        </a>`).join("")}
+        <a href="results.html?category=Loodgieter" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Loodgieter</div>
+          <div class="text-gray-500 text-xs mt-1">Lekkage, verstopping</div>
+        </a>
+        <a href="results.html?category=CV" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">CV / Verwarming</div>
+          <div class="text-gray-500 text-xs mt-1">Ketel, onderhoud</div>
+        </a>
+        <a href="results.html?category=Elektricien" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Elektricien</div>
+          <div class="text-gray-500 text-xs mt-1">Storingen, groepenkast</div>
+        </a>
+        <a href="results.html?category=Schoonmaak" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Schoonmaak</div>
+          <div class="text-gray-500 text-xs mt-1">Particulier & zakelijk</div>
+        </a>
+        <a href="results.html?category=Slotenmaker" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Slotenmaker</div>
+          <div class="text-gray-500 text-xs mt-1">Deur open, inbraakschade</div>
+        </a>
+        <a href="results.html?category=Glazenwasser" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">Glazenwasser</div>
+          <div class="text-gray-500 text-xs mt-1">Woning & kantoor</div>
+        </a>
       </div>
     </section>
 
     <!-- HOE HET WERKT -->
     <section class="bg-white border-y border-gray-200">
       <div class="max-w-6xl mx-auto px-4 py-12">
-        <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6"><span class="text-xl mr-2">⚡</span> Hoe het werkt</h2>
+        <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+          <span class="text-xl mr-2">⚡</span> Hoe het werkt
+        </h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
             <div class="text-indigo-600 font-semibold mb-2 text-sm">1. Vertel wat je nodig hebt</div>
@@ -110,20 +132,27 @@
       </div>
     </section>
 
-    <!-- REVIEWS -->
+    <!-- ERVARINGEN -->
     <section class="max-w-6xl mx-auto px-4 py-12">
-      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6"><span class="text-xl mr-2">💬</span> Ervaringen van anderen</h2>
+      <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
+        <span class="text-xl mr-2">💬</span> Ervaringen van anderen
+      </h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-        ${[
-          ["⭐⭐⭐⭐⭐","“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”","Sanne, Amsterdam"],
-          ["⭐⭐⭐⭐","“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”","Peter, Utrecht"],
-          ["⭐⭐⭐⭐⭐","“Volgende keer bel ik weer via Irisje in plaats van Googlen.”","Linda, Rotterdam"]
-        ].map(r => `
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-          <div class="text-yellow-500 text-sm font-semibold leading-none">${r[0]}</div>
-          <p class="text-gray-800 mt-2 leading-relaxed">${r[1]}</p>
-          <div class="text-gray-500 text-xs mt-3">— ${r[2]}</div>
-        </div>`).join("")}
+          <div class="text-yellow-500 text-sm font-semibold leading-none">⭐⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2 leading-relaxed">“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Sanne, Amsterdam</div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold leading-none">⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2 leading-relaxed">“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Peter, Utrecht</div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold leading-none">⭐⭐⭐⭐⭐</div>
+          <p class="text-gray-800 mt-2 leading-relaxed">“Volgende keer bel ik weer via Irisje in plaats van Googlen.”</p>
+          <div class="text-gray-500 text-xs mt-3">— Linda, Rotterdam</div>
+        </div>
       </div>
     </section>
 
@@ -144,16 +173,6 @@
         </div>
       </div>
     </section>
-
-    <!-- 🔧 Verborgen testlink -->
-    <!--
-    <div class="text-center mt-8 mb-12">
-      <a href="components-preview.html"
-         class="inline-block text-xs text-gray-400 hover:text-indigo-600 transition">
-         🔧 Design testpagina openen
-      </a>
-    </div>
-    -->
 
   </main>
 
@@ -182,32 +201,37 @@
         const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
-        if (!data.items?.length) {
+
+        if (!data.items || !data.items.length) {
           resultDiv.innerHTML = "<p class='text-gray-500 text-sm mt-3 leading-relaxed'>Geen bedrijven gevonden. Probeer een andere plaats of categorie.</p>";
           return;
         }
-        resultDiv.innerHTML = data.items.slice(0, 3).map(c => `
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left mt-3 shadow-sm">
-            <div class="flex items-start justify-between">
-              <div class="font-semibold text-indigo-700 text-sm leading-snug">${c.name || ""}</div>
-              <div class="text-yellow-500 text-xs leading-none">${"⭐".repeat(Math.round(c.avgRating || 0))}</div>
+
+        resultDiv.innerHTML =
+          data.items.slice(0, 3).map(c => `
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left mt-3 shadow-sm">
+              <div class="flex items-start justify-between">
+                <div class="font-semibold text-indigo-700 text-sm leading-snug">${c.name || ""}</div>
+                <div class="text-yellow-500 text-xs leading-none">${"⭐".repeat(Math.round(c.avgRating || 0))}</div>
+              </div>
+              <div class="text-gray-600 text-xs mt-1">${c.city || ""}</div>
+              <div class="text-gray-500 text-xs mt-1 leading-relaxed">${c.tagline || ""}</div>
+              <a class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2" href="company.html?slug=${encodeURIComponent(c.slug)}">Bekijk profiel →</a>
             </div>
-            <div class="text-gray-600 text-xs mt-1">${c.city || ""}</div>
-            <div class="text-gray-500 text-xs mt-1 leading-relaxed">${c.tagline || ""}</div>
-            <a class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2" href="company.html?slug=${encodeURIComponent(c.slug)}">Bekijk profiel →</a>
-          </div>
-        `).join("") + `
-          <div class="text-center mt-4">
-            <a class="inline-block text-indigo-600 hover:text-indigo-700 text-xs font-semibold" href="results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}">
-              Alle resultaten bekijken →
-            </a>
-          </div>`;
+          `).join("") +
+          `
+            <div class="text-center mt-4">
+              <a class="inline-block text-indigo-600 hover:text-indigo-700 text-xs font-semibold" href="results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}">
+                Alle resultaten bekijken →
+              </a>
+            </div>
+          `;
       } catch {
         resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3 leading-relaxed'>❌ Er ging iets mis bij het laden van resultaten.</p>";
       }
     });
 
-    // Fade-in animatie
+    // Zachte fade-in
     document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll("header, main section, footer").forEach((el, i) => {
         el.style.opacity = "0";
