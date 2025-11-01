@@ -1,4 +1,6 @@
 // backend/server.js
+require("./config/validateEnv"); // ✅ checkt eerst alle vereiste .env-velden
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -7,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
+
 
 const app = express();
 
