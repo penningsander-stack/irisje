@@ -1,69 +1,38 @@
 // backend/server.js
-require("./config/validateEnv"); // ✅ checkt eerst alle vereiste .env-velden
-// backend/server.js
-require("./config/validateEnv"); // ✅ eerst .env check
+require("./config/validateEnv"); // ✅ controleert alle vereiste .env-velden
 const { startupBanner } = require("./utils/logHelper"); // 🌸 nette logs
-
 
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
+// 🌸 Nieuwe centrale beveiligingsconfiguratie
+const { corsMiddleware, securityHeaders } = require("./config/security");
 
 const app = express();
 
-// === ✅ CORS-instellingen ===
-const allowedOrigins = [
-  "https://irisje.nl",
-  "https://www.irisje.nl",
-  "https://irisje-frontend.onrender.com"
-];
-app.use(
-  cors({
-    origin: (origin, cb) =>
-      !origin || allowedOrigins.includes(origin)
-        ? cb(null, true)
-        : cb(new Error("Niet-toegestane bron: " + origin)),
-    credentials: true
-  })
-);
-
-// === ✅ Middleware ===
+// === ✅ Basis middleware ===
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(compression());
-
-// === 🚫 Cachebeleid + security headers ===
-app.use((req, res, next) => {
-  if (req.path.endsWith(".html")) {
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  } else if (/\.(css|js|png|jpg|jpeg|svg|webp|ico)$/i.test(req.path)) {
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  }
-  res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
-  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("X-XSS-Protection", "1; mode=block");
-  next();
-});
+app.use(corsMiddleware);
+app.use(securityHeaders);
 
 // === ✅ MongoDB connectie ===
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
-  console.error("❌ Geen MongoDB URI gevonden");
+  console.error("🌸 [FOUT] Geen MongoDB URI gevonden");
   process.exit(1);
 }
+
 mongoose
   .connect(uri)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err.message));
+  .then(() => console.log("🌸 [Irisje] ✅ MongoDB connected"))
+  .catch((err) => console.error("🌸 [FOUT] MongoDB error:", err.message));
 
 // === ✅ API-routes ===
 app.use("/api/auth", require("./routes/auth"));
@@ -76,7 +45,7 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
-// === ✅ Testroute — moet vóór frontend fallback ===
+// === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
@@ -85,7 +54,6 @@ app.get("/api/test", (req, res) => {
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
   const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-
   const acceptsWebp = req.headers.accept && req.headers.accept.includes("image/webp");
 
   if (acceptsWebp && fs.existsSync(webpPath)) {
@@ -107,6 +75,7 @@ app.use(/.*\.html$/, (req, res, next) => {
 
   let html = fs.readFileSync(filePath, "utf8");
 
+  // Fonts & preload alleen injecteren als ze nog ontbreken
   if (!html.includes("fonts.googleapis.com") && html.includes("<head>")) {
     const preloadBlock = `
     <!-- Injected performance preload -->
@@ -120,6 +89,7 @@ app.use(/.*\.html$/, (req, res, next) => {
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
   }
 
+  // lazyload.js correct toevoegen (kleine letters!)
   if (!html.includes("js/lazyload.js")) {
     html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
   }
@@ -127,15 +97,15 @@ app.use(/.*\.html$/, (req, res, next) => {
   res.type("html").send(html);
 });
 
-// === ✅ Fallback naar index.html (alleen niet-API routes) ===
+// === ✅ Frontend fallback (alle niet-API routes) ===
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
-// === ✅ Start server ===
+// === ✅ Server starten ===
 const PORT = process.env.PORT || 3000;
 startupBanner();
 
-app.listen(PORT, () =>
-  console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`)
-);
+app.listen(PORT, () => {
+  console.log(`🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`);
+});
