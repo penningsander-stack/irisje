@@ -33,9 +33,9 @@ app.use(
 // === ✅ Middleware ===
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(compression()); // 🔧 automatische gzip-compressie
+app.use(compression()); // gzip-compressie
 
-// 🚫 Cache uitschakelen voor HTML, maar wél caching voor statische bestanden
+// 🚫 Cachebeleid
 app.use((req, res, next) => {
   if (req.path.endsWith(".html")) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -45,7 +45,7 @@ app.use((req, res, next) => {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   }
 
-  // 🛡️ Beveiligingsheaders
+  // 🛡️ Security-headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -79,7 +79,8 @@ app.use("/api/seed", require("./routes/seed"));
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 // === ✅ Frontend fallback (Express 5-compatibel) ===
-app.get("/*", (req, res) => {
+// Gebruik een regex i.p.v. een ster-route
+app.use(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
