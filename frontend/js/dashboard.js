@@ -7,25 +7,25 @@ async function initDashboard() {
   const email = localStorage.getItem("userEmail");
   let companyId = localStorage.getItem("companyId");
 
-  // 🟣 Fallback voor beheerder (bedrijf koppelen via e-mail)
+  // 🟣 Beheerdersfallback (bedrijf koppelen via e-mail)
   if (email === "info@irisje.nl" && !companyId) {
     try {
-      const r = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
-      const j = await r.json();
-      if (r.ok && Array.isArray(j) && j.length) {
-        companyId = j[0]._id;
+      const res = await fetch(`${API_BASE}/companies/byOwner/${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (res.ok && Array.isArray(data) && data.length) {
+        companyId = data[0]._id;
         localStorage.setItem("companyId", companyId);
       }
-    } catch (e) {
-      console.error("Fout bij koppelen beheerder:", e);
+    } catch (err) {
+      console.error("Fout bij koppelen beheerder:", err);
     }
   }
 
-  // UI hooks
   const $reqBody = byId("request-table-body");
   const $revBody = byId("review-table-body");
   const $statusFilter = byId("statusFilter");
 
+  // 🚨 Geen bedrijf gevonden
   if (!companyId) {
     if ($reqBody)
       $reqBody.innerHTML =
@@ -39,139 +39,151 @@ async function initDashboard() {
   let allRequests = [];
   let allReviews = [];
 
-  // ====== Loaders ======
+  // ===================
+  // 📬 AANVRAGEN LADEN
+  // ===================
   async function loadRequests() {
     try {
-      const r = await fetch(`${API_BASE}/requests/company/${companyId}`);
-      const j = await r.json();
-      if (!r.ok || !Array.isArray(j)) throw new Error("Ongeldig antwoord (requests)");
-      allRequests = [...j].sort(
+      const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord (requests)");
+      allRequests = [...data].sort(
         (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
       );
       renderRequestsTable(allRequests);
-    } catch (e) {
-      console.error("Fout bij laden aanvragen:", e);
+    } catch (err) {
+      console.error("Fout bij laden aanvragen:", err);
       if ($reqBody)
         $reqBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
+          "<tr><td colspan='5' class='text-center text-red-600 p-4'>❌ Fout bij laden aanvragen.</td></tr>";
       allRequests = [];
     }
   }
 
+  // =================
+  // 💬 REVIEWS LADEN
+  // =================
   async function loadReviews() {
     try {
-      const r = await fetch(`${API_BASE}/reviews/company/${companyId}`);
-      const j = await r.json();
-      if (!r.ok || !Array.isArray(j)) throw new Error("Ongeldig antwoord (reviews)");
-      allReviews = [...j].sort(
+      const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord (reviews)");
+      allReviews = [...data].sort(
         (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
       );
       renderReviewsTable(allReviews);
-    } catch (e) {
-      console.error("Fout bij laden reviews:", e);
+    } catch (err) {
+      console.error("Fout bij laden reviews:", err);
       if ($revBody)
         $revBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
+          "<tr><td colspan='5' class='text-center text-red-600 p-4'>❌ Fout bij laden reviews.</td></tr>";
       allReviews = [];
     }
   }
 
-  // ====== Renderers ======
+  // ====================
+  // 📄 TABELRENDERERS
+  // ====================
   function renderRequestsTable(list) {
     if (!$reqBody) return;
-    if (!list || !list.length) {
+    if (!list?.length) {
       $reqBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
       updateStatsAndCharts();
       return;
     }
 
-    const rows = list
+    $reqBody.innerHTML = list
       .map((req) => {
         const d = new Date(req.createdAt || req.date);
-        const datum = isNaN(d)
-          ? "-"
-          : d.toLocaleDateString("nl-NL", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            });
+        const datum = !isNaN(d)
+          ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
+          : "-";
+        const status = req.status || "Nieuw";
         return `
-        <tr class="border-t hover:bg-indigo-50 transition">
-          <td>${esc(req.name)}</td>
-          <td>${esc(req.email)}</td>
-          <td>${esc(req.message)}</td>
-          <td>${esc(req.status || "Nieuw")}</td>
-          <td>${datum}</td>
-        </tr>`;
+          <tr class="border-t hover:bg-indigo-50 transition">
+            <td>${esc(req.name)}</td>
+            <td>${esc(req.email)}</td>
+            <td class="max-w-xs truncate">${esc(req.message)}</td>
+            <td>
+              <span class="px-2 py-1 rounded text-xs font-medium ${
+                status === "Geaccepteerd"
+                  ? "bg-green-100 text-green-700"
+                  : status === "Afgewezen"
+                  ? "bg-red-100 text-red-700"
+                  : status === "Opgevolgd"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-indigo-100 text-indigo-700"
+              }">${status}</span>
+            </td>
+            <td>${datum}</td>
+          </tr>`;
       })
       .join("");
 
-    $reqBody.innerHTML = rows;
     updateStatsAndCharts();
   }
 
   function renderReviewsTable(list) {
     if (!$revBody) return;
-    if (!list || !list.length) {
+    if (!list?.length) {
       $revBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
       updateStatsAndCharts();
       return;
     }
 
-    const rows = list
+    $revBody.innerHTML = list
       .map((rev) => {
         const d = new Date(rev.createdAt || rev.date);
-        const datum = isNaN(d)
-          ? "-"
-          : d.toLocaleDateString("nl-NL", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            });
+        const datum = !isNaN(d)
+          ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
+          : "-";
         return `
-        <tr class="border-t hover:bg-indigo-50 transition">
-          <td>${esc(rev.name)}</td>
-          <td>${"⭐".repeat(rev.rating || 0)}</td>
-          <td>${esc(rev.message)}</td>
-          <td>${datum}</td>
-          <td>
-            ${
-              rev.reported
-                ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
-                : `<button onclick="meldReview('${rev._id}')"
-                    class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700">
-                    Melden
-                  </button>`
-            }
-          </td>
-        </tr>`;
+          <tr class="border-t hover:bg-indigo-50 transition">
+            <td>${esc(rev.name)}</td>
+            <td>${"⭐".repeat(rev.rating || 0)}</td>
+            <td class="max-w-xs truncate">${esc(rev.message)}</td>
+            <td>${datum}</td>
+            <td>
+              ${
+                rev.reported
+                  ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
+                  : `<button onclick="meldReview('${rev._id}')"
+                      class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition">
+                      Melden
+                    </button>`
+              }
+            </td>
+          </tr>`;
       })
       .join("");
 
-    $revBody.innerHTML = rows;
     updateStatsAndCharts();
   }
 
-  // ====== Review melden ======
+  // =======================
+  // 🚨 REVIEW MELDEN
+  // =======================
   window.meldReview = async function (id) {
     if (!confirm("Weet je zeker dat je deze review wilt melden aan de beheerder?")) return;
     try {
-      const r = await fetch(`${API_BASE}/reviews/report/${id}`, {
+      const res = await fetch(`${API_BASE}/reviews/report/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
       });
-      if (!r.ok) throw new Error(`Server antwoordde met ${r.status}`);
+      if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       alert("✅ Review is gemeld aan de beheerder.");
       await loadReviews();
-    } catch (e) {
-      console.error("Fout bij melden review:", e);
+    } catch (err) {
+      console.error("Fout bij melden review:", err);
       alert("❌ Er ging iets mis bij het melden van de review.");
     }
   };
 
-  // ====== Statistieken & grafieken ======
+  // ===========================
+  // 📊 STATISTIEKEN & GRAFIEKEN
+  // ===========================
   let maandChart, statusChart;
 
   function updateStatsAndCharts() {
@@ -215,6 +227,7 @@ async function initDashboard() {
       const key = `${d.toLocaleString("nl-NL", { month: "short" })} ${d.getFullYear()}`;
       perMaand[key] = (perMaand[key] || 0) + 1;
     });
+
     const labels = Object.keys(perMaand);
     const values = Object.values(perMaand);
 
@@ -234,11 +247,15 @@ async function initDashboard() {
           },
         ],
       },
-      options: { responsive: true, plugins: { legend: { display: false } } },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      },
     });
 
     const statusData = {
-      Nieuw: allRequests.filter((r) => r.status === "Nieuw" || !r.status).length,
+      Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
       Geaccepteerd: accepted,
       Afgewezen: rejected,
       Opgevolgd: followedUp,
@@ -256,11 +273,16 @@ async function initDashboard() {
           },
         ],
       },
-      options: { responsive: true, plugins: { legend: { position: "bottom" } } },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: "bottom" } },
+      },
     });
   }
 
-  // ====== Filter ======
+  // ===================
+  // 🔍 FILTEREN
+  // ===================
   if ($statusFilter) {
     $statusFilter.addEventListener("change", () => {
       const val = $statusFilter.value;
@@ -272,7 +294,9 @@ async function initDashboard() {
     });
   }
 
-  // ====== Uitloggen ======
+  // ===================
+  // 🚪 UITLOGGEN
+  // ===================
   const $logout = byId("logoutBtn");
   if ($logout) {
     $logout.addEventListener("click", () => {
@@ -284,11 +308,14 @@ async function initDashboard() {
     });
   }
 
+  // 🚀 INIT
   await loadRequests();
   await loadReviews();
 }
 
-// ====== Helpers ======
+// ===================
+// 🧩 HELPERS
+// ===================
 function byId(id) {
   return document.getElementById(id);
 }
@@ -303,16 +330,9 @@ function sameMonthYear(a, b) {
   return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 }
 
-// ✅ Correcte HTML-escape-functie
 function esc(v) {
   if (v == null) return "";
   return String(v).replace(/[&<>"']/g, (s) =>
-    ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    }[s])
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
   );
 }
