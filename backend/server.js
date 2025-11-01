@@ -12,6 +12,8 @@ require("dotenv").config();
 
 // 🌸 Nieuwe centrale beveiligingsconfiguratie
 const { corsMiddleware, securityHeaders } = require("./config/security");
+// 🌸 Logger (voor status-overzicht)
+const { addLog } = require("./utils/logger");
 
 const app = express();
 
@@ -26,13 +28,20 @@ app.use(securityHeaders);
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
   console.error("🌸 [FOUT] Geen MongoDB URI gevonden");
+  addLog("Geen MongoDB URI gevonden", "error");
   process.exit(1);
 }
 
 mongoose
   .connect(uri)
-  .then(() => console.log("🌸 [Irisje] ✅ MongoDB connected"))
-  .catch((err) => console.error("🌸 [FOUT] MongoDB error:", err.message));
+  .then(() => {
+    console.log("🌸 [Irisje] ✅ MongoDB connected");
+    addLog("MongoDB connected", "info");
+  })
+  .catch((err) => {
+    console.error("🌸 [FOUT] MongoDB error:", err.message);
+    addLog("MongoDB connection error: " + err.message, "error");
+  });
 
 // === ✅ API-routes ===
 app.use("/api/auth", require("./routes/auth"));
@@ -46,9 +55,9 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/status", require("./routes/status"));
 
-
 // === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
+  addLog("API test uitgevoerd", "debug");
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
 
@@ -107,6 +116,7 @@ app.get(/^\/(?!api\/).*/, (req, res) => {
 // === ✅ Server starten ===
 const PORT = process.env.PORT || 3000;
 startupBanner();
+addLog("Server gestart op poort " + PORT, "info");
 
 app.listen(PORT, () => {
   console.log(`🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`);
