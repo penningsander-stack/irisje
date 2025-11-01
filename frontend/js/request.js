@@ -1,22 +1,50 @@
+// frontend/js/request.js
+
 document.addEventListener("DOMContentLoaded", () => {
-  const apiBase = "https://irisje-backend.onrender.com";
   const form = document.getElementById("requestForm");
-  const msg = document.getElementById("requestMessage");
 
-  form.addEventListener("submit", async e => {
+  if (!form) {
+    console.error("❌ Formulier met id='requestForm' niet gevonden.");
+    return;
+  }
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = e.target.name.value.trim();
-    const email = e.target.email.value.trim();
-    const message = e.target.message.value.trim();
 
-    msg.textContent = "Versturen...";
+    const name = document.getElementById("name")?.value?.trim();
+    const email = document.getElementById("email")?.value?.trim();
+    const message = document.getElementById("message")?.value?.trim();
+    const companyId = form.dataset.companyId;
+
+    if (!name || !email || !message) {
+      alert("❌ Vul alle velden in voordat je de aanvraag verzendt.");
+      return;
+    }
+
+    const data = { name, email, message, companyId };
+
     try {
-      await axios.post(`${apiBase}/api/requests`, { name, email, message });
-      msg.textContent = "✅ Je aanvraag is succesvol verzonden!";
-      e.target.reset();
+      const response = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Serverfout: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result && result.success) {
+        alert("✅ Aanvraag succesvol verzonden!");
+        form.reset();
+      } else {
+        alert("❌ Er ging iets mis bij het verzenden. Probeer het later opnieuw.");
+      }
     } catch (err) {
-      console.error(err);
-      msg.textContent = "❌ Er ging iets mis bij het verzenden.";
+      console.error("❌ Fout bij verzenden:", err);
+      alert("❌ Er ging iets mis bij het verzenden. Controleer je internetverbinding en probeer het opnieuw.");
     }
   });
 });
