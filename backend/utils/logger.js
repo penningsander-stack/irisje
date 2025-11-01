@@ -1,11 +1,15 @@
 // backend/utils/logger.js
 /**
- * 🌸 Irisje.nl – In-memory logger voor status-overzicht
- * Bewaart de laatste 10 logregels in RAM zodat ze via /api/status zichtbaar zijn.
+ * 🌸 Irisje.nl – Uitgebreide in-memory logger
+ * Bewaart laatste 20 regels in RAM + kleurige console-uitvoer.
  */
 
-const MAX_LOGS = 10;
+const fs = require("fs");
+const path = require("path");
+
+const MAX_LOGS = 20;
 const logs = [];
+const LOG_FILE = path.join(__dirname, "../logs/irisje.log");
 
 function addLog(message, level = "info") {
   const entry = {
@@ -13,13 +17,30 @@ function addLog(message, level = "info") {
     level,
     message
   };
+
   logs.push(entry);
-  if (logs.length > MAX_LOGS) logs.shift(); // oudste verwijderen
-  console.log(`[${level.toUpperCase()}] ${message}`);
+  if (logs.length > MAX_LOGS) logs.shift();
+
+  // 🎨 Kleuren in console
+  const colors = {
+    info: "\x1b[36m", // blauw
+    debug: "\x1b[33m", // geel
+    error: "\x1b[31m"  // rood
+  };
+  const color = colors[level] || "\x1b[0m";
+  console.log(`${color}[${level.toUpperCase()}] ${message}\x1b[0m`);
+
+  // 💾 Ook naar bestand loggen
+  try {
+    const line = `[${entry.time}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
+    fs.appendFileSync(LOG_FILE, line, "utf8");
+  } catch (err) {
+    console.warn("Kon logbestand niet schrijven:", err.message);
+  }
 }
 
 function getLogs() {
-  return [...logs].reverse(); // nieuwste eerst
+  return [...logs].reverse();
 }
 
 module.exports = { addLog, getLogs };
