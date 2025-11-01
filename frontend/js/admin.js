@@ -2,19 +2,23 @@
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const reviewTable = document.querySelector("#reportedReviewsBody");
+  const $tableBody = document.querySelector("#reportedReviewsBody");
 
-  // === Gemelde reviews laden ===
+  if (!$tableBody) return;
+
+  // ===========================
+  // 💬 GEMELDE REVIEWS LADEN
+  // ===========================
   async function loadReportedReviews() {
     try {
       const res = await fetch(`${API_BASE}/admin/reported`);
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
 
       const reviews = await res.json();
-      reviewTable.innerHTML = "";
+      $tableBody.innerHTML = "";
 
-      if (!Array.isArray(reviews) || reviews.length === 0) {
-        reviewTable.innerHTML = `
+      if (!Array.isArray(reviews) || !reviews.length) {
+        $tableBody.innerHTML = `
           <tr>
             <td colspan="5" class="text-center text-gray-500 p-4">
               Geen gemelde reviews gevonden.
@@ -33,32 +37,35 @@ document.addEventListener("DOMContentLoaded", () => {
           : "-";
 
         const row = document.createElement("tr");
-        row.classList.add("border-t", "hover:bg-indigo-50", "transition");
+        row.className = "border-t hover:bg-indigo-50 transition";
+
         row.innerHTML = `
-          <td class="p-3">${rev.name || "-"}</td>
+          <td class="p-3">${esc(rev.name) || "-"}</td>
           <td class="p-3">${"⭐".repeat(rev.rating || 0)}</td>
-          <td class="p-3">${rev.message || "-"}</td>
+          <td class="p-3 max-w-xs truncate">${esc(rev.message) || "-"}</td>
           <td class="p-3">${datum}</td>
-          <td class="p-3">
-            <button data-id="${rev._id}" 
-              class="bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 transition">
+          <td class="p-3 text-center">
+            <button data-id="${rev._id}"
+              class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1">
               Afgehandeld
             </button>
           </td>`;
-        reviewTable.appendChild(row);
+        $tableBody.appendChild(row);
       });
     } catch (err) {
       console.error("❌ Fout bij laden reviews:", err);
-      reviewTable.innerHTML = `
+      $tableBody.innerHTML = `
         <tr>
           <td colspan="5" class="text-center text-red-600 p-4">
-            Fout bij laden reviews.
+            ❌ Fout bij laden reviews.
           </td>
         </tr>`;
     }
   }
 
-  // === Review afhandelen (markeren als niet meer gemeld) ===
+  // ===============================
+  // ✅ REVIEW AFHANDELEN (UNREPORT)
+  // ===============================
   document.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-id]");
     if (!btn) return;
@@ -75,18 +82,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
 
-      console.log(`✅ Review ${id} afgehandeld`);
-      alert("✅ Review succesvol afgehandeld!");
-
+      showToast("✅ Review succesvol afgehandeld!", "success");
       await loadReportedReviews();
     } catch (err) {
       console.error("❌ Fout bij afhandelen review:", err);
+      showToast("❌ Er is iets misgegaan bij het afhandelen.", "error");
       btn.disabled = false;
       btn.textContent = "Afgehandeld";
-      alert("Er is een fout opgetreden bij het afhandelen van deze review.");
     }
   });
 
-  // === Init ===
+  // ===========================
+  // 🪄 MINI TOAST-MELDING
+  // ===========================
+  function showToast(msg, type = "info") {
+    const toast = document.createElement("div");
+    const color =
+      type === "success"
+        ? "bg-green-600"
+        : type === "error"
+        ? "bg-red-600"
+        : "bg-indigo-600";
+    toast.className = `${color} text-white fixed bottom-6 right-6 px-4 py-2 rounded-lg shadow-md text-sm animate-fade-in-up`;
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  }
+
+  // ===========================
+  // 🔒 ESCAPE FUNCTIE
+  // ===========================
+  function esc(v) {
+    if (v == null) return "";
+    return String(v).replace(/[&<>"']/g, (s) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
+    );
+  }
+
+  // ===========================
+  // 🚀 INIT
+  // ===========================
   loadReportedReviews();
 });
