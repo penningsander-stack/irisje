@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
+const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
@@ -33,7 +34,7 @@ app.use(
 // === ✅ Middleware ===
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-app.use(compression()); // gzip-compressie
+app.use(compression());
 
 // 🚫 Cachebeleid
 app.use((req, res, next) => {
@@ -44,8 +45,6 @@ app.use((req, res, next) => {
   } else if (/\.(css|js|png|jpg|jpeg|svg|webp|ico)$/i.test(req.path)) {
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
   }
-
-  // 🛡️ Security-headers
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -64,7 +63,7 @@ mongoose
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => console.error("❌ MongoDB error:", err.message));
 
-// === ✅ Routes ===
+// === ✅ API-routes ===
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
@@ -78,15 +77,26 @@ app.use("/api/seed", require("./routes/seed"));
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === ✅ Frontend fallback (Express 5-compatibel) ===
-// Gebruik een regex i.p.v. een ster-route
-app.use(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
+// === 🪄 Automatisch lazyload.js injecteren ===
+app.use(/.*\.html$/, (req, res, next) => {
+  const filePath = path.join(__dirname, "../frontend", req.path);
+  if (fs.existsSync(filePath)) {
+    let html = fs.readFileSync(filePath, "utf8");
+    if (!html.includes("js/lazyload.js")) {
+      html = html.replace(
+        /<\/body>/i,
+        `  <script src="js/lazyload.js"></script>\n</body>`
+      );
+    }
+    res.type("html").send(html);
+  } else {
+    next();
+  }
 });
 
-// === ✅ Testroute ===
-app.get("/api/test", (req, res) => {
-  res.json({ ok: true, message: "Server ziet routes correct" });
+// === ✅ Frontend fallback (Express 5-compatibel) ===
+app.use(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
 // === ✅ Start server ===
