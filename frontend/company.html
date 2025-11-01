@@ -4,13 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedrijf | Irisje.nl</title>
+
+  <title>Bedrijf – Irisje.nl</title>
   <meta name="description" content="Bekijk bedrijfsinformatie, lees reviews en vraag offertes aan bij lokale specialisten op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- ✅ Lokale Tailwind build -->
-  <link rel="stylesheet" href="style.css?v=20251030" />
+  <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -28,17 +29,17 @@
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-10 space-y-10">
+  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-10 space-y-10">
 
-    <!-- Bedrijfsinfo -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 text-center stat-card">
+    <!-- 📇 Bedrijfsinformatie -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 text-center fade-in">
       <img id="logo"
-        src="https://via.placeholder.com/100"
+        src="https://via.placeholder.com/120"
         alt="Bedrijfslogo"
-        class="mx-auto rounded-full shadow mb-3 w-24 h-24 object-cover bg-gray-100"
+        class="mx-auto rounded-full shadow mb-4 w-28 h-28 object-cover bg-gray-100"
         onerror="this.style.display='none'" />
 
-      <h1 id="companyName" class="text-2xl font-bold text-indigo-700 mb-1"></h1>
+      <h1 id="companyName" class="text-3xl font-bold text-indigo-700 mb-1"></h1>
       <p id="tagline" class="text-gray-600 mb-3 text-sm"></p>
 
       <div class="flex flex-col items-center gap-1 text-sm mb-2">
@@ -49,12 +50,12 @@
       <div id="city" class="text-gray-600 text-sm"></div>
       <div id="categories" class="text-gray-500 text-xs mt-1"></div>
 
-      <p id="description" class="text-gray-700 text-base mt-4"></p>
+      <p id="description" class="text-gray-700 text-base mt-5 max-w-2xl mx-auto"></p>
     </section>
 
-    <!-- Reviews -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 table-section">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+    <!-- 💬 Reviews -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 fade-in">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-5 flex items-center">
         💬 <span class="ml-2">Beoordelingen</span>
       </h2>
       <div id="review-list" class="space-y-4 text-left">
@@ -62,9 +63,9 @@
       </div>
     </section>
 
-    <!-- Nieuwe review -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+    <!-- ✍ Nieuwe review -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 fade-in">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-5 flex items-center">
         ✍ <span class="ml-2">Jouw ervaring</span>
       </h2>
 
@@ -92,13 +93,13 @@
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur beoordeling
         </button>
-        <p id="reviewStatusMsg" class="text-center text-sm"></p>
+        <p id="reviewStatusMsg" class="text-center text-sm mt-2"></p>
       </form>
     </section>
 
-    <!-- Offerte aanvragen -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
-      <h2 class="text-xl font-semibold text-indigo-700 mb-4 flex items-center">
+    <!-- 📬 Offerte aanvragen -->
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 fade-in">
+      <h2 class="text-xl font-semibold text-green-700 mb-5 flex items-center">
         📬 <span class="ml-2">Vraag een offerte aan</span>
       </h2>
 
@@ -116,27 +117,18 @@
           class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur aanvraag
         </button>
-        <p id="requestStatusMsg" class="text-center text-sm"></p>
+        <p id="requestStatusMsg" class="text-center text-sm mt-2"></p>
       </form>
     </section>
-
-    <!-- 🔧 Verborgen testlink -->
-    <!--
-    <div class="text-center mt-6">
-      <a href="components-preview.html"
-         class="inline-block text-xs text-gray-400 hover:text-indigo-600 transition">
-         🔧 Design testpagina openen
-      </a>
-    </div>
-    -->
 
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
+  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100 mt-auto">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- ✅ Script -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -145,32 +137,21 @@
 
     async function loadCompany() {
       const slug = getSlug();
-      const els = {
-        name: document.getElementById("companyName"),
-        tagline: document.getElementById("tagline"),
-        rating: document.getElementById("rating"),
-        reviewCount: document.getElementById("reviewCount"),
-        city: document.getElementById("city"),
-        categories: document.getElementById("categories"),
-        desc: document.getElementById("description"),
-        logo: document.getElementById("logo")
-      };
-
       try {
         const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error("Kon bedrijfsgegevens niet laden.");
         const data = await res.json();
 
-        els.name.textContent = data.name || "";
-        els.tagline.textContent = data.tagline || "";
-        els.rating.textContent = stars(data.avgRating);
-        els.reviewCount.textContent = `(${data.reviewCount || 0} reviews)`;
-        els.city.textContent = data.city || "";
-        els.categories.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
-        els.desc.textContent = data.description || "";
-        if (data.logoUrl) els.logo.src = data.logoUrl;
+        document.getElementById("companyName").textContent = data.name || "";
+        document.getElementById("tagline").textContent = data.tagline || "";
+        document.getElementById("rating").textContent = stars(data.avgRating);
+        document.getElementById("reviewCount").textContent = `(${data.reviewCount || 0} reviews)`;
+        document.getElementById("city").textContent = data.city || "";
+        document.getElementById("categories").textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
+        document.getElementById("description").textContent = data.description || "";
+        if (data.logoUrl) document.getElementById("logo").src = data.logoUrl;
       } catch (err) {
-        els.name.textContent = "Kon bedrijfsgegevens niet laden.";
+        document.getElementById("companyName").textContent = "Kon bedrijfsgegevens niet laden.";
         console.error(err);
       }
     }
@@ -180,31 +161,27 @@
       const listEl = document.getElementById("review-list");
       try {
         const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
-        if (!res.ok) throw new Error();
         const data = await res.json();
         if (!data.length) {
           listEl.innerHTML = `<div class='text-gray-500 text-sm'>Nog geen beoordelingen beschikbaar.</div>`;
           return;
         }
-        const sorted = [...data].sort((a,b) => new Date(b.createdAt||b.date) - new Date(a.createdAt||a.date));
-        listEl.innerHTML = sorted.map(rev => {
-          const d = new Date(rev.createdAt||rev.date||Date.now()).toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"});
+        listEl.innerHTML = data.map(rev => {
+          const d = new Date(rev.createdAt || Date.now()).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" });
           return `
-            <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
-              <div class="text-yellow-500 text-sm font-semibold leading-none">${"⭐".repeat(rev.rating || 0)}</div>
-              <div class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</div>
+            <div class="border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow transition">
+              <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(rev.rating || 0)}</div>
+              <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${rev.message || ""}</p>
               <div class="text-gray-500 text-xs mt-3">— ${rev.name || "Anoniem"}, ${d}</div>
             </div>`;
         }).join("");
       } catch (err) {
-        console.error(err);
-        listEl.innerHTML = `<div class='text-red-600 text-sm'>Fout bij laden reviews.</div>`;
+        listEl.innerHTML = `<div class='text-red-600 text-sm'>❌ Fout bij laden reviews.</div>`;
       }
     }
 
     async function submitReview(e) {
       e.preventDefault();
-      const slug = getSlug();
       const msg = document.getElementById("reviewStatusMsg");
       msg.textContent = "Bezig met versturen...";
       msg.className = "text-gray-500 text-center text-sm";
@@ -213,21 +190,19 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            companySlug: slug,
+            companySlug: getSlug(),
             name: reviewName.value.trim(),
             email: reviewEmail.value.trim(),
             rating: reviewRating.value,
             message: reviewMessage.value.trim()
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message);
+        if (!res.ok) throw new Error();
         msg.textContent = "✅ Bedankt voor je beoordeling!";
         msg.className = "text-green-600 text-center text-sm";
         reviewForm.reset();
         loadReviews();
-      } catch (err) {
-        console.error(err);
+      } catch {
         msg.textContent = "❌ Er ging iets mis bij het versturen.";
         msg.className = "text-red-600 text-center text-sm";
       }
@@ -235,14 +210,14 @@
 
     async function submitRequest(e) {
       e.preventDefault();
-      const slug = getSlug();
       const msg = document.getElementById("requestStatusMsg");
       msg.textContent = "Bezig met verzenden...";
       msg.className = "text-gray-500 text-center text-sm";
       try {
+        const slug = getSlug();
         const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         const companyData = await companyRes.json();
-        const companyId = companyData._id || companyData.id;
+        const companyId = companyData._id;
         const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -253,36 +228,21 @@
             message: requestMessage.value.trim()
           })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error();
         msg.textContent = "✅ Aanvraag succesvol verzonden!";
         msg.className = "text-green-600 text-center text-sm";
         requestForm.reset();
-      } catch (err) {
-        console.error(err);
+      } catch {
         msg.textContent = "❌ Er ging iets mis bij het verzenden.";
         msg.className = "text-red-600 text-center text-sm";
       }
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      const reviewForm = document.getElementById("reviewForm");
-      const requestForm = document.getElementById("requestForm");
-      if (reviewForm) reviewForm.addEventListener("submit", submitReview);
-      if (requestForm) requestForm.addEventListener("submit", submitRequest);
       loadCompany();
       loadReviews();
-
-      // Fade-in animatie
-      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        setTimeout(() => {
-          el.style.transition = "opacity .8s ease, transform .8s ease";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        }, 150 * i);
-      });
+      reviewForm.addEventListener("submit", submitReview);
+      requestForm.addEventListener("submit", submitRequest);
     });
   </script>
 </body>
