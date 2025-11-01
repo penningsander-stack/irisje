@@ -2,15 +2,16 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Systeemstatus – Irisje.nl</title>
-  <meta name="theme-color" content="#4F46E5">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="style.css?v=20251101">
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-4 shadow-md">
     <div class="max-w-4xl mx-auto px-4 flex justify-between items-center">
       <h1 class="text-xl font-semibold tracking-tight">🌸 Irisje.nl – Systeemstatus</h1>
@@ -18,7 +19,9 @@
     </div>
   </header>
 
+  <!-- MAIN -->
   <main class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
+    <!-- STATUS -->
     <section id="statusCard" class="bg-white rounded-2xl shadow border border-gray-100 p-8 w-full max-w-md space-y-4">
       <h2 class="text-lg font-semibold text-indigo-700 mb-3">Serverstatus</h2>
 
@@ -43,21 +46,25 @@
       <p class="text-xs text-gray-400 mt-3" id="timestamp"></p>
     </section>
 
-    <!-- 📜 Logsectie -->
+    <!-- LOGS -->
     <section class="bg-white rounded-2xl shadow border border-gray-100 p-6 w-full max-w-2xl text-left">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
         <h3 class="text-md font-semibold text-indigo-700">📜 Laatste servermeldingen</h3>
-        <div class="space-x-2 text-xs">
+
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <button id="toggleRefresh" class="px-3 py-1 rounded-full bg-green-600 text-white">Auto-refresh: aan</button>
           <button data-filter="all" class="log-filter px-3 py-1 rounded-full bg-indigo-600 text-white">Alle</button>
           <button data-filter="info" class="log-filter px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300">Info</button>
           <button data-filter="debug" class="log-filter px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300">Debug</button>
           <button data-filter="error" class="log-filter px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300">Fouten</button>
         </div>
       </div>
-      <pre id="logContainer" class="text-xs bg-gray-50 p-3 rounded overflow-y-auto max-h-64 font-mono text-gray-700"></pre>
+
+      <pre id="logContainer" class="text-xs bg-gray-50 p-3 rounded overflow-y-auto max-h-64 font-mono text-gray-700 whitespace-pre-wrap"></pre>
     </section>
   </main>
 
+  <!-- FOOTER -->
   <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
@@ -65,18 +72,18 @@
   <script>
     const STATUS_API = "https://irisje-backend.onrender.com/api/status";
     const LOG_API = "https://irisje-backend.onrender.com/api/admin/logs";
-
     let currentFilter = "all";
+    let autoRefresh = true;
+    let statusTimer, logTimer;
 
     async function loadStatus() {
+      if (!autoRefresh) return;
       const indicator = document.getElementById("statusIndicator");
       const text = document.getElementById("statusText");
 
       try {
         const res = await fetch(STATUS_API);
         const data = await res.json();
-
-        if (!data.ok) throw new Error("Server gaf foutmelding terug");
 
         const colorMap = { "🟢": "text-green-600", "🟡": "text-yellow-500", "🔴": "text-red-600" };
         indicator.textContent = data.mongoStatus || "❓";
@@ -105,15 +112,13 @@
     }
 
     async function loadLogs() {
+      if (!autoRefresh) return;
       try {
         const res = await fetch(LOG_API);
         const data = await res.json();
         const logs = data.logs || [];
 
-        const filtered = currentFilter === "all"
-          ? logs
-          : logs.filter(l => l.level === currentFilter);
-
+        const filtered = currentFilter === "all" ? logs : logs.filter(l => l.level === currentFilter);
         const lines = filtered.map(
           l => `[${new Date(l.time).toLocaleTimeString()}] ${l.level.toUpperCase()} → ${l.message}`
         ).join("\n");
@@ -124,7 +129,7 @@
       }
     }
 
-    // Filterknoppen
+    // Filters
     document.querySelectorAll(".log-filter").forEach(btn => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".log-filter").forEach(b => b.classList.remove("bg-indigo-600", "text-white"));
@@ -134,13 +139,28 @@
       });
     });
 
+    // Toggle auto-refresh
+    document.getElementById("toggleRefresh").addEventListener("click", () => {
+      autoRefresh = !autoRefresh;
+      const btn = document.getElementById("toggleRefresh");
+      if (autoRefresh) {
+        btn.textContent = "Auto-refresh: aan";
+        btn.className = "px-3 py-1 rounded-full bg-green-600 text-white";
+        loadStatus();
+        loadLogs();
+      } else {
+        btn.textContent = "Auto-refresh: uit";
+        btn.className = "px-3 py-1 rounded-full bg-red-600 text-white";
+      }
+    });
+
+    // Timers
+    statusTimer = setInterval(loadStatus, 10000);
+    logTimer = setInterval(loadLogs, 15000);
+
     // Initieel laden
     loadStatus();
     loadLogs();
-
-    // Periodiek verversen
-    setInterval(loadStatus, 10000);
-    setInterval(loadLogs, 15000);
   </script>
 </body>
 </html>
