@@ -10,7 +10,7 @@ require("dotenv").config();
 
 const app = express();
 
-// === ✅ CORS FIX ===
+// === ✅ CORS-instellingen ===
 const allowedOrigins = [
   "https://irisje.nl",
   "https://www.irisje.nl",
@@ -31,7 +31,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(compression());
 
-// 🚫 Cachebeleid
+// === 🚫 Cachebeleid + security headers ===
 app.use((req, res, next) => {
   if (req.path.endsWith(".html")) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -47,7 +47,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// === ✅ Database connectie ===
+// === ✅ MongoDB connectie ===
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
   console.error("❌ Geen MongoDB URI gevonden");
@@ -69,17 +69,33 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
+// === 🖼️ Slimme image-serve middleware (WebP-detectie) ===
+app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
+  const originalPath = path.join(__dirname, "../frontend", req.path);
+  const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
+
+  // Browser accepteert WebP?
+  const acceptsWebp = req.headers.accept && req.headers.accept.includes("image/webp");
+
+  if (acceptsWebp && fs.existsSync(webpPath)) {
+    res.sendFile(webpPath);
+  } else if (fs.existsSync(originalPath)) {
+    res.sendFile(originalPath);
+  } else {
+    res.status(404).send("Afbeelding niet gevonden");
+  }
+});
+
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === 🪄 Automatisch head- én lazyload-injectie ===
+// === 🪄 HTML-head & lazyload injectie ===
 app.use(/.*\.html$/, (req, res, next) => {
   const filePath = path.join(__dirname, "../frontend", req.path);
   if (!fs.existsSync(filePath)) return next();
 
   let html = fs.readFileSync(filePath, "utf8");
 
-  // 🔹 Injecteer preload-head-sectie als nog niet aanwezig
   if (!html.includes("fonts.googleapis.com") && html.includes("<head>")) {
     const preloadBlock = `
     <!-- Injected performance preload -->
@@ -93,7 +109,6 @@ app.use(/.*\.html$/, (req, res, next) => {
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
   }
 
-  // 🔹 Injecteer lazyload-script indien niet aanwezig
   if (!html.includes("js/lazyload.js")) {
     html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
   }
@@ -101,7 +116,7 @@ app.use(/.*\.html$/, (req, res, next) => {
   res.type("html").send(html);
 });
 
-// === ✅ Frontend fallback ===
+// === ✅ Fallback naar index.html ===
 app.use(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
