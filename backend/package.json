@@ -1,6 +1,6 @@
 {
   "name": "irisje-backend",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Backend van Irisje.nl – platform voor bedrijven, aanvragen en reviews.",
   "main": "server.js",
   "type": "commonjs",
@@ -11,6 +11,7 @@
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.3",
+    "compression": "^1.7.4",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
