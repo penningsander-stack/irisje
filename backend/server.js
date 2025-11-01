@@ -1,5 +1,9 @@
 // backend/server.js
 require("./config/validateEnv"); // ✅ checkt eerst alle vereiste .env-velden
+// backend/server.js
+require("./config/validateEnv"); // ✅ eerst .env check
+const { startupBanner } = require("./utils/logHelper"); // 🌸 nette logs
+
 
 const express = require("express");
 const mongoose = require("mongoose");
