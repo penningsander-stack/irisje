@@ -2,6 +2,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 require("dotenv").config();
@@ -12,7 +13,7 @@ const app = express();
 const allowedOrigins = [
   "https://irisje.nl",
   "https://www.irisje.nl",
-  "https://irisje-frontend.onrender.com",
+  "https://irisje-frontend.onrender.com"
 ];
 
 app.use(
@@ -32,12 +33,19 @@ app.use(
 // === ✅ Middleware ===
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
+app.use(compression()); // 🔧 automatische gzip-compressie
 
-// 🚫 Cache uitschakelen zodat altijd de nieuwste frontendbestanden worden geladen
+// 🚫 Cache uitschakelen voor HTML, maar wél caching voor statische bestanden
 app.use((req, res, next) => {
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
+  if (req.path.endsWith(".html")) {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  } else if (/\.(css|js|png|jpg|jpeg|svg|webp|ico)$/i.test(req.path)) {
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  }
+
+  // 🛡️ Beveiligingsheaders
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -45,7 +53,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// === ✅ Database connectie (zonder verouderde opties) ===
+// === ✅ Database connectie ===
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
   console.error("❌ Geen MongoDB URI gevonden in environment variabelen");
