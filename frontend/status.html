@@ -1,0 +1,100 @@
+<!-- frontend/status.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Systeemstatus – Irisje.nl</title>
+  <meta name="theme-color" content="#4F46E5">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <!-- Lokale Tailwind build -->
+  <link rel="stylesheet" href="style.css?v=20251101">
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
+  <header class="bg-indigo-600 text-white py-4 shadow-md">
+    <div class="max-w-4xl mx-auto px-4 flex justify-between items-center">
+      <h1 class="text-xl font-semibold tracking-tight">🌸 Irisje.nl – Systeemstatus</h1>
+      <a href="index.html" class="text-sm underline hover:text-indigo-200">Terug naar site</a>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+    <section id="statusCard" class="bg-white rounded-2xl shadow border border-gray-100 p-8 w-full max-w-md space-y-4">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-3">Serverstatus</h2>
+
+      <div id="statusIndicator" class="text-4xl">⏳</div>
+      <p id="statusText" class="text-gray-600 text-sm">Bezig met ophalen...</p>
+
+      <div class="border-t my-4"></div>
+
+      <div class="grid grid-cols-2 gap-2 text-sm text-left">
+        <div class="font-medium text-gray-500">Versie:</div><div id="version">–</div>
+        <div class="font-medium text-gray-500">Omgeving:</div><div id="environment">–</div>
+        <div class="font-medium text-gray-500">Bedrijven:</div><div id="companies">–</div>
+        <div class="font-medium text-gray-500">Uptime:</div><div id="uptime">–</div>
+        <div class="font-medium text-gray-500">Geheugen:</div><div id="memory">–</div>
+        <div class="font-medium text-gray-500">Server:</div><div id="server">–</div>
+      </div>
+
+      <div class="relative w-full bg-gray-200 h-3 rounded-full overflow-hidden mt-3">
+        <div id="uptimeBar" class="absolute left-0 top-0 h-3 bg-indigo-600 transition-all duration-500" style="width:0%"></div>
+      </div>
+
+      <p class="text-xs text-gray-400 mt-3" id="timestamp"></p>
+    </section>
+  </main>
+
+  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api/status";
+
+    async function loadStatus() {
+      const indicator = document.getElementById("statusIndicator");
+      const text = document.getElementById("statusText");
+
+      try {
+        const res = await fetch(API_BASE);
+        const data = await res.json();
+
+        if (!data.ok) throw new Error("Server gaf foutmelding terug");
+
+        const colorMap = { "🟢": "text-green-600", "🟡": "text-yellow-500", "🔴": "text-red-600" };
+        indicator.textContent = data.mongoStatus || "❓";
+        indicator.className = "text-4xl " + (colorMap[data.mongoStatus] || "text-gray-500");
+
+        document.getElementById("version").textContent = data.version;
+        document.getElementById("environment").textContent = data.environment;
+        document.getElementById("companies").textContent = data.companyCount;
+        document.getElementById("uptime").textContent = data.uptime;
+        document.getElementById("memory").textContent = data.memory;
+        document.getElementById("server").textContent = data.server;
+        document.getElementById("timestamp").textContent = "Laatst bijgewerkt: " + new Date(data.timestamp).toLocaleTimeString();
+
+        text.textContent = data.mongoStatus === "🟢"
+          ? "MongoDB verbonden en actief"
+          : (data.mongoStatus === "🟡" ? "Verbinding wordt opgebouwd..." : "Geen verbinding met database");
+
+        // uptimeBar animatie (gewoon visueel, niet technisch exact)
+        const uptimeParts = data.uptime.split("m");
+        const minutes = parseInt(uptimeParts[0] || 0);
+        const width = Math.min(100, (minutes / 60) * 100);
+        document.getElementById("uptimeBar").style.width = width + "%";
+
+      } catch (err) {
+        indicator.textContent = "🔴";
+        indicator.className = "text-4xl text-red-600";
+        text.textContent = "Server niet bereikbaar";
+        console.error("Statusfout:", err);
+      }
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 10000); // elke 10 seconden verversen
+  </script>
+</body>
+</html>
