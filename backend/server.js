@@ -10,23 +10,18 @@ require("dotenv").config();
 
 const app = express();
 
-// === ✅ CORS FIX (Render + productiecompatibiliteit) ===
+// === ✅ CORS FIX ===
 const allowedOrigins = [
   "https://irisje.nl",
   "https://www.irisje.nl",
   "https://irisje-frontend.onrender.com"
 ];
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("❌ Geblokkeerde CORS-origin:", origin);
-        callback(new Error("Niet-toegestane bron: " + origin));
-      }
-    },
+    origin: (origin, cb) =>
+      !origin || allowedOrigins.includes(origin)
+        ? cb(null, true)
+        : cb(new Error("Niet-toegestane bron: " + origin)),
     credentials: true
   })
 );
@@ -55,7 +50,7 @@ app.use((req, res, next) => {
 // === ✅ Database connectie ===
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
-  console.error("❌ Geen MongoDB URI gevonden in environment variabelen");
+  console.error("❌ Geen MongoDB URI gevonden");
   process.exit(1);
 }
 mongoose
@@ -77,24 +72,36 @@ app.use("/api/seed", require("./routes/seed"));
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === 🪄 Automatisch lazyload.js injecteren ===
+// === 🪄 Automatisch head- én lazyload-injectie ===
 app.use(/.*\.html$/, (req, res, next) => {
   const filePath = path.join(__dirname, "../frontend", req.path);
-  if (fs.existsSync(filePath)) {
-    let html = fs.readFileSync(filePath, "utf8");
-    if (!html.includes("js/lazyload.js")) {
-      html = html.replace(
-        /<\/body>/i,
-        `  <script src="js/lazyload.js"></script>\n</body>`
-      );
-    }
-    res.type("html").send(html);
-  } else {
-    next();
+  if (!fs.existsSync(filePath)) return next();
+
+  let html = fs.readFileSync(filePath, "utf8");
+
+  // 🔹 Injecteer preload-head-sectie als nog niet aanwezig
+  if (!html.includes("fonts.googleapis.com") && html.includes("<head>")) {
+    const preloadBlock = `
+    <!-- Injected performance preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="style.css?v=20251030">
+    <link rel="preload" as="image" href="favicon.ico">
+    `;
+    html = html.replace(/<head>/i, `<head>${preloadBlock}`);
   }
+
+  // 🔹 Injecteer lazyload-script indien niet aanwezig
+  if (!html.includes("js/lazyload.js")) {
+    html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
+  }
+
+  res.type("html").send(html);
 });
 
-// === ✅ Frontend fallback (Express 5-compatibel) ===
+// === ✅ Frontend fallback ===
 app.use(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
