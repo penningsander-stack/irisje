@@ -79,7 +79,10 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === 🪄 HTML-head & lazyload injectie ===
+
+
+
+// === 🪄 HTML-head & lazyload + status-enhanced injectie ===
 app.use(/.*\.html$/, (req, res, next) => {
   const filePath = path.join(__dirname, "../frontend", req.path);
   if (!fs.existsSync(filePath)) return next();
@@ -105,8 +108,14 @@ app.use(/.*\.html$/, (req, res, next) => {
     html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
   }
 
+  // 🌸 Extra: status-enhanced.js automatisch injecteren op statuspagina
+  if (req.path === "/status.html" && !html.includes("js/status-enhanced.js")) {
+    html = html.replace(/<\/body>/i, `  <script src="js/status-enhanced.js"></script>\n</body>`);
+  }
+
   res.type("html").send(html);
 });
+
 
 // === ✅ Frontend fallback (alle niet-API routes) ===
 app.get(/^\/(?!api\/).*/, (req, res) => {
