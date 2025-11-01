@@ -4,13 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>Account aanmaken – Irisje.nl</title>
   <meta name="description" content="Maak gratis een bedrijfsaccount aan om aanvragen en reviews te beheren via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <!-- ✅ Lokale Tailwind build -->
-  <link rel="stylesheet" href="style.css?v=20251031" />
+  <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -36,15 +37,19 @@
   <!-- MAIN -->
   <main class="flex-1 flex items-center justify-center px-4 py-10">
     <section
-      class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 w-full max-w-md"
+      class="bg-white rounded-2xl shadow-lg border border-gray-100 p-10 w-full max-w-md text-center fade-in"
       aria-labelledby="registerTitle"
     >
-      <h1 id="registerTitle" class="text-2xl font-bold text-indigo-700 mb-6 text-center">
+      <div class="text-4xl mb-4">📝</div>
+      <h1 id="registerTitle" class="text-2xl font-bold text-indigo-700 mb-2">
         Account aanmaken
       </h1>
+      <p class="text-gray-500 text-sm mb-6">
+        Registreer je bedrijf om aanvragen te ontvangen en reviews te beheren.
+      </p>
 
-      <form id="registerForm" class="space-y-4" novalidate>
-        <div>
+      <form id="registerForm" class="space-y-5" novalidate>
+        <div class="text-left">
           <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
             Bedrijfsnaam
           </label>
@@ -58,7 +63,7 @@
           />
         </div>
 
-        <div>
+        <div class="text-left">
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
             E-mailadres
           </label>
@@ -71,7 +76,7 @@
           />
         </div>
 
-        <div>
+        <div class="text-left">
           <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
             Wachtwoord
           </label>
@@ -95,11 +100,11 @@
         <p id="registerMessage" role="alert" class="text-center text-sm mt-2"></p>
       </form>
 
-      <p class="text-xs text-gray-500 text-center mt-4 leading-relaxed">
-        Door je te registreren ga je akkoord met de
+      <p class="text-xs text-gray-500 text-center mt-6 leading-relaxed">
+        Door je te registreren ga je akkoord met onze
         <a
           href="voorwaarden.html"
-          class="hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md"
+          class="underline hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md"
         >
           gebruiksvoorwaarden
         </a>.
@@ -112,7 +117,22 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Extern script -->
-  <script src="js/register.js?v=20251031"></script>
+  <!-- ✅ Script -->
+  <script src="js/register.js?v=20251101"></script>
+
+  <!-- ✅ Fade-in animatie -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        setTimeout(() => {
+          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
+      });
+    });
+  </script>
 </body>
 </html>
