@@ -2,6 +2,27 @@
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
+const { getLogs } = require("../utils/logger");
+
+/**
+ * 🌸 Irisje.nl – Admin routes
+ * Bevat:
+ * - Reviewbeheer (melden / afhandelen)
+ * - Serverlogs voor statuspagina
+ */
+
+/* === 📜 LOGS === */
+router.get("/logs", (req, res) => {
+  try {
+    const logs = getLogs();
+    res.json({ ok: true, logs });
+  } catch (err) {
+    console.error("❌ Fout bij ophalen logs:", err);
+    res.status(500).json({ ok: false, message: "Kon logs niet ophalen" });
+  }
+});
+
+/* === 💬 GEMELDE REVIEWS === */
 
 /**
  * ✅ PATCH /api/admin/resolve/:id
@@ -16,7 +37,6 @@ router.patch("/resolve/:id", async (req, res) => {
       return res.status(404).json({ message: "Review niet gevonden" });
     }
 
-    // Markeer als afgehandeld
     review.reported = false;
     await review.save();
 
