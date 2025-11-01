@@ -8,8 +8,6 @@
   <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- ✅ Lokale Tailwind build -->
   <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
@@ -18,8 +16,8 @@
   <!-- HEADER -->
   <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
-      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold leading-none select-none">I</span>
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold leading-none">I</span>
         <span class="tracking-tight">Irisje.nl</span>
       </a>
       <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
@@ -55,7 +53,7 @@
 
         <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 lg:py-8 lg:px-8 w-full max-w-md lg:ml-auto">
           <h2 class="text-base font-semibold text-gray-800 mb-4 text-center">🔍 Zoek een bedrijf</h2>
-          <form id="searchForm" class="grid gap-4" novalidate aria-label="Zoekformulier">
+          <form id="searchForm" class="grid gap-4" novalidate>
             <input id="categoryInput" type="text" placeholder="Categorie (bijv. loodgieter, schilder...)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
             <input id="cityInput" type="text" placeholder="Plaats (bijv. Amsterdam)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
             <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
@@ -76,13 +74,7 @@
       <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
         <span class="text-xl mr-2">🔎</span> Populaire categorieën
       </h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-        ${["Loodgieter","CV / Verwarming","Elektricien","Schoonmaak","Slotenmaker","Glazenwasser"].map(cat => `
-          <a href="results.html?category=${encodeURIComponent(cat)}"
-             class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
-            <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
-          </a>`).join("")}
-      </div>
+      <div id="popularCategories" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-sm"></div>
     </section>
 
     <!-- HOE HET WERKT -->
@@ -91,17 +83,7 @@
         <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
           <span class="text-xl mr-2">⚡</span> Hoe het werkt
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
-          ${[
-            ["1. Vertel wat je nodig hebt","Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
-            ["2. Bedrijven reageren","Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
-            ["3. Jij kiest","Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
-          ].map(([title, text]) => `
-            <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
-              <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
-              <p class="text-gray-700 leading-relaxed">${text}</p>
-            </div>`).join("")}
-        </div>
+        <div id="howItWorks" class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm"></div>
         <div class="text-center mt-10">
           <a href="request.html" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-6 py-3 text-sm shadow-sm transition">
             Vraag gratis een offerte aan
@@ -115,18 +97,7 @@
       <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
         <span class="text-xl mr-2">💬</span> Ervaringen van anderen
       </h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-        ${[
-          ["⭐⭐⭐⭐⭐","“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”","Sanne, Amsterdam"],
-          ["⭐⭐⭐⭐","“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”","Peter, Utrecht"],
-          ["⭐⭐⭐⭐⭐","“Volgende keer bel ik weer via Irisje in plaats van Googlen.”","Linda, Rotterdam"]
-        ].map(([stars, msg, name]) => `
-          <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-            <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
-            <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
-            <div class="text-gray-500 text-xs mt-3">— ${name}</div>
-          </div>`).join("")}
-      </div>
+      <div id="reviews" class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm"></div>
     </section>
 
     <!-- CTA VOOR BEDRIJVEN -->
@@ -154,10 +125,11 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Script -->
+  <!-- ✅ Scripts -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
+    // --- Zoekfunctie ---
     document.getElementById("searchForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const category = categoryInput.value.trim();
@@ -172,7 +144,7 @@
       resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
 
       try {
-        const res = await fetch(\`\${API_BASE}/companies/search?category=\${encodeURIComponent(category)}&city=\${encodeURIComponent(city)}\`);
+        const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
         const data = await res.json();
         if (!res.ok || !data.items?.length) throw new Error();
 
@@ -197,19 +169,57 @@
       }
     });
 
-    // Zachte fade-in
+    // --- Dynamische content ---
     document.addEventListener("DOMContentLoaded", () => {
+      // Populaire categorieën
+      const categories = ["Loodgieter", "CV / Verwarming", "Elektricien", "Schoonmaak", "Slotenmaker", "Glazenwasser"];
+      const catContainer = document.getElementById("popularCategories");
+      catContainer.innerHTML = categories.map(cat => `
+        <a href="results.html?category=${encodeURIComponent(cat)}"
+           class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
+        </a>
+      `).join("");
+
+      // Hoe het werkt
+      const steps = [
+        ["1. Vertel wat je nodig hebt","Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
+        ["2. Bedrijven reageren","Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
+        ["3. Jij kiest","Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
+      ];
+      const stepsContainer = document.getElementById("howItWorks");
+      stepsContainer.innerHTML = steps.map(([title, text]) => `
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+          <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
+          <p class="text-gray-700 leading-relaxed">${text}</p>
+        </div>
+      `).join("");
+
+      // Reviews
+      const reviews = [
+        ["⭐⭐⭐⭐⭐","“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”","Sanne, Amsterdam"],
+        ["⭐⭐⭐⭐","“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”","Peter, Utrecht"],
+        ["⭐⭐⭐⭐⭐","“Volgende keer bel ik weer via Irisje in plaats van Googlen.”","Linda, Rotterdam"]
+      ];
+      const revContainer = document.getElementById("reviews");
+      revContainer.innerHTML = reviews.map(([stars, msg, name]) => `
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+          <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
+          <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
+          <div class="text-gray-500 text-xs mt-3">— ${name}</div>
+        </div>
+      `).join("");
+
+      // Fade-in
       const elements = document.querySelectorAll("header, main section, footer");
       elements.forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(12px)";
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            el.style.transition = "opacity .8s ease, transform .8s ease";
-            el.style.opacity = "1";
-            el.style.transform = "translateY(0)";
-          }, 150 * i);
-        });
+        setTimeout(() => {
+          el.style.transition = "opacity .8s ease, transform .8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
       });
     });
   </script>
