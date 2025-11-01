@@ -1,11 +1,12 @@
 // frontend/js/status-enhanced.js
 /**
- * 🌸 Irisje.nl – Statuspagina visual enhancer (v2)
- * Functies:
- * - kleurcodering van logs
- * - fade-in animaties
- * - statusindicator-tril bij fouten
- * - dynamische uptime-balk (groen→oranje→rood)
+ * 🌸 Irisje.nl – Statuspagina visual enhancer (v3)
+ * Verbeteringen:
+ * - stabielere kleurupdates
+ * - throttled observer
+ * - consistente kleurcodering
+ * - soepelere animaties
+ * - uptimekleur berekend op tijd
  */
 
 console.log("🌸 [Irisje] status-enhanced.js geladen");
@@ -19,25 +20,32 @@ document.addEventListener("DOMContentLoaded", () => {
   function applyLogColors() {
     if (!logContainer) return;
     const lines = logContainer.innerText.split("\n");
-    logContainer.innerHTML = lines
+    const html = lines
       .map(line => {
-        if (line.includes("ERROR")) return `<div class="text-red-600 font-medium">${line}</div>`;
-        if (line.includes("DEBUG")) return `<div class="text-yellow-600">${line}</div>`;
-        if (line.includes("INFO")) return `<div class="text-blue-600">${line}</div>`;
+        const upper = line.toUpperCase();
+        if (upper.includes("ERROR"))
+          return `<div class="text-red-600 font-medium">${line}</div>`;
+        if (upper.includes("DEBUG"))
+          return `<div class="text-yellow-600">${line}</div>`;
+        if (upper.includes("INFO"))
+          return `<div class="text-blue-600">${line}</div>`;
         return `<div class="text-gray-700">${line}</div>`;
       })
       .join("");
+    logContainer.innerHTML = html;
   }
 
-  /* === 💫 2. Fade-in bij nieuwe logs === */
+  /* === 💫 2. Fade-in en throttled updates === */
   if (logContainer) {
+    let updateTimer;
     const observer = new MutationObserver(() => {
-      logContainer.style.opacity = "0.3";
-      setTimeout(() => {
+      clearTimeout(updateTimer);
+      logContainer.style.opacity = "0.4";
+      updateTimer = setTimeout(() => {
         logContainer.style.transition = "opacity 0.8s ease";
         logContainer.style.opacity = "1";
         applyLogColors();
-      }, 50);
+      }, 120);
     });
     observer.observe(logContainer, { childList: true, subtree: true });
     applyLogColors();
@@ -46,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* === 🚨 3. Tril-effect bij 🔴 databasefout === */
   if (indicator) {
     const animateStatus = () => {
-      if (indicator.textContent === "🔴") {
+      if (indicator.textContent.trim() === "🔴") {
         indicator.style.animation = "shake 0.4s ease";
         setTimeout(() => (indicator.style.animation = ""), 400);
       }
@@ -59,12 +67,15 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateUptimeColor() {
     if (!uptimeBar) return;
     const text = document.getElementById("uptime")?.textContent || "";
-    const mins = parseInt(text) || 0;
+    const minsMatch = text.match(/(\d+)m/);
+    const secsMatch = text.match(/(\d+)s/);
+    const mins = minsMatch ? parseInt(minsMatch[1]) : 0;
+    const secs = secsMatch ? parseInt(secsMatch[1]) : 0;
+    const total = mins + secs / 60;
 
-    // 0–20 min = groen, 20–40 = oranje, >40 = rood
     let color = "bg-green-600";
-    if (mins > 40) color = "bg-red-600";
-    else if (mins > 20) color = "bg-yellow-500";
+    if (total > 40) color = "bg-red-600";
+    else if (total > 20) color = "bg-yellow-500";
 
     uptimeBar.className = `absolute left-0 top-0 h-3 transition-all duration-500 ${color}`;
   }
