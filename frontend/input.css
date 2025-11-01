@@ -1,9 +1,73 @@
+/* frontend/input.css */
+
+/* === Basisthema Irisje.nl === */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Extra reset */
-html, body {
-  margin: 0;
-  padding: 0;
+/* === Font === */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #ffffff;
+  color: #111827;
+}
+
+/* === Animaties & transities === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+/* === Lazy-load ondersteuning voor afbeeldingen === */
+img[loading="lazy"] {
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+}
+img[loading="lazy"].loaded {
+  opacity: 1;
+}
+
+/* === Buttons === */
+.btn-irisje {
+  @apply px-4 py-2 rounded-xl font-medium text-white bg-irisje-primary hover:bg-irisje-secondary transition-colors duration-200;
+}
+
+/* === Cards === */
+.card {
+  @apply rounded-2xl shadow-md bg-white hover:shadow-lg transition-shadow duration-200 p-4;
+}
+
+/* === Formulieren === */
+input,
+textarea,
+select {
+  @apply border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-irisje-primary focus:border-irisje-primary;
+}
+
+/* === Statusmeldingen === */
+.alert-success {
+  @apply bg-green-100 text-green-800 p-3 rounded-lg;
+}
+.alert-error {
+  @apply bg-red-100 text-red-800 p-3 rounded-lg;
+}
+
+/* === Responsive tweaks === */
+@media (max-width: 640px) {
+  .card {
+    @apply p-3;
+  }
+  .btn-irisje {
+    @apply w-full;
+  }
 }
