@@ -69,12 +69,16 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
 
+// === ✅ Testroute — moet vóór frontend fallback ===
+app.get("/api/test", (req, res) => {
+  res.json({ ok: true, message: "Server ziet routes correct" });
+});
+
 // === 🖼️ Slimme image-serve middleware (WebP-detectie) ===
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
   const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
 
-  // Browser accepteert WebP?
   const acceptsWebp = req.headers.accept && req.headers.accept.includes("image/webp");
 
   if (acceptsWebp && fs.existsSync(webpPath)) {
@@ -82,7 +86,7 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   } else if (fs.existsSync(originalPath)) {
     res.sendFile(originalPath);
   } else {
-    res.status(404).send("Afbeelding niet gevonden");
+    next();
   }
 });
 
@@ -116,8 +120,8 @@ app.use(/.*\.html$/, (req, res, next) => {
   res.type("html").send(html);
 });
 
-// === ✅ Fallback naar index.html ===
-app.use(/.*/, (req, res) => {
+// === ✅ Fallback naar index.html (alleen niet-API routes) ===
+app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
