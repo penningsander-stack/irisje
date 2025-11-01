@@ -43,6 +43,12 @@
       </div>
 
       <p class="text-xs text-gray-400 mt-3" id="timestamp"></p>
+
+      <!-- 🧾 Logweergave -->
+      <div id="logsContainer" class="text-left text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 max-h-48 overflow-y-auto hidden">
+        <h3 class="text-gray-600 font-semibold mb-2 text-center">📜 Laatste servermeldingen</h3>
+        <ul id="logList" class="space-y-1 font-mono text-[11px]"></ul>
+      </div>
     </section>
   </main>
 
@@ -56,6 +62,8 @@
     async function loadStatus() {
       const indicator = document.getElementById("statusIndicator");
       const text = document.getElementById("statusText");
+      const logsBox = document.getElementById("logsContainer");
+      const logList = document.getElementById("logList");
 
       try {
         const res = await fetch(API_BASE);
@@ -63,28 +71,52 @@
 
         if (!data.ok) throw new Error("Server gaf foutmelding terug");
 
+        // 🟢 statuslampje
         const colorMap = { "🟢": "text-green-600", "🟡": "text-yellow-500", "🔴": "text-red-600" };
         indicator.textContent = data.mongoStatus || "❓";
         indicator.className = "text-4xl " + (colorMap[data.mongoStatus] || "text-gray-500");
 
+        // 🔢 waarden
         document.getElementById("version").textContent = data.version;
         document.getElementById("environment").textContent = data.environment;
         document.getElementById("companies").textContent = data.companyCount;
         document.getElementById("uptime").textContent = data.uptime;
         document.getElementById("memory").textContent = data.memory;
         document.getElementById("server").textContent = data.server;
-        document.getElementById("timestamp").textContent = "Laatst bijgewerkt: " + new Date(data.timestamp).toLocaleTimeString();
+        document.getElementById("timestamp").textContent =
+          "Laatst bijgewerkt: " + new Date(data.timestamp).toLocaleTimeString();
 
-        text.textContent = data.mongoStatus === "🟢"
-          ? "MongoDB verbonden en actief"
-          : (data.mongoStatus === "🟡" ? "Verbinding wordt opgebouwd..." : "Geen verbinding met database");
+        text.textContent =
+          data.mongoStatus === "🟢"
+            ? "MongoDB verbonden en actief"
+            : data.mongoStatus === "🟡"
+            ? "Verbinding wordt opgebouwd..."
+            : "Geen verbinding met database";
 
-        // uptimeBar animatie (gewoon visueel, niet technisch exact)
+        // 📈 uptimebalk
         const uptimeParts = data.uptime.split("m");
         const minutes = parseInt(uptimeParts[0] || 0);
         const width = Math.min(100, (minutes / 60) * 100);
         document.getElementById("uptimeBar").style.width = width + "%";
 
+        // 🧾 logs
+        if (Array.isArray(data.logs) && data.logs.length > 0) {
+          logsBox.classList.remove("hidden");
+          logList.innerHTML = data.logs
+            .map((log) => {
+              const levelColor =
+                log.level === "error"
+                  ? "text-red-600"
+                  : log.level === "debug"
+                  ? "text-yellow-600"
+                  : "text-blue-600";
+              const time = new Date(log.time).toLocaleTimeString();
+              return `<li class="${levelColor}">[${time}] ${log.level.toUpperCase()} → ${log.message}</li>`;
+            })
+            .join("");
+        } else {
+          logsBox.classList.add("hidden");
+        }
       } catch (err) {
         indicator.textContent = "🔴";
         indicator.className = "text-4xl text-red-600";
