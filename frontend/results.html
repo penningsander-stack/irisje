@@ -4,74 +4,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>Zoekresultaten – Irisje.nl</title>
   <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- ✅ Lokale Tailwind build (geen CDN) -->
-  <link rel="stylesheet" href="style.css?v=20251030" />
+  <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-5 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">Irisje.nl</a>
-      <nav class="space-x-6 text-sm font-medium hidden sm:block">
-        <a href="index.html" class="hover:underline">Home</a>
-        <a href="login.html" class="hover:underline">Inloggen</a>
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        <span>Irisje.nl</span>
+      </a>
+      <nav class="hidden sm:flex space-x-6 text-sm font-medium text-gray-600">
+        <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
+        <a href="login.html" class="hover:text-indigo-600 transition">Inloggen</a>
       </nav>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-8">
-    <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
-      <span class="text-3xl mr-2">🔎</span>
-      Bedrijven in jouw regio
-    </h1>
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-10">
 
-    <!-- Filters -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-6">
-      <form id="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <input
-          id="filterCategory"
-          type="text"
-          placeholder="Categorie (bijv. loodgieter)"
-          class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-        <input
-          id="filterCity"
-          type="text"
-          placeholder="Plaats"
-          class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-        />
-        <button
-          type="submit"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-center transition text-sm"
-        >
+    <section>
+      <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
+        <span class="text-3xl mr-2">🔎</span> Bedrijven in jouw regio
+      </h1>
+
+      <!-- FILTERS -->
+      <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Zoeken
         </button>
       </form>
-      <p id="filterMessage" class="text-xs text-gray-500 mt-3"></p>
-    </section>
+      <p id="filterMessage" class="text-xs text-gray-500 mb-4"></p>
 
-    <!-- Resultaten -->
-    <section id="resultsContainer" class="grid gap-6">
-      <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
-
-      <!-- 🔧 Verborgen testlink -->
-      <!--
-      <div class="text-center mt-8">
-        <a href="components-preview.html"
-           class="inline-block text-xs text-gray-400 hover:text-indigo-600 transition">
-           🔧 Design testpagina openen
-        </a>
-      </div>
-      -->
+      <!-- RESULTATEN -->
+      <section id="resultsContainer" class="grid gap-6">
+        <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
+      </section>
     </section>
   </main>
 
@@ -80,107 +57,100 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- SCRIPT -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    function stars(rating) {
-      const full = Math.round(rating || 0);
-      return "⭐".repeat(full);
-    }
+    const stars = rating => "⭐".repeat(Math.round(rating || 0));
 
     async function loadResults(category, city) {
       const container = document.getElementById("resultsContainer");
       const msg = document.getElementById("filterMessage");
-      container.innerHTML = "<div class='text-gray-500 text-sm'>Resultaten worden geladen...</div>";
+      container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
       msg.textContent = "";
 
-      const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category || "")}&city=${encodeURIComponent(city || "")}`;
-
       try {
+        const url = \`\${API_BASE}/companies/search?category=\${encodeURIComponent(category || "")}&city=\${encodeURIComponent(city || "")}\`;
         const res = await fetch(url);
-        if (!res.ok) throw new Error("Kon geen verbinding maken met de server");
+        if (!res.ok) throw new Error("Serverfout");
         const data = await res.json();
 
         if (!data.items?.length) {
-          container.innerHTML = `
-            <div class="text-gray-500 text-sm bg-white border border-gray-200 rounded-xl p-5 shadow">
-              Geen bedrijven gevonden. Probeer een andere zoekopdracht.
-            </div>`;
+          container.innerHTML = \`
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center text-gray-500 text-sm">
+              Geen bedrijven gevonden.<br />Probeer een andere categorie of plaats.
+            </div>\`;
           return;
         }
 
-        container.innerHTML = data.items.map(c => `
-          <article class="bg-white rounded-2xl border border-gray-200 shadow p-5 stat-card">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        container.innerHTML = data.items.map(c => \`
+          <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
-                <h2 class="text-lg font-semibold text-indigo-700 leading-tight">${c.name || ""}</h2>
-                <div class="text-gray-500 text-sm">${c.city || ""}</div>
-                <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
-                <p class="text-gray-700 text-sm mt-3">${c.tagline || ""}</p>
+                <h2 class="text-lg font-semibold text-indigo-700 leading-tight">\${c.name || ""}</h2>
+                <div class="text-gray-500 text-sm">\${c.city || ""}</div>
+                <div class="text-gray-400 text-xs mt-1">\${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
+                <p class="text-gray-700 text-sm mt-3 leading-relaxed">\${c.tagline || ""}</p>
               </div>
-
               <div class="text-right">
-                <div class="text-yellow-500 text-sm font-semibold leading-none">${stars(c.avgRating)}</div>
-                <div class="text-gray-500 text-xs leading-none mt-1">${c.reviewCount || 0} reviews</div>
+                <div class="text-yellow-500 text-sm font-semibold leading-none">\${stars(c.avgRating)}</div>
+                <div class="text-gray-500 text-xs leading-none mt-1">\${c.reviewCount || 0} reviews</div>
               </div>
             </div>
 
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
-              <a
-                href="company.html?slug=${encodeURIComponent(c.slug)}"
-                class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition"
-              >
-                Bekijk profiel
+              <a href="company.html?slug=\${encodeURIComponent(c.slug)}"
+                 class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition">
+                 Bekijk profiel
               </a>
               <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
-                ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
+                \${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
               </div>
             </div>
           </article>
-        `).join("");
+        \`).join("");
 
-        msg.textContent = `${data.items.length} resultaat / resultaten gevonden`;
+        msg.textContent = \`\${data.items.length} resultaat(en) gevonden\`;
       } catch (err) {
         console.error("Zoekfout:", err);
-        container.innerHTML = `
-          <div class="text-red-600 text-sm bg-white border border-red-200 rounded-xl p-5 shadow">
-            ❌ Er ging iets mis bij het laden van resultaten.
-          </div>`;
+        container.innerHTML = \`
+          <div class="bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm">
+            ❌ Er ging iets mis bij het laden van de resultaten.
+          </div>\`;
       }
     }
 
-    function getQueryParam(name) {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(name) || "";
-    }
+    const getParam = n => new URLSearchParams(window.location.search).get(n) || "";
 
     document.getElementById("filterForm").addEventListener("submit", e => {
       e.preventDefault();
-      const category = document.getElementById("filterCategory").value.trim();
+      const cat = document.getElementById("filterCategory").value.trim();
       const city = document.getElementById("filterCity").value.trim();
-      loadResults(category, city);
+      loadResults(cat, city);
     });
 
-    // Initieel laden
+    // INIT
     (function init() {
-      const startCategory = getQueryParam("category");
-      const startCity = getQueryParam("city");
-      document.getElementById("filterCategory").value = startCategory;
-      document.getElementById("filterCity").value = startCity;
-      loadResults(startCategory, startCity);
+      const cat = getParam("category");
+      const city = getParam("city");
+      document.getElementById("filterCategory").value = cat;
+      document.getElementById("filterCity").value = city;
+      loadResults(cat, city);
     })();
 
-    // Zachte fade-in animatie bij laden
+    // FADE-IN
     document.addEventListener("DOMContentLoaded", () => {
-      const sections = document.querySelectorAll("header, main section, footer");
-      sections.forEach((el, i) => {
+      const els = document.querySelectorAll("header, main section, footer");
+      els.forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(12px)";
-        setTimeout(() => {
-          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        }, 150 * i);
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            el.style.transition = "opacity .8s ease, transform .8s ease";
+            el.style.opacity = "1";
+            el.style.transform = "translateY(0)";
+          }, 150 * i);
+        });
       });
     });
   </script>
