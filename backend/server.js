@@ -44,6 +44,8 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/seed", require("./routes/seed"));
+app.use("/api/status", require("./routes/status"));
+
 
 // === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
