@@ -1,51 +1,84 @@
-/* frontend/sw.js
-   🌸 Irisje.nl – verbeterde service worker met offline fallback
+// frontend/sw.js
+/* 🌸 Irisje.nl – verbeterde service worker (v3)
+   - Fouttolerant cachen
+   - Offline fallback via offline.html
+   - Automatische update bij nieuwe versies
 */
 
-const CACHE_NAME = "irisje-cache-v2";
-const OFFLINE_URL = "offline.html";
-const PRECACHE_URLS = [
-  "index.html",
-  "offline.html",
-  "style.css",
-  "manifest.json",
-  "favicon.ico"
+const CACHE_NAME = "irisje-cache-v3";
+const OFFLINE_URLS = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/manifest.json",
+  "/offline.html",
+  "/favicon.ico"
 ];
 
-// 🔹 INSTALLATIE – cache de belangrijkste bestanden
+/* === INSTALLATIE === */
 self.addEventListener("install", (event) => {
+  console.log("🔧 [SW] Installatie gestart...");
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const okFiles = [];
+
+      for (const url of OFFLINE_URLS) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            await cache.put(url, res.clone());
+            okFiles.push(url);
+          } else {
+            console.warn(`⚠️ [SW] ${url} gaf status ${res.status}, niet gecachet.`);
+          }
+        } catch (err) {
+          console.warn(`⚠️ [SW] ${url} kon niet worden opgehaald (${err.message}).`);
+        }
+      }
+
+      console.log("✅ [SW] Bestanden succesvol gecachet:", okFiles);
+      self.skipWaiting();
+    })()
   );
-  self.skipWaiting();
 });
 
-// 🔹 ACTIVEREN – oude versies verwijderen
+/* === ACTIVATIE === */
 self.addEventListener("activate", (event) => {
+  console.log("♻️ [SW] Activatie...");
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))
+      Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log("🗑️ [SW] Oude cache verwijderd:", key);
+            return caches.delete(key);
+          }
+        })
+      )
     )
   );
   self.clients.claim();
 });
 
-// 🔹 FETCH – probeer netwerk, val terug op cache of offline.html
+/* === FETCH HANDLER === */
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // ✅ Cache succesvolle responses voor later gebruik
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        return response;
-      })
-      .catch(async () => {
-        // 🌐 Geen netwerk: probeer uit cache, anders offline.html
+    (async () => {
+      try {
         const cached = await caches.match(event.request);
-        return cached || (await caches.match(OFFLINE_URL));
-      })
+        if (cached) return cached;
+
+        const response = await fetch(event.request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, response.clone());
+        return response;
+      } catch (err) {
+        console.warn("⚠️ [SW] Netwerkfout, probeer offline fallback:", err);
+        return caches.match("/offline.html");
+      }
+    })()
   );
 });
