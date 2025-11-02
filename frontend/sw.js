@@ -1,10 +1,9 @@
 /* frontend/sw.js
-   🌸 Irisje.nl – verbeterde service worker voor PWA & offline gebruik
-   Versie: 2025-11-01
+   🌸 Irisje.nl – definitieve PWA service worker (2025-11-01)
+   Volledig compatibel met offline.html + manifest.json
 */
 
 const CACHE_NAME = "irisje-cache-v20251101";
-const OFFLINE_FALLBACK = "offline.html";
 const FILES_TO_CACHE = [
   "index.html",
   "offline.html",
@@ -13,8 +12,6 @@ const FILES_TO_CACHE = [
   "favicon.ico",
   "icons/icon-192.png",
   "icons/icon-512.png",
-
-  // Belangrijkste pagina's van de site
   "login.html",
   "register.html",
   "results.html",
@@ -36,23 +33,25 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// ✅ Activatie: oude caches opruimen
+// ✅ Activatie: verwijder oude caches
 self.addEventListener("activate", (event) => {
   console.log("🧹 [ServiceWorker] Activeren...");
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((key) => {
-        if (key !== CACHE_NAME) {
-          console.log("🗑️ Oude cache verwijderd:", key);
-          return caches.delete(key);
-        }
-      }))
+      Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log("🗑️ Oude cache verwijderd:", key);
+            return caches.delete(key);
+          }
+        })
+      )
     )
   );
   self.clients.claim();
 });
 
-// ✅ Fetch: gebruik cache, val terug op netwerk of offline-pagina
+// ✅ Fetch: eerst cache, dan netwerk, anders offline.html
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
@@ -64,13 +63,16 @@ self.addEventListener("fetch", (event) => {
       }
 
       return fetch(event.request)
-        .then((networkResponse) => {
-          // Cache nieuwe response
-          const clone = networkResponse.clone();
+        .then((response) => {
+          const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          return networkResponse;
+          return response;
         })
-        .catch(() => caches.match(OFFLINE_FALLBACK));
+        .catch(() => {
+          if (event.request.mode === "navigate") {
+            return caches.match("offline.html");
+          }
+        });
     })
   );
 });
