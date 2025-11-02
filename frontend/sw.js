@@ -1,11 +1,11 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – Service Worker v4
+/* 🌸 Irisje.nl – Service Worker v5
    - Offline fallback via offline.html
-   - Slimme caching (met update bij nieuwe versies)
-   - Bescherming tegen fetch-fouten door ontbrekende iconen
+   - Slimmere detectie van navigatieverzoeken
+   - Veilige caching en automatische updates
 */
 
-const CACHE_NAME = "irisje-cache-v4";
+const CACHE_NAME = "irisje-cache-v5";
 const OFFLINE_URL = "/offline.html";
 
 const OFFLINE_ASSETS = [
@@ -25,17 +25,24 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
+      const okFiles = [];
+
       for (const url of OFFLINE_ASSETS) {
         try {
           const res = await fetch(url);
-          if (res.ok) await cache.put(url, res.clone());
-          else console.warn(`⚠️ [SW] ${url} gaf status ${res.status}, niet gecachet.`);
+          if (res.ok) {
+            await cache.put(url, res.clone());
+            okFiles.push(url);
+          } else {
+            console.warn(`⚠️ [SW] ${url} gaf status ${res.status}, niet gecachet.`);
+          }
         } catch (err) {
           console.warn(`⚠️ [SW] Kon ${url} niet ophalen (${err.message})`);
         }
       }
+
+      console.log("✅ [SW] Succesvol gecachet:", okFiles);
       self.skipWaiting();
-      console.log("✅ [SW] Installatie voltooid.");
     })()
   );
 });
@@ -59,28 +66,36 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-/* === FETCH === */
+/* === FETCH (offline fallback verbeterd) === */
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
     (async () => {
       try {
-        // 1️⃣ Eerst proberen uit de cache
+        // Cache eerst
         const cached = await caches.match(event.request);
         if (cached) return cached;
 
-        // 2️⃣ Anders netwerk, en daarna toevoegen aan cache
+        // Dan netwerk
         const response = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
         cache.put(event.request, response.clone());
         return response;
       } catch (err) {
-        // 3️⃣ Fallback naar offline.html
-        console.warn("⚠️ [SW] Netwerkfout, toon offline-pagina:", err);
-        if (event.request.destination === "document") {
+        console.warn("⚠️ [SW] Netwerkfout:", err);
+
+        // Robuuste detectie van navigatie (pagina)
+        if (
+          event.request.mode === "navigate" ||
+          (event.request.destination === "document") ||
+          (event.request.headers.get("accept")?.includes("text/html"))
+        ) {
+          console.log("🌐 [SW] Offline fallback → offline.html");
           return caches.match(OFFLINE_URL);
         }
+
+        // Andere bestanden (zoals afbeeldingen)
         return new Response("Offline", { status: 503, statusText: "Offline" });
       }
     })()
