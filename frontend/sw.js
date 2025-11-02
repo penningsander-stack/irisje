@@ -1,61 +1,51 @@
 /* frontend/sw.js
-   🌸 Irisje.nl – verbeterde cache-service-worker met offline fallback
+   🌸 Irisje.nl – verbeterde service worker met offline fallback
 */
 
 const CACHE_NAME = "irisje-cache-v2";
-const OFFLINE_URLS = [
+const OFFLINE_URL = "offline.html";
+const PRECACHE_URLS = [
   "index.html",
   "offline.html",
   "style.css",
-  "manifest.json"
+  "manifest.json",
+  "favicon.ico"
 ];
 
-// ✅ Installatie: belangrijkste bestanden in cache plaatsen
+// 🔹 INSTALLATIE – cache de belangrijkste bestanden
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log("📦 Caching bestanden:", OFFLINE_URLS);
-      return cache.addAll(OFFLINE_URLS);
-    }).catch((err) => {
-      console.error("❌ Cache-fout:", err);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
   );
   self.skipWaiting();
 });
 
-// ✅ Activatie: oude caches opruimen
+// 🔹 ACTIVEREN – oude versies verwijderen
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => {
-        if (k !== CACHE_NAME) {
-          console.log("🧹 Oude cache verwijderd:", k);
-          return caches.delete(k);
-        }
-      }))
+      Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
-// ✅ Fetch: eerst netwerk proberen, anders cache of offline-pagina
+// 🔹 FETCH – probeer netwerk, val terug op cache of offline.html
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // ✅ Succesvol netwerkverzoek → opslaan in cache
-        const resClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, resClone);
-        });
+        // ✅ Cache succesvolle responses voor later gebruik
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         return response;
       })
-      .catch(() => {
-        // ❌ Geen netwerk → probeer cache, anders offline.html
-        return caches.match(event.request)
-          .then((cached) => cached || caches.match("offline.html"));
+      .catch(async () => {
+        // 🌐 Geen netwerk: probeer uit cache, anders offline.html
+        const cached = await caches.match(event.request);
+        return cached || (await caches.match(OFFLINE_URL));
       })
   );
 });
