@@ -25,9 +25,9 @@
         issues.push("❌ mist <html lang=\"nl\">");
       if (!html.match(/<title>.*<\/title>/i))
         issues.push("❌ mist <title>");
-      if (!html.match(/<meta[^>]+name=["']viewport["']/i))
+      if (!html.match(/<meta[^>]+name=[\"']viewport[\"']/i))
         issues.push("❌ mist <meta name=\"viewport\">");
-      if (!html.match(/<meta[^>]+charset=["']utf-8["']/i))
+      if (!html.match(/<meta[^>]+charset=[\"']utf-8[\"']/i))
         issues.push("❌ mist <meta charset=\"UTF-8\">");
 
       if (issues.length === 0) {
@@ -38,7 +38,7 @@
         console.groupEnd();
       }
     } catch (err) {
-      console.error(`❌ Kon ${f} niet controleren:`, err.message);
+      console.error(`❌ Kon ${f} niet controleren: ${err.message}`);
     }
   }
 
