@@ -8,7 +8,7 @@
   <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="manifest" href="manifest.json" />
+  <link rel="manifest" href="/manifest.json" />
   <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
@@ -127,9 +127,12 @@
   <!-- ✅ Service Worker -->
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js")
-        .then(() => console.log("✅ Service worker geregistreerd."))
-        .catch(err => console.error("Service worker fout:", err));
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          console.log("✅ Service worker geregistreerd:", reg.scope);
+        })
+        .catch(err => console.error("❌ Service worker fout:", err));
     }
   </script>
 
@@ -209,7 +212,7 @@
         </div>
       `).join("");
 
-      // Fade-in
+      // Fade-in animatie
       document.querySelectorAll("header, main section, footer").forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(12px)";
