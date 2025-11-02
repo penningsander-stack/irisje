@@ -29,3 +29,6 @@
   "author": "Sander Penning",
   "license": "ISC"
 }
+"scripts": {
+  "postbuild": "node frontend/fix-all-html.js"
+}
