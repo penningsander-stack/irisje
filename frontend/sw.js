@@ -1,17 +1,18 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – verbeterde service worker (v4)
+/* 🌸 Irisje.nl – verbeterde service worker (v5)
+   - Betrouwbare offline fallback (altijd werkt)
+   - Automatische update na 24 uur
    - Fouttolerant cachen
-   - Offline fallback via offline.html
-   - Automatische updatecontrole na 24 uur
 */
 
-const CACHE_NAME = "irisje-cache-v4";
+const CACHE_NAME = "irisje-cache-v5";
+const OFFLINE_URL = "offline.html";
 const OFFLINE_URLS = [
   "/",
   "/index.html",
   "/style.css",
   "/manifest.json",
-  "/offline.html",
+  `/${OFFLINE_URL}`,
   "/favicon.ico"
 ];
 
@@ -22,10 +23,9 @@ self.addEventListener("install", (event) => {
     (async () => {
       const cache = await caches.open(CACHE_NAME);
       const okFiles = [];
-
       for (const url of OFFLINE_URLS) {
         try {
-          const res = await fetch(url);
+          const res = await fetch(url, { cache: "no-cache" });
           if (res.ok) {
             await cache.put(url, res.clone());
             okFiles.push(url);
@@ -36,7 +36,6 @@ self.addEventListener("install", (event) => {
           console.warn(`⚠️ [SW] ${url} kon niet worden opgehaald (${err.message}).`);
         }
       }
-
       console.log("✅ [SW] Bestanden succesvol gecachet:", okFiles);
       self.skipWaiting();
     })()
@@ -68,23 +67,25 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (async () => {
       try {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-
+        // Probeer eerst netwerk
         const response = await fetch(event.request);
         const cache = await caches.open(CACHE_NAME);
         cache.put(event.request, response.clone());
         return response;
       } catch (err) {
-        console.warn("⚠️ [SW] Netwerkfout, probeer offline fallback:", err);
-        return caches.match("/offline.html");
+        console.warn("⚠️ [SW] Netwerkfout:", err);
+        // Toon cache als mogelijk
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+        // Toon offline.html als laatste redmiddel
+        return caches.match(OFFLINE_URL);
       }
     })()
   );
 });
 
-/* === AUTOMATISCHE UPDATECHECK (24 uur) === */
+/* === AUTOMATISCHE UPDATE === */
 setInterval(() => {
   console.log("🔄 [SW] Controle op nieuwe versie...");
   self.registration.update();
-}, 24 * 60 * 60 * 1000); // elke 24 uur
+}, 24 * 60 * 60 * 1000);
