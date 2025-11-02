@@ -8,19 +8,9 @@
   <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
-
-  <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").then(() => {
-      console.log("✅ Service worker geregistreerd.");
-    }).catch(err => {
-      console.error("Service worker fout:", err);
-    });
-  }
-</script>
-
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
@@ -43,7 +33,6 @@
 
   <!-- MAIN -->
   <main class="flex-1">
-
     <!-- HERO -->
     <section class="bg-white">
       <div class="max-w-6xl mx-auto px-4 py-14 lg:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
@@ -128,7 +117,6 @@
         </div>
       </div>
     </section>
-
   </main>
 
   <!-- FOOTER -->
@@ -136,11 +124,18 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Scripts -->
+  <!-- ✅ Service Worker -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js")
+        .then(() => console.log("✅ Service worker geregistreerd."))
+        .catch(err => console.error("Service worker fout:", err));
+    }
+  </script>
+
+  <!-- ✅ Functional Scripts -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
-
-    // --- Zoekfunctie ---
     document.getElementById("searchForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const category = categoryInput.value.trim();
@@ -180,40 +175,33 @@
       }
     });
 
-    // --- Dynamische content ---
     document.addEventListener("DOMContentLoaded", () => {
-      // Populaire categorieën
       const categories = ["Loodgieter", "CV / Verwarming", "Elektricien", "Schoonmaak", "Slotenmaker", "Glazenwasser"];
-      const catContainer = document.getElementById("popularCategories");
-      catContainer.innerHTML = categories.map(cat => `
+      document.getElementById("popularCategories").innerHTML = categories.map(cat => `
         <a href="results.html?category=${encodeURIComponent(cat)}"
            class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
           <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
         </a>
       `).join("");
 
-      // Hoe het werkt
       const steps = [
         ["1. Vertel wat je nodig hebt","Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
         ["2. Bedrijven reageren","Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
         ["3. Jij kiest","Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
       ];
-      const stepsContainer = document.getElementById("howItWorks");
-      stepsContainer.innerHTML = steps.map(([title, text]) => `
+      document.getElementById("howItWorks").innerHTML = steps.map(([title, text]) => `
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
           <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
           <p class="text-gray-700 leading-relaxed">${text}</p>
         </div>
       `).join("");
 
-      // Reviews
       const reviews = [
         ["⭐⭐⭐⭐⭐","“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”","Sanne, Amsterdam"],
         ["⭐⭐⭐⭐","“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”","Peter, Utrecht"],
         ["⭐⭐⭐⭐⭐","“Volgende keer bel ik weer via Irisje in plaats van Googlen.”","Linda, Rotterdam"]
       ];
-      const revContainer = document.getElementById("reviews");
-      revContainer.innerHTML = reviews.map(([stars, msg, name]) => `
+      document.getElementById("reviews").innerHTML = reviews.map(([stars, msg, name]) => `
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
           <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
           <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
@@ -222,8 +210,7 @@
       `).join("");
 
       // Fade-in
-      const elements = document.querySelectorAll("header, main section, footer");
-      elements.forEach((el, i) => {
+      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(12px)";
         setTimeout(() => {
