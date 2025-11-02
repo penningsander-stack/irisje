@@ -1,5 +1,6 @@
 // frontend/fix-structure.js
-// ✅ Irisje.nl - Automatisch toevoegen van manifest + service worker
+// ✅ Irisje.nl – Automatisch toevoegen van manifest + service worker aan alle HTML-bestanden
+
 import fs from "fs";
 import path from "path";
 
@@ -22,13 +23,19 @@ for (const file of files) {
   let html = fs.readFileSync(filePath, "utf8");
   let changed = false;
 
-  // 1️⃣ Manifest toevoegen in <head>
+  // 🟢 Manifest: voeg toe na favicon of theme-color (fallback: einde head)
   if (!html.includes('rel="manifest"')) {
-    html = html.replace(/(<link[^>]+href=["'][^"']*favicon[^>]+>)/i, `$1\n  ${manifestTag}`);
+    if (/<link[^>]+favicon[^>]*>/i.test(html)) {
+      html = html.replace(/(<link[^>]+favicon[^>]*>)/i, `$1\n  ${manifestTag}`);
+    } else if (/<meta[^>]+theme-color/i.test(html)) {
+      html = html.replace(/(<meta[^>]+theme-color[^>]*>)/i, `$1\n  ${manifestTag}`);
+    } else {
+      html = html.replace(/<\/head>/i, `  ${manifestTag}\n</head>`);
+    }
     changed = true;
   }
 
-  // 2️⃣ Service worker-script controleren of toevoegen
+  // 🟢 Service worker: voeg toe voor </body>
   if (!html.includes("navigator.serviceWorker")) {
     html = html.replace(/<\/body>/i, `${swScript}\n</body>`);
     changed = true;
@@ -42,4 +49,4 @@ for (const file of files) {
   }
 }
 
-console.log("✨ Alle HTML-bestanden zijn gecontroleerd en waar nodig aangepast.");
+console.log("✨ Alles is gecontroleerd en waar nodig automatisch aangepast.");
