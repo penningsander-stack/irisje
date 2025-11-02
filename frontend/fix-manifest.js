@@ -42,10 +42,10 @@
         }
         console.groupEnd();
       } else {
-        console.log("OK:", f, "is al in orde");
+        console.log("OK: " + f + " is al in orde");
       }
     } catch (err) {
-      console.error("Kon", f, "niet controleren:", err.message);
+      console.error("Kon " + f + " niet controleren: " + err.message);
     }
   }
 
