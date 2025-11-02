@@ -1,92 +1,74 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – Service Worker v7
-   - Altijd offline fallback, ook bij varianten van index.html
-   - Logt precies wat er gebeurt
+/* 🌸 Irisje.nl – Service Worker v5 (stabiel)
+   - Cachet alleen http(s) same-origin resources (geen chrome-extension)
+   - Offline fallback voor navigaties naar /offline.html
+   - Eenvoudige precache + cleanup
 */
-
-const CACHE_NAME = "irisje-cache-v7";
-const OFFLINE_URL = "offline.html";
-
-const ASSETS = [
-  "/",
-  "/index.html",
-  "/style.css",
-  "/manifest.json",
-  "/favicon.ico",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  `/${OFFLINE_URL}`
+const CACHE_NAME = "irisje-cache-v5";
+const OFFLINE_URL = "/offline.html";
+const PRECACHE = [
+  "/", "/index.html", OFFLINE_URL,
+  "/style.css", "/manifest.json"
 ];
 
-/* === INSTALL === */
+// Install: precache basisbestanden
 self.addEventListener("install", (event) => {
-  console.log("🔧 [SW] Installatie gestart...");
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      for (const url of ASSETS) {
-        try {
-          const res = await fetch(url);
-          if (res.ok) await cache.put(url, res.clone());
-        } catch (err) {
-          console.warn(`⚠️ [SW] Niet gecachet: ${url}`, err);
-        }
-      }
-      self.skipWaiting();
-      console.log("✅ [SW] Installatie voltooid.");
-    })()
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(PRECACHE);
+    self.skipWaiting();
+  })());
 });
 
-/* === ACTIVATE === */
+// Activate: oude caches weg
 self.addEventListener("activate", (event) => {
-  console.log("♻️ [SW] Activatie...");
-  event.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)));
-      self.clients.claim();
-    })()
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => k !== CACHE_NAME ? caches.delete(k) : null));
+    self.clients.claim();
+  })());
 });
 
-/* === FETCH === */
+// Fetch:
 self.addEventListener("fetch", (event) => {
-  // Alleen GET-requests
-  if (event.request.method !== "GET") return;
+  const req = event.request;
+  if (req.method !== "GET") return;
 
-  event.respondWith(
-    (async () => {
+  const url = new URL(req.url);
+  const isHttp = url.protocol === "http:" || url.protocol === "https:";
+  const isSameOrigin = url.origin === self.location.origin;
+
+  // Navigaties: network-first, bij fout -> offline.html
+  if (req.mode === "navigate") {
+    event.respondWith((async () => {
       try {
-        // Probeer eerst cache
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-
-        // Dan netwerk
-        const response = await fetch(event.request);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(event.request, response.clone());
-        return response;
-      } catch (err) {
-        // Fallback: toon offline.html bij navigatie
-        const accept = event.request.headers.get("accept") || "";
-        const isHTML =
-          event.request.mode === "navigate" ||
-          event.request.destination === "document" ||
-          accept.includes("text/html");
-
-        if (isHTML) {
-          console.log("🌐 [SW] Offline fallback → offline.html");
-          const cachedOffline = await caches.match(OFFLINE_URL);
-          if (cachedOffline) return cachedOffline;
-        }
-
-        // Andere bestanden (icoon, CSS)
-        return new Response("Offline", {
-          status: 503,
-          statusText: "Offline",
-        });
+        const fresh = await fetch(req);
+        return fresh;
+      } catch {
+        const offline = await caches.match(OFFLINE_URL);
+        return offline || new Response("Offline", { status: 503 });
       }
-    })()
-  );
+    })());
+    return;
+  }
+
+  // Alleen http(s) + same-origin cachen (vermijdt chrome-extension fouten)
+  if (!isHttp || !isSameOrigin) return;
+
+  // Statisch spul: cache-first, anders netwerk en dan bij cache zetten
+  event.respondWith((async () => {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+
+    try {
+      const resp = await fetch(req);
+      const clone = resp.clone();
+      caches.open(CACHE_NAME).then(c => c.put(req, clone));
+      return resp;
+    } catch {
+      // Laatste redmiddel: eventueel een cache-hit (als die er is)
+      const fallback = await caches.match(req);
+      return fallback || new Response("Offline", { status: 503 });
+    }
+  })());
 });
