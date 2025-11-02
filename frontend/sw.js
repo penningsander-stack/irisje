@@ -1,43 +1,76 @@
 /* frontend/sw.js
-   🌸 Irisje.nl – eenvoudige cache-service-worker voor snellere laadtijden
+   🌸 Irisje.nl – verbeterde service worker voor PWA & offline gebruik
+   Versie: 2025-11-01
 */
-const CACHE_NAME = "irisje-cache-v1";
-const OFFLINE_URLS = [
+
+const CACHE_NAME = "irisje-cache-v20251101";
+const OFFLINE_FALLBACK = "offline.html";
+const FILES_TO_CACHE = [
   "index.html",
+  "offline.html",
   "style.css",
   "manifest.json",
-  "favicon.ico"
+  "favicon.ico",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
+
+  // Belangrijkste pagina's van de site
+  "login.html",
+  "register.html",
+  "results.html",
+  "company.html",
+  "dashboard.html",
+  "admin.html",
+  "request.html",
+  "error.html",
+  "status.html"
 ];
 
-// Installatie: cache de belangrijkste bestanden
+// ✅ Installatie: cache alle belangrijke bestanden
 self.addEventListener("install", (event) => {
+  console.log("📦 [ServiceWorker] Installeren...");
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_URLS))
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(FILES_TO_CACHE))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activatie: oude caches opschonen
+// ✅ Activatie: oude caches opruimen
 self.addEventListener("activate", (event) => {
+  console.log("🧹 [ServiceWorker] Activeren...");
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.map((k) => k !== CACHE_NAME && caches.delete(k)))
+      Promise.all(keys.map((key) => {
+        if (key !== CACHE_NAME) {
+          console.log("🗑️ Oude cache verwijderd:", key);
+          return caches.delete(key);
+        }
+      }))
     )
   );
   self.clients.claim();
 });
 
-// Fetch: probeer cache eerst, val terug op netwerk
+// ✅ Fetch: gebruik cache, val terug op netwerk of offline-pagina
 self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
   event.respondWith(
-    caches.match(event.request).then((cached) =>
-      cached ||
-      fetch(event.request).then((res) => {
-        // Cache nieuwe resources
-        const resClone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
-        return res;
-      }).catch(() => caches.match("index.html"))
-    )
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        console.log("⚡ [Cache hit]", event.request.url);
+        return cachedResponse;
+      }
+
+      return fetch(event.request)
+        .then((networkResponse) => {
+          // Cache nieuwe response
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          return networkResponse;
+        })
+        .catch(() => caches.match(OFFLINE_FALLBACK));
+    })
   );
 });
