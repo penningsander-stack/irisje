@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style.css?v=20251101" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 flex flex-col min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 flex flex-col min-h-screen fade-seq">
   <!-- HEADER -->
   <header class="bg-indigo-600 dark:bg-indigo-800 text-white py-4 shadow-md">
     <div class="max-w-4xl mx-auto px-4 flex justify-between items-center">
@@ -20,10 +20,10 @@
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6">
+  <main class="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-6" role="main">
     <!-- STATUS -->
-    <section id="statusCard" class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-100 dark:border-gray-700 p-8 w-full max-w-md space-y-4">
-      <h2 class="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-3">Serverstatus</h2>
+    <section id="statusCard" class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-100 dark:border-gray-700 p-8 w-full max-w-md space-y-4 fade-in" aria-labelledby="statusHeading">
+      <h2 id="statusHeading" class="text-lg font-semibold text-indigo-700 dark:text-indigo-300 mb-3">Serverstatus</h2>
 
       <div id="statusIndicator" class="text-4xl">⏳</div>
       <p id="statusText" class="text-gray-600 dark:text-gray-300 text-sm">Bezig met ophalen...</p>
@@ -47,9 +47,9 @@
     </section>
 
     <!-- LOGS -->
-    <section class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-100 dark:border-gray-700 p-6 w-full max-w-2xl text-left">
+    <section class="bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-100 dark:border-gray-700 p-6 w-full max-w-2xl text-left fade-in" aria-labelledby="logsHeading">
       <div class="flex flex-wrap items-center justify-between mb-3 gap-2">
-        <h3 class="text-md font-semibold text-indigo-700 dark:text-indigo-300">📜 Laatste servermeldingen</h3>
+        <h3 id="logsHeading" class="text-md font-semibold text-indigo-700 dark:text-indigo-300">📜 Laatste servermeldingen</h3>
 
         <div class="flex flex-wrap items-center gap-2 text-xs">
           <button id="toggleRefresh" class="px-3 py-1 rounded-full bg-green-600 text-white">Auto-refresh: aan</button>
@@ -65,16 +65,16 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
+  <footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6 border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 mt-auto">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- ✅ Scripts -->
   <script>
     const STATUS_API = "https://irisje-backend.onrender.com/api/status";
     const LOG_API = "https://irisje-backend.onrender.com/api/admin/logs";
     let currentFilter = "all";
     let autoRefresh = true;
-    let statusTimer, logTimer;
 
     async function loadStatus() {
       if (!autoRefresh) return;
@@ -83,20 +83,20 @@
 
       try {
         const res = await fetch(STATUS_API);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         const colorMap = { "🟢": "text-green-600", "🟡": "text-yellow-500", "🔴": "text-red-600" };
         indicator.textContent = data.mongoStatus || "❓";
         indicator.className = "text-4xl " + (colorMap[data.mongoStatus] || "text-gray-500");
 
-        document.getElementById("version").textContent = data.version;
-        document.getElementById("environment").textContent = data.environment;
-        document.getElementById("companies").textContent = data.companyCount;
-        document.getElementById("uptime").textContent = data.uptime;
-        document.getElementById("memory").textContent = data.memory;
-        document.getElementById("server").textContent = data.server;
+        document.getElementById("version").textContent = data.version || "–";
+        document.getElementById("environment").textContent = data.environment || "–";
+        document.getElementById("companies").textContent = data.companyCount ?? "–";
+        document.getElementById("uptime").textContent = data.uptime || "–";
+        document.getElementById("memory").textContent = data.memory || "–";
+        document.getElementById("server").textContent = data.server || "–";
         document.getElementById("timestamp").textContent =
-          "Laatst bijgewerkt: " + new Date(data.timestamp).toLocaleTimeString();
+          "Laatst bijgewerkt: " + new Date(data.timestamp || Date.now()).toLocaleTimeString();
 
         text.textContent =
           data.mongoStatus === "🟢"
@@ -105,7 +105,7 @@
             ? "Verbinding wordt opgebouwd..."
             : "Geen verbinding met database";
 
-        const uptimeParts = data.uptime.split("m");
+        const uptimeParts = (data.uptime || "").split("m");
         const minutes = parseInt(uptimeParts[0] || 0);
         document.getElementById("uptimeBar").style.width = Math.min(100, (minutes / 60) * 100) + "%";
       } catch {
@@ -119,12 +119,12 @@
       if (!autoRefresh) return;
       try {
         const res = await fetch(LOG_API);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         const logs = data.logs || [];
 
         const filtered = currentFilter === "all" ? logs : logs.filter((l) => l.level === currentFilter);
         const lines = filtered
-          .map((l) => `[${new Date(l.time).toLocaleTimeString()}] ${l.level.toUpperCase()} → ${l.message}`)
+          .map((l) => `[${new Date(l.time).toLocaleTimeString()}] ${l.level?.toUpperCase() || "INFO"} → ${l.message || ""}`)
           .join("\n");
 
         document.getElementById("logContainer").textContent = lines || "(Geen logmeldingen gevonden)";
@@ -133,7 +133,7 @@
       }
     }
 
-    // Filters
+    // Filterknoppen
     document.querySelectorAll(".log-filter").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".log-filter").forEach((b) =>
@@ -160,13 +160,26 @@
       }
     });
 
-    // Timers
-    statusTimer = setInterval(loadStatus, 10000);
-    logTimer = setInterval(loadLogs, 15000);
+    // Periodieke updates
+    setInterval(loadStatus, 10000);
+    setInterval(loadLogs, 15000);
 
     // Initieel laden
-    loadStatus();
-    loadLogs();
+    document.addEventListener("DOMContentLoaded", () => {
+      loadStatus();
+      loadLogs();
+
+      // Fade-in consistentie
+      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        setTimeout(() => {
+          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
+      });
+    });
   </script>
 </body>
 </html>
