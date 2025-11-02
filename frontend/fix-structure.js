@@ -1,8 +1,8 @@
 // frontend/fix-structure.js
 // ✅ Irisje.nl – Automatisch toevoegen van manifest + service worker aan alle HTML-bestanden
 
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
 
 const folder = "./frontend";
 const files = fs.readdirSync(folder).filter(f => f.endsWith(".html"));
