@@ -1,11 +1,11 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – verbeterde service worker (v3)
+/* 🌸 Irisje.nl – verbeterde service worker (v4)
    - Fouttolerant cachen
    - Offline fallback via offline.html
-   - Automatische update bij nieuwe versies
+   - Automatische updatecontrole na 24 uur
 */
 
-const CACHE_NAME = "irisje-cache-v3";
+const CACHE_NAME = "irisje-cache-v4";
 const OFFLINE_URLS = [
   "/",
   "/index.html",
@@ -82,3 +82,9 @@ self.addEventListener("fetch", (event) => {
     })()
   );
 });
+
+/* === AUTOMATISCHE UPDATECHECK (24 uur) === */
+setInterval(() => {
+  console.log("🔄 [SW] Controle op nieuwe versie...");
+  self.registration.update();
+}, 24 * 60 * 60 * 1000); // elke 24 uur
