@@ -1,3 +1,4 @@
+<!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -36,7 +37,7 @@
     <!-- 📈 OVERZICHT -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
       <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">📈 Overzicht</h2>
-      <p class="text-gray-500 mb-6 text-sm">Je ziet hier het totaal aantal aanvragen en hoe veel daarvan zijn opgevolgd.</p>
+      <p class="text-gray-500 mb-6 text-sm">Je ziet hier het totaal aantal aanvragen en hoeveel daarvan zijn opgevolgd.</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-gray-50 p-4 rounded-xl border text-center">
@@ -141,12 +142,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- 🧩 Snelle JS + veilige fallback -->
-  <script src="frontend/js/dashboard.min.js?v=20251103"></script>
-  <script>
-    if (!window.Chart || typeof initDashboard !== "function") {
-      document.write('<script src="js/dashboard.js?v=20251103"><\\/script>');
-    }
-  </script>
+  <!-- ✅ Correct pad zonder 'frontend/' -->
+  <script src="js/dashboard.min.js?v=20251103"></script>
 </body>
 </html>
