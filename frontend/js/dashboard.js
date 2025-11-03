@@ -17,7 +17,7 @@ async function initDashboard() {
         localStorage.setItem("companyId", companyId);
       }
     } catch (err) {
-      console.error("Fout bij koppelen beheerder:", err);
+      console.warn("Kon geen bedrijf koppelen op basis van e-mail:", err);
     }
   }
 
@@ -39,24 +39,25 @@ async function initDashboard() {
   let allRequests = [];
   let allReviews = [];
 
-  // ===================
+  // =================
   // 📬 AANVRAGEN LADEN
-  // ===================
+  // =================
   async function loadRequests() {
     try {
       const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord (requests)");
-      allRequests = [...data].sort(
+      allRequests = data.sort(
         (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
       );
-      renderRequestsTable(allRequests);
+      renderRequestTable(allRequests);
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
       if ($reqBody)
         $reqBody.innerHTML =
           "<tr><td colspan='5' class='text-center text-red-600 p-4'>❌ Fout bij laden aanvragen.</td></tr>";
       allRequests = [];
+      updateStatsAndCharts();
     }
   }
 
@@ -81,14 +82,14 @@ async function initDashboard() {
     }
   }
 
-  // ====================
-  // 📄 TABELRENDERERS
-  // ====================
-  function renderRequestsTable(list) {
+  // ===========================
+  // 📄 TABEL RENDERFUNCTIES
+  // ===========================
+  function renderRequestTable(list) {
     if (!$reqBody) return;
     if (!list?.length) {
       $reqBody.innerHTML =
-        "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
+        "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Nog geen aanvragen.</td></tr>";
       updateStatsAndCharts();
       return;
     }
@@ -100,12 +101,12 @@ async function initDashboard() {
           ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
           : "-";
         const status = req.status || "Nieuw";
-        return `
-          <tr class="border-t hover:bg-indigo-50 transition">
-            <td>${esc(req.name)}</td>
-            <td>${esc(req.email)}</td>
-            <td class="max-w-xs truncate">${esc(req.message)}</td>
-            <td>
+
+        return `<tr class="border-b border-gray-50 hover:bg-gray-50">
+            <td class="p-3">${esc(req.name)}</td>
+            <td class="p-3">${esc(req.email)}</td>
+            <td class="p-3 max-w-xs truncate" title="${esc(req.message)}">${esc(req.message)}</td>
+            <td class="p-3">
               <span class="px-2 py-1 rounded text-xs font-medium ${
                 status === "Geaccepteerd"
                   ? "bg-green-100 text-green-700"
@@ -116,7 +117,7 @@ async function initDashboard() {
                   : "bg-indigo-100 text-indigo-700"
               }">${status}</span>
             </td>
-            <td>${datum}</td>
+            <td class="p-3 whitespace-nowrap">${datum}</td>
           </tr>`;
       })
       .join("");
@@ -129,7 +130,6 @@ async function initDashboard() {
     if (!list?.length) {
       $revBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
-      updateStatsAndCharts();
       return;
     }
 
@@ -139,13 +139,13 @@ async function initDashboard() {
         const datum = !isNaN(d)
           ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
           : "-";
-        return `
-          <tr class="border-t hover:bg-indigo-50 transition">
-            <td>${esc(rev.name)}</td>
-            <td>${"⭐".repeat(rev.rating || 0)}</td>
-            <td class="max-w-xs truncate">${esc(rev.message)}</td>
-            <td>${datum}</td>
-            <td>
+
+        return `<tr class="border-b border-gray-50 hover:bg-gray-50">
+            <td class="p-3">${esc(rev.reviewerName || rev.name || "Onbekend")}</td>
+            <td class="p-3">${rev.rating ? "⭐".repeat(rev.rating) : "-"}</td>
+            <td class="p-3 max-w-xs truncate" title="${esc(rev.message)}">${esc(rev.message)}</td>
+            <td class="p-3 whitespace-nowrap">${datum}</td>
+            <td class="p-3">
               ${
                 rev.reported
                   ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
@@ -158,8 +158,101 @@ async function initDashboard() {
           </tr>`;
       })
       .join("");
+  }
 
-    updateStatsAndCharts();
+  // ===========================
+  // 📊 STATISTIEKEN & GRAFIEKEN
+  // ===========================
+  let maandChart, statusChart;
+
+  function updateStatsAndCharts() {
+    const total = allRequests.length;
+    const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
+    const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
+    const followedUp = allRequests.filter((r) => r.status === "Opgevolgd").length;
+
+    setText("total", total);
+    setText("accepted", accepted);
+    setText("rejected", rejected);
+    setText("followed-up", followedUp);
+
+    const now = new Date();
+    const perMaand = {};
+
+    allRequests.forEach((r) => {
+      const d = new Date(r.createdAt || r.date);
+      if (!d || isNaN(d)) return;
+      const key = d.toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
+      perMaand[key] = (perMaand[key] || 0) + 1;
+    });
+
+    const labels = Object.keys(perMaand);
+    const values = Object.values(perMaand);
+
+    const ctx1 = document.getElementById("monthChart");
+    if (ctx1) {
+      if (maandChart) maandChart.destroy();
+      maandChart = new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Aanvragen",
+              data: values,
+              borderColor: "#4F46E5",
+              backgroundColor: "rgba(79,70,229,0.2)",
+              fill: true,
+              tension: 0.4,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+      });
+    }
+
+    const statusData = {
+      Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
+      Geaccepteerd: accepted,
+      Afgewezen: rejected,
+      Opgevolgd: followedUp,
+    };
+
+    const ctx2 = document.getElementById("statusChart");
+    if (ctx2) {
+      if (statusChart) statusChart.destroy();
+      statusChart = new Chart(ctx2, {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(statusData),
+          datasets: [
+            {
+              data: Object.values(statusData),
+              backgroundColor: [
+                "rgba(99,102,241,0.7)",
+                "rgba(34,197,94,0.7)",
+                "rgba(239,68,68,0.7)",
+                "rgba(234,179,8,0.7)",
+              ],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { usePointStyle: true },
+            },
+          },
+        },
+      });
+    }
   }
 
   // =======================
@@ -181,141 +274,41 @@ async function initDashboard() {
     }
   };
 
-  // ===========================
-  // 📊 STATISTIEKEN & GRAFIEKEN
-  // ===========================
-  let maandChart, statusChart;
-
-  function updateStatsAndCharts() {
-    const total = allRequests.length;
-    const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
-    const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
-    const followedUp = allRequests.filter((r) => r.status === "Opgevolgd").length;
-
-    setText("total", total);
-    setText("accepted", accepted);
-    setText("rejected", rejected);
-    setText("followed-up", followedUp);
-
-    const now = new Date();
-    const thisMonthReqs = allRequests.filter((r) =>
-      sameMonthYear(new Date(r.createdAt || r.date), now)
-    );
-    const monthTotal = thisMonthReqs.length;
-    const monthAccepted = thisMonthReqs.filter((r) => r.status === "Geaccepteerd").length;
-    const thisMonthReviews = allReviews.filter((rv) =>
-      sameMonthYear(new Date(rv.createdAt || rv.date), now)
-    );
-    const monthReviews = thisMonthReviews.length;
-    const avgRating = allReviews.length
-      ? (allReviews.reduce((s, rv) => s + (rv.rating || 0), 0) / allReviews.length).toFixed(1)
-      : "–";
-
-    setText("monthTotal", monthTotal);
-    setText("monthAccepted", monthAccepted);
-    setText("monthReviews", monthReviews);
-    setText("avgRating", avgRating);
-
-    const ctx1 = byId("maandChart");
-    const ctx2 = byId("statusChart");
-    if (!ctx1 || !ctx2) return;
-
-    const perMaand = {};
-    allRequests.forEach((r) => {
-      const d = new Date(r.createdAt || r.date);
-      if (isNaN(d)) return;
-      const key = `${d.toLocaleString("nl-NL", { month: "short" })} ${d.getFullYear()}`;
-      perMaand[key] = (perMaand[key] || 0) + 1;
-    });
-
-    const labels = Object.keys(perMaand);
-    const values = Object.values(perMaand);
-
-    if (maandChart) maandChart.destroy();
-    maandChart = new Chart(ctx1, {
-      type: "line",
-      data: {
-        labels,
-        datasets: [
-          {
-            label: "Aanvragen",
-            data: values,
-            borderColor: "#4F46E5",
-            backgroundColor: "rgba(79,70,229,0.2)",
-            fill: true,
-            tension: 0.4,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
-      },
-    });
-
-    const statusData = {
-      Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
-      Geaccepteerd: accepted,
-      Afgewezen: rejected,
-      Opgevolgd: followedUp,
-    };
-
-    if (statusChart) statusChart.destroy();
-    statusChart = new Chart(ctx2, {
-      type: "doughnut",
-      data: {
-        labels: Object.keys(statusData),
-        datasets: [
-          {
-            data: Object.values(statusData),
-            backgroundColor: ["#4F46E5", "#22c55e", "#ef4444", "#eab308"],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: "bottom" } },
-      },
-    });
-  }
-
-  // ===================
-  // 🔍 FILTEREN
-  // ===================
+  // =======================
+  // 🧪 FILTERS
+  // =======================
   if ($statusFilter) {
     $statusFilter.addEventListener("change", () => {
       const val = $statusFilter.value;
-      const list =
-        val === "ALLE"
-          ? allRequests
-          : allRequests.filter((r) => (r.status || "Nieuw") === val);
-      renderRequestsTable(list);
+      if (val === "ALLE") {
+        renderRequestTable(allRequests);
+      } else {
+        const filtered = allRequests.filter((r) => (r.status || "Nieuw") === val);
+        renderRequestTable(filtered);
+      }
     });
   }
 
-  // ===================
-  // 🚪 UITLOGGEN
-  // ===================
-  const $logout = byId("logoutBtn");
-  if ($logout) {
-    $logout.addEventListener("click", () => {
-      document.body.classList.add("fade-out");
-      setTimeout(() => {
-        localStorage.clear();
-        window.location.href = "login.html";
-      }, 600);
+  // =======================
+  // 🔐 LOGOUT
+  // =======================
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("companyId");
+      window.location.href = "login.html";
     });
   }
 
-  // 🚀 INIT
-  await loadRequests();
-  await loadReviews();
+  // Initieel laden
+  await Promise.all([loadRequests(), loadReviews()]);
 }
 
-// ===================
-// 🧩 HELPERS
-// ===================
+// =======================
+// 🔧 HELPERS
+// =======================
 function byId(id) {
   return document.getElementById(id);
 }
@@ -325,14 +318,9 @@ function setText(id, val) {
   if (el) el.textContent = val;
 }
 
-function sameMonthYear(a, b) {
-  if (!(a instanceof Date) || isNaN(a)) return false;
-  return a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
-}
-
 function esc(v) {
   if (v == null) return "";
-  return String(v).replace(/[&<>"']/g, (s) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
-  );
+  return String(v).replace(/[&<>"']/g, (s) => {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+  });
 }
