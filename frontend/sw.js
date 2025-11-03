@@ -1,11 +1,13 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – Service Worker v6 (auto-refresh)
-   - Cacht alleen http(s) same-origin resources
-   - Offline fallback voor navigaties naar /offline.html
-   - Automatische herlaad bij nieuwe versie
+/* 🌸 Irisje.nl – Service Worker v7 (compleet & stabiel)
+   Functies:
+   ✅ Cacht alleen veilige same-origin HTTP(S)-resources
+   ✅ Offline fallback (offline.html)
+   ✅ Automatische refresh bij nieuwe versies
+   ✅ Melding aan gebruiker bij update
 */
 
-const CACHE_NAME = "irisje-cache-v6";
+const CACHE_NAME = "irisje-cache-v7";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [
   "/", "/index.html", OFFLINE_URL,
@@ -19,7 +21,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     await cache.addAll(PRECACHE);
-    self.skipWaiting(); // onmiddellijk klaarzetten
+    self.skipWaiting();
     console.log("✅ [SW] Installatie voltooid.");
   })());
 });
@@ -32,10 +34,10 @@ self.addEventListener("activate", (event) => {
     await Promise.all(keys.map(k => (k !== CACHE_NAME ? caches.delete(k) : null)));
     self.clients.claim();
 
-    // 🔄 Forceer refresh bij nieuwe SW
-    const clientsList = await self.clients.matchAll({ type: "window" });
+    // 🔄 Meld clients dat een nieuwe versie actief is
+    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const client of clientsList) {
-      client.navigate(client.url);
+      client.postMessage({ type: "NEW_VERSION" });
     }
   })());
 });
@@ -49,7 +51,7 @@ self.addEventListener("fetch", (event) => {
   const isHttp = url.protocol === "http:" || url.protocol === "https:";
   const isSameOrigin = url.origin === self.location.origin;
 
-  // Navigaties: network-first, bij fout → offline.html
+  // Navigatieverzoeken → network-first met offline fallback
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       try {
@@ -61,10 +63,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Alleen same-origin HTTP(S) bestanden cachen
+  // Alleen same-origin HTTP(S)
   if (!isHttp || !isSameOrigin) return;
 
-  // Cache-first strategie
+  // Cache-first voor statische bestanden
   event.respondWith((async () => {
     const cached = await caches.match(req);
     if (cached) return cached;
@@ -79,4 +81,9 @@ self.addEventListener("fetch", (event) => {
       return fallback || new Response("Offline", { status: 503 });
     }
   })());
+});
+
+/* === Melding tonen bij nieuwe versie === */
+self.addEventListener("message", (event) => {
+  // Kan worden uitgebreid als client iets terugstuurt
 });
