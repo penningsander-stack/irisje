@@ -4,6 +4,13 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 document.addEventListener("DOMContentLoaded", initDashboard);
 
 async function initDashboard() {
+  // 🔄 Loader tonen bij het starten
+  const loader = document.getElementById("loadingIndicator");
+  if (loader) {
+    loader.classList.remove("hidden");
+    loader.style.opacity = "1";
+  }
+
   const email = localStorage.getItem("userEmail");
   let companyId = localStorage.getItem("companyId");
 
@@ -56,13 +63,12 @@ async function initDashboard() {
     if ($revBody)
       $revBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
+    if (loader) hideLoader(loader);
     return;
   }
 
   let allRequests = [];
   let allReviews = [];
-
-  // charts refs
   let maandChart, statusChart, conversionChart;
 
   // =================
@@ -244,10 +250,7 @@ async function initDashboard() {
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} aanvragen` } },
-          },
+          plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
         },
       });
@@ -281,22 +284,7 @@ async function initDashboard() {
             },
           ],
         },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: "bottom", labels: { usePointStyle: true } },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const label = ctx.label || "";
-                  const val = ctx.parsed || 0;
-                  const pct = ((val / totalForPercent) * 100).toFixed(1);
-                  return ` ${label}: ${val} (${pct}%)`;
-                },
-              },
-            },
-          },
-        },
+        options: { responsive: true, plugins: { legend: { position: "bottom" } } },
       });
     }
 
@@ -318,8 +306,7 @@ async function initDashboard() {
     });
     const convValues = convKeys.map((k) => {
       const { total, accepted } = convPerMaand[k];
-      if (!total) return 0;
-      return Number(((accepted / total) * 100).toFixed(1));
+      return total ? Number(((accepted / total) * 100).toFixed(1)) : 0;
     });
 
     const ctx3 = document.getElementById("conversionChart");
@@ -341,10 +328,7 @@ async function initDashboard() {
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y}% geaccepteerd` } },
-          },
+          plugins: { legend: { display: false } },
           scales: { y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + "%" } } },
         },
       });
@@ -422,7 +406,7 @@ async function initDashboard() {
     $exportBtn.addEventListener("click", () => {
       const data = getFilteredRequests();
       exportToCsv(data);
-      showNotif(); // ✅ melding tonen
+      showNotif();
     });
   }
 
@@ -434,12 +418,23 @@ async function initDashboard() {
     });
   }
 
+  // Data laden
   await Promise.all([loadRequests(), loadReviews()]);
+
+  // 🔄 Loader verbergen na laden
+  if (loader) hideLoader(loader);
 }
 
-function byId(id) {
-  return document.getElementById(id);
+// =======================
+// 🔧 HULPFUNCTIES
+// =======================
+function hideLoader(loader) {
+  loader.style.transition = "opacity 0.5s ease";
+  loader.style.opacity = "0";
+  setTimeout(() => loader.classList.add("hidden"), 500);
 }
+
+function byId(id) { return document.getElementById(id); }
 
 function setText(id, val) {
   const el = byId(id);
@@ -448,9 +443,9 @@ function setText(id, val) {
 
 function esc(v) {
   if (v == null) return "";
-  return String(v).replace(/[&<>"']/g, (s) => {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
-  });
+  return String(v).replace(/[&<>"']/g, (s) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
+  );
 }
 
 function exportToCsv(list) {
