@@ -4,15 +4,15 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 document.addEventListener("DOMContentLoaded", initDashboard);
 
 async function initDashboard() {
-  // 🔄 Loader tonen bij het starten
-  const loader = document.getElementById("loadingIndicator");
-  if (loader) {
-    loader.classList.remove("hidden");
-    loader.style.opacity = "1";
-  }
-
   const email = localStorage.getItem("userEmail");
   let companyId = localStorage.getItem("companyId");
+  const loading = document.getElementById("loadingIndicator");
+
+  // 🟣 Loader aan bij start
+  if (loading) {
+    loading.classList.remove("hidden");
+    loading.style.opacity = "1";
+  }
 
   // 🟣 Beheerdersfallback (bedrijf koppelen via e-mail)
   if (email === "info@irisje.nl" && !companyId) {
@@ -36,7 +36,7 @@ async function initDashboard() {
   const $sortSelect = byId("sortSelect");
   const $exportBtn = byId("exportCsvBtn");
 
-  // ✅ Notificatiebalk toevoegen voor CSV-export
+  // ✅ Notificatiebalk voor CSV-export
   const notif = document.createElement("div");
   notif.id = "notif";
   notif.className =
@@ -63,7 +63,7 @@ async function initDashboard() {
     if ($revBody)
       $revBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
-    if (loader) hideLoader(loader);
+    hideLoader();
     return;
   }
 
@@ -119,9 +119,7 @@ async function initDashboard() {
   // ===========================
   function renderRequestTable() {
     if (!$reqBody) return;
-
     const filtered = getFilteredRequests();
-
     if (!filtered.length) {
       $reqBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
@@ -136,7 +134,6 @@ async function initDashboard() {
           ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
           : "-";
         const status = req.status || "Nieuw";
-
         return `<tr class="border-b border-gray-50 hover:bg-gray-50">
             <td class="p-3">${esc(req.name)}</td>
             <td class="p-3">${esc(req.email)}</td>
@@ -250,7 +247,10 @@ async function initDashboard() {
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} aanvragen` } },
+          },
           scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
         },
       });
@@ -284,7 +284,22 @@ async function initDashboard() {
             },
           ],
         },
-        options: { responsive: true, plugins: { legend: { position: "bottom" } } },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom", labels: { usePointStyle: true } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.label || "";
+                  const val = ctx.parsed || 0;
+                  const pct = ((val / totalForPercent) * 100).toFixed(1);
+                  return ` ${label}: ${val} (${pct}%)`;
+                },
+              },
+            },
+          },
+        },
       });
     }
 
@@ -306,7 +321,8 @@ async function initDashboard() {
     });
     const convValues = convKeys.map((k) => {
       const { total, accepted } = convPerMaand[k];
-      return total ? Number(((accepted / total) * 100).toFixed(1)) : 0;
+      if (!total) return 0;
+      return Number(((accepted / total) * 100).toFixed(1));
     });
 
     const ctx3 = document.getElementById("conversionChart");
@@ -328,13 +344,17 @@ async function initDashboard() {
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y}% geaccepteerd` } },
+          },
           scales: { y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + "%" } } },
         },
       });
     }
   }
 
+  // === Filterfuncties ===
   function filterRequestsByPeriod(list, period) {
     if (period === "all") return list;
     const now = new Date();
@@ -397,11 +417,11 @@ async function initDashboard() {
     }
   };
 
+  // === Eventlisteners ===
   if ($statusFilter) $statusFilter.addEventListener("change", renderRequestTable);
   if ($periodFilter) $periodFilter.addEventListener("change", updateStatsAndCharts);
   if ($searchInput) $searchInput.addEventListener("input", renderRequestTable);
   if ($sortSelect) $sortSelect.addEventListener("change", renderRequestTable);
-
   if ($exportBtn) {
     $exportBtn.addEventListener("click", () => {
       const data = getFilteredRequests();
@@ -418,69 +438,3 @@ async function initDashboard() {
     });
   }
 
-  // Data laden
-  await Promise.all([loadRequests(), loadReviews()]);
-
-  // 🔄 Loader verbergen na laden
-  if (loader) hideLoader(loader);
-}
-
-// =======================
-// 🔧 HULPFUNCTIES
-// =======================
-function hideLoader(loader) {
-  loader.style.transition = "opacity 0.5s ease";
-  loader.style.opacity = "0";
-  setTimeout(() => loader.classList.add("hidden"), 500);
-}
-
-function byId(id) { return document.getElementById(id); }
-
-function setText(id, val) {
-  const el = byId(id);
-  if (el) el.textContent = val;
-}
-
-function esc(v) {
-  if (v == null) return "";
-  return String(v).replace(/[&<>"']/g, (s) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
-  );
-}
-
-function exportToCsv(list) {
-  if (!list || !list.length) {
-    alert("Geen data om te exporteren.");
-    return;
-  }
-
-  const rows = [
-    ["Naam", "E-mail", "Bericht", "Status", "Datum"],
-    ...list.map((r) => [
-      r.name || "",
-      r.email || "",
-      (r.message || "").replace(/\r?\n|\r/g, " "),
-      r.status || "Nieuw",
-      new Date(r.createdAt || r.date).toLocaleString("nl-NL"),
-    ]),
-  ];
-
-  const csvContent = rows.map((row) => row.map(csvEscape).join(";")).join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "irisje-aanvragen.csv";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function csvEscape(v) {
-  const s = String(v ?? "");
-  if (s.includes(";") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
