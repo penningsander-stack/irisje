@@ -10,6 +10,25 @@ async function initAdmin() {
   const refreshBtn = document.getElementById("refreshBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
+  // 🔔 Notificatiecontainer toevoegen (boven tabel)
+  const notif = document.createElement("div");
+  notif.id = "notif";
+  notif.className =
+    "hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50";
+  notif.textContent = "✅ Review succesvol afgehandeld";
+  document.body.appendChild(notif);
+
+  function showNotif() {
+    notif.classList.remove("hidden");
+    notif.style.opacity = "0";
+    notif.style.transition = "opacity 0.3s ease";
+    setTimeout(() => (notif.style.opacity = "1"), 10);
+    setTimeout(() => {
+      notif.style.opacity = "0";
+      setTimeout(() => notif.classList.add("hidden"), 300);
+    }, 3000);
+  }
+
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       localStorage.clear();
@@ -17,9 +36,7 @@ async function initAdmin() {
     });
   }
 
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", loadReportedReviews);
-  }
+  if (refreshBtn) refreshBtn.addEventListener("click", loadReportedReviews);
 
   await loadReportedReviews();
 
@@ -37,9 +54,7 @@ async function initAdmin() {
       const res = await fetch(ENDPOINT_GET_REPORTED);
       const data = await res.json();
 
-      if (!res.ok || !Array.isArray(data)) {
-        throw new Error("Ongeldig antwoord van de server.");
-      }
+      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord");
 
       renderTable(data);
       updateStats(data);
@@ -118,14 +133,17 @@ async function initAdmin() {
     try {
       const res = await fetch(ENDPOINT_RESOLVE_REPORTED(id), { method: "PATCH" });
       if (!res.ok) throw new Error("Serverfout");
+
       const row = document.querySelector(`tr[data-id="${id}"]`);
       if (row) {
         row.classList.add("fade-row-out");
         setTimeout(() => {
           row.remove();
+          showNotif();
           loadReportedReviews();
         }, 450);
       } else {
+        showNotif();
         loadReportedReviews();
       }
     } catch (err) {
@@ -149,13 +167,18 @@ async function initAdmin() {
   }
 }
 
+// helpers
 function esc(v) {
-  return v == null ? "" : String(v).replace(/[&<>"']/g, (s) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[s]));
+  return v == null
+    ? ""
+    : String(v).replace(/[&<>"']/g, (s) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
+      );
 }
 
 function formatDate(v) {
   const d = new Date(v);
-  return isNaN(d) ? "-" : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
+  return isNaN(d)
+    ? "-"
+    : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
 }
