@@ -119,7 +119,9 @@ async function initDashboard() {
   // ===========================
   function renderRequestTable() {
     if (!$reqBody) return;
+
     const filtered = getFilteredRequests();
+
     if (!filtered.length) {
       $reqBody.innerHTML =
         "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
@@ -134,6 +136,7 @@ async function initDashboard() {
           ? d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" })
           : "-";
         const status = req.status || "Nieuw";
+
         return `<tr class="border-b border-gray-50 hover:bg-gray-50">
             <td class="p-3">${esc(req.name)}</td>
             <td class="p-3">${esc(req.email)}</td>
@@ -206,9 +209,11 @@ async function initDashboard() {
     setText("rejected", rejected);
     setText("followed-up", followedUp);
 
+    // Periodefilter toepassen op grafiekdata
     const periodValue = $periodFilter ? $periodFilter.value : "all";
     const filteredForCharts = filterRequestsByPeriod(allRequests, periodValue);
 
+    // ---- Maandgrafiek (aantallen) ----
     const perMaand = {};
     filteredForCharts.forEach((r) => {
       const d = new Date(r.createdAt || r.date);
@@ -217,7 +222,7 @@ async function initDashboard() {
       perMaand[key] = (perMaand[key] || 0) + 1;
     });
 
-    const sortedKeys = Object.keys(perMaand).sort();
+    const sortedKeys = Object.keys(perMaand).sort(); // 2025-01, 2025-02, ...
     const labels = sortedKeys.map((k) => {
       const [year, month] = k.split("-");
       const date = new Date(Number(year), Number(month) - 1, 1);
@@ -249,13 +254,20 @@ async function initDashboard() {
           responsive: true,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y} aanvragen` } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.parsed.y} aanvragen`,
+              },
+            },
           },
-          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          },
         },
       });
     }
 
+    // ---- Statusgrafiek ----
     const statusData = {
       Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
       Geaccepteerd: accepted,
@@ -275,10 +287,10 @@ async function initDashboard() {
             {
               data: Object.values(statusData),
               backgroundColor: [
-                "rgba(99,102,241,0.7)",
-                "rgba(34,197,94,0.7)",
-                "rgba(239,68,68,0.7)",
-                "rgba(234,179,8,0.7)",
+                "rgba(99,102,241,0.7)", // Nieuw
+                "rgba(34,197,94,0.7)",  // Geaccepteerd
+                "rgba(239,68,68,0.7)",  // Afgewezen
+                "rgba(234,179,8,0.7)",  // Opgevolgd
               ],
               borderWidth: 0,
             },
@@ -287,7 +299,10 @@ async function initDashboard() {
         options: {
           responsive: true,
           plugins: {
-            legend: { position: "bottom", labels: { usePointStyle: true } },
+            legend: {
+              position: "bottom",
+              labels: { usePointStyle: true },
+            },
             tooltip: {
               callbacks: {
                 label: (ctx) => {
@@ -303,12 +318,15 @@ async function initDashboard() {
       });
     }
 
+    // ---- Conversiegrafiek (acceptatie per maand) ----
     const convPerMaand = {};
     filteredForCharts.forEach((r) => {
       const d = new Date(r.createdAt || r.date);
       if (!d || isNaN(d)) return;
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      if (!convPerMaand[key]) convPerMaand[key] = { total: 0, accepted: 0 };
+      if (!convPerMaand[key]) {
+        convPerMaand[key] = { total: 0, accepted: 0 };
+      }
       convPerMaand[key].total += 1;
       if (r.status === "Geaccepteerd") convPerMaand[key].accepted += 1;
     });
@@ -346,22 +364,37 @@ async function initDashboard() {
           responsive: true,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y}% geaccepteerd` } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.parsed.y}% geaccepteerd`,
+              },
+            },
           },
-          scales: { y: { beginAtZero: true, max: 100, ticks: { callback: (v) => v + "%" } } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { callback: (v) => v + "%" },
+            },
+          },
         },
       });
     }
   }
 
-  // === Filterfuncties ===
+  // 🔍 periodefilter: all, 6m, 3m, 1m
   function filterRequestsByPeriod(list, period) {
     if (period === "all") return list;
     const now = new Date();
     const from = new Date(now);
-    if (period === "6m") from.setMonth(from.getMonth() - 6);
-    else if (period === "3m") from.setMonth(from.getMonth() - 3);
-    else if (period === "1m") from.setMonth(from.getMonth() - 1);
+    if (period === "6m") {
+      from.setMonth(from.getMonth() - 6);
+    } else if (period === "3m") {
+      from.setMonth(from.getMonth() - 3);
+    } else if (period === "1m") {
+      from.setMonth(from.getMonth() - 1);
+    }
+
     return list.filter((r) => {
       const d = new Date(r.createdAt || r.date);
       if (!d || isNaN(d)) return false;
@@ -369,21 +402,34 @@ async function initDashboard() {
     });
   }
 
+  // 🔍 status + zoeken + sorteren samen
   function getFilteredRequests() {
     const statusVal = $statusFilter ? $statusFilter.value : "ALLE";
     const searchVal = $searchInput ? $searchInput.value.trim().toLowerCase() : "";
     const sortVal = $sortSelect ? $sortSelect.value : "date_desc";
 
     let arr = [...allRequests];
-    if (statusVal !== "ALLE") arr = arr.filter((r) => (r.status || "Nieuw") === statusVal);
+
+    // statusfilter
+    if (statusVal !== "ALLE") {
+      arr = arr.filter((r) => (r.status || "Nieuw") === statusVal);
+    }
+
+    // zoeken
     if (searchVal) {
       arr = arr.filter((r) => {
         const name = (r.name || "").toLowerCase();
         const email = (r.email || "").toLowerCase();
         const msg = (r.message || "").toLowerCase();
-        return name.includes(searchVal) || email.includes(searchVal) || msg.includes(searchVal);
+        return (
+          name.includes(searchVal) ||
+          email.includes(searchVal) ||
+          msg.includes(searchVal)
+        );
       });
     }
+
+    // sorteren
     arr.sort((a, b) => {
       const aDate = new Date(a.createdAt || a.date);
       const bDate = new Date(b.createdAt || b.date);
@@ -394,13 +440,18 @@ async function initDashboard() {
           return (a.name || "").localeCompare(b.name || "");
         case "name_desc":
           return (b.name || "").localeCompare(a.name || "");
+        case "date_desc":
         default:
           return bDate - aDate;
       }
     });
+
     return arr;
   }
 
+  // =======================
+  // 🚨 REVIEW MELDEN
+  // =======================
   window.meldReview = async function (id) {
     if (!confirm("Weet je zeker dat je deze review wilt melden aan de beheerder?")) return;
     try {
@@ -417,19 +468,44 @@ async function initDashboard() {
     }
   };
 
-  // === Eventlisteners ===
-  if ($statusFilter) $statusFilter.addEventListener("change", renderRequestTable);
-  if ($periodFilter) $periodFilter.addEventListener("change", updateStatsAndCharts);
-  if ($searchInput) $searchInput.addEventListener("input", renderRequestTable);
-  if ($sortSelect) $sortSelect.addEventListener("change", renderRequestTable);
+  // =======================
+  // 🧪 FILTERS / EVENTS
+  // =======================
+  if ($statusFilter) {
+    $statusFilter.addEventListener("change", () => {
+      renderRequestTable();
+    });
+  }
+
+  if ($periodFilter) {
+    $periodFilter.addEventListener("change", () => {
+      updateStatsAndCharts();
+    });
+  }
+
+  if ($searchInput) {
+    $searchInput.addEventListener("input", () => {
+      renderRequestTable();
+    });
+  }
+
+  if ($sortSelect) {
+    $sortSelect.addEventListener("change", () => {
+      renderRequestTable();
+    });
+  }
+
   if ($exportBtn) {
     $exportBtn.addEventListener("click", () => {
       const data = getFilteredRequests();
       exportToCsv(data);
-      showNotif();
+      showNotif(); // ✅ melding tonen
     });
   }
 
+  // =======================
+  // 🔐 LOGOUT
+  // =======================
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
@@ -438,3 +514,72 @@ async function initDashboard() {
     });
   }
 
+  // Initieel laden
+  await Promise.all([loadRequests(), loadReviews()]);
+
+  // 🟣 Loader uit als alles geladen is
+  hideLoader();
+}
+
+// =======================
+// 🔧 HELPERS
+// =======================
+function hideLoader() {
+  const el = document.getElementById("loadingIndicator");
+  if (!el) return;
+  // korte fade-out: je kunt hier ook classList toevoegen als je wilt
+  el.classList.add("hidden");
+}
+
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function setText(id, val) {
+  const el = byId(id);
+  if (el) el.textContent = val;
+}
+
+function esc(v) {
+  if (v == null) return "";
+  return String(v).replace(/[&<>"']/g, (s) => {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s];
+  });
+}
+
+function exportToCsv(list) {
+  if (!list || !list.length) {
+    alert("Geen data om te exporteren.");
+    return;
+  }
+
+  const rows = [
+    ["Naam", "E-mail", "Bericht", "Status", "Datum"],
+    ...list.map((r) => [
+      r.name || "",
+      r.email || "",
+      (r.message || "").replace(/\r?\n|\r/g, " "),
+      r.status || "Nieuw",
+      new Date(r.createdAt || r.date).toLocaleString("nl-NL"),
+    ]),
+  ];
+
+  const csvContent = rows.map((row) => row.map(csvEscape).join(";")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "irisje-aanvragen.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(v) {
+  const s = String(v ?? "");
+  if (s.includes(";") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
