@@ -1,4 +1,3 @@
-// backend/utils/logger.js
 /**
  * 🌸 Irisje.nl – Uitgebreide logger met automatische logrotatie
  * - Houdt 20 regels in geheugen (voor /status)
@@ -52,7 +51,7 @@ function cleanupOldLogs() {
  */
 function addLog(message, level = "info") {
   const entry = {
-    time: new Date().toISOString(),
+    timestamp: new Date().toISOString(),
     level,
     message
   };
@@ -72,7 +71,7 @@ function addLog(message, level = "info") {
 
   // Schrijf naar huidig daglog
   try {
-    const line = `[${entry.time}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
+    const line = `[${entry.timestamp}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
     fs.appendFileSync(currentLogFile(), line, "utf8");
   } catch (err) {
     console.warn("Kon logbestand niet schrijven:", err.message);
@@ -81,9 +80,16 @@ function addLog(message, level = "info") {
 
 /**
  * Geef logs in omgekeerde volgorde (nieuwste eerst).
+ * Vorm compatibel met frontend (timestamp + message).
  */
 function getLogs() {
-  return [...logs].reverse();
+  return [...logs]
+    .reverse()
+    .map((l) => ({
+      timestamp: l.timestamp || l.time || new Date().toISOString(),
+      message: l.message || "",
+      level: l.level || "info"
+    }));
 }
 
 // 🧹 Opruimen uitvoeren bij opstart
