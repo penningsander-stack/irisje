@@ -1,5 +1,3 @@
-// frontend/style.css
-
 /* === BASISINSTELLINGEN === */
 @tailwind base;
 @tailwind components;
@@ -117,4 +115,15 @@ footer {
   main { padding: 1.25rem; }
   section { padding: 1rem !important; }
   h1, h2 { font-size: 1rem !important; }
+}
+
+/* === Loader fade-out animatie (Irisje Dashboard) === */
+#loadingIndicator {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+#loadingIndicator.hidden {
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
 }
