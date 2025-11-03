@@ -2,6 +2,7 @@
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const ENDPOINT_GET_REPORTED = `${API_BASE}/admin/reported`;
 const ENDPOINT_RESOLVE_REPORTED = (id) => `${API_BASE}/admin/resolve/${id}`;
+const ENDPOINT_GET_LOGS = `${API_BASE}/admin/logs`;
 
 document.addEventListener("DOMContentLoaded", initAdmin);
 
@@ -9,6 +10,8 @@ async function initAdmin() {
   const tableBody = document.getElementById("reported-table-body");
   const refreshBtn = document.getElementById("refreshBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const logsContainer = document.getElementById("logs-container");
+  const refreshLogsBtn = document.getElementById("refreshLogsBtn");
 
   // 🔔 Notificatiecontainer toevoegen (boven tabel)
   const notif = document.createElement("div");
@@ -37,9 +40,15 @@ async function initAdmin() {
   }
 
   if (refreshBtn) refreshBtn.addEventListener("click", loadReportedReviews);
+  if (refreshLogsBtn) refreshLogsBtn.addEventListener("click", loadServerLogs);
 
   await loadReportedReviews();
+  await loadServerLogs();
 
+  // automatische logverversing
+  setInterval(loadServerLogs, 30000);
+
+  // === GEMELDE REVIEWS ===
   async function loadReportedReviews() {
     if (tableBody) {
       tableBody.innerHTML = `
@@ -165,6 +174,37 @@ async function initAdmin() {
     if (openEl) openEl.textContent = open;
     if (resolvedEl) resolvedEl.textContent = resolved;
   }
+
+  // === SERVERLOGS ===
+  async function loadServerLogs() {
+    if (!logsContainer) return;
+    logsContainer.textContent = "Logs worden geladen...";
+
+    try {
+      const res = await fetch(ENDPOINT_GET_LOGS);
+      const logs = await res.json();
+
+      if (!res.ok || !Array.isArray(logs)) throw new Error("Ongeldig logantwoord");
+
+      // Sorteer nieuwste eerst en pak max 30
+      const recentLogs = logs.slice(-30).reverse();
+
+      logsContainer.innerHTML = recentLogs
+        .map(
+          (l) =>
+            `<div class="mb-1"><span class="text-gray-500">${formatDate(l.timestamp || l.date)}:</span> ${esc(
+              l.message || l
+            )}</div>`
+        )
+        .join("");
+
+      if (!recentLogs.length)
+        logsContainer.innerHTML = `<div class="text-gray-400">Geen logs gevonden.</div>`;
+    } catch (err) {
+      console.error("Fout bij laden logs:", err);
+      logsContainer.innerHTML = `<div class="text-red-600">❌ Kon serverlogs niet laden.</div>`;
+    }
+  }
 }
 
 // helpers
@@ -180,5 +220,11 @@ function formatDate(v) {
   const d = new Date(v);
   return isNaN(d)
     ? "-"
-    : d.toLocaleDateString("nl-NL", { day: "2-digit", month: "short", year: "numeric" });
+    : d.toLocaleString("nl-NL", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 }
