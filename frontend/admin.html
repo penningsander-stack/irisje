@@ -3,17 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <title>Beheerdersdashboard – Irisje.nl</title>
   <meta name="description" content="Beheer gemelde reviews op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- jouw bestaande stijl -->
   <link rel="stylesheet" href="style.css?v=20251103" />
 
   <style>
-    /* extra kleine admin-specifieke animatie */
     .fade-row-out {
       animation: fadeRow 0.45s ease-out forwards;
     }
@@ -23,6 +19,7 @@
     }
   </style>
 </head>
+
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
@@ -79,9 +76,7 @@
           <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
             💬 Gemelde reviews
           </h2>
-          <p class="text-gray-500 text-sm">
-            Alleen beheerders kunnen hier meldingen afhandelen.
-          </p>
+          <p class="text-gray-500 text-sm">Alleen beheerders kunnen hier meldingen afhandelen.</p>
         </div>
         <button
           id="refreshBtn"
@@ -122,15 +117,14 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- kleine binnenvlieg-animatie (zelfde als dashboard) -->
+  <!-- Fade-in animatie -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const blocks = [
         document.querySelector("header"),
         ...document.querySelectorAll("main section"),
-        document.querySelector("footer")
+        document.querySelector("footer"),
       ].filter(Boolean);
-
       blocks.forEach((el, i) => {
         el.style.opacity = "0";
         el.style.transform = "translateY(12px)";
@@ -143,7 +137,6 @@
     });
   </script>
 
-  <!-- admin logica -->
   <script src="js/admin.js?v=20251103"></script>
 </body>
 </html>
