@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
-const { getLogs } = require("../utils/logger");
+const { getLogs, addLog } = require("../utils/logger");
 
 /**
  * 🌸 Irisje.nl – Admin routes
@@ -44,16 +44,21 @@ router.patch("/resolve/:id", async (req, res) => {
     const review = await Review.findById(id);
 
     if (!review) {
+      addLog(`❌ Poging tot afhandelen onbekende review: ${id}`, "error");
       return res.status(404).json({ message: "Review niet gevonden" });
     }
 
     review.reported = false;
     await review.save();
 
-    console.log(`✅ Review ${id} gemarkeerd als afgehandeld.`);
+    const logMsg = `✅ Review ${id} gemarkeerd als afgehandeld.`;
+    console.log(logMsg);
+    addLog(logMsg, "info");
+
     res.json({ message: "Review afgehandeld", review });
   } catch (err) {
     console.error("❌ Fout bij afhandelen review:", err);
+    addLog(`❌ Fout bij afhandelen review ${req.params.id}: ${err.message}`, "error");
     res.status(500).json({ message: "Serverfout bij afhandelen review" });
   }
 });
@@ -67,9 +72,13 @@ router.get("/reported", async (req, res) => {
     const reportedReviews = await Review.find({ reported: true })
       .sort({ createdAt: -1 })
       .lean();
+
+    addLog(`💬 Opgevraagd: ${reportedReviews.length} gemelde reviews.`, "debug");
+
     res.json(reportedReviews);
   } catch (err) {
     console.error("❌ Fout bij ophalen gemelde reviews:", err);
+    addLog(`❌ Fout bij ophalen gemelde reviews: ${err.message}`, "error");
     res.status(500).json({ message: "Serverfout bij ophalen gemelde reviews" });
   }
 });
