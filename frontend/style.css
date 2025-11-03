@@ -15,27 +15,30 @@ body {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
-/* 📦 Fade-in animatie voor header, secties en footer */
-.fade-seq header,
-.fade-seq section,
-.fade-seq footer {
+.fade-seq section {
   opacity: 0;
   transform: translateY(12px);
-  animation: fadeInDashboard 0.6s ease-out forwards;
+  animation: fadeInDashboard 0.9s ease-out forwards;
 }
-
-.fade-seq header   { animation-delay: 0.05s; }
-.fade-seq section:nth-of-type(1) { animation-delay: 0.15s; }
+.fade-seq section:nth-of-type(1) { animation-delay: 0.1s; }
 .fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
-.fade-seq section:nth-of-type(3) { animation-delay: 0.45s; }
-.fade-seq section:nth-of-type(4) { animation-delay: 0.6s; }
-.fade-seq footer   { animation-delay: 0.75s; }
+.fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
+.fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
+
+/* === NIEUW: Fade-in voor grafieken === */
+@keyframes fadeInChart {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.chart-fade {
+  opacity: 0;
+  animation: fadeInChart 0.6s ease forwards;
+}
 
 /* === KLEUREN Irisje === */
 :root {
-  --irisje-indigo: #6366f1;          /* indigo 500 */
-  --irisje-indigo-strong: #4f46e5;   /* indigo 600 */
+  --irisje-indigo: #6366f1;
+  --irisje-indigo-strong: #4f46e5;
   --irisje-indigo-light: rgba(99,102,241,0.12);
   --irisje-green: #22c55e;
   --irisje-red: #ef4444;
@@ -67,11 +70,8 @@ section.bg-white:hover {
   box-shadow: 0 8px 24px rgba(99,102,241,0.12);
 }
 
-/* === TABELLEN === */
-.table-section table {
-  width: 100%;
-  border-collapse: collapse;
-}
+/* Tabellen */
+.table-section table { width: 100%; border-collapse: collapse; }
 .table-section th {
   text-align: left;
   font-weight: 600;
@@ -84,14 +84,11 @@ section.bg-white:hover {
 }
 
 /* === KNOPPEN === */
-button,
-a.button {
-  transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+button, a.button {
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
-button:hover,
-a.button:hover {
+button:hover, a.button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
 }
 
 /* === SCHADUWEN EN OVERGANGEN === */
@@ -125,15 +122,12 @@ footer {
   h1, h2 { font-size: 1rem !important; }
 }
 
-/* === Loader fade-out animatie (Irisje Dashboard) === */
+/* === Loader fade-out animatie === */
 #loadingIndicator {
-  transition: opacity 0.6s ease, transform 0.6s ease;
-  opacity: 1;
-  transform: translateY(0);
+  transition: opacity 0.5s ease, transform 0.5s ease;
 }
-
 #loadingIndicator.hidden {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-4px);
   pointer-events: none;
 }
