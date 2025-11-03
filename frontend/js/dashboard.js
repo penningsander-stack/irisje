@@ -24,6 +24,7 @@ async function initDashboard() {
   const $reqBody = byId("request-table-body");
   const $revBody = byId("review-table-body");
   const $statusFilter = byId("statusFilter");
+  const $periodFilter = byId("periodFilter");
 
   // 🚨 Geen bedrijf gevonden
   if (!companyId) {
@@ -39,6 +40,9 @@ async function initDashboard() {
   let allRequests = [];
   let allReviews = [];
 
+  // charts refs
+  let maandChart, statusChart;
+
   // =================
   // 📬 AANVRAGEN LADEN
   // =================
@@ -47,9 +51,9 @@ async function initDashboard() {
       const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
       const data = await res.json();
       if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord (requests)");
-      allRequests = data.sort(
-        (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
-      );
+      allRequests = data
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
       renderRequestTable(allRequests);
     } catch (err) {
       console.error("Fout bij laden aanvragen:", err);
@@ -163,8 +167,6 @@ async function initDashboard() {
   // ===========================
   // 📊 STATISTIEKEN & GRAFIEKEN
   // ===========================
-  let maandChart, statusChart;
-
   function updateStatsAndCharts() {
     const total = allRequests.length;
     const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
@@ -176,18 +178,28 @@ async function initDashboard() {
     setText("rejected", rejected);
     setText("followed-up", followedUp);
 
-    const now = new Date();
-    const perMaand = {};
+    // Periodefilter toepassen op grafiekdata
+    const periodValue = $periodFilter ? $periodFilter.value : "all";
+    const filteredForCharts = filterRequestsByPeriod(allRequests, periodValue);
 
-    allRequests.forEach((r) => {
+    // ---- Maandgrafiek ----
+    const perMaand = {};
+    filteredForCharts.forEach((r) => {
       const d = new Date(r.createdAt || r.date);
       if (!d || isNaN(d)) return;
-      const key = d.toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
+      // we nemen jaar + maand als key zodat sorting klopt
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       perMaand[key] = (perMaand[key] || 0) + 1;
     });
 
-    const labels = Object.keys(perMaand);
-    const values = Object.values(perMaand);
+    // sorteren op jaar-maand
+    const sortedKeys = Object.keys(perMaand).sort(); // 2025-01, 2025-02, ...
+    const labels = sortedKeys.map((k) => {
+      const [year, month] = k.split("-");
+      const date = new Date(Number(year), Number(month) - 1, 1);
+      return date.toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
+    });
+    const values = sortedKeys.map((k) => perMaand[k]);
 
     const ctx1 = document.getElementById("monthChart");
     if (ctx1) {
@@ -204,23 +216,36 @@ async function initDashboard() {
               backgroundColor: "rgba(79,70,229,0.2)",
               fill: true,
               tension: 0.4,
+              pointRadius: 3,
+              pointHoverRadius: 5,
             },
           ],
         },
         options: {
           responsive: true,
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` ${ctx.parsed.y} aanvragen`,
+              },
+            },
+          },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          },
         },
       });
     }
 
+    // ---- Statusgrafiek ----
     const statusData = {
       Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
       Geaccepteerd: accepted,
       Afgewezen: rejected,
       Opgevolgd: followedUp,
     };
+    const totalForPercent = Object.values(statusData).reduce((a, b) => a + b, 0) || 1;
 
     const ctx2 = document.getElementById("statusChart");
     if (ctx2) {
@@ -233,10 +258,10 @@ async function initDashboard() {
             {
               data: Object.values(statusData),
               backgroundColor: [
-                "rgba(99,102,241,0.7)",
-                "rgba(34,197,94,0.7)",
-                "rgba(239,68,68,0.7)",
-                "rgba(234,179,8,0.7)",
+                "rgba(99,102,241,0.7)", // Nieuw
+                "rgba(34,197,94,0.7)",  // Geaccepteerd
+                "rgba(239,68,68,0.7)",  // Afgewezen
+                "rgba(234,179,8,0.7)",  // Opgevolgd
               ],
               borderWidth: 0,
             },
@@ -249,10 +274,41 @@ async function initDashboard() {
               position: "bottom",
               labels: { usePointStyle: true },
             },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const label = ctx.label || "";
+                  const val = ctx.parsed || 0;
+                  const pct = ((val / totalForPercent) * 100).toFixed(1);
+                  return ` ${label}: ${val} (${pct}%)`;
+                },
+              },
+            },
           },
         },
       });
     }
+  }
+
+  // 🔍 periodefilter: all, 6m, 3m, 1m
+  function filterRequestsByPeriod(list, period) {
+    if (period === "all") return list;
+    const now = new Date();
+    const from = new Date(now);
+
+    if (period === "6m") {
+      from.setMonth(from.getMonth() - 6);
+    } else if (period === "3m") {
+      from.setMonth(from.getMonth() - 3);
+    } else if (period === "1m") {
+      from.setMonth(from.getMonth() - 1);
+    }
+
+    return list.filter((r) => {
+      const d = new Date(r.createdAt || r.date);
+      if (!d || isNaN(d)) return false;
+      return d >= from;
+    });
   }
 
   // =======================
@@ -286,6 +342,13 @@ async function initDashboard() {
         const filtered = allRequests.filter((r) => (r.status || "Nieuw") === val);
         renderRequestTable(filtered);
       }
+    });
+  }
+
+  // nieuw: periodefilter -> herteken grafieken
+  if ($periodFilter) {
+    $periodFilter.addEventListener("change", () => {
+      updateStatsAndCharts();
     });
   }
 
