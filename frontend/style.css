@@ -60,38 +60,15 @@ section.bg-white {
 }
 section.bg-white:hover {
   box-shadow: 0 8px 24px rgba(99,102,241,0.12);
-  transform: translateY(-2px);
 }
 
-/* === STATISTIEK-KAARTEN === */
-.stat-card {
-  border: 1px solid rgba(99,102,241,0.08);
-  background-color: #fff;
-  border-radius: 1rem;
-  transition: all 0.3s ease;
-}
-.stat-card:hover {
-  box-shadow: 0 6px 18px rgba(99,102,241,0.15);
-  transform: translateY(-2px);
-}
-#total { color: var(--irisje-indigo-strong) !important; }
-#accepted { color: var(--irisje-green) !important; }
-#rejected { color: var(--irisje-red) !important; }
-#followed-up { color: var(--irisje-yellow) !important; }
-
-/* === TABELLEN === */
-@keyframes fadeInTables {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+/* tabellen */
 .table-section table {
-  opacity: 0;
-  animation: fadeInTables 1s ease forwards;
-  animation-delay: 0.25s;
+  width: 100%;
+  border-collapse: collapse;
 }
-.table-section thead {
-  background-color: var(--irisje-indigo-light);
-  color: var(--irisje-indigo-strong);
+.table-section th {
+  text-align: left;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -117,6 +94,12 @@ a.button:hover {
   transform: translateY(-3px);
   transition: all 0.3s ease;
   box-shadow: 0 8px 20px rgba(99,102,241,0.15);
+}
+
+/* 🔁 Grafiek-cards responsief houden */
+.chart-card canvas {
+  width: 100% !important;
+  height: auto !important;
 }
 
 /* === FOOTER === */
