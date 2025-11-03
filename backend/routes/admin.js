@@ -15,10 +15,20 @@ const { getLogs } = require("../utils/logger");
 router.get("/logs", (req, res) => {
   try {
     const logs = getLogs();
-    res.json({ ok: true, logs });
+
+    // Zorg dat altijd een array wordt teruggegeven
+    if (!Array.isArray(logs)) {
+      return res.json([]);
+    }
+
+    // Beperk tot de laatste 30 logs en sorteer nieuwste bovenaan
+    const recent = logs.slice(-30).reverse();
+
+    // Altijd een kale array (frontend verwacht dit formaat)
+    res.status(200).json(recent);
   } catch (err) {
     console.error("❌ Fout bij ophalen logs:", err);
-    res.status(500).json({ ok: false, message: "Kon logs niet ophalen" });
+    res.status(500).json([]);
   }
 });
 
@@ -54,7 +64,9 @@ router.patch("/resolve/:id", async (req, res) => {
  */
 router.get("/reported", async (req, res) => {
   try {
-    const reportedReviews = await Review.find({ reported: true }).sort({ createdAt: -1 }).lean();
+    const reportedReviews = await Review.find({ reported: true })
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(reportedReviews);
   } catch (err) {
     console.error("❌ Fout bij ophalen gemelde reviews:", err);
