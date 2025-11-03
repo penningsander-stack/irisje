@@ -70,13 +70,26 @@
 
     <!-- 📊 GRAFIEKEN -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex items-center justify-between mb-6 gap-4">
-        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          📊 Statistieken
-        </h2>
-        <p class="text-xs text-gray-400">
-          Data wordt gevuld op basis van ontvangen aanvragen.
-        </p>
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            📊 Statistieken
+          </h2>
+          <p class="text-xs text-gray-400">Data wordt gevuld op basis van ontvangen aanvragen.</p>
+        </div>
+        <!-- nieuw: periodefilter -->
+        <div class="flex items-center gap-2">
+          <label for="periodFilter" class="text-sm text-gray-600">Periode:</label>
+          <select
+            id="periodFilter"
+            class="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+          >
+            <option value="all">Alle maanden</option>
+            <option value="6m">Laatste 6 maanden</option>
+            <option value="3m">Laatste 3 maanden</option>
+            <option value="1m">Deze maand</option>
+          </select>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
