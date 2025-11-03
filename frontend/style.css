@@ -18,12 +18,12 @@ body {
 .fade-seq section {
   opacity: 0;
   transform: translateY(12px);
-  animation: fadeInDashboard 0.9s ease-out forwards;
+  animation: fadeInDashboard 0.6s ease-out forwards;
 }
 .fade-seq section:nth-of-type(1) { animation-delay: 0.1s; }
-.fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
-.fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
-.fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
+.fade-seq section:nth-of-type(2) { animation-delay: 0.25s; }
+.fade-seq section:nth-of-type(3) { animation-delay: 0.4s; }
+.fade-seq section:nth-of-type(4) { animation-delay: 0.55s; }
 
 /* === KLEUREN Irisje === */
 :root {
@@ -60,7 +60,7 @@ section.bg-white:hover {
   box-shadow: 0 8px 24px rgba(99,102,241,0.12);
 }
 
-/* tabellen */
+/* === TABELLEN === */
 .table-section table {
   width: 100%;
   border-collapse: collapse;
@@ -119,11 +119,13 @@ footer {
 
 /* === Loader fade-out animatie (Irisje Dashboard) === */
 #loadingIndicator {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  opacity: 1;
+  transform: translateY(0);
 }
 
 #loadingIndicator.hidden {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-6px);
   pointer-events: none;
 }
