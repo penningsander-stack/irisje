@@ -110,6 +110,30 @@
         </table>
       </div>
     </section>
+
+    <!-- SERVERLOGS -->
+    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+            📄 Serverlogs
+          </h2>
+          <p class="text-gray-500 text-sm">Bekijk de laatste gebeurtenissen van de Irisje-server.</p>
+        </div>
+        <button
+          id="refreshLogsBtn"
+          type="button"
+          class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition"
+        >
+          🔄 Vernieuwen
+        </button>
+      </div>
+
+      <div id="logs-container" class="bg-gray-50 rounded-xl border border-gray-200 h-64 overflow-y-auto font-mono text-xs text-gray-700 p-4">
+        Logs worden geladen...
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
