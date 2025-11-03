@@ -77,7 +77,7 @@
           </h2>
           <p class="text-xs text-gray-400">Data wordt gevuld op basis van ontvangen aanvragen.</p>
         </div>
-        <!-- nieuw: periodefilter -->
+        <!-- periodefilter -->
         <div class="flex items-center gap-2">
           <label for="periodFilter" class="text-sm text-gray-600">Periode:</label>
           <select
@@ -92,7 +92,8 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- twee rijen grafieken -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Aantal aanvragen per maand -->
         <div class="chart-card bg-gray-50 border border-gray-200 rounded-xl p-4">
           <h3 class="text-sm font-medium text-gray-700 mb-3">Aanvragen per maand</h3>
@@ -105,41 +106,93 @@
           <canvas id="statusChart" height="180" aria-label="Grafiek verdeling per status" role="img"></canvas>
         </div>
       </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Conversie / acceptatie per maand -->
+        <div class="chart-card bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <h3 class="text-sm font-medium text-gray-700 mb-3">Acceptatiepercentage per maand</h3>
+          <canvas id="conversionChart" height="180" aria-label="Grafiek acceptatie per maand" role="img"></canvas>
+        </div>
+        <!-- extra blok voor toekomst / toelichting -->
+        <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
+          <h3 class="text-sm font-medium text-indigo-900 mb-2">Tip</h3>
+          <p class="text-sm text-indigo-800 leading-relaxed">
+            Gebruik het periodefilter om te zien wanneer je bedrijf de meeste aanvragen krijgt en welk deel daarvan je accepteert.
+            Zo kun je je bereik vergroten op de goede momenten.
+          </p>
+        </div>
+      </div>
     </section>
 
     <!-- 📬 AANVRAGEN -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div>
-          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            📬 Aanvragen
-          </h2>
-          <p class="text-gray-500 text-sm">Hier zie je alle leads die via Irisje.nl binnenkomen.</p>
+      <div class="flex flex-col gap-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              📬 Aanvragen
+            </h2>
+            <p class="text-gray-500 text-sm">Hier zie je alle leads die via Irisje.nl binnenkomen.</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label for="statusFilter" class="text-gray-600 whitespace-nowrap">
+              Filter op status:
+            </label>
+            <select
+              id="statusFilter"
+              class="border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="ALLE">Alle</option>
+              <option value="Nieuw">Nieuw</option>
+              <option value="Geaccepteerd">Geaccepteerd</option>
+              <option value="Afgewezen">Afgewezen</option>
+              <option value="Opgevolgd">Opgevolgd</option>
+            </select>
+
+            <button
+              id="refreshBtn"
+              class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition"
+              onclick="location.reload()"
+              type="button"
+            >
+              🔄 Vernieuwen
+            </button>
+          </div>
         </div>
 
-        <div class="flex items-center gap-3">
-          <label for="statusFilter" class="text-gray-600 whitespace-nowrap">
-            Filter op status:
-          </label>
-          <select
-            id="statusFilter"
-            class="border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
-          >
-            <option value="ALLE">Alle</option>
-            <option value="Nieuw">Nieuw</option>
-            <option value="Geaccepteerd">Geaccepteerd</option>
-            <option value="Afgewezen">Afgewezen</option>
-            <option value="Opgevolgd">Opgevolgd</option>
-          </select>
-
-          <button
-            id="refreshBtn"
-            class="text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 transition"
-            onclick="location.reload()"
-            type="button"
-          >
-            🔄 Vernieuwen
-          </button>
+        <!-- extra controls: zoeken / sorteren / export -->
+        <div class="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+          <div class="flex gap-2 items-center">
+            <label for="searchInput" class="text-sm text-gray-600 whitespace-nowrap">Zoek:</label>
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Zoek op naam, e-mail of bericht..."
+              class="border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 w-full md:w-72"
+            />
+          </div>
+          <div class="flex gap-2 items-center">
+            <label for="sortSelect" class="text-sm text-gray-600 whitespace-nowrap">Sorteer:</label>
+            <select
+              id="sortSelect"
+              class="border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="date_desc">Nieuwste eerst</option>
+              <option value="date_asc">Oudste eerst</option>
+              <option value="name_asc">Naam A-Z</option>
+              <option value="name_desc">Naam Z-A</option>
+            </select>
+          </div>
+          <div>
+            <button
+              id="exportCsvBtn"
+              type="button"
+              class="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+            >
+              ⬇️ Exporteer naar CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -203,7 +256,7 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- Animatie voor binnenvliegen (behouden maar lichter gemaakt) -->
+  <!-- Animatie voor binnenvliegen -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const blocks = [
