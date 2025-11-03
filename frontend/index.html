@@ -124,21 +124,35 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Service Worker -->
+  <!-- ✅ Service Worker met update-banner -->
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker
-        .register("/sw.js")
-        .then((reg) => {
-          console.log("✅ Service worker geregistreerd:", reg.scope);
-        })
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("✅ Service worker geregistreerd:", reg.scope))
         .catch(err => console.error("❌ Service worker fout:", err));
+
+      // 👂 Luister naar nieuwe versies van de service worker
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data?.type === "NEW_VERSION") {
+          const banner = document.createElement("div");
+          banner.textContent = "💡 Nieuwe versie geladen – klik om te vernieuwen";
+          banner.style.cssText = `
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: #4F46E5; color: white; padding: 10px 18px;
+            border-radius: 10px; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 9999;
+          `;
+          banner.onclick = () => location.reload();
+          document.body.appendChild(banner);
+        }
+      });
     }
   </script>
 
   <!-- ✅ Functional Scripts -->
   <script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
+
     document.getElementById("searchForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const category = categoryInput.value.trim();
@@ -188,9 +202,9 @@
       `).join("");
 
       const steps = [
-        ["1. Vertel wat je nodig hebt","Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
-        ["2. Bedrijven reageren","Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
-        ["3. Jij kiest","Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
+        ["1. Vertel wat je nodig hebt", "Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
+        ["2. Bedrijven reageren", "Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
+        ["3. Jij kiest", "Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
       ];
       document.getElementById("howItWorks").innerHTML = steps.map(([title, text]) => `
         <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -200,9 +214,9 @@
       `).join("");
 
       const reviews = [
-        ["⭐⭐⭐⭐⭐","“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”","Sanne, Amsterdam"],
-        ["⭐⭐⭐⭐","“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”","Peter, Utrecht"],
-        ["⭐⭐⭐⭐⭐","“Volgende keer bel ik weer via Irisje in plaats van Googlen.”","Linda, Rotterdam"]
+        ["⭐⭐⭐⭐⭐", "“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”", "Sanne, Amsterdam"],
+        ["⭐⭐⭐⭐", "“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”", "Peter, Utrecht"],
+        ["⭐⭐⭐⭐⭐", "“Volgende keer bel ik weer via Irisje in plaats van Googlen.”", "Linda, Rotterdam"]
       ];
       document.getElementById("reviews").innerHTML = reviews.map(([stars, msg, name]) => `
         <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
