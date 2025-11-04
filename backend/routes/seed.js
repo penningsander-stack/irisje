@@ -12,21 +12,24 @@ router.get("/seed-companies", async (req, res) => {
     const filePath = path.join(__dirname, "../seed/companies.json");
     const companies = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-    // dummy user-ID voor alle bedrijven zonder eigenaar
     const dummyOwnerId = new mongoose.Types.ObjectId();
 
-    const prepared = companies.map((c) => ({
+    const prepared = companies.map((c, i) => ({
       ...c,
       owner: c.owner || dummyOwnerId,
       isVerified: true,
       avgRating: 0,
       reviewCount: 0,
+      email:
+        c.email && c.email.trim() !== ""
+          ? c.email.trim()
+          : `noemail_${i}@irisje.nl`,
     }));
 
     await Company.deleteMany({});
     await Company.insertMany(prepared);
 
-    console.log(`✅ ${prepared.length} bedrijven succesvol toegevoegd (met dummy-owner).`);
+    console.log(`✅ ${prepared.length} bedrijven succesvol toegevoegd (met dummy-owner + unieke e-mails).`);
     res.json({ ok: true, count: prepared.length });
   } catch (err) {
     console.error("❌ Fout bij seeden:", err);
