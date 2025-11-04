@@ -8,53 +8,26 @@ const ClaimRequestSchema = new mongoose.Schema(
       ref: 'Company',
       required: true
     },
-    contactName: {
-      type: String,
-      default: ''
-    },
-    contactEmail: {
-      type: String,
-      default: ''
-    },
-    contactPhone: {
-      type: String,
-      default: ''
-    },
-    kvkNumber: {
-      type: String,
-      default: ''
-    },
+    contactName: String,
+    contactEmail: String,
+    contactPhone: String,
+    kvkNumber: String,
     methodRequested: {
-      // hoe wil hij verifiëren: email / sms / kvk / doc
       type: String,
       enum: ['email', 'sms', 'kvk', 'doc'],
       default: 'email'
     },
     status: {
-      // verloop van de claim
       type: String,
       enum: ['pending', 'verified', 'rejected', 'cancelled'],
       default: 'pending'
     },
-    verificationCode: {
-      // hier komt de gehashte code in (niet de leesbare 6-cijfer code)
-      type: String,
-      default: ''
-    },
-    verificationSentAt: {
-      type: Date
-    },
-    verifiedAt: {
-      type: Date
-    },
-    adminNotes: {
-      type: String,
-      default: ''
-    }
+    verificationCode: String, // wordt later gehasht opgeslagen
+    verificationSentAt: Date,
+    verifiedAt: Date,
+    adminNotes: String
   },
-  {
-    timestamps: true // maakt createdAt en updatedAt aan
-  }
+  { timestamps: true }
 );
 
 module.exports = mongoose.model('ClaimRequest', ClaimRequestSchema);
