@@ -639,3 +639,216 @@
   }
 ]
 
+,
+  {
+    "name": "Bouwbedrijf van den Broek",
+    "slug": "bouwbedrijf-van-den-broek",
+    "tagline": "Allround aannemer – Nieuwbouw & Renovatie",
+    "categories": ["Aannemer", "Bouwbedrijf"],
+    "city": "Den Bosch",
+    "website": "https://www.bouwbedrijfvandenbroek.nl/",
+    "email": "info@bouwbedrijfvandenbroek.nl",
+    "phone": "073-5219200"
+  },
+  {
+    "name": "Heijmans Bouw",
+    "slug": "heijmans-bouw",
+    "tagline": "Landelijk actief in woningbouw en infra",
+    "categories": ["Aannemer"],
+    "city": "Rosmalen",
+    "website": "https://www.heijmans.nl/",
+    "email": "info@heijmans.nl",
+    "phone": "073-5435000"
+  },
+  {
+    "name": "Jongeneel Bouw",
+    "slug": "jongeneel-bouw",
+    "tagline": "Bouwmaterialen & aannemersdiensten",
+    "categories": ["Aannemer"],
+    "city": "Utrecht",
+    "website": "https://www.jongeneel.nl/",
+    "email": "info@jongeneel.nl",
+    "phone": "030-2861500"
+  },
+  {
+    "name": "Klusbedrijf Jansen & Zn.",
+    "slug": "klusbedrijf-jansen-en-zn",
+    "tagline": "Totaalonderhoud en verbouw",
+    "categories": ["Klusbedrijf", "Aannemer"],
+    "city": "Apeldoorn",
+    "website": "https://klusbedrijfjansen.nl/",
+    "email": "info@klusbedrijfjansen.nl",
+    "phone": "055-5338266"
+  },
+  {
+    "name": "Stukadoorsbedrijf Vermeulen",
+    "slug": "stukadoorsbedrijf-vermeulen",
+    "tagline": "Wand- en plafondafwerking – Breda",
+    "categories": ["Stukadoor"],
+    "city": "Breda",
+    "website": "https://stukadoorsbedrijfvermeulen.nl/",
+    "email": "info@stukadoorsbedrijfvermeulen.nl",
+    "phone": "076-5654811"
+  },
+  {
+    "name": "Stukadoorsbedrijf van Dongen",
+    "slug": "stukadoorsbedrijf-van-dongen",
+    "tagline": "Specialist in sierpleister en spachtelputz",
+    "categories": ["Stukadoor"],
+    "city": "Tilburg",
+    "website": "https://stukadoorvandongen.nl/",
+    "email": "info@stukadoorvandongen.nl",
+    "phone": "013-4679877"
+  },
+  {
+    "name": "Tegelzetbedrijf Roelofs",
+    "slug": "tegelzetbedrijf-roelofs",
+    "tagline": "Vloer- en wandtegelwerk – Arnhem",
+    "categories": ["Tegelzetter"],
+    "city": "Arnhem",
+    "website": "https://tegelzetbedrijfroelofs.nl/",
+    "email": "info@tegelzetbedrijfroelofs.nl",
+    "phone": "026-4438822"
+  },
+  {
+    "name": "Tegelzetbedrijf van Dijk",
+    "slug": "tegelzetbedrijf-van-dijk",
+    "tagline": "Badkamers & vloeren – Rotterdam",
+    "categories": ["Tegelzetter"],
+    "city": "Rotterdam",
+    "website": "https://tegelzetbedrijfvandijk.nl/",
+    "email": "info@tegelzetbedrijfvandijk.nl",
+    "phone": "010-4184501"
+  },
+  {
+    "name": "Zon&Co Zonnepanelen",
+    "slug": "zon-en-co-zonnepanelen",
+    "tagline": "Duurzame energie voor iedereen",
+    "categories": ["Zonnepanelen", "Duurzaam"],
+    "city": "Amersfoort",
+    "website": "https://www.zonen.co/",
+    "email": "info@zonen.co",
+    "phone": "033-2858535"
+  },
+  {
+    "name": "SolarNRG",
+    "slug": "solarnrg",
+    "tagline": "Zonnepanelen, omvormers en batterijen",
+    "categories": ["Zonnepanelen", "Installatie"],
+    "city": "Poeldijk",
+    "website": "https://www.solarnrg.nl/",
+    "email": "info@solarnrg.nl",
+    "phone": "0174-764300"
+  },
+  {
+    "name": "Zonduurzaam Installaties",
+    "slug": "zonduurzaam-installaties",
+    "tagline": "Advies en montage van zonnepanelen",
+    "categories": ["Zonnepanelen", "Installatie"],
+    "city": "Nijmegen",
+    "website": "https://zonduurzaam.nl/",
+    "email": "info@zonduurzaam.nl",
+    "phone": "024-2022204"
+  },
+  {
+    "name": "Airco Specialist Noord",
+    "slug": "airco-specialist-noord",
+    "tagline": "Installatie en onderhoud van airco’s",
+    "categories": ["Airco", "Installatie"],
+    "city": "Groningen",
+    "website": "https://www.aircospecialistnoord.nl/",
+    "email": "info@aircospecialistnoord.nl",
+    "phone": "050-2113856"
+  },
+  {
+    "name": "CoolComfort Airconditioning",
+    "slug": "coolcomfort-airconditioning",
+    "tagline": "Particulier & zakelijk – Eindhoven",
+    "categories": ["Airco", "Installatie"],
+    "city": "Eindhoven",
+    "website": "https://www.coolcomfort.nl/",
+    "email": "info@coolcomfort.nl",
+    "phone": "040-8200350"
+  },
+  {
+    "name": "Vloerexpert Nederland",
+    "slug": "vloerexpert-nederland",
+    "tagline": "PVC, laminaat en gietvloeren",
+    "categories": ["Vloeren", "Woninginrichting"],
+    "city": "Zwolle",
+    "website": "https://www.vloerexpert.nl/",
+    "email": "info@vloerexpert.nl",
+    "phone": "038-2022595"
+  },
+  {
+    "name": "De Vloerenkamer",
+    "slug": "de-vloerenkamer",
+    "tagline": "Specialist in parketvloeren – Leiden",
+    "categories": ["Vloeren"],
+    "city": "Leiden",
+    "website": "https://www.devloerenkamer.nl/",
+    "email": "info@devloerenkamer.nl",
+    "phone": "071-5124082"
+  },
+  {
+    "name": "Vloermeesters BV",
+    "slug": "vloermeesters-bv",
+    "tagline": "Professioneel vloerenbedrijf – Breda",
+    "categories": ["Vloeren"],
+    "city": "Breda",
+    "website": "https://vloermeesters.nl/",
+    "email": "info@vloermeesters.nl",
+    "phone": "076-2050077"
+  },
+  {
+    "name": "Isolatie Totaal Nederland",
+    "slug": "isolatie-totaal-nederland",
+    "tagline": "Spouwmuur-, dak- en vloerisolatie",
+    "categories": ["Isolatie"],
+    "city": "Deventer",
+    "website": "https://isolatietotaalnederland.nl/",
+    "email": "info@isolatietotaalnederland.nl",
+    "phone": "0570-230112"
+  },
+  {
+    "name": "Pluimers Isolatie",
+    "slug": "pluimers-isolatie",
+    "tagline": "Energie besparen met isolatie – sinds 1977",
+    "categories": ["Isolatie"],
+    "city": "Rijssen",
+    "website": "https://www.pluimers.nl/",
+    "email": "info@pluimers.nl",
+    "phone": "0548-540540"
+  },
+  {
+    "name": "Glascentrum Brabant",
+    "slug": "glascentrum-brabant",
+    "tagline": "HR++ glas en glasherstel",
+    "categories": ["Glaszetter"],
+    "city": "Tilburg",
+    "website": "https://glascentrumbrabant.nl/",
+    "email": "info@glascentrumbrabant.nl",
+    "phone": "013-2032040"
+  },
+  {
+    "name": "Van Noordenne Glas",
+    "slug": "van-noordenne-glas",
+    "tagline": "Isolatieglas en interieurglas – Gorinchem",
+    "categories": ["Glaszetter"],
+    "city": "Gorinchem",
+    "website": "https://www.noordenneglas.nl/",
+    "email": "info@noordenneglas.nl",
+    "phone": "0183-632200"
+  },
+  {
+    "name": "Glasindustrie De Maas",
+    "slug": "glasindustrie-de-maas",
+    "tagline": "Industrieel en particulier glaswerk",
+    "categories": ["Glaszetter"],
+    "city": "Rotterdam",
+    "website": "https://glasdemaas.nl/",
+    "email": "info@glasdemaas.nl",
+    "phone": "010-2452666"
+  }
+]
+
