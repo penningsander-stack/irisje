@@ -528,3 +528,117 @@
     "source": "turn3view0"
   }
 ]
+
+[
+  {
+    "name": "Elektrawerken Nederland B.V.",
+    "slug": "elektrawerken-nederland-bv",
+    "tagline": "Elektrotechnische installaties – Weesp",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Weesp",
+    "website": "https://www.ewn.nl/",
+    "email": "info@ewn.nl",
+    "phone": "0294-413944",
+    "source": "turn0search1"
+  },
+  {
+    "name": "Fontein Elektrotechniek",
+    "slug": "fontein-elektrotechniek",
+    "tagline": "Elektrotechnische installatiebedrijf regio Den Haag",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Leidschendam",
+    "website": "https://fonteinelektrotechniek.nl/elektrotechnisch-installatiebedrijf/",
+    "email": "info@fonteinelektrotechniek.nl",
+    "phone": "071-5803324",
+    "source": "turn0search3"
+  },
+  {
+    "name": "Van Lanen BV Elektro-Installatiebedrijf",
+    "slug": "van-lanen-elektro-installatiebedrijf",
+    "tagline": "Familiebedrijf sinds 1979 – Mill",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Mill",
+    "website": "https://etbvanlanen.nl/contact",
+    "email": "info@etbvanlanen.nl",
+    "phone": "0485-451946",
+    "source": "turn0search4"
+  },
+  {
+    "name": "Kampert Elektro BV",
+    "slug": "kampert-elektro-bv",
+    "tagline": "Elektrotechnisch installateur – Wekerom",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Wekerom",
+    "website": "https://www.kampertelektro.nl/",
+    "email": "info@kampertelektro.nl",
+    "phone": "0318-255068",
+    "source": "turn0search5"
+  },
+  {
+    "name": "Electra & Zo ETIB",
+    "slug": "electra-en-zo-etib",
+    "tagline": "Erkend elektrotechnisch installateur – Nijmegen",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Nijmegen",
+    "website": "https://www.electraenzo.nl/",
+    "email": "info@electraenzo.nl",
+    "phone": "024-3609393",
+    "source": "turn0search15"
+  },
+  {
+    "name": "Borms Elektrotechniek BV",
+    "slug": "borms-elektrotechniek-bv",
+    "tagline": "Al 44 jaar uw elektra expert – Haarlem e.o.",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Haarlem",
+    "website": "https://borms.nl/",
+    "email": "",
+    "phone": "",
+    "source": "turn0search9"
+  },
+  {
+    "name": "Elektricien Louwmans",
+    "slug": "elektricien-louwmans",
+    "tagline": "24/7 bereikbare elektricien – landelijk netwerk",
+    "categories": ["Elektricien", "Spoedservice"],
+    "city": "Amsterdam",
+    "website": "https://www.elektricien-louwmans.nl/",
+    "email": "",
+    "phone": "085-0190035",
+    "source": "turn0search14"
+  },
+  {
+    "name": "Elektra Koning",
+    "slug": "elektra-koning",
+    "tagline": "Uw elektricien in Den Haag",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Den Haag",
+    "website": "https://www.elektrakoning.nl/contact",
+    "email": "info@elektrakoning.nl",
+    "phone": "070-2042229",
+    "source": "turn0search19"
+  },
+  {
+    "name": "E+M Installaties",
+    "slug": "e-m-installaties",
+    "tagline": "Dé oplossing in elektrotechniek – Delft",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Delft",
+    "website": "https://eminstallaties.nl/",
+    "email": "",
+    "phone": "015-3612524",
+    "source": "turn0search7"
+  },
+  {
+    "name": "Elektricien Experts",
+    "slug": "elektricien-experts",
+    "tagline": "Landelijk netwerk van elektra specialisten",
+    "categories": ["Elektricien", "Installatie"],
+    "city": "Nederland",
+    "website": "https://elektricien-experts.nl/contact/",
+    "email": "info@elektricien-experts.nl",
+    "phone": "085-2129920",
+    "source": "turn0search12"
+  }
+]
+
