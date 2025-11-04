@@ -119,6 +119,35 @@
       </form>
     </section>
 
+    <!-- 🏷️ Bedrijf claimen -->
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
+      <h2 class="text-xl font-semibold text-indigo-700 mb-5 flex items-center gap-2">
+        🏷️ <span>Ben jij de eigenaar van dit bedrijf?</span>
+      </h2>
+
+      <p class="text-gray-600 text-sm mb-4">
+        Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.
+      </p>
+
+      <form id="claimForm" class="space-y-4">
+        <input id="claimName" type="text" placeholder="Naam contactpersoon" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+
+        <input id="claimEmail" type="email" placeholder="Zakelijk e-mailadres" required
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+
+        <input id="claimPhone" type="tel" placeholder="Telefoonnummer"
+          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
+          Claim dit bedrijf
+        </button>
+
+        <p id="claimStatusMsg" class="text-center text-sm mt-2 min-h-[1.25rem]"></p>
+      </form>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
@@ -134,13 +163,13 @@
 
     async function loadCompany() {
       try {
-        const res = await fetch(\`\${API_BASE}/companies/\${encodeURIComponent(slug)}\`);
+        const res = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         if (!res.ok) throw new Error();
         const data = await res.json();
         companyName.textContent = data.name || "";
         tagline.textContent = data.tagline || "";
         rating.textContent = stars(data.avgRating);
-        reviewCount.textContent = \`(\${data.reviewCount || 0} reviews)\`;
+        reviewCount.textContent = `(${data.reviewCount || 0} reviews)`;
         city.textContent = data.city || "";
         categories.textContent = Array.isArray(data.categories) ? data.categories.join(", ") : "";
         description.textContent = data.description || "";
@@ -152,7 +181,7 @@
 
     async function loadReviews() {
       try {
-        const res = await fetch(\`\${API_BASE}/reviews?slug=\${encodeURIComponent(slug)}\`);
+        const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
         const data = await res.json();
         if (!data.length) {
           review-list.innerHTML = "<div class='text-gray-500 text-sm'>Nog geen beoordelingen beschikbaar.</div>";
@@ -160,12 +189,12 @@
         }
         review-list.innerHTML = data.map(r => {
           const d = new Date(r.createdAt || Date.now()).toLocaleDateString("nl-NL", { day: "numeric", month: "short", year: "numeric" });
-          return \`
+          return `
             <div class="border border-gray-200 rounded-xl p-4 bg-gray-50 hover:shadow transition">
-              <div class="text-yellow-500 text-sm font-semibold">\${"⭐".repeat(r.rating || 0)}</div>
-              <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">\${r.message || ""}</p>
-              <div class="text-gray-500 text-xs mt-3">— \${r.name || "Anoniem"}, \${d}</div>
-            </div>\`;
+              <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
+              <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
+              <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"}, ${d}</div>
+            </div>`;
         }).join("");
       } catch {
         review-list.innerHTML = "<div class='text-red-600 text-sm'>❌ Fout bij laden reviews.</div>";
@@ -178,7 +207,7 @@
       msg.textContent = "Bezig met versturen...";
       msg.className = "text-gray-500 text-center text-sm";
       try {
-        const res = await fetch(\`\${API_BASE}/reviews\`, {
+        const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -206,9 +235,9 @@
       msg.textContent = "Bezig met verzenden...";
       msg.className = "text-gray-500 text-center text-sm";
       try {
-        const companyRes = await fetch(\`\${API_BASE}/companies/\${encodeURIComponent(slug)}\`);
+        const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
         const companyData = await companyRes.json();
-        const res = await fetch(\`\${API_BASE}/requests\`, {
+        const res = await fetch(`${API_BASE}/requests`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -228,10 +257,42 @@
       }
     });
 
+    // === Claimformulier ===
+    const claimForm = document.getElementById("claimForm");
+    if (claimForm) {
+      claimForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById("claimStatusMsg");
+        msg.textContent = "Bezig met versturen...";
+        msg.className = "text-gray-500 text-center text-sm";
+        try {
+          const companyRes = await fetch(`${API_BASE}/companies/${encodeURIComponent(slug)}`);
+          const companyData = await companyRes.json();
+          const res = await fetch(`${API_BASE}/claims/companies/${companyData._id}/claim`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contactName: claimName.value.trim(),
+              contactEmail: claimEmail.value.trim(),
+              contactPhone: claimPhone.value.trim(),
+              methodRequested: "email"
+            })
+          });
+          if (!res.ok) throw new Error();
+          msg.textContent = "✅ Claim succesvol verstuurd! We nemen spoedig contact met je op.";
+          msg.className = "text-green-600 text-center text-sm";
+          claimForm.reset();
+        } catch {
+          msg.textContent = "❌ Er ging iets mis bij het versturen.";
+          msg.className = "text-red-600 text-center text-sm";
+        }
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       loadCompany();
       loadReviews();
-      // Fade-in
+      // Fade-in animatie
       const els = document.querySelectorAll("header, main section, footer");
       els.forEach((el, i) => {
         el.style.opacity = "0";
