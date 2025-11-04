@@ -1,32 +1,25 @@
 // backend/routes/seed.js
-const express = require("express");
+import express from "express";
+import fs from "fs";
+import path from "path";
+import Company from "../models/Company.js";
+
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
 
-router.get("/create-admin", async (req, res) => {
+// Tijdelijke route om bedrijven te importeren
+router.get("/seed-companies", async (req, res) => {
   try {
-    const existing = await User.findOne({ email: "info@irisje.nl" });
-    if (existing) {
-      return res.json({ message: "Admin bestaat al", user: existing });
-    }
+    const filePath = path.join(process.cwd(), "seed", "companies.json");
+    const companies = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-    const hashedPassword = await bcrypt.hash("Admin1234!", 10);
+    await Company.deleteMany({});
+    await Company.insertMany(companies);
 
-    const adminUser = new User({
-      name: "Irisje Admin",
-      email: "info@irisje.nl",
-      password: hashedPassword,
-      role: "admin",
-    });
-
-    await adminUser.save();
-
-    res.json({ message: "✅ Admin aangemaakt", user: adminUser });
+    res.json({ ok: true, count: companies.length });
   } catch (err) {
-    console.error("❌ Fout bij seed:", err);
-    res.status(500).json({ message: "Fout bij aanmaken admin" });
+    console.error("❌ Fout bij seeden:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
-module.exports = router;
+export default router;
