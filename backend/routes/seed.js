@@ -2,21 +2,32 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const mongoose = require("mongoose");
 const Company = require("../models/Company");
 
 const router = express.Router();
 
-// Tijdelijke route om echte bedrijven te importeren
 router.get("/seed-companies", async (req, res) => {
   try {
     const filePath = path.join(__dirname, "../seed/companies.json");
     const companies = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
-    await Company.deleteMany({});
-    await Company.insertMany(companies);
+    // dummy user-ID voor alle bedrijven zonder eigenaar
+    const dummyOwnerId = new mongoose.Types.ObjectId();
 
-    console.log(`✅ ${companies.length} bedrijven succesvol toegevoegd.`);
-    res.json({ ok: true, count: companies.length });
+    const prepared = companies.map((c) => ({
+      ...c,
+      owner: c.owner || dummyOwnerId,
+      isVerified: true,
+      avgRating: 0,
+      reviewCount: 0,
+    }));
+
+    await Company.deleteMany({});
+    await Company.insertMany(prepared);
+
+    console.log(`✅ ${prepared.length} bedrijven succesvol toegevoegd (met dummy-owner).`);
+    res.json({ ok: true, count: prepared.length });
   } catch (err) {
     console.error("❌ Fout bij seeden:", err);
     res.status(500).json({ error: err.message });
