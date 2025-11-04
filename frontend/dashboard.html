@@ -1,4 +1,3 @@
-<!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -8,7 +7,9 @@
   <meta name="description" content="Bekijk aanvragen, reviews en statistieken van je bedrijf op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" href="favicon.ico" />
+  <!-- jouw Tailwind / custom CSS -->
   <link rel="stylesheet" href="style.css?v=20251103" />
+  <!-- Chart.js (moet vóór jouw eigen dashboard.js geladen zijn) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 
@@ -17,17 +18,23 @@
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-4 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <h1 class="text-lg font-semibold flex items-center gap-2">📊 <span>Bedrijfsdashboard</span></h1>
-      <button id="logoutBtn"
-        class="bg-white text-indigo-700 font-medium rounded-lg px-4 py-2 shadow-sm hover:bg-indigo-50 transition">
+      <h1 class="text-lg font-semibold flex items-center gap-2">
+        📊 <span>Bedrijfsdashboard</span>
+      </h1>
+      <button
+        id="logoutBtn"
+        class="bg-white text-indigo-700 font-medium rounded-lg px-4 py-2 shadow-sm hover:bg-indigo-50 transition"
+      >
         Uitloggen
       </button>
     </div>
   </header>
 
-  <!-- 🔄 LAADINDICATOR -->
-  <div id="loadingIndicator"
-       class="hidden text-center py-3 bg-indigo-100 text-indigo-700 text-sm font-medium animate-pulse fixed top-16 left-0 right-0 shadow-sm z-40">
+  <!-- 🔄 LAADINDICATOR (bovenaan, fixed) -->
+  <div
+    id="loadingIndicator"
+    class="hidden text-center py-3 bg-indigo-100 text-indigo-700 text-sm font-medium animate-pulse fixed top-16 left-0 right-0 shadow-sm z-40"
+  >
     ⏳ Dashboard wordt geladen...
   </div>
 
@@ -37,7 +44,9 @@
     <!-- 📈 OVERZICHT -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
       <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">📈 Overzicht</h2>
-      <p class="text-gray-500 mb-6 text-sm">Je ziet hier het totaal aantal aanvragen en hoeveel daarvan zijn opgevolgd.</p>
+      <p class="text-gray-500 mb-6 text-sm">
+        Je ziet hier het totaal aantal aanvragen en hoe veel daarvan zijn opgevolgd.
+      </p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-gray-50 p-4 rounded-xl border text-center">
@@ -61,37 +70,50 @@
 
     <!-- 📊 GRAFIEKEN -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex flex-wrap justify-between items-center mb-4">
+      <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
         <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📊 Statistieken</h2>
-        <select id="periodFilter" class="border border-gray-200 rounded-lg py-1.5 px-3 text-sm">
+        <select
+          id="periodFilter"
+          class="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        >
           <option value="all">Alle maanden</option>
           <option value="6m">Laatste 6 maanden</option>
           <option value="3m">Laatste 3 maanden</option>
           <option value="1m">Deze maand</option>
         </select>
       </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Aanvragen per maand -->
         <div class="bg-gray-50 border rounded-xl p-4">
           <h3 class="text-sm font-medium text-gray-700 mb-3">Aanvragen per maand</h3>
-          <canvas id="monthChart" height="180"></canvas>
+          <canvas id="monthChart" height="180" aria-label="Grafiek aanvragen per maand" role="img"></canvas>
         </div>
+
+        <!-- Verdeling per status -->
         <div class="bg-gray-50 border rounded-xl p-4">
           <h3 class="text-sm font-medium text-gray-700 mb-3">Verdeling per status</h3>
-          <canvas id="statusChart" height="180"></canvas>
+          <canvas id="statusChart" height="180" aria-label="Grafiek verdeling per status" role="img"></canvas>
         </div>
+
+        <!-- Acceptatiepercentage -->
         <div class="bg-gray-50 border rounded-xl p-4 lg:col-span-2">
           <h3 class="text-sm font-medium text-gray-700 mb-3">Acceptatiepercentage per maand</h3>
-          <canvas id="conversionChart" height="180"></canvas>
+          <canvas id="conversionChart" height="180" aria-label="Grafiek acceptatie per maand" role="img"></canvas>
         </div>
       </div>
     </section>
 
     <!-- 📬 AANVRAGEN -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex flex-wrap justify-between items-center mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📬 Aanvragen</h2>
-        <div class="flex items-center gap-3 text-sm">
-          <label for="statusFilter">Status:</label>
+      <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📬 Aanvragen</h2>
+          <p class="text-gray-500 text-sm">Hier zie je alle leads die via Irisje.nl binnenkomen.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <label for="statusFilter" class="text-gray-600">Status:</label>
           <select id="statusFilter" class="border rounded-lg py-1 px-2">
             <option value="ALLE">Alle</option>
             <option value="Nieuw">Nieuw</option>
@@ -99,24 +121,48 @@
             <option value="Afgewezen">Afgewezen</option>
             <option value="Opgevolgd">Opgevolgd</option>
           </select>
-          <input id="searchInput" type="text" placeholder="Zoek..." class="border rounded-lg py-1 px-2 w-40" />
+
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Zoek..."
+            class="border rounded-lg py-1 px-2 w-40"
+          />
+
           <select id="sortSelect" class="border rounded-lg py-1 px-2">
             <option value="date_desc">Nieuwste eerst</option>
             <option value="date_asc">Oudste eerst</option>
             <option value="name_asc">Naam (A-Z)</option>
             <option value="name_desc">Naam (Z-A)</option>
           </select>
-          <button id="exportCsvBtn" class="text-indigo-600 hover:text-indigo-800 font-medium">⬇️ Exporteren</button>
+
+          <button
+            id="exportCsvBtn"
+            class="text-indigo-600 hover:text-indigo-800 font-medium"
+            type="button"
+          >
+            ⬇️ Exporteren
+          </button>
         </div>
       </div>
 
       <div class="overflow-x-auto border rounded-lg">
         <table class="min-w-full text-sm">
           <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
-            <tr><th class="p-3">Naam</th><th class="p-3">E-mail</th><th class="p-3">Bericht</th><th class="p-3">Status</th><th class="p-3">Datum</th></tr>
+            <tr>
+              <th class="p-3 text-left">Naam</th>
+              <th class="p-3 text-left">E-mail</th>
+              <th class="p-3 text-left">Bericht</th>
+              <th class="p-3 text-left">Status</th>
+              <th class="p-3 text-left">Datum</th>
+            </tr>
           </thead>
           <tbody id="request-table-body">
-            <tr><td colspan="5" class="text-center text-gray-400 p-4">Aanvragen worden geladen...</td></tr>
+            <tr>
+              <td colspan="5" class="text-center text-gray-400 p-4">
+                Aanvragen worden geladen...
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -125,24 +171,41 @@
     <!-- ⭐ REVIEWS -->
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
       <h2 class="text-lg font-semibold text-gray-800 mb-4">⭐ Reviews</h2>
+      <p class="text-gray-500 text-sm mb-4">
+        Bedrijven kunnen reviews alleen melden; een beheerder beoordeelt de melding.
+      </p>
+
       <div class="overflow-x-auto border rounded-lg">
         <table class="min-w-full text-sm">
           <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
-            <tr><th class="p-3">Naam</th><th class="p-3">Beoordeling</th><th class="p-3">Bericht</th><th class="p-3">Datum</th><th class="p-3">Actie</th></tr>
+            <tr>
+              <th class="p-3 text-left">Naam</th>
+              <th class="p-3 text-left">Beoordeling</th>
+              <th class="p-3 text-left">Bericht</th>
+              <th class="p-3 text-left">Datum</th>
+              <th class="p-3 text-left">Actie</th>
+            </tr>
           </thead>
           <tbody id="review-table-body">
-            <tr><td colspan="5" class="text-center text-gray-400 p-4">Reviews worden geladen...</td></tr>
+            <tr>
+              <td colspan="5" class="text-center text-gray-400 p-4">
+                Reviews worden geladen...
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
     </section>
+
   </main>
 
+  <!-- FOOTER -->
   <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Correct pad zonder 'frontend/' -->
-  <script src="js/dashboard.min.js?v=20251103"></script>
+  <!-- JOUW DASHBOARD-JS (uit frontend/js/) -->
+  <!-- let op: dit pad werkt omdat Render publiceert vanuit /frontend -->
+  <script src="js/dashboard.min.js?v=20251103" type="application/javascript"></script>
 </body>
 </html>
