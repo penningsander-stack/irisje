@@ -3,6 +3,7 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 const ENDPOINT_GET_REPORTED = `${API_BASE}/admin/reported`;
 const ENDPOINT_RESOLVE_REPORTED = (id) => `${API_BASE}/admin/resolve/${id}`;
 const ENDPOINT_GET_LOGS = `${API_BASE}/admin/logs`;
+const ENDPOINT_GET_CLAIMS = `${API_BASE}/claims/all`; // nieuw
 
 document.addEventListener("DOMContentLoaded", initAdmin);
 
@@ -13,7 +14,7 @@ async function initAdmin() {
   const logsContainer = document.getElementById("logs-container");
   const refreshLogsBtn = document.getElementById("refreshLogsBtn");
 
-  // 🔔 Notificatiecontainer toevoegen (boven tabel)
+  // 🔔 Notificatiecontainer
   const notif = document.createElement("div");
   notif.id = "notif";
   notif.className =
@@ -32,17 +33,19 @@ async function initAdmin() {
     }, 3000);
   }
 
+  // === Buttons ===
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       localStorage.clear();
       window.location.href = "login.html";
     });
   }
-
   if (refreshBtn) refreshBtn.addEventListener("click", loadReportedReviews);
   if (refreshLogsBtn) refreshLogsBtn.addEventListener("click", loadServerLogs);
 
+  // === Init-loads ===
   await loadReportedReviews();
+  await loadClaims();
   await loadServerLogs();
 
   // automatische logverversing
@@ -62,9 +65,7 @@ async function initAdmin() {
     try {
       const res = await fetch(ENDPOINT_GET_REPORTED);
       const data = await res.json();
-
       if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord");
-
       renderTable(data);
       updateStats(data);
     } catch (err) {
@@ -83,7 +84,6 @@ async function initAdmin() {
 
   function renderTable(list) {
     if (!tableBody) return;
-
     if (!list.length) {
       tableBody.innerHTML = `
         <tr>
@@ -175,6 +175,56 @@ async function initAdmin() {
     if (resolvedEl) resolvedEl.textContent = resolved;
   }
 
+  // === CLAIMVERZOEKEN ===
+  async function loadClaims() {
+    const claimTable = document.getElementById("claimTableBody");
+    if (!claimTable) return;
+
+    claimTable.innerHTML = `
+      <tr><td colspan="6" class="text-gray-400 text-center p-4">Claimverzoeken worden geladen...</td></tr>
+    `;
+
+    try {
+      const res = await fetch(ENDPOINT_GET_CLAIMS);
+      const data = await res.json();
+
+      if (!res.ok || !Array.isArray(data)) throw new Error("Ongeldig antwoord");
+
+      if (!data.length) {
+        claimTable.innerHTML = `
+          <tr><td colspan="6" class="text-gray-400 text-center p-4">Geen claimverzoeken gevonden.</td></tr>`;
+        return;
+      }
+
+      claimTable.innerHTML = data
+        .map((c) => {
+          const d = formatDate(c.createdAt);
+          return `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="p-3">${d}</td>
+              <td class="p-3">${esc(c.companyId?.name || "(onbekend)")}</td>
+              <td class="p-3">${esc(c.contactName || "")}</td>
+              <td class="p-3">${esc(c.contactEmail || "")}</td>
+              <td class="p-3">${esc(c.contactPhone || "")}</td>
+              <td class="p-3">
+                <span class="px-2 py-1 rounded text-xs font-medium ${
+                  c.status === "verified"
+                    ? "bg-green-100 text-green-700"
+                    : c.status === "rejected"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-yellow-100 text-yellow-700"
+                }">${c.status}</span>
+              </td>
+            </tr>`;
+        })
+        .join("");
+    } catch (err) {
+      console.error("Fout bij laden claimverzoeken:", err);
+      claimTable.innerHTML = `
+        <tr><td colspan="6" class="text-red-600 text-center p-4">❌ Kon claimverzoeken niet laden.</td></tr>`;
+    }
+  }
+
   // === SERVERLOGS ===
   async function loadServerLogs() {
     if (!logsContainer) return;
@@ -186,15 +236,13 @@ async function initAdmin() {
 
       if (!res.ok || !Array.isArray(logs)) throw new Error("Ongeldig logantwoord");
 
-      // Sorteer nieuwste eerst en pak max 30
       const recentLogs = logs.slice(-30).reverse();
-
       logsContainer.innerHTML = recentLogs
         .map(
           (l) =>
-            `<div class="mb-1"><span class="text-gray-500">${formatDate(l.timestamp || l.date)}:</span> ${esc(
-              l.message || l
-            )}</div>`
+            `<div class="mb-1"><span class="text-gray-500">${formatDate(
+              l.timestamp || l.date
+            )}:</span> ${esc(l.message || l)}</div>`
         )
         .join("");
 
