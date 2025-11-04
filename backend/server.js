@@ -52,10 +52,11 @@ app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
-app.use("/api/seed", require("./routes/seed"));
 app.use("/api/status", require("./routes/status"));
-app.use('/api/claims', require('./routes/claims'));
+app.use("/api/claims", require("./routes/claims"));
 
+// 🌸 Tijdelijke seed-route om echte bedrijven te importeren
+app.use("/api/seed", require("./routes/seed"));
 
 // === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
@@ -80,9 +81,6 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 
 // === ✅ Statische frontend-bestanden ===
 app.use(express.static(path.join(__dirname, "../frontend")));
-
-
-
 
 // === 🪄 HTML-head & lazyload + status-enhanced injectie ===
 app.use(/.*\.html$/, (req, res, next) => {
@@ -117,7 +115,6 @@ app.use(/.*\.html$/, (req, res, next) => {
 
   res.type("html").send(html);
 });
-
 
 // === ✅ Frontend fallback (alle niet-API routes) ===
 app.get(/^\/(?!api\/).*/, (req, res) => {
