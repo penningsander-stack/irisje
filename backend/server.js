@@ -58,6 +58,9 @@ app.use("/api/claims", require("./routes/claims"));
 // 🌸 Tijdelijke seed-route om echte bedrijven te importeren
 app.use("/api/seed", require("./routes/seed"));
 
+// 🌍 NIEUW: Google Places Importer
+app.use("/api/importer", require("./routes/importer_places"));
+
 // === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
   addLog("API test uitgevoerd", "debug");
