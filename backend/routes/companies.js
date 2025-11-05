@@ -83,14 +83,19 @@ router.get("/byOwner/:email", async (req, res) => {
   }
 });
 
-// ✅ Bedrijf ophalen via slug (zonder reviews in de response)
+// ✅ Bedrijf ophalen via slug (inclusief reviews)
 router.get("/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
     const company = await Company.findOne({ slug }).lean();
     if (!company) return res.status(404).json({ message: "Bedrijf niet gevonden" });
 
-    // Netjes fallback-teksten
+    // Reviews ophalen
+    const reviews = await Review.find({ company: company._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Fallbackteksten
     const fallbackDescription = company.description?.trim()
       ? company.description
       : "Nog geen beschrijving beschikbaar.";
@@ -112,9 +117,16 @@ router.get("/:slug", async (req, res) => {
       website: fallbackWebsite,
       categories: company.categories || [],
       avgRating: company.avgRating || 0,
-      reviewCount: company.reviewCount || 0,
+      reviewCount: company.reviewCount || reviews.length,
       isVerified: company.isVerified || false,
       logoUrl: company.logoUrl || "",
+      // Nieuw: reviews toegevoegd aan response
+      reviews: reviews.map((r) => ({
+        name: r.name || "Anoniem",
+        rating: r.rating || 0,
+        message: r.message || "",
+        date: r.createdAt || r.date || null,
+      })),
     });
   } catch (error) {
     console.error("Fout bij ophalen bedrijf:", error);
