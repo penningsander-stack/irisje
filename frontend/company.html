@@ -8,7 +8,7 @@
   <meta name="description" content="Bekijk bedrijfsinformatie, reviews en verstuur direct een aanvraag via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251105" />
+  <link rel="stylesheet" href="style.css?v=20251106" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -29,17 +29,14 @@
   <main class="flex-grow">
     <section id="company-section" class="max-w-5xl mx-auto p-6 md:p-10">
       <div id="company-info" class="bg-white shadow rounded-2xl p-6 md:p-10 animate-fadeIn">
+
         <h1 id="company-name" class="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">Bedrijfsnaam</h1>
         <p id="company-tagline" class="text-gray-600 mb-4"></p>
 
         <!-- 📍 Contactinformatie -->
         <div class="space-y-2 mb-6 text-gray-700 text-sm">
-          <p id="company-address" class="flex items-center gap-2">
-            <span>📍</span><span>Adres niet opgegeven.</span>
-          </p>
-          <p id="company-phone" class="flex items-center gap-2">
-            <span>☎</span><span>Geen telefoonnummer beschikbaar.</span>
-          </p>
+          <p id="company-address" class="flex items-center gap-2"><span>📍</span><span>Adres niet opgegeven.</span></p>
+          <p id="company-phone" class="flex items-center gap-2"><span>☎</span><span>Geen telefoonnummer beschikbaar.</span></p>
           <p id="company-website-wrapper" class="flex items-center gap-2 hidden">
             <span>🌐</span><a id="company-website" href="#" target="_blank" class="text-indigo-600 hover:underline break-all"></a>
           </p>
@@ -84,8 +81,7 @@
 
             <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
 
-            <button type="submit" id="review-submit"
-              class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
               Verstuur beoordeling
             </button>
           </form>
@@ -116,171 +112,132 @@
   </footer>
 
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    // losse helper om reviews op te halen via aparte endpoint
-    async function fetchReviewsForSlug(slug) {
-      try {
-        const res = await fetch(`${API_BASE}/reviews?slug=${encodeURIComponent(slug)}`);
-        if (!res.ok) return [];
-        const data = await res.json();
-        // jouw /api/reviews geeft álle reviews terug → we filteren hier op slug (als die mee komt)
-        if (Array.isArray(data)) {
-          return data.filter(r => r.companySlug === slug);
-        }
-        return [];
-      } catch (e) {
-        console.warn("Reviews ophalen mislukt:", e);
-        return [];
-      }
+  // 🟢 Render de reviews in het DOM
+  function renderReviews(reviews) {
+    const container = document.getElementById("reviews-container");
+    if (!container) return;
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
+      return;
     }
+    container.innerHTML = reviews.map(r => {
+      const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
+      return `
+        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
+          <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
+          <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
+        </div>`;
+    }).join("");
+  }
 
-    function renderReviews(reviews) {
+  // 🟢 Ophalen van bedrijfsinfo + reviews
+  async function loadCompany() {
+    const slug = new URLSearchParams(window.location.search).get("slug");
+    if (!slug) return;
+
+    const el = id => document.getElementById(id);
+
+    try {
+      const res = await fetch(`${API_BASE}/companies/${slug}`);
+      if (!res.ok) throw new Error("Serverfout bij ophalen bedrijf");
+      const data = await res.json();
+
+      el("company-name").textContent = data.name || "Onbekend bedrijf";
+      el("company-tagline").textContent = data.tagline || "";
+      el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
+      el("company-address").lastElementChild.textContent = data.address || "Adres niet opgegeven.";
+      el("company-phone").lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
+
+      if (data.website) {
+        const link = el("company-website");
+        const wrap = el("company-website-wrapper");
+        link.href = data.website;
+        link.textContent = data.website;
+        wrap.classList.remove("hidden");
+      }
+
+      if (data.avgRating && data.avgRating > 0) {
+        el("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
+        el("company-reviews").textContent = `(${data.reviewCount || 0} reviews)`;
+      } else {
+        el("company-rating").textContent = "Nog geen beoordelingen";
+        el("company-reviews").textContent = "";
+      }
+
+      // Reviews via nieuwe endpoint
+      const revRes = await fetch(`${API_BASE}/reviews/slug/${slug}`);
+      const revData = await revRes.json();
+      renderReviews(revData.reviews || []);
+
+      setupReviewForm(slug);
+
+    } catch (err) {
+      console.error("❌ Fout bij laden bedrijf:", err);
       const container = document.getElementById("reviews-container");
-      if (!container) return;
-
-      if (!reviews || reviews.length === 0) {
-        container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
-        return;
-      }
-
-      container.innerHTML = reviews.map(r => {
-        const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
-        return `
-          <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
-            <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
-            <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
-          </div>
-        `;
-      }).join("");
+      if (container)
+        container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
     }
+  }
 
-    async function loadCompany() {
-      const slug = new URLSearchParams(window.location.search).get("slug");
-      if (!slug) return;
+  // 🟢 Nieuwe review verzenden
+  function setupReviewForm(slug) {
+    const form = document.getElementById("review-form");
+    const statusEl = document.getElementById("review-status");
+    const btn = document.getElementById("review-submit");
+
+    if (!form) return;
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      btn.disabled = true;
+      statusEl.textContent = "⏳ Beoordeling wordt verzonden...";
+      statusEl.className = "text-gray-500 text-sm mt-2";
+
+      const payload = {
+        companySlug: slug,
+        name: form.querySelector("#review-name").value.trim(),
+        email: form.querySelector("#review-email").value.trim(),
+        rating: Number(form.querySelector("#review-rating").value),
+        message: form.querySelector("#review-message").value.trim(),
+      };
 
       try {
-        const res = await fetch(`${API_BASE}/companies/${slug}`);
-        if (!res.ok) throw new Error("Serverfout");
+        const res = await fetch(`${API_BASE}/reviews`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
         const data = await res.json();
 
+        if (!data.ok) throw new Error(data.message || "Onbekende fout");
+
+        statusEl.textContent = "✅ Bedankt voor je beoordeling!";
+        statusEl.className = "text-green-600 text-sm mt-2";
+        form.reset();
+
+        // vernieuw de reviews direct
+        renderReviews(data.reviews || []);
         const el = id => document.getElementById(id);
-
-        // bedrijfsinfo
-        el("company-name").textContent = data.name || "Onbekend bedrijf";
-        el("company-tagline").textContent = data.tagline || "";
-        el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
-
-        const addr = el("company-address");
-        if (addr && addr.lastElementChild) {
-          addr.lastElementChild.textContent = data.address || "Adres niet opgegeven.";
-        }
-
-        const phone = el("company-phone");
-        if (phone && phone.lastElementChild) {
-          phone.lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
-        }
-
-        if (data.website) {
-          const wrap = el("company-website-wrapper");
-          const link = el("company-website");
-          link.href = data.website;
-          link.textContent = data.website;
-          wrap.classList.remove("hidden");
-        }
-
-        // sterren
-        if (data.avgRating && data.avgRating > 0) {
+        if (data.avgRating) {
           el("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
-          el("company-reviews").textContent = `(${data.reviewCount || 0} reviews)`;
-        } else {
-          el("company-rating").textContent = "Nog geen beoordelingen";
-          el("company-reviews").textContent = "";
+          el("company-reviews").textContent = `(${data.reviewCount} reviews)`;
         }
 
-        // reviews: als backend ze niet meestuurt, haal los op
-        if (Array.isArray(data.reviews) && data.reviews.length) {
-          renderReviews(data.reviews);
-        } else {
-          const fresh = await fetchReviewsForSlug(slug);
-          renderReviews(fresh);
-        }
-
-        setupReviewForm(slug);
-
+        setTimeout(() => (statusEl.textContent = ""), 3000);
       } catch (err) {
-        console.error("Fout bij laden:", err);
-        const container = document.getElementById("reviews-container");
-        if (container) {
-          container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
-        }
+        console.error("❌ Fout bij versturen review:", err);
+        statusEl.textContent = "❌ Er ging iets mis bij het verzenden van je beoordeling.";
+        statusEl.className = "text-red-600 text-sm mt-2";
+      } finally {
+        btn.disabled = false;
       }
-    }
+    });
+  }
 
-    function setupReviewForm(slug) {
-      const form = document.getElementById("review-form");
-      const statusEl = document.getElementById("review-status");
-      const submitBtn = document.getElementById("review-submit");
-      if (!form) return;
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        statusEl.textContent = "⏳ Beoordeling wordt verzonden...";
-        statusEl.className = "text-gray-500 text-sm mt-2";
-        submitBtn.disabled = true;
-
-        const payload = {
-          companySlug: slug,
-          name: form.querySelector("#review-name").value.trim(),
-          email: form.querySelector("#review-email").value.trim(),
-          rating: Number(form.querySelector("#review-rating").value),
-          message: form.querySelector("#review-message").value.trim(),
-        };
-
-        try {
-          const res = await fetch(`${API_BASE}/reviews`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          // server kan HTML teruggeven → eerst content-type checken
-          const ct = res.headers.get("content-type") || "";
-          if (!ct.includes("application/json")) {
-            const text = await res.text();
-            throw new Error("Server gaf geen JSON terug: " + text.slice(0, 80));
-          }
-
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.message || "Onbekende fout");
-          }
-
-          statusEl.textContent = "✅ Bedankt voor je beoordeling!";
-          statusEl.className = "text-green-600 text-sm mt-2";
-          form.reset();
-
-          // na POST opnieuw ophalen en tonen
-          const fresh = await fetchReviewsForSlug(slug);
-          renderReviews(fresh);
-
-          setTimeout(() => {
-            statusEl.textContent = "";
-          }, 3000);
-
-        } catch (err) {
-          console.error("Fout bij versturen review:", err);
-          statusEl.textContent = "❌ Er ging iets mis bij het verzenden van je beoordeling.";
-          statusEl.className = "text-red-600 text-sm mt-2";
-        } finally {
-          submitBtn.disabled = false;
-        }
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", loadCompany);
+  document.addEventListener("DOMContentLoaded", loadCompany);
   </script>
-
 </body>
 </html>
