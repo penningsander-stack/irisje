@@ -113,84 +113,86 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-<script>
-const API_BASE = "https://irisje-backend.onrender.com/api";
+  <!-- ✅ SCRIPT GEFIXT -->
+  <script>
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-async function loadCompany() {
-  const slug = new URLSearchParams(window.location.search).get("slug");
-  if (!slug) return;
+  async function loadCompany() {
+    const slug = new URLSearchParams(window.location.search).get("slug");
+    if (!slug) return;
 
-  try {
-    const res = await fetch(`${API_BASE}/companies/${slug}`);
-    if (!res.ok) throw new Error("Serverfout");
-    const data = await res.json();
+    try {
+      const res = await fetch(`${API_BASE}/companies/${slug}`);
+      if (!res.ok) throw new Error("Serverfout");
+      const data = await res.json();
+      const el = id => document.getElementById(id);
 
-    // --- veiligheid: controleer of elementen bestaan ---
-    const el = id => document.getElementById(id);
+      // --- bedrijfsinfo ---
+      if (el("company-name")) el("company-name").textContent = data.name || "Onbekend bedrijf";
+      if (el("company-tagline")) el("company-tagline").textContent = data.tagline || "";
+      if (el("company-description")) el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
 
-    // --- bedrijfsinfo ---
-    el("company-name")?.textContent = data.name || "Onbekend bedrijf";
-    el("company-tagline")?.textContent = data.tagline || "";
-    el("company-description")?.textContent = data.description || "Nog geen beschrijving beschikbaar.";
-    el("company-address")?.lastElementChild && (el("company-address").lastElementChild.textContent = data.address || "Adres niet opgegeven.");
-    el("company-phone")?.lastElementChild && (el("company-phone").lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.");
+      const addrEl = el("company-address");
+      if (addrEl && addrEl.lastElementChild)
+        addrEl.lastElementChild.textContent = data.address || "Adres niet opgegeven.";
 
-    // 🌐 Website tonen
-    if (data.website) {
-      const wrapper = el("company-website-wrapper");
-      const link = el("company-website");
-      if (wrapper && link) {
-        link.href = data.website;
-        link.textContent = data.website;
-        wrapper.classList.remove("hidden");
+      const phoneEl = el("company-phone");
+      if (phoneEl && phoneEl.lastElementChild)
+        phoneEl.lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
+
+      // 🌐 Website tonen
+      if (data.website) {
+        const wrapper = el("company-website-wrapper");
+        const link = el("company-website");
+        if (wrapper && link) {
+          link.href = data.website;
+          link.textContent = data.website;
+          wrapper.classList.remove("hidden");
+        }
       }
-    }
 
-    // ⭐ Beoordeling
-    const ratingEl = el("company-rating");
-    const countEl = el("company-reviews");
-    if (ratingEl && countEl) {
-      if (data.avgRating && data.avgRating > 0) {
-        ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
-        countEl.textContent = `(${data.reviewCount || 0} reviews)`;
-      } else {
-        ratingEl.textContent = "Nog geen beoordelingen";
-        countEl.textContent = "";
+      // ⭐ Beoordeling
+      const ratingEl = el("company-rating");
+      const countEl = el("company-reviews");
+      if (ratingEl && countEl) {
+        if (data.avgRating && data.avgRating > 0) {
+          ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
+          countEl.textContent = `(${data.reviewCount || 0} reviews)`;
+        } else {
+          ratingEl.textContent = "Nog geen beoordelingen";
+          countEl.textContent = "";
+        }
       }
+
+      // 💬 Reviews
+      const container = el("reviews-container");
+      const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+      if (container) {
+        if (reviews.length === 0) {
+          container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
+        } else {
+          container.innerHTML = reviews.map(r => {
+            const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
+            return `
+              <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
+                <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
+                <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
+              </div>`;
+          }).join("");
+        }
+      }
+
+    } catch (err) {
+      console.error("Fout bij laden:", err);
+      const container = document.getElementById("reviews-container");
+      if (container)
+        container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
     }
-
-    // 💬 Reviews
-    const container = el("reviews-container");
-    const reviews = data.reviews || [];
-    if (!container) return;
-
-    if (reviews.length === 0) {
-      container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
-    } else {
-      container.innerHTML = reviews.map(r => {
-        const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
-        return `
-          <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
-            <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
-            <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
-          </div>`;
-      }).join("");
-    }
-
-  } catch (err) {
-    console.error("Fout bij laden:", err);
-    const container = document.getElementById("reviews-container");
-    if (container)
-      container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
   }
-}
 
-document.addEventListener("DOMContentLoaded", loadCompany);
-</script>
-
-
-
+  document.addEventListener("DOMContentLoaded", loadCompany);
+  </script>
 
 </body>
 </html>
