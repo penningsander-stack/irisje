@@ -83,19 +83,20 @@ router.get("/byOwner/:email", async (req, res) => {
   }
 });
 
-// ✅ Bedrijf ophalen via slug (inclusief reviews)
+// ✅ Bedrijf ophalen via slug (inclusief gekoppelde reviews)
 router.get("/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
     const company = await Company.findOne({ slug }).lean();
-    if (!company) return res.status(404).json({ message: "Bedrijf niet gevonden" });
 
-    // Reviews ophalen
-    const reviews = await Review.find({ company: company._id })
-      .sort({ createdAt: -1 })
-      .lean();
+    if (!company) {
+      return res.status(404).json({ message: "Bedrijf niet gevonden" });
+    }
 
-    // Fallbackteksten
+    // Alle reviews van dit bedrijf ophalen
+    const reviews = await Review.find({ company: company._id }).sort({ createdAt: -1 }).lean();
+
+    // ✨ Nette fallback-teksten
     const fallbackDescription = company.description?.trim()
       ? company.description
       : "Nog geen beschrijving beschikbaar.";
@@ -105,6 +106,9 @@ router.get("/:slug", async (req, res) => {
     const fallbackWebsite = company.website?.trim()
       ? company.website
       : "";
+    const fallbackPhone = company.phone?.trim()
+      ? company.phone
+      : "Geen telefoonnummer beschikbaar.";
 
     res.json({
       _id: company._id,
@@ -113,14 +117,13 @@ router.get("/:slug", async (req, res) => {
       description: fallbackDescription,
       address: fallbackAddress,
       city: company.city || "",
-      phone: company.phone?.trim() || "Geen telefoonnummer beschikbaar.",
+      phone: fallbackPhone,
       website: fallbackWebsite,
       categories: company.categories || [],
       avgRating: company.avgRating || 0,
       reviewCount: company.reviewCount || reviews.length,
       isVerified: company.isVerified || false,
       logoUrl: company.logoUrl || "",
-      // Nieuw: reviews toegevoegd aan response
       reviews: reviews.map((r) => ({
         name: r.name || "Anoniem",
         rating: r.rating || 0,
