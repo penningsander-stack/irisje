@@ -54,7 +54,6 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/status", require("./routes/status"));
 app.use("/api/claims", require("./routes/claims"));
-app.use("/api/importer/batch", require("./routes/importer_batch"));
 
 // 🌸 Tijdelijke seed-route om echte bedrijven te importeren
 app.use("/api/seed", require("./routes/seed"));
