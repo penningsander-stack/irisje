@@ -8,92 +8,67 @@
   <meta name="description" content="Vraag gratis en vrijblijvend een offerte aan bij betrouwbare bedrijven via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- ✅ Lokale Tailwind build -->
-  <link rel="stylesheet" href="style.css?v=20251101" />
+  <link rel="stylesheet" href="style.css?v=20251106" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
   <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-5 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <a href="index.html" class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition">
-        Irisje.nl
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        <span>Irisje.nl</span>
       </a>
-      <a href="results.html" class="text-sm underline hover:text-gray-100 transition">
-        ← Terug naar bedrijven
-      </a>
+      <a href="results.html" class="text-sm text-gray-600 hover:text-indigo-600 transition">← Terug naar bedrijven</a>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-3xl mx-auto px-4 py-10 space-y-10" role="main">
+  <main class="flex-1 max-w-3xl mx-auto px-4 py-12 space-y-10">
     <!-- Intro -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 text-center">
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 text-center">
       <h1 class="text-2xl font-bold text-indigo-700 mb-3">Vraag een vrijblijvende offerte aan</h1>
-      <p class="text-gray-600 text-sm leading-relaxed">
+      <p class="text-gray-600 text-sm leading-relaxed max-w-2xl mx-auto">
         Vul hieronder je gegevens en een korte beschrijving van je klus in.
-        Tot vijf bedrijven kunnen vrijblijvend contact opnemen.
+        Maximaal vijf bedrijven nemen vrijblijvend contact met je op.
       </p>
     </section>
 
     <!-- Formulier -->
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8" aria-labelledby="requestTitle">
-      <h2 id="requestTitle" class="text-lg font-semibold text-indigo-700 mb-4 text-center">📝 Aanvraagformulier</h2>
+    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8">
+      <h2 class="text-lg font-semibold text-indigo-700 mb-4 text-center">📝 Aanvraagformulier</h2>
 
       <form id="requestForm" class="space-y-4">
-        <!-- Verborgen honeypot tegen spam -->
+        <!-- Honeypot -->
         <input type="text" id="hp_field" name="hp_field" class="hidden" tabindex="-1" autocomplete="off" />
 
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Naam</label>
-          <input
-            id="name"
-            type="text"
-            placeholder="Naam"
-            required
-            autocomplete="name"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
+          <input id="name" type="text" placeholder="Naam" required autocomplete="name"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
 
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="E-mailadres"
-            required
-            autocomplete="email"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
+          <input id="email" type="email" placeholder="E-mailadres" required autocomplete="email"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
 
         <div>
           <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Plaats</label>
-          <input
-            id="city"
-            type="text"
-            placeholder="Plaats"
-            autocomplete="address-level2"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
+          <input id="city" type="text" placeholder="Plaats (optioneel)" autocomplete="address-level2"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         </div>
 
         <div>
           <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Bericht</label>
-          <textarea
-            id="message"
-            placeholder="Beschrijf je klus of vraag..."
-            required
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none h-32"
-          ></textarea>
+          <textarea id="message" placeholder="Beschrijf je klus of vraag..." required
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none h-32"></textarea>
         </div>
 
-        <button
-          type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition"
-        >
+        <button type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Verstuur aanvraag
         </button>
 
@@ -107,57 +82,57 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ JS -->
+  <!-- SCRIPT -->
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    document.getElementById("requestForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById("statusMsg");
-      msg.textContent = "Bezig met verzenden...";
-      msg.className = "text-gray-500 text-center text-sm";
+  document.getElementById("requestForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("statusMsg");
+    msg.textContent = "⏳ Bezig met verzenden...";
+    msg.className = "text-gray-500 text-center text-sm";
+    const hp = document.getElementById("hp_field").value;
+    if (hp) return; // botdetectie
 
-      const hp = document.getElementById("hp_field").value;
-      if (hp) return; // Stop bots
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const city = document.getElementById("city").value.trim();
+    const message = document.getElementById("message").value.trim();
 
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const city = document.getElementById("city").value.trim();
-      const message = document.getElementById("message").value.trim();
-
-      try {
-        const res = await fetch(`${API_BASE}/publicRequests`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, city, message }),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Kon aanvraag niet versturen.");
-
-        msg.textContent = "✅ Aanvraag succesvol verzonden!";
-        msg.className = "text-green-600 text-center text-sm";
-        e.target.reset();
-      } catch (err) {
-        console.error("Fout bij verzenden:", err);
-        msg.textContent = "❌ Er ging iets mis bij het verzenden.";
-        msg.className = "text-red-600 text-center text-sm";
-      }
-    });
-
-    // Fade-in animatie
-    document.addEventListener("DOMContentLoaded", () => {
-      const blocks = document.querySelectorAll("header, main section, footer");
-      blocks.forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        setTimeout(() => {
-          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        }, 150 * i);
+    try {
+      const res = await fetch(`${API_BASE}/publicRequests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, city, message }),
       });
+
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) throw new Error("Geen JSON");
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.message || "Verzenden mislukt");
+
+      msg.textContent = "✅ Aanvraag succesvol verzonden! We nemen spoedig contact op.";
+      msg.className = "text-green-600 text-center text-sm";
+      e.target.reset();
+    } catch (err) {
+      console.error("Fout bij verzenden:", err);
+      msg.textContent = "❌ Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
+      msg.className = "text-red-600 text-center text-sm";
+    }
+  });
+
+  // Fade-in animatie
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(12px)";
+      setTimeout(() => {
+        el.style.transition = "opacity .8s ease, transform .8s ease";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      }, 150 * i);
     });
+  });
   </script>
 </body>
 </html>
