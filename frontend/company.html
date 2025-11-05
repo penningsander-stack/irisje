@@ -114,62 +114,64 @@
   </footer>
 
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    async function loadCompany() {
-      const params = new URLSearchParams(window.location.search);
-      const slug = params.get("slug");
-      if (!slug) return;
+async function loadCompany() {
+  const slug = new URLSearchParams(window.location.search).get("slug");
+  if (!slug) return;
 
-      try {
-        const res = await fetch(`${API_BASE}/companies/${slug}`);
-        const data = await res.json();
-        if (!data || !data._id) return;
+  try {
+    const res = await fetch(`${API_BASE}/companies/${slug}`);
+    const data = await res.json();
+    if (!data || !data.name) throw new Error("Geen data");
 
-        document.getElementById("company-name").textContent = data.name || "Onbekend bedrijf";
-        document.getElementById("company-tagline").textContent = data.tagline || "";
-        document.getElementById("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
-        document.getElementById("company-address").innerHTML = `📍 ${data.address || "Adres niet opgegeven."}`;
-        document.getElementById("company-phone").innerHTML = `☎ ${data.phone || "Geen telefoonnummer beschikbaar."}`;
-
-        // 🌐 Website
-        if (data.website) {
-          const wrap = document.getElementById("company-website-wrapper");
-          const link = document.getElementById("company-website");
-          link.href = data.website;
-          link.textContent = data.website.replace(/^https?:\/\//, "");
-          wrap.classList.remove("hidden");
-        }
-
-        // 📞 Bel- en mailknoppen
-        const buttons = document.getElementById("action-buttons");
-        buttons.classList.remove("hidden");
-
-        if (data.phone && data.phone.trim() && !data.phone.includes("Geen")) {
-          const callBtn = document.getElementById("call-btn");
-          callBtn.href = `tel:${data.phone.replace(/\s+/g, "")}`;
-          callBtn.classList.remove("hidden");
-        }
-
-        if (data.email && data.email.includes("@")) {
-          const mailBtn = document.getElementById("email-btn");
-          mailBtn.href = `mailto:${data.email}`;
-          mailBtn.classList.remove("hidden");
-        }
-
-        // ⭐ Beoordeling
-        if (data.avgRating && data.avgRating > 0) {
-          document.getElementById("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
-          document.getElementById("company-reviews").textContent = `(${data.reviewCount || 0} reviews)`;
-        } else {
-          document.getElementById("company-rating").textContent = "Nog geen beoordelingen";
-        }
-      } catch (err) {
-        console.error("Fout bij laden bedrijf:", err);
-      }
+    // --- bedrijfsinfo invullen ---
+    document.getElementById("company-name").textContent = data.name;
+    document.getElementById("company-tagline").textContent = data.tagline || "";
+    document.getElementById("company-description").textContent = data.description;
+    document.getElementById("company-address").textContent = data.address;
+    document.getElementById("company-city").textContent = data.city;
+    if (data.website) {
+      const link = document.getElementById("company-website");
+      link.href = data.website;
+      link.classList.remove("hidden");
     }
 
-    document.addEventListener("DOMContentLoaded", loadCompany);
-  </script>
+    const ratingEl = document.getElementById("company-rating");
+    const reviewCountEl = document.getElementById("company-reviews");
+    if (data.avgRating > 0) {
+      ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
+      reviewCountEl.textContent = `(${data.reviewCount} reviews)`;
+    } else {
+      ratingEl.textContent = "Nog geen beoordelingen";
+      reviewCountEl.textContent = "";
+    }
+
+    // --- reviews tonen ---
+    const container = document.getElementById("reviews-container");
+    if (!data.reviews || !data.reviews.length) {
+      container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
+    } else {
+      container.innerHTML = data.reviews.map(r => {
+        const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
+        return `
+          <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating)}</div>
+            <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message}</p>
+            <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
+          </div>`;
+      }).join("");
+    }
+
+  } catch (err) {
+    document.getElementById("reviews-container").innerHTML =
+      "<p class='text-red-600'>❌ Fout bij laden bedrijf of reviews.</p>";
+    console.error("Fout:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadCompany);
+</script>
+
 </body>
 </html>
