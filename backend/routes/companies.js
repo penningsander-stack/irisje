@@ -66,7 +66,6 @@ router.get("/byOwner/:email", async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email).toLowerCase();
 
-    // Beheerder ziet alles
     if (email === "info@irisje.nl") {
       const allCompanies = await Company.find().lean();
       return res.json(allCompanies);
@@ -84,19 +83,14 @@ router.get("/byOwner/:email", async (req, res) => {
   }
 });
 
-// ✅ Bedrijf ophalen via slug (met reviews)
+// ✅ Bedrijf ophalen via slug (zonder reviews in de response)
 router.get("/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
     const company = await Company.findOne({ slug }).lean();
+    if (!company) return res.status(404).json({ message: "Bedrijf niet gevonden" });
 
-    if (!company) {
-      return res.status(404).json({ message: "Bedrijf niet gevonden" });
-    }
-
-    const reviews = await Review.find({ company: company._id }).lean();
-
-    // ✨ Nette fallback-teksten
+    // Netjes fallback-teksten
     const fallbackDescription = company.description?.trim()
       ? company.description
       : "Nog geen beschrijving beschikbaar.";
@@ -108,28 +102,19 @@ router.get("/:slug", async (req, res) => {
       : "";
 
     res.json({
-      ok: true,
-      company: {
-        _id: company._id,
-        name: company.name,
-        tagline: company.tagline || "",
-        description: fallbackDescription,
-        address: fallbackAddress,
-        city: company.city || "",
-        phone: company.phone || "Geen telefoonnummer beschikbaar.",
-        website: fallbackWebsite,
-        categories: company.categories || [],
-        avgRating: company.avgRating || 0,
-        reviewCount: company.reviewCount || reviews.length,
-        isVerified: company.isVerified || false,
-        logoUrl: company.logoUrl || "",
-      },
-      reviews: reviews.map((r) => ({
-        name: r.name,
-        rating: r.rating,
-        message: r.message,
-        date: r.date,
-      })),
+      _id: company._id,
+      name: company.name,
+      tagline: company.tagline || "",
+      description: fallbackDescription,
+      address: fallbackAddress,
+      city: company.city || "",
+      phone: company.phone?.trim() || "Geen telefoonnummer beschikbaar.",
+      website: fallbackWebsite,
+      categories: company.categories || [],
+      avgRating: company.avgRating || 0,
+      reviewCount: company.reviewCount || 0,
+      isVerified: company.isVerified || false,
+      logoUrl: company.logoUrl || "",
     });
   } catch (error) {
     console.error("Fout bij ophalen bedrijf:", error);
