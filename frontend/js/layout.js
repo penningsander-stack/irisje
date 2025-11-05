@@ -1,47 +1,36 @@
 // frontend/js/layout.js
+
 document.addEventListener("DOMContentLoaded", () => {
-  const headerHTML = `
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
-      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold leading-none">I</span>
-        <span class="tracking-tight">Irisje.nl</span>
-      </a>
-      <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
-        <a href="results.html" class="hover:text-indigo-600 transition">Bedrijven</a>
-        <a href="login.html" class="hover:text-indigo-600 transition">Inloggen</a>
-      </nav>
-      <a href="login.html" class="sm:hidden text-xs font-medium text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5">
-        Inloggen
-      </a>
-    </div>
-  </header>`;
-
-  const footerHTML = `
-  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 mt-auto">
-    © ${new Date().getFullYear()} Irisje.nl – Alle rechten voorbehouden
-  </footer>`;
-
-  // Injecteer header bovenaan body (voor het eerste <main>-element)
-  if (!document.querySelector("header")) {
-    const main = document.querySelector("main") || document.body.firstChild;
-    document.body.insertBefore(document.createRange().createContextualFragment(headerHTML), main);
-  }
-
-  // Voeg footer toe als die nog niet bestaat
-  if (!document.querySelector("footer")) {
-    document.body.appendChild(document.createRange().createContextualFragment(footerHTML));
-  }
-
-  // Voeg fade-in animatie toe aan belangrijke secties
-  const blocks = document.querySelectorAll("header, main section, footer");
-  blocks.forEach((el, i) => {
-    el.style.opacity = "0";
-    el.style.transform = "translateY(12px)";
+  // 🌈 Fade-in animatie voor alle secties
+  const sections = document.querySelectorAll("header, main section, footer");
+  sections.forEach((el, i) => {
     setTimeout(() => {
-      el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
+      el.classList.add("fade-visible");
     }, 150 * i);
   });
+
+  // 💡 Service worker update-banner
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data?.type === "NEW_VERSION") {
+        const banner = document.createElement("div");
+        banner.textContent = "💡 Nieuwe versie geladen – klik om te vernieuwen";
+        banner.className = "fixed bottom-4 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm shadow-lg cursor-pointer z-[9999]";
+        banner.onclick = () => location.reload();
+        document.body.appendChild(banner);
+      }
+    });
+  }
+
+  // 🔝 Sticky header schaduw bij scroll
+  const header = document.querySelector("header");
+  if (header) {
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 10) {
+        header.classList.add("shadow-md");
+      } else {
+        header.classList.remove("shadow-md");
+      }
+    });
+  }
 });
