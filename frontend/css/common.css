@@ -1,0 +1,44 @@
+/* frontend/css/common.css */
+
+/* === Basisfont & kleuren === */
+body {
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+  background-color: #f9fafb;
+}
+
+/* === Links & knoppen === */
+a {
+  transition: color 0.2s ease;
+}
+
+button {
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* === Fade-in fallback === */
+.fade-seq section {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInDashboard 0.9s ease-out forwards;
+}
+
+@keyframes fadeInDashboard {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === Util classes voor formulieren === */
+.input {
+  @apply w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none;
+}
