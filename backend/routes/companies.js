@@ -96,17 +96,28 @@ router.get("/:slug", async (req, res) => {
 
     const reviews = await Review.find({ company: company._id }).lean();
 
+    // ✨ Nette fallback-teksten
+    const fallbackDescription = company.description?.trim()
+      ? company.description
+      : "Nog geen beschrijving beschikbaar.";
+    const fallbackAddress = company.address?.trim()
+      ? company.address
+      : "Adres niet opgegeven.";
+    const fallbackWebsite = company.website?.trim()
+      ? company.website
+      : "";
+
     res.json({
       ok: true,
       company: {
         _id: company._id,
         name: company.name,
-        tagline: company.tagline,
-        description: company.description || "",
-        address: company.address || "",
+        tagline: company.tagline || "",
+        description: fallbackDescription,
+        address: fallbackAddress,
         city: company.city || "",
-        phone: company.phone || "",
-        website: company.website || "",
+        phone: company.phone || "Geen telefoonnummer beschikbaar.",
+        website: fallbackWebsite,
         categories: company.categories || [],
         avgRating: company.avgRating || 0,
         reviewCount: company.reviewCount || reviews.length,
