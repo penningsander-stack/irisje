@@ -34,11 +34,20 @@
 
         <!-- 📍 Contactinformatie -->
         <div class="space-y-2 mb-6 text-gray-700 text-sm">
-          <p id="company-address" class="flex items-center gap-2"><span>📍</span><span class="text-gray-800">Adres niet opgegeven.</span></p>
-          <p id="company-phone" class="flex items-center gap-2"><span>☎</span><span class="text-gray-800">Geen telefoonnummer beschikbaar.</span></p>
+          <p id="company-address" class="flex items-center gap-2"><span>📍</span><span>Adres niet opgegeven.</span></p>
+          <p id="company-phone" class="flex items-center gap-2"><span>☎</span><span>Geen telefoonnummer beschikbaar.</span></p>
           <p id="company-website-wrapper" class="flex items-center gap-2 hidden">
             <span>🌐</span><a id="company-website" href="#" target="_blank" class="text-indigo-600 hover:underline break-all"></a>
           </p>
+        </div>
+
+        <!-- 📞 Knoppen -->
+        <div id="action-buttons" class="flex flex-wrap gap-3 mb-6 hidden">
+          <a id="call-btn" href="#" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition text-sm hidden">📞 Bellen</a>
+          <a id="email-btn" href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition text-sm hidden">✉ Mailen</a>
+          <button id="request-btn" class="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition text-sm">
+            📬 Offerte aanvragen
+          </button>
         </div>
 
         <div class="flex items-center gap-2 mb-4">
@@ -47,12 +56,6 @@
         </div>
 
         <p id="company-description" class="text-gray-700 leading-relaxed mb-6"></p>
-
-        <div class="flex flex-wrap gap-3 mb-6">
-          <button id="request-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition text-sm">
-            📬 Offerte aanvragen
-          </button>
-        </div>
 
         <hr class="my-8" />
 
@@ -128,7 +131,8 @@
         document.getElementById("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
         document.getElementById("company-address").innerHTML = `📍 ${data.address || "Adres niet opgegeven."}`;
         document.getElementById("company-phone").innerHTML = `☎ ${data.phone || "Geen telefoonnummer beschikbaar."}`;
-        
+
+        // 🌐 Website
         if (data.website) {
           const wrap = document.getElementById("company-website-wrapper");
           const link = document.getElementById("company-website");
@@ -137,6 +141,23 @@
           wrap.classList.remove("hidden");
         }
 
+        // 📞 Bel- en mailknoppen
+        const buttons = document.getElementById("action-buttons");
+        buttons.classList.remove("hidden");
+
+        if (data.phone && data.phone.trim() && !data.phone.includes("Geen")) {
+          const callBtn = document.getElementById("call-btn");
+          callBtn.href = `tel:${data.phone.replace(/\s+/g, "")}`;
+          callBtn.classList.remove("hidden");
+        }
+
+        if (data.email && data.email.includes("@")) {
+          const mailBtn = document.getElementById("email-btn");
+          mailBtn.href = `mailto:${data.email}`;
+          mailBtn.classList.remove("hidden");
+        }
+
+        // ⭐ Beoordeling
         if (data.avgRating && data.avgRating > 0) {
           document.getElementById("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
           document.getElementById("company-reviews").textContent = `(${data.reviewCount || 0} reviews)`;
