@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="style.css?v=20251101" />
+  <link rel="stylesheet" href="style.css?v=20251106" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -124,119 +124,130 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ Service Worker met update-banner -->
+  <!-- ✅ SERVICE WORKER -->
   <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js")
-        .then(reg => console.log("✅ Service worker geregistreerd:", reg.scope))
-        .catch(err => console.error("❌ Service worker fout:", err));
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js")
+      .then(reg => console.log("✅ Service worker geregistreerd:", reg.scope))
+      .catch(err => console.error("❌ Service worker fout:", err));
 
-      // 👂 Luister naar nieuwe versies van de service worker
-      navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data?.type === "NEW_VERSION") {
-          const banner = document.createElement("div");
-          banner.textContent = "💡 Nieuwe versie geladen – klik om te vernieuwen";
-          banner.style.cssText = `
-            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-            background: #4F46E5; color: white; padding: 10px 18px;
-            border-radius: 10px; font-size: 14px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 9999;
-          `;
-          banner.onclick = () => location.reload();
-          document.body.appendChild(banner);
-        }
-      });
-    }
+    navigator.serviceWorker.addEventListener("message", event => {
+      if (event.data?.type === "NEW_VERSION") {
+        const banner = document.createElement("div");
+        banner.textContent = "💡 Nieuwe versie geladen – klik om te vernieuwen";
+        banner.style.cssText = `
+          position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+          background: #4F46E5; color: white; padding: 10px 18px;
+          border-radius: 10px; font-size: 14px; cursor: pointer;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 9999;
+        `;
+        banner.onclick = () => location.reload();
+        document.body.appendChild(banner);
+      }
+    });
+  }
   </script>
 
-  <!-- ✅ Functional Scripts -->
+  <!-- ✅ FUNCTIONAL SCRIPT -->
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    document.getElementById("searchForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const category = categoryInput.value.trim();
-      const city = cityInput.value.trim();
-      const resultDiv = document.getElementById("searchResult");
+  // Zoeken via formulier
+  document.getElementById("searchForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const category = categoryInput.value.trim();
+    const city = cityInput.value.trim();
+    const resultDiv = document.getElementById("searchResult");
 
-      if (!category && !city) {
-        resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3'>Voer een categorie of plaats in.</p>";
+    if (!category && !city) {
+      resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3'>Voer een categorie of plaats in.</p>";
+      return;
+    }
+
+    resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
+
+    try {
+      const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`;
+      const res = await fetch(url);
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) throw new Error("Geen JSON");
+      const data = await res.json();
+
+      if (!res.ok || !data.items?.length) {
+        resultDiv.innerHTML = "<p class='text-gray-600 text-sm mt-3'>Geen resultaten gevonden.</p>";
         return;
       }
 
-      resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
-
-      try {
-        const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
-        const data = await res.json();
-        if (!res.ok || !data.items?.length) throw new Error();
-
-        resultDiv.innerHTML = data.items.slice(0, 3).map(c => `
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left mt-3 shadow-sm">
-            <div class="flex items-start justify-between">
-              <div class="font-semibold text-indigo-700 text-sm leading-snug">${c.name || ""}</div>
-              <div class="text-yellow-500 text-xs leading-none">${"⭐".repeat(Math.round(c.avgRating || 0))}</div>
-            </div>
-            <div class="text-gray-600 text-xs mt-1">${c.city || ""}</div>
-            <div class="text-gray-500 text-xs mt-1 leading-relaxed">${c.tagline || ""}</div>
-            <a class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2" href="company.html?slug=${encodeURIComponent(c.slug)}">Bekijk profiel →</a>
+      resultDiv.innerHTML = data.items.slice(0, 3).map(c => `
+        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left mt-3 shadow-sm">
+          <div class="flex items-start justify-between">
+            <div class="font-semibold text-indigo-700 text-sm leading-snug">${c.name || ""}</div>
+            <div class="text-yellow-500 text-xs leading-none">${"⭐".repeat(Math.round(c.avgRating || 0))}</div>
           </div>
-        `).join("") + `
-          <div class="text-center mt-4">
-            <a class="inline-block text-indigo-600 hover:text-indigo-700 text-xs font-semibold" href="results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}">
-              Alle resultaten bekijken →
-            </a>
-          </div>`;
-      } catch {
-        resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3 leading-relaxed'>❌ Er ging iets mis bij het laden van resultaten.</p>";
-      }
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const categories = ["Loodgieter", "CV / Verwarming", "Elektricien", "Schoonmaak", "Slotenmaker", "Glazenwasser"];
-      document.getElementById("popularCategories").innerHTML = categories.map(cat => `
-        <a href="results.html?category=${encodeURIComponent(cat)}"
-           class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
-          <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
-        </a>
-      `).join("");
-
-      const steps = [
-        ["1. Vertel wat je nodig hebt", "Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
-        ["2. Bedrijven reageren", "Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
-        ["3. Jij kiest", "Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
-      ];
-      document.getElementById("howItWorks").innerHTML = steps.map(([title, text]) => `
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
-          <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
-          <p class="text-gray-700 leading-relaxed">${text}</p>
+          <div class="text-gray-600 text-xs mt-1">${c.city || ""}</div>
+          <div class="text-gray-500 text-xs mt-1 leading-relaxed">${c.tagline || ""}</div>
+          <a class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2" href="company.html?slug=${encodeURIComponent(c.slug)}">Bekijk profiel →</a>
         </div>
-      `).join("");
+      `).join("") + `
+        <div class="text-center mt-4">
+          <a class="inline-block text-indigo-600 hover:text-indigo-700 text-xs font-semibold" href="results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}">
+            Alle resultaten bekijken →
+          </a>
+        </div>`;
+    } catch (err) {
+      console.error("Fout bij zoeken:", err);
+      resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3 leading-relaxed'>❌ Er ging iets mis bij het laden van resultaten.</p>";
+    }
+  });
 
-      const reviews = [
-        ["⭐⭐⭐⭐⭐", "“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”", "Sanne, Amsterdam"],
-        ["⭐⭐⭐⭐", "“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”", "Peter, Utrecht"],
-        ["⭐⭐⭐⭐⭐", "“Volgende keer bel ik weer via Irisje in plaats van Googlen.”", "Linda, Rotterdam"]
-      ];
-      document.getElementById("reviews").innerHTML = reviews.map(([stars, msg, name]) => `
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-          <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
-          <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
-          <div class="text-gray-500 text-xs mt-3">— ${name}</div>
-        </div>
-      `).join("");
+  document.addEventListener("DOMContentLoaded", () => {
+    // Populaire categorieën
+    const categories = ["Loodgieter", "CV / Verwarming", "Elektricien", "Schoonmaak", "Slotenmaker", "Glazenwasser"];
+    document.getElementById("popularCategories").innerHTML = categories.map(cat => `
+      <a href="results.html?category=${encodeURIComponent(cat)}"
+         class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
+        <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
+      </a>
+    `).join("");
 
-      // Fade-in animatie
-      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        setTimeout(() => {
-          el.style.transition = "opacity .8s ease, transform .8s ease";
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        }, 150 * i);
-      });
+    // Stappenplan
+    const steps = [
+      ["1. Vertel wat je nodig hebt", "Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
+      ["2. Bedrijven reageren", "Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
+      ["3. Jij kiest", "Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
+    ];
+    document.getElementById("howItWorks").innerHTML = steps.map(([title, text]) => `
+      <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+        <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
+        <p class="text-gray-700 leading-relaxed">${text}</p>
+      </div>
+    `).join("");
+
+    // Reviews (statisch)
+    const reviews = [
+      ["⭐⭐⭐⭐⭐", "“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”", "Sanne, Amsterdam"],
+      ["⭐⭐⭐⭐", "“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”", "Peter, Utrecht"],
+      ["⭐⭐⭐⭐⭐", "“Volgende keer bel ik weer via Irisje in plaats van Googlen.”", "Linda, Rotterdam"]
+    ];
+    document.getElementById("reviews").innerHTML = reviews.map(([stars, msg, name]) => `
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
+        <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
+        <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
+        <div class="text-gray-500 text-xs mt-3">— ${name}</div>
+      </div>
+    `).join("");
+
+    // Fade-in animatie
+    document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(12px)";
+      setTimeout(() => {
+        el.style.transition = "opacity .8s ease, transform .8s ease";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      }, 150 * i);
     });
+  });
   </script>
 </body>
 </html>
