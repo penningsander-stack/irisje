@@ -36,7 +36,7 @@ async function fetchPlaces(city) {
 
     // Google eist kleine pauze voor next_page_token
     if (pageToken) await new Promise((r) => setTimeout(r, 2000));
-  } while (pageToken && results.length < 60); // max ±60 per stad
+  } while (pageToken && results.length < 60);
 
   console.log(`📄 ${city}: ${results.length} advocaten gevonden`);
   return results;
@@ -52,7 +52,7 @@ router.get("/batch", async (req, res) => {
 
   try {
     for (const city of CITIES) {
-      if (imported >= 500) break; // veiligheidslimiet
+      if (imported >= 500) break;
       const places = await fetchPlaces(city);
 
       for (const place of places) {
@@ -64,6 +64,9 @@ router.get("/batch", async (req, res) => {
         const exists = await Company.findOne({ name, city });
         if (exists) continue;
 
+        // ✅ Uniek e-mailadres genereren
+        const uniqueEmail = `noemail_${Date.now()}_${Math.floor(Math.random() * 100000)}@irisje.nl`;
+
         try {
           await Company.create({
             name,
@@ -72,7 +75,7 @@ router.get("/batch", async (req, res) => {
             categories: ["Advocaat"],
             city,
             phone: place.formatted_phone_number || "",
-            email: `noemail_${Math.floor(Math.random() * 100000)}@irisje.nl`,
+            email: uniqueEmail,
             website: place.website || place.url || "",
             avgRating: 0,
             reviewCount: 0,
