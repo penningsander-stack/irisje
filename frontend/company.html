@@ -41,15 +41,6 @@
           </p>
         </div>
 
-        <!-- 📞 Knoppen -->
-        <div id="action-buttons" class="flex flex-wrap gap-3 mb-6 hidden">
-          <a id="call-btn" href="#" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition text-sm hidden">📞 Bellen</a>
-          <a id="email-btn" href="#" class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow hover:bg-indigo-700 transition text-sm hidden">✉ Mailen</a>
-          <button id="request-btn" class="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-600 transition text-sm">
-            📬 Offerte aanvragen
-          </button>
-        </div>
-
         <div class="flex items-center gap-2 mb-4">
           <span id="company-rating" class="text-yellow-500 text-lg"></span>
           <span id="company-reviews" class="text-gray-500 text-sm"></span>
@@ -84,6 +75,10 @@
               </select>
             </div>
             <textarea id="review-message" placeholder="Bericht" class="input mt-3" rows="4" required></textarea>
+
+            <!-- ✅ statusmelding -->
+            <p id="review-status" class="text-sm mt-2"></p>
+
             <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
               Verstuur beoordeling
             </button>
@@ -113,7 +108,6 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- ✅ SCRIPT GEFIXT -->
   <script>
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -128,71 +122,109 @@
       const el = id => document.getElementById(id);
 
       // --- bedrijfsinfo ---
-      if (el("company-name")) el("company-name").textContent = data.name || "Onbekend bedrijf";
-      if (el("company-tagline")) el("company-tagline").textContent = data.tagline || "";
-      if (el("company-description")) el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
+      el("company-name").textContent = data.name || "Onbekend bedrijf";
+      el("company-tagline").textContent = data.tagline || "";
+      el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
 
-      const addrEl = el("company-address");
-      if (addrEl && addrEl.lastElementChild)
-        addrEl.lastElementChild.textContent = data.address || "Adres niet opgegeven.";
-
-      const phoneEl = el("company-phone");
-      if (phoneEl && phoneEl.lastElementChild)
-        phoneEl.lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
+      el("company-address").lastElementChild.textContent = data.address || "Adres niet opgegeven.";
+      el("company-phone").lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
 
       // 🌐 Website tonen
       if (data.website) {
         const wrapper = el("company-website-wrapper");
         const link = el("company-website");
-        if (wrapper && link) {
-          link.href = data.website;
-          link.textContent = data.website;
-          wrapper.classList.remove("hidden");
-        }
+        link.href = data.website;
+        link.textContent = data.website;
+        wrapper.classList.remove("hidden");
       }
 
       // ⭐ Beoordeling
       const ratingEl = el("company-rating");
       const countEl = el("company-reviews");
-      if (ratingEl && countEl) {
-        if (data.avgRating && data.avgRating > 0) {
-          ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
-          countEl.textContent = `(${data.reviewCount || 0} reviews)`;
-        } else {
-          ratingEl.textContent = "Nog geen beoordelingen";
-          countEl.textContent = "";
-        }
+      if (data.avgRating && data.avgRating > 0) {
+        ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
+        countEl.textContent = `(${data.reviewCount || 0} reviews)`;
+      } else {
+        ratingEl.textContent = "Nog geen beoordelingen";
+        countEl.textContent = "";
       }
 
       // 💬 Reviews
-      const container = el("reviews-container");
-      const reviews = Array.isArray(data.reviews) ? data.reviews : [];
-      if (container) {
-        if (reviews.length === 0) {
-          container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
-        } else {
-          container.innerHTML = reviews.map(r => {
-            const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
-            return `
-              <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
-                <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
-                <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
-              </div>`;
-          }).join("");
-        }
-      }
+      renderReviews(data.reviews || []);
+
+      // 📬 Reviewformulier activeren
+      setupReviewForm(slug);
 
     } catch (err) {
       console.error("Fout bij laden:", err);
-      const container = document.getElementById("reviews-container");
-      if (container)
-        container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
+      document.getElementById("reviews-container").innerHTML =
+        "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
     }
+  }
+
+  function renderReviews(reviews) {
+    const container = document.getElementById("reviews-container");
+    if (!container) return;
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
+      return;
+    }
+    container.innerHTML = reviews.map(r => {
+      const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
+      return `
+        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
+          <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
+          <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function setupReviewForm(slug) {
+    const form = document.getElementById("review-form");
+    const statusEl = document.getElementById("review-status");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      statusEl.textContent = "⏳ Beoordeling wordt verzonden...";
+      statusEl.className = "text-gray-500 text-sm mt-2";
+
+      const payload = {
+        companySlug: slug,
+        name: form.querySelector("#review-name").value,
+        email: form.querySelector("#review-email").value,
+        rating: form.querySelector("#review-rating").value,
+        message: form.querySelector("#review-message").value,
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/reviews`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          statusEl.textContent = "✅ Bedankt voor je beoordeling!";
+          statusEl.className = "text-green-600 text-sm mt-2";
+          form.reset();
+
+          // Direct vernieuwen
+          renderReviews([data.review, ...(document.querySelectorAll("#reviews-container div").length ? [] : [])]);
+        } else {
+          throw new Error(data.message || "Onbekende fout");
+        }
+      } catch (err) {
+        console.error("Fout bij versturen review:", err);
+        statusEl.textContent = "❌ Er ging iets mis bij het verzenden van je beoordeling.";
+        statusEl.className = "text-red-600 text-sm mt-2";
+      }
+    });
   }
 
   document.addEventListener("DOMContentLoaded", loadCompany);
   </script>
-
 </body>
 </html>
