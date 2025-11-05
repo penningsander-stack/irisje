@@ -125,36 +125,49 @@ async function loadCompany() {
     if (!res.ok) throw new Error("Serverfout");
     const data = await res.json();
 
+    // --- veiligheid: controleer of elementen bestaan ---
+    const el = id => document.getElementById(id);
+
     // --- bedrijfsinfo ---
-    document.getElementById("company-name").textContent = data.name || "Onbekend bedrijf";
-    document.getElementById("company-tagline").textContent = data.tagline || "";
-    document.getElementById("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
-    document.getElementById("company-address").textContent = data.address || "Adres niet opgegeven.";
-    document.getElementById("company-city").textContent = data.city || "";
+    el("company-name")?.textContent = data.name || "Onbekend bedrijf";
+    el("company-tagline")?.textContent = data.tagline || "";
+    el("company-description")?.textContent = data.description || "Nog geen beschrijving beschikbaar.";
+    el("company-address")?.lastElementChild && (el("company-address").lastElementChild.textContent = data.address || "Adres niet opgegeven.");
+    el("company-phone")?.lastElementChild && (el("company-phone").lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.");
+
+    // 🌐 Website tonen
     if (data.website) {
-      const link = document.getElementById("company-website");
-      if (link) {
+      const wrapper = el("company-website-wrapper");
+      const link = el("company-website");
+      if (wrapper && link) {
         link.href = data.website;
-        link.classList.remove("hidden");
+        link.textContent = data.website;
+        wrapper.classList.remove("hidden");
       }
     }
 
-    const ratingEl = document.getElementById("company-rating");
-    const reviewCountEl = document.getElementById("company-reviews");
-    if (data.avgRating > 0) {
-      ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
-      reviewCountEl.textContent = `(${data.reviewCount} reviews)`;
-    } else {
-      ratingEl.textContent = "Nog geen beoordelingen";
-      reviewCountEl.textContent = "";
+    // ⭐ Beoordeling
+    const ratingEl = el("company-rating");
+    const countEl = el("company-reviews");
+    if (ratingEl && countEl) {
+      if (data.avgRating && data.avgRating > 0) {
+        ratingEl.textContent = "⭐".repeat(Math.round(data.avgRating));
+        countEl.textContent = `(${data.reviewCount || 0} reviews)`;
+      } else {
+        ratingEl.textContent = "Nog geen beoordelingen";
+        countEl.textContent = "";
+      }
     }
 
-    // --- reviews ---
-    const container = document.getElementById("reviews-container");
-    if (!data.reviews || data.reviews.length === 0) {
+    // 💬 Reviews
+    const container = el("reviews-container");
+    const reviews = data.reviews || [];
+    if (!container) return;
+
+    if (reviews.length === 0) {
       container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
     } else {
-      container.innerHTML = data.reviews.map(r => {
+      container.innerHTML = reviews.map(r => {
         const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
         return `
           <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -175,6 +188,7 @@ async function loadCompany() {
 
 document.addEventListener("DOMContentLoaded", loadCompany);
 </script>
+
 
 
 
