@@ -39,6 +39,7 @@ router.get("/search", async (req, res) => {
         avgRating: c.avgRating || 0,
         reviewCount: c.reviewCount || 0,
         isVerified: c.isVerified || false,
+        website: c.website || "",
       })),
     });
   } catch (error) {
@@ -51,7 +52,7 @@ router.get("/search", async (req, res) => {
 router.get("/byEmail/:email", async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email).toLowerCase();
-    const company = await Company.findOne({ email });
+    const company = await Company.findOne({ email }).lean();
     if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
     res.json(company);
   } catch (err) {
@@ -60,18 +61,17 @@ router.get("/byEmail/:email", async (req, res) => {
   }
 });
 
-// ✅ Nieuw: bedrijven ophalen via 'owner'-e-mailadres (beheerfunctie)
+// ✅ Bedrijven ophalen via eigenaar (beheerfunctie)
 router.get("/byOwner/:email", async (req, res) => {
   try {
     const email = decodeURIComponent(req.params.email).toLowerCase();
 
-    // Als de gebruiker de beheerder is (info@irisje.nl), toon alle bedrijven
+    // Beheerder ziet alles
     if (email === "info@irisje.nl") {
       const allCompanies = await Company.find().lean();
       return res.json(allCompanies);
     }
 
-    // Anders: filter bedrijven die gekoppeld zijn aan deze eigenaar
     const companies = await Company.find({ ownerEmail: email }).lean();
     if (!companies.length) {
       return res.status(404).json({ error: "Geen bedrijven gevonden voor deze eigenaar." });
@@ -84,7 +84,7 @@ router.get("/byOwner/:email", async (req, res) => {
   }
 });
 
-// ✅ Bedrijf ophalen via slug + gekoppelde reviews
+// ✅ Bedrijf ophalen via slug (met reviews)
 router.get("/:slug", async (req, res) => {
   try {
     const slug = req.params.slug;
@@ -97,15 +97,22 @@ router.get("/:slug", async (req, res) => {
     const reviews = await Review.find({ company: company._id }).lean();
 
     res.json({
-      name: company.name,
-      tagline: company.tagline,
-      city: company.city,
-      categories: company.categories,
-      avgRating: company.avgRating || 0,
-      reviewCount: company.reviewCount || reviews.length,
-      description: company.description || "",
-      logoUrl: company.logoUrl || "",
-      isVerified: company.isVerified || false,
+      ok: true,
+      company: {
+        _id: company._id,
+        name: company.name,
+        tagline: company.tagline,
+        description: company.description || "",
+        address: company.address || "",
+        city: company.city || "",
+        phone: company.phone || "",
+        website: company.website || "",
+        categories: company.categories || [],
+        avgRating: company.avgRating || 0,
+        reviewCount: company.reviewCount || reviews.length,
+        isVerified: company.isVerified || false,
+        logoUrl: company.logoUrl || "",
+      },
       reviews: reviews.map((r) => ({
         name: r.name,
         rating: r.rating,
