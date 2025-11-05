@@ -8,7 +8,7 @@
   <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251101" />
+  <link rel="stylesheet" href="style.css?v=20251106" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -58,97 +58,113 @@
 
   <!-- SCRIPT -->
   <script>
-    const API_BASE = "https://irisje-backend.onrender.com/api";
-    const stars = (rating) => "⭐".repeat(Math.round(rating || 0));
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-    async function loadResults(category, city) {
-      const container = document.getElementById("resultsContainer");
-      const msg = document.getElementById("filterMessage");
-      container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
-      msg.textContent = "";
+  // ⭐ Sterrenfunctie
+  const stars = rating => {
+    const r = Math.round(rating || 0);
+    return r > 0 ? "⭐".repeat(r) : "—";
+  };
 
-      try {
-        const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category || "")}&city=${encodeURIComponent(city || "")}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Serverfout");
-        const data = await res.json();
+  // 🔍 Resultaten laden
+  async function loadResults(category, city) {
+    const container = document.getElementById("resultsContainer");
+    const msg = document.getElementById("filterMessage");
+    container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
+    msg.textContent = "";
 
-        if (!data.items || !data.items.length) {
-          container.innerHTML = `
-            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center text-gray-500 text-sm">
-              Geen bedrijven gevonden.<br />Probeer een andere categorie of plaats.
-            </div>`;
-          return;
-        }
+    try {
+      const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category || "")}&city=${encodeURIComponent(city || "")}`;
+      const res = await fetch(url);
 
-        container.innerHTML = data.items.map((c) => `
-          <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5">
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-              <div>
-                <h2 class="text-lg font-semibold text-indigo-700 leading-tight">${c.name || ""}</h2>
-                <div class="text-gray-500 text-sm">${c.city || ""}</div>
-                <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
-                <p class="text-gray-700 text-sm mt-3 leading-relaxed">${c.tagline || ""}</p>
-              </div>
-              <div class="text-right">
-                <div class="text-yellow-500 text-sm font-semibold leading-none">${stars(c.avgRating)}</div>
-                <div class="text-gray-500 text-xs leading-none mt-1">${c.reviewCount || 0} reviews</div>
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
-              <a href="company.html?slug=${encodeURIComponent(c.slug)}"
-                 class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition">
-                 Bekijk profiel
-              </a>
-              <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
-                ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
-              </div>
-            </div>
-          </article>
-        `).join("");
-
-        msg.textContent = `${data.items.length} resultaat(en) gevonden`;
-      } catch (err) {
-        console.error("Zoekfout:", err);
-        container.innerHTML = `
-          <div class="bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm">
-            ❌ Er ging iets mis bij het laden van de resultaten.
-          </div>`;
+      // controleer of de server JSON teruggeeft
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error("Server gaf geen JSON terug: " + text.slice(0, 80));
       }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Serverfout");
+
+      const items = data.items || [];
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-center text-gray-500 text-sm">
+            Geen bedrijven gevonden.<br />Probeer een andere categorie of plaats.
+          </div>`;
+        msg.textContent = "Geen resultaten gevonden";
+        return;
+      }
+
+      container.innerHTML = items.map(c => `
+        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-indigo-700 leading-tight">${c.name || "Onbekend bedrijf"}</h2>
+              <div class="text-gray-500 text-sm">${c.city || ""}</div>
+              <div class="text-gray-400 text-xs mt-1">${Array.isArray(c.categories) ? c.categories.join(", ") : ""}</div>
+              <p class="text-gray-700 text-sm mt-3 leading-relaxed">${c.tagline || ""}</p>
+            </div>
+            <div class="text-right">
+              <div class="text-yellow-500 text-sm font-semibold leading-none">${stars(c.avgRating)}</div>
+              <div class="text-gray-500 text-xs leading-none mt-1">${c.reviewCount || 0} reviews</div>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-4">
+            <a href="company.html?slug=${encodeURIComponent(c.slug)}"
+              class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition">
+              Bekijk profiel
+            </a>
+            <div class="text-gray-400 text-[11px] mt-3 sm:mt-0">
+              ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Niet geverifieerd"}
+            </div>
+          </div>
+        </article>
+      `).join("");
+
+      msg.textContent = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
+
+    } catch (err) {
+      console.error("❌ Fout bij laden resultaten:", err);
+      container.innerHTML = `
+        <div class="bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm">
+          ❌ Er ging iets mis bij het laden van de resultaten.
+        </div>`;
     }
+  }
 
-    const getParam = (n) => new URLSearchParams(window.location.search).get(n) || "";
+  // 🌐 Params ophalen
+  const getParam = n => new URLSearchParams(window.location.search).get(n) || "";
 
-    document.getElementById("filterForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const cat = document.getElementById("filterCategory").value.trim();
-      const city = document.getElementById("filterCity").value.trim();
-      loadResults(cat, city);
+  // 📤 Filterformulier
+  document.getElementById("filterForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const cat = document.getElementById("filterCategory").value.trim();
+    const city = document.getElementById("filterCity").value.trim();
+    loadResults(cat, city);
+  });
+
+  // 🟢 Initialiseren bij laden
+  document.addEventListener("DOMContentLoaded", () => {
+    const cat = getParam("category");
+    const city = getParam("city");
+    document.getElementById("filterCategory").value = cat;
+    document.getElementById("filterCity").value = city;
+    loadResults(cat, city);
+
+    // kleine fade-in animatie
+    document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+      el.style.opacity = "0";
+      el.style.transform = "translateY(12px)";
+      setTimeout(() => {
+        el.style.transition = "opacity .8s ease, transform .8s ease";
+        el.style.opacity = "1";
+        el.style.transform = "translateY(0)";
+      }, 150 * i);
     });
-
-    (function init() {
-      const cat = getParam("category");
-      const city = getParam("city");
-      document.getElementById("filterCategory").value = cat;
-      document.getElementById("filterCity").value = city;
-      loadResults(cat, city);
-    })();
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const els = document.querySelectorAll("header, main section, footer");
-      els.forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            el.style.transition = "opacity .8s ease, transform .8s ease";
-            el.style.opacity = "1";
-            el.style.transform = "translateY(0)";
-          }, 150 * i);
-        });
-      });
-    });
+  });
   </script>
 </body>
 </html>
