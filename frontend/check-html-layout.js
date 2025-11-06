@@ -3,45 +3,56 @@ import fs from "fs";
 import path from "path";
 
 const rootDir = "./frontend";
-const skipDirs = ["js", "css", "dist", "backup_fixed_html", "node_modules"];
+const backupDir = path.join(rootDir, "backup_fixed_html");
+let fixedCount = 0;
 
-let missingCss = [];
-let missingJs = [];
+console.log("🔍 Bezig met scannen van HTML-bestanden...\n");
 
-function checkHtmlFiles(dir) {
-  const files = fs.readdirSync(dir);
-  for (const file of files) {
-    const fullPath = path.join(dir, file);
-    const stats = fs.statSync(fullPath);
+function fixFile(filePath) {
+  let html = fs.readFileSync(filePath, "utf8");
+  let changed = false;
 
-    if (stats.isDirectory()) {
-      if (!skipDirs.includes(file)) checkHtmlFiles(fullPath);
-      continue;
-    }
+  if (!html.includes('css/common.css')) {
+    html = html.replace(/<\/head>/i, '  <link rel="stylesheet" href="css/common.css">\n</head>');
+    changed = true;
+  }
 
-    if (file.endsWith(".html")) {
-      const html = fs.readFileSync(fullPath, "utf8");
-      const relPath = path.relative(rootDir, fullPath);
+  if (!html.includes('js/layout.js')) {
+    html = html.replace(/<\/body>/i, '  <script src="js/layout.js" defer></script>\n</body>');
+    changed = true;
+  }
 
-      if (!html.includes("css/common.css")) missingCss.push(relPath);
-      if (!html.includes("js/layout.js")) missingJs.push(relPath);
-    }
+  if (changed) {
+    const backupPath = path.join(backupDir, path.basename(filePath));
+    fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+    fs.copyFileSync(filePath, backupPath);
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log(`🛠️  Hersteld + backup gemaakt: ${path.basename(filePath)}`);
+    fixedCount++;
   }
 }
 
-console.log("🔍 Bezig met scannen van HTML-bestanden...\n");
-checkHtmlFiles(rootDir);
+const files = fs.readdirSync(rootDir).filter(f => f.endsWith(".html"));
 
-if (missingCss.length === 0 && missingJs.length === 0) {
-  console.log("✅ Alles is in orde! Alle HTML-bestanden bevatten common.css en layout.js.");
+const missing = [];
+
+for (const file of files) {
+  const filePath = path.join(rootDir, file);
+  const content = fs.readFileSync(filePath, "utf8");
+
+  const missingItems = [];
+  if (!content.includes('css/common.css')) missingItems.push("common.css");
+  if (!content.includes('js/layout.js')) missingItems.push("layout.js");
+
+  if (missingItems.length) {
+    missing.push({ file, missing: missingItems });
+    fixFile(filePath);
+  }
+}
+
+if (!missing.length) {
+  console.log("✅ Alles in orde! Alle HTML-bestanden bevatten common.css en layout.js.");
 } else {
-  if (missingCss.length) {
-    console.log("\n⚠️  Ontbrekende 'css/common.css' in:");
-    missingCss.forEach(f => console.log("  -", f));
-  }
-  if (missingJs.length) {
-    console.log("\n⚠️  Ontbrekende 'js/layout.js' in:");
-    missingJs.forEach(f => console.log("  -", f));
-  }
-  console.log("\n📋 Controle voltooid.");
+  console.log("\n📋 Controle + herstel voltooid.");
+  console.log(`✨ ${fixedCount} bestand(en) automatisch hersteld.\n`);
 }
