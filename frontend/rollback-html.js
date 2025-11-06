@@ -1,6 +1,7 @@
 // frontend/rollback-html.js
 import fs from "fs";
 import path from "path";
+import readline from "readline";
 
 const rootDir = "./frontend";
 const backupDir = path.join(rootDir, "backup_fixed_html");
@@ -27,6 +28,18 @@ function restoreDir(dir) {
   }
 }
 
-console.log("♻️  Terugzetten van HTML-bestanden gestart...");
-restoreDir(backupDir);
-console.log("✅ Terugzetten voltooid! Alle HTML-bestanden zijn hersteld uit de back-up.");
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+rl.question("⚠️  Weet je zeker dat je alle HTML-bestanden wilt terugzetten uit de back-up? (j/n) ", (answer) => {
+  if (answer.toLowerCase() === "j") {
+    console.log("♻️  Terugzetten gestart...");
+    restoreDir(backupDir);
+    console.log("✅ Terugzetten voltooid! Alle HTML-bestanden zijn hersteld uit de back-up.");
+  } else {
+    console.log("🚫 Terugzetten geannuleerd.");
+  }
+  rl.close();
+});
