@@ -1,0 +1,9 @@
+diff --git a/frontend/*.html b/frontend/*.html
+--- a/frontend/*.html
++++ b/frontend/*.html
+@@
+   <link rel="icon" type="image/x-icon" href="favicon.ico" />
++  <link rel="stylesheet" href="css/common.css" />
+@@
+   </body>
++  <script src="js/layout.js" defer></script>
