@@ -6,7 +6,9 @@ import readline from "readline";
 const rootDir = "./frontend";
 const backupDir = path.join(rootDir, "backup_fixed_html");
 
-// 🛠️ Functie om bestanden te herstellen
+// ❌ Mappen die we overslaan
+const skipDirs = ["js", "css", "dist", "backup_fixed_html", "node_modules"];
+
 function fixHtmlFiles(dir) {
   const files = fs.readdirSync(dir);
   for (const file of files) {
@@ -14,20 +16,20 @@ function fixHtmlFiles(dir) {
     const stats = fs.statSync(fullPath);
 
     if (stats.isDirectory()) {
-      if (!file.startsWith("backup_fixed_html")) fixHtmlFiles(fullPath);
+      if (!skipDirs.includes(file)) {
+        fixHtmlFiles(fullPath);
+      }
       continue;
     }
 
     if (file.endsWith(".html")) {
       const html = fs.readFileSync(fullPath, "utf8");
 
-      // Controleer of <link> en <script> ontbreken
       const needsCss = !html.includes('css/common.css');
       const needsJs = !html.includes('js/layout.js');
 
       if (!needsCss && !needsJs) return;
 
-      // Maak backup-map aan
       const relPath = path.relative(rootDir, fullPath);
       const backupPath = path.join(backupDir, relPath);
       fs.mkdirSync(path.dirname(backupPath), { recursive: true });
@@ -53,14 +55,13 @@ function fixHtmlFiles(dir) {
   }
 }
 
-// 🧠 Bevestigingsvraag
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
 
 rl.question(
-  "⚠️  Weet je zeker dat je alle HTML-bestanden wilt controleren en aanvullen met layout.js en common.css? (j/n) ",
+  "⚠️  Weet je zeker dat je ALLE HTML-bestanden (behalve in js/css/dist) wilt controleren en aanvullen met layout.js en common.css? (j/n) ",
   (answer) => {
     if (answer.toLowerCase() === "j") {
       console.log("🔍 Controle en herstel gestart...");
