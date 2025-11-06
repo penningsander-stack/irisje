@@ -6,68 +6,66 @@ import readline from "readline";
 const rootDir = "./frontend";
 const backupDir = path.join(rootDir, "backup_fixed_html");
 
-// ❌ Mappen die we overslaan
-const skipDirs = ["js", "css", "dist", "backup_fixed_html", "node_modules"];
+// Alleen deze bestanden fixen (zoals uit je scan)
+const targetFiles = [
+  "ad-company.html","admin.html","company.html","components-preview.html","contact.html",
+  "dashboard.html","email-confirmation.html","email-verification-error.html","error.html",
+  "forgot.html","index.html","login.html","maintenance.html","offline.html","over.html",
+  "password-forgot.html","password-reset-success.html","password-reset.html","privacy.html",
+  "register.html","request.html","reset-password.html","results.html","status.html",
+  "style-guide.html","voorwaarden.html"
+];
 
-function fixHtmlFiles(dir) {
-  const files = fs.readdirSync(dir);
-  for (const file of files) {
-    const fullPath = path.join(dir, file);
-    const stats = fs.statSync(fullPath);
-
-    if (stats.isDirectory()) {
-      if (!skipDirs.includes(file)) {
-        fixHtmlFiles(fullPath);
-      }
-      continue;
-    }
-
-    if (file.endsWith(".html")) {
-      const html = fs.readFileSync(fullPath, "utf8");
-
-      const needsCss = !html.includes('css/common.css');
-      const needsJs = !html.includes('js/layout.js');
-
-      if (!needsCss && !needsJs) return;
-
-      const relPath = path.relative(rootDir, fullPath);
-      const backupPath = path.join(backupDir, relPath);
-      fs.mkdirSync(path.dirname(backupPath), { recursive: true });
-      fs.copyFileSync(fullPath, backupPath);
-
-      let fixed = html;
-      if (needsCss) {
-        fixed = fixed.replace(
-          /<\/head>/i,
-          '  <link rel="stylesheet" href="css/common.css">\n</head>'
-        );
-      }
-      if (needsJs) {
-        fixed = fixed.replace(
-          /<\/body>/i,
-          '  <script src="js/layout.js" defer></script>\n</body>'
-        );
-      }
-
-      fs.writeFileSync(fullPath, fixed, "utf8");
-      console.log(`🛠️  Hersteld + backup gemaakt: ${relPath}`);
-    }
+function fixFile(filename) {
+  const filePath = path.join(rootDir, filename);
+  if (!fs.existsSync(filePath)) {
+    console.warn(`⚠️  Bestand niet gevonden: ${filename}`);
+    return;
   }
+
+  let html = fs.readFileSync(filePath, "utf8");
+  const needsCss = !html.includes('css/common.css');
+  const needsJs = !html.includes('js/layout.js');
+  if (!needsCss && !needsJs) return;
+
+  // backup maken
+  const backupPath = path.join(backupDir, filename);
+  fs.mkdirSync(path.dirname(backupPath), { recursive: true });
+  fs.copyFileSync(filePath, backupPath);
+
+  // CSS toevoegen voor </head>
+  if (needsCss) {
+    html = html.replace(
+      /<\/head>/i,
+      '  <link rel="stylesheet" href="css/common.css">\n</head>'
+    );
+  }
+
+  // JS toevoegen voor </body>
+  if (needsJs) {
+    html = html.replace(
+      /<\/body>/i,
+      '  <script src="js/layout.js" defer></script>\n</body>'
+    );
+  }
+
+  fs.writeFileSync(filePath, html, "utf8");
+  console.log(`🛠️  Hersteld + backup gemaakt: ${filename}`);
 }
 
 const rl = readline.createInterface({
   input: process.stdin,
-  output: process.stdout,
+  output: process.stdout
 });
 
 rl.question(
-  "⚠️  Weet je zeker dat je ALLE HTML-bestanden (behalve in js/css/dist) wilt controleren en aanvullen met layout.js en common.css? (j/n) ",
+  "⚠️  Wil je alle ontbrekende layout-verwijzingen toevoegen in de 27 HTML-bestanden (met backup)? (j/n) ",
   (answer) => {
     if (answer.toLowerCase() === "j") {
-      console.log("🔍 Controle en herstel gestart...");
+      console.log("\n🔍 Start herstelproces...\n");
       fs.mkdirSync(backupDir, { recursive: true });
-      fixHtmlFiles(rootDir);
-      console.log("✅ Controle + herstel met backup voltooid!");
+      targetFiles.forEach(fixFile);
+      console.log("\n✅ Herstel compleet! Backups staan in /frontend/backup_fixed_html/");
     } else {
       console.log("🚫 Bewerking geannuleerd.");
     }
