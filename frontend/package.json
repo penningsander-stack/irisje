@@ -2,6 +2,7 @@
   "name": "irisje-frontend",
   "version": "1.0.1",
   "description": "Frontend van Irisje.nl – moderne indigo-stijl met TailwindCSS en animaties.",
+  "type": "module",
   "main": "index.html",
   "scripts": {
     "build": "npx tailwindcss -i ./input.css -o ./dist.css --minify && cat ./dist.css ./custom.css > ./style.css",
