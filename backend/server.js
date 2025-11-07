@@ -1,19 +1,42 @@
 // backend/server.js
-require("./config/validateEnv"); // ✅ controleert alle vereiste .env-velden
-const { startupBanner } = require("./utils/logHelper"); // 🌸 nette logs
+import "./config/validateEnv.js"; // ✅ controleert alle vereiste .env-velden
+import { startupBanner } from "./utils/logHelper.js"; // 🌸 nette logs
 
-const express = require("express");
-const mongoose = require("mongoose");
-const compression = require("compression");
-const cookieParser = require("cookie-parser");
-const fs = require("fs");
-const path = require("path");
-require("dotenv").config();
+import express from "express";
+import mongoose from "mongoose";
+import compression from "compression";
+import cookieParser from "cookie-parser";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
 
 // 🌸 Nieuwe centrale beveiligingsconfiguratie
-const { corsMiddleware, securityHeaders } = require("./config/security");
+import { corsMiddleware, securityHeaders } from "./config/security.js";
 // 🌸 Logger (voor status-overzicht)
-const { addLog } = require("./utils/logger");
+import { addLog } from "./utils/logger.js";
+
+// 🌍 Routes
+import authRoutes from "./routes/auth.js";
+import companyRoutes from "./routes/companies.js";
+import requestRoutes from "./routes/requests.js";
+import publicRequestsRoutes from "./routes/publicRequests.js";
+import reviewRoutes from "./routes/reviews.js";
+import adminRoutes from "./routes/admin.js";
+import emailRoutes from "./routes/email.js";
+import paymentsRoutes from "./routes/payments.js";
+import statusRoutes from "./routes/status.js";
+import claimsRoutes from "./routes/claims.js";
+import seedRoutes from "./routes/seed.js";
+import importerRoutes from "./routes/importer_places.js";
+import googleReviewsRoutes from "./routes/googleReviews.js";
+
+// ES module equivalents van __dirname / __filename
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// .env laden
+dotenv.config();
 
 const app = express();
 
@@ -44,25 +67,19 @@ mongoose
   });
 
 // === ✅ API-routes ===
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/companies", require("./routes/companies"));
-app.use("/api/requests", require("./routes/requests"));
-app.use("/api/publicRequests", require("./routes/publicRequests"));
-app.use("/api/reviews", require("./routes/reviews"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/email", require("./routes/email"));
-app.use("/api/payments", require("./routes/payments"));
-app.use("/api/status", require("./routes/status"));
-app.use("/api/claims", require("./routes/claims"));
-import googleReviewsRoutes from "./routes/googleReviews.js";
+app.use("/api/auth", authRoutes);
+app.use("/api/companies", companyRoutes);
+app.use("/api/requests", requestRoutes);
+app.use("/api/publicRequests", publicRequestsRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/email", emailRoutes);
+app.use("/api/payments", paymentsRoutes);
+app.use("/api/status", statusRoutes);
+app.use("/api/claims", claimsRoutes);
 app.use("/api/google-reviews", googleReviewsRoutes);
-
-
-// 🌸 Tijdelijke seed-route om echte bedrijven te importeren
-app.use("/api/seed", require("./routes/seed"));
-
-// 🌍 NIEUW: Google Places Importer
-app.use("/api/importer", require("./routes/importer_places"));
+app.use("/api/seed", seedRoutes);
+app.use("/api/importer", importerRoutes);
 
 // === ✅ Testroute — vóór frontend fallback ===
 app.get("/api/test", (req, res) => {
@@ -74,7 +91,8 @@ app.get("/api/test", (req, res) => {
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
   const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-  const acceptsWebp = req.headers.accept && req.headers.accept.includes("image/webp");
+  const acceptsWebp =
+    req.headers.accept && req.headers.accept.includes("image/webp");
 
   if (acceptsWebp && fs.existsSync(webpPath)) {
     res.sendFile(webpPath);
@@ -111,12 +129,18 @@ app.use(/.*\.html$/, (req, res, next) => {
 
   // lazyload.js correct toevoegen (kleine letters!)
   if (!html.includes("js/lazyload.js")) {
-    html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
+    html = html.replace(
+      /<\/body>/i,
+      `  <script src="js/lazyload.js"></script>\n</body>`
+    );
   }
 
   // 🌸 Extra: status-enhanced.js automatisch injecteren op statuspagina
   if (req.path === "/status.html" && !html.includes("js/status-enhanced.js")) {
-    html = html.replace(/<\/body>/i, `  <script src="js/status-enhanced.js"></script>\n</body>`);
+    html = html.replace(
+      /<\/body>/i,
+      `  <script src="js/status-enhanced.js"></script>\n</body>`
+    );
   }
 
   res.type("html").send(html);
@@ -133,5 +157,7 @@ startupBanner();
 addLog("Server gestart op poort " + PORT, "info");
 
 app.listen(PORT, () => {
-  console.log(`🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`);
+  console.log(
+    `🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`
+  );
 });
