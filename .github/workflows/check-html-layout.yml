@@ -1,0 +1,55 @@
+name: 🔍 Controleer en herstel HTML-layout
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  check-html:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Repo ophalen
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Node installeren
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Dependencies installeren
+        run: |
+          cd frontend
+          npm install
+
+      - name: 🧰 HTML-layout automatisch controleren en herstellen
+        id: fix
+        run: |
+          cd frontend
+          node check-html-layout.js <<< "j" | tee ../fix-report.log
+
+      - name: 🧾 Samenvattingsrapport genereren
+        run: |
+          echo "## 🔍 Controle & herstel rapport" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if grep -q "🛠️" fix-report.log; then
+            echo "### 🛠️ Herstelde bestanden:" >> $GITHUB_STEP_SUMMARY
+            grep "🛠️" fix-report.log | sed 's/^/• /' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Geen aanpassingen nodig." >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🕓 Workflow uitgevoerd op $(date '+%d-%m-%Y %H:%M')" >> $GITHUB_STEP_SUMMARY
+
+      - name: ✅ Commit wijzigingen (indien nodig)
+        run: |
+          if [ -n "$(git status --porcelain frontend/*.html)" ]; then
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add frontend/*.html
+            git commit -m "🔧 Auto: HTML-layout automatisch bijgewerkt"
+            git push
+          else
+            echo "✅ Geen wijzigingen nodig."
+          fi
