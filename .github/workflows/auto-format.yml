@@ -1,0 +1,50 @@
+# .github/workflows/auto-format.yml
+name: 🎨 Auto Formatter
+
+on:
+  push:
+    paths:
+      - "frontend/**/*.html"
+      - "frontend/css/**"
+      - "frontend/js/**"
+      - ".github/workflows/auto-format.yml"
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: Controleer & formatteer frontend-bestanden
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Installeer Prettier (formatter)
+        run: |
+          npm install -g prettier
+
+      - name: 🎨 Format HTML, CSS & JS
+        run: |
+          echo "Formatteer frontend-bestanden..."
+          prettier --write "frontend/**/*.{html,css,js}" || echo "⚠️ Formatter waarschuwing, maar doorgegaan."
+
+      # Optioneel: commit automatisch formatter-wijzigingen terug
+      # Verwijder de comments (###) hieronder als je wilt dat het systeem
+      # automatisch commit naar je repo wanneer er iets wordt aangepast.
+      #
+      # - name: 💾 Commit en push wijzigingen
+      #   if: success()
+      #   run: |
+      #     git config --global user.name "Irisje Formatter Bot"
+      #     git config --global user.email "info@irisje.nl"
+      #     git add frontend
+      #     if ! git diff --cached --quiet; then
+      #       git commit -m "🎨 Auto-format: HTML/CSS/JS opgemaakt"
+      #       git push
+      #     else
+      #       echo "Geen wijzigingen om te committen."
