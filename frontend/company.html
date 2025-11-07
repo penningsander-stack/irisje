@@ -25,82 +25,94 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <main class="flex-grow">
-    <section id="company-section" class="max-w-5xl mx-auto p-6 md:p-10">
-      <div id="company-details" class="bg-white shadow rounded-2xl p-6 md:p-10 animate-fadeIn">
+    <section class="max-w-5xl mx-auto p-6 md:p-10">
 
-        <!-- Dynamische bedrijfsinformatie -->
-        <div id="company-info">
-          <h1 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-2" data-company-name="">Bedrijfsnaam</h1>
-          <p class="text-gray-600 mb-4" data-city=""></p>
-          <p class="text-gray-700 leading-relaxed mb-6" id="company-description">Beschrijving wordt geladen...</p>
-        </div>
-
-        <!-- 💬 Irisje Reviews -->
-        <hr class="my-8" />
-        <div>
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
-          <div id="reviews-list" class="space-y-4 mb-6">
-            <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
+      <!-- 🔹 Bedrijfsinformatie -->
+      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 fade-in mb-10">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
+          <img
+            src="/img/default-logo.png"
+            alt="Bedrijfslogo"
+            class="w-24 h-24 rounded-xl object-cover border bg-gray-100"
+          />
+          <div>
+            <h1 class="text-2xl font-bold text-indigo-700" data-company-name="">Bedrijfsnaam</h1>
+            <p class="text-gray-600" data-city="">Plaats</p>
+            <p class="text-sm text-gray-500 mt-2" id="company-tagline"></p>
+            <p class="text-sm text-gray-400 mt-1" id="company-categories"></p>
+            <p class="text-yellow-500 mt-2" id="company-rating">
+              ⭐ 0.0 (0 reviews)
+            </p>
           </div>
         </div>
 
-        <!-- ⭐ Google Reviews -->
-        <hr class="my-8" />
-        <section id="google-reviews" class="mt-6">
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">⭐ Google Reviews</h2>
-          <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
-        </section>
-
-        <!-- ✍ Reviewformulier -->
-        <hr class="my-8" />
-        <div id="review-form-wrapper">
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
-          <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <div class="grid md:grid-cols-2 gap-3">
-              <input type="text" id="review-name" placeholder="Naam" class="input" required />
-              <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
-            </div>
-            <div class="mt-3">
-              <label class="block text-sm text-gray-600 mb-1">Kies aantal sterren</label>
-              <select id="review-rating" class="input" required>
-                <option value="">– Kies –</option>
-                <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                <option value="4">⭐⭐⭐⭐ (4)</option>
-                <option value="3">⭐⭐⭐ (3)</option>
-                <option value="2">⭐⭐ (2)</option>
-                <option value="1">⭐ (1)</option>
-              </select>
-            </div>
-            <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
-            <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
-            <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-              Verstuur beoordeling
-            </button>
-          </form>
-        </div>
-
-        <!-- 🏷️ CLAIM -->
-        <hr class="my-8" />
-        <div id="claim-section">
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
-          <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
-          <form id="claim-form" class="grid md:grid-cols-2 gap-3">
-            <input type="text" id="claim-name" placeholder="Naam contactpersoon" class="input" required />
-            <input type="email" id="claim-email" placeholder="Zakelijk e-mailadres" class="input" required />
-            <input type="tel" id="claim-phone" placeholder="Telefoonnummer" class="input md:col-span-2" />
-            <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition md:col-span-2">
-              Claim dit bedrijf
-            </button>
-          </form>
-        </div>
-
+        <p id="company-description" class="text-gray-700 leading-relaxed mb-8">
+          Beschrijving wordt geladen...
+        </p>
       </div>
+
+      <!-- 💬 Irisje Reviews -->
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
+        <div id="reviews-list" class="space-y-4">
+          <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
+        </div>
+      </section>
+
+      <!-- ⭐ Google Reviews -->
+      <section id="google-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">⭐ Google Reviews</h2>
+        <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
+      </section>
+
+      <!-- ✍ Reviewformulier -->
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
+        <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" id="review-name" placeholder="Naam" class="input" required />
+            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
+          </div>
+          <div class="mt-3">
+            <label class="block text-sm text-gray-600 mb-1">Kies aantal sterren</label>
+            <select id="review-rating" class="input" required>
+              <option value="">– Kies –</option>
+              <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+              <option value="4">⭐⭐⭐⭐ (4)</option>
+              <option value="3">⭐⭐⭐ (3)</option>
+              <option value="2">⭐⭐ (2)</option>
+              <option value="1">⭐ (1)</option>
+            </select>
+          </div>
+          <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
+          <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
+          <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Verstuur beoordeling
+          </button>
+        </form>
+      </section>
+
+      <!-- 🏷️ Claim sectie -->
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
+        <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
+        <form id="claim-form" class="grid md:grid-cols-2 gap-3">
+          <input type="text" id="claim-name" placeholder="Naam contactpersoon" class="input" required />
+          <input type="email" id="claim-email" placeholder="Zakelijk e-mailadres" class="input" required />
+          <input type="tel" id="claim-phone" placeholder="Telefoonnummer" class="input md:col-span-2" />
+          <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition md:col-span-2">
+            Claim dit bedrijf
+          </button>
+        </form>
+      </section>
+
     </section>
   </main>
 
-  <footer class="bg-white border-t border-gray-200 mt-10 text-center py-4 text-sm text-gray-600">
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-gray-200 text-center py-4 text-sm text-gray-600">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
