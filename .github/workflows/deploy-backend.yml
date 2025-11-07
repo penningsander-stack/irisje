@@ -1,0 +1,46 @@
+name: 🚀 Deploy Irisje.nl Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy backend naar Render
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: ⚙️ Installeer backend dependencies (optioneel)
+        working-directory: backend
+        run: |
+          if [ -f package.json ]; then
+            echo "Dependencies installeren..."
+            npm ci --omit=dev || npm install --omit=dev
+          else
+            echo "Geen package.json gevonden — stap overslaan."
+          fi
+
+      - name: 🚀 Trigger Render backend-deploy
+        env:
+          RENDER_BACKEND_HOOK: ${{ secrets.RENDER_BACKEND_HOOK }}
+        run: |
+          if [ -z "$RENDER_BACKEND_HOOK" ]; then
+            echo "❌ Geen backend Render webhook ingesteld. Voeg toe in Secrets als RENDER_BACKEND_HOOK."
+            exit 1
+          fi
+          echo "Start backend-deploy..."
+          curl -X POST "$RENDER_BACKEND_HOOK"
+          echo "✅ Backend-deploy trigger verzonden naar Render."
