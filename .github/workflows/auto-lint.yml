@@ -1,0 +1,39 @@
+# .github/workflows/auto-lint.yml
+name: 🧠 JavaScript Linter
+
+on:
+  push:
+    paths:
+      - "frontend/js/**"
+      - ".github/workflows/auto-lint.yml"
+  pull_request:
+    paths:
+      - "frontend/js/**"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Controleer JavaScript op fouten en best practices
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 📦 Installeer ESLint
+        run: |
+          npm install -g eslint
+
+      - name: 🧠 Analyseer JavaScript-code
+        run: |
+          echo "Linting gestart..."
+          eslint "frontend/js/**/*.js" || echo "⚠️ Waarschuwingen gevonden, maar build gaat door."
+
+      - name: ✅ Samenvatting
+        run: |
+          echo "Lint-controle voltooid — bekijk de Action-log voor waarschuwingen of fouten."
