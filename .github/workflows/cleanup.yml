@@ -70,16 +70,16 @@ jobs:
         run: |
           echo "Cleanup voltooid: oude runs, artifacts, caches en branches verwijderd."
 
-      - name: 📣 Stuur Slack melding
-        if: always()
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          MESSAGE="🧹 *Cleanup voltooid voor* \`${{ github.repository }}\`\n
-          📦 *Artifacts:* verwijderd ouder dan 14 dagen\n
-          🔁 *Workflow-runs:* opgeschoond\n
-          🌿 *Branches verwijderd:*\n${{ env.deleted_branches || 'Geen' }}"
-
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"$MESSAGE\"}" \
-          "$SLACK_WEBHOOK_URL"
+      # - name: 📣 Stuur Slack melding (optioneel, later activeren)
+      #   if: always()
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   run: |
+      #     MESSAGE="🧹 *Cleanup voltooid voor* \`${{ github.repository }}\`\n
+      #     📦 *Artifacts:* verwijderd ouder dan 14 dagen\n
+      #     🔁 *Workflow-runs:* opgeschoond\n
+      #     🌿 *Branches verwijderd:*\n${{ env.deleted_branches || 'Geen' }}"
+      #
+      #     curl -X POST -H 'Content-type: application/json' \
+      #     --data "{\"text\":\"$MESSAGE\"}" \
+      #     "$SLACK_WEBHOOK_URL"
