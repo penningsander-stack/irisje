@@ -9,11 +9,11 @@ on:
 
 jobs:
   cleanup:
-    name: Verwijder oude artifacts en cache
+    name: Verwijder oude runs, artifacts, caches en branches
     runs-on: ubuntu-latest
     permissions:
       actions: write
-      contents: read
+      contents: write   # nodig voor branch-verwijdering
 
     steps:
       - name: 🧾 Toon repo-info
@@ -23,12 +23,14 @@ jobs:
           echo "Cleanup gestart op $(date -u)"
 
       - name: 🗑️ Verwijder oude workflow-runs (>14 dagen)
+        id: del_runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
           retain_days: 14
           keep_minimum_runs: 5
 
       - name: 🧩 Verwijder oude artifacts
+        id: del_artifacts
         uses: geekyeggo/delete-artifact@v4
         with:
           age: 14d
@@ -39,6 +41,45 @@ jobs:
           echo "Verwijder oude Node cache"
           npm cache clean --force || true
 
+      - name: 🌿 Verwijder oude inactieve branches (>30 dagen)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Zoek naar branches ouder dan 30 dagen..."
+          git fetch --prune
+          current_date=$(date +%s)
+          deleted_branches=""
+
+          git for-each-ref --format '%(refname:short) %(committerdate:iso8601)' refs/remotes/origin/ | while read branch date; do
+            if [[ "$branch" == "main" || "$branch" == "master" ]]; then
+              continue
+            fi
+            branch_date=$(date -d "$date" +%s)
+            age_days=$(( (current_date - branch_date) / 86400 ))
+            if (( age_days > 30 )); then
+              echo "🗑️ Verwijder branch: $branch ($age_days dagen oud)"
+              branch_name="${branch#origin/}"
+              gh api --method DELETE repos/${{ github.repository }}/git/refs/heads/$branch_name || echo "⚠️ Kon $branch_name niet verwijderen"
+              deleted_branches+="$branch_name ($age_days dagen oud)%0A"
+            fi
+          done
+
+          echo "deleted_branches=$deleted_branches" >> $GITHUB_ENV
+
       - name: ✅ Samenvatting
         run: |
-          echo "Cleanup voltooid: oude artifacts en cache verwijderd."
+          echo "Cleanup voltooid: oude runs, artifacts, caches en branches verwijderd."
+
+      - name: 📣 Stuur Slack melding
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="🧹 *Cleanup voltooid voor* \`${{ github.repository }}\`\n
+          📦 *Artifacts:* verwijderd ouder dan 14 dagen\n
+          🔁 *Workflow-runs:* opgeschoond\n
+          🌿 *Branches verwijderd:*\n${{ env.deleted_branches || 'Geen' }}"
+
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"$MESSAGE\"}" \
+          "$SLACK_WEBHOOK_URL"
