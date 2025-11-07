@@ -1,0 +1,44 @@
+# .github/workflows/cleanup.yml
+name: 🧹 Repository Cleanup
+
+on:
+  schedule:
+    # Iedere zondag om 03:00 UTC (≈ 04:00 NL-tijd)
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: Verwijder oude artifacts en cache
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+
+    steps:
+      - name: 🧾 Toon repo-info
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Cleanup gestart op $(date -u)"
+
+      - name: 🗑️ Verwijder oude workflow-runs (>14 dagen)
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          retain_days: 14
+          keep_minimum_runs: 5
+
+      - name: 🧩 Verwijder oude artifacts
+        uses: geekyeggo/delete-artifact@v4
+        with:
+          age: 14d
+          skip-tags: true
+
+      - name: 🧰 Verwijder oude npm cache
+        run: |
+          echo "Verwijder oude Node cache"
+          npm cache clean --force || true
+
+      - name: ✅ Samenvatting
+        run: |
+          echo "Cleanup voltooid: oude artifacts en cache verwijderd."
