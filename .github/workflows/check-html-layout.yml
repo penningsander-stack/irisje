@@ -1,4 +1,5 @@
-name: 🔍 Controleer en herstel HTML-layout
+# .github/workflows/check-html-layout.yml
+name: 🔍 Controleer & herstel HTML-layout
 
 on:
   push:
@@ -11,29 +12,40 @@ on:
 
 jobs:
   check-and-fix:
+    name: Controleer & herstel HTML-bestanden
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
-      - name: 📥 Checkout repo
+      - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🟣 Setup Node
+      - name: 🟣 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: 📦 Installeer frontend-deps (als nodig)
+      - name: 📦 Installeer frontend dependencies (indien aanwezig)
         working-directory: frontend
         run: |
           if [ -f package.json ]; then
-            npm install --omit=dev || true
+            echo "package.json gevonden — installeren..."
+            npm ci --omit=dev || npm install --omit=dev || true
+          else
+            echo "Geen package.json gevonden, stap overslaan."
           fi
 
-      - name: 🛠️ Controle & herstel HTML
+      - name: 🛠️ Controleer & herstel HTML-layouts
         working-directory: frontend
         run: |
-          # run jouw script dat je net hebt gebruikt in Codespace
-          node check-html-layout.js || true
+          if [ -f check-html-layout.js ]; then
+            echo "Controle uitvoeren..."
+            node check-html-layout.js || echo "⚠️ Fouten gedetecteerd maar doorgegaan."
+          else
+            echo "⚠️ check-html-layout.js niet gevonden, stap overslaan."
+          fi
 
       - name: 📤 Upload eventuele backups
         if: always()
