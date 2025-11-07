@@ -5,10 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijf – Irisje.nl</title>
-  <meta name="description" content="Bekijk bedrijfsinformatie, reviews en verstuur direct een aanvraag via Irisje.nl." />
+  <meta name="description" content="Bekijk bedrijfsinformatie, reviews en Google-beoordelingen via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251106" />
+  <link rel="stylesheet" href="style.css?v=20251107" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -28,40 +28,36 @@
   <!-- MAIN CONTENT -->
   <main class="flex-grow">
     <section id="company-section" class="max-w-5xl mx-auto p-6 md:p-10">
-      <div id="company-info" class="bg-white shadow rounded-2xl p-6 md:p-10 animate-fadeIn">
+      <div id="company-details" class="bg-white shadow rounded-2xl p-6 md:p-10 animate-fadeIn">
 
-        <h1 id="company-name" class="text-2xl md:text-3xl font-semibold text-gray-900 mb-2">Bedrijfsnaam</h1>
-        <p id="company-tagline" class="text-gray-600 mb-4"></p>
-
-        <!-- 📍 Contactinformatie -->
-        <div class="space-y-2 mb-6 text-gray-700 text-sm">
-          <p id="company-address" class="flex items-center gap-2"><span>📍</span><span>Adres niet opgegeven.</span></p>
-          <p id="company-phone" class="flex items-center gap-2"><span>☎</span><span>Geen telefoonnummer beschikbaar.</span></p>
-          <p id="company-website-wrapper" class="flex items-center gap-2 hidden">
-            <span>🌐</span><a id="company-website" href="#" target="_blank" class="text-indigo-600 hover:underline break-all"></a>
-          </p>
+        <!-- Dynamische bedrijfsinformatie -->
+        <div id="company-info">
+          <h1 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-2" data-company-name="">Bedrijfsnaam</h1>
+          <p class="text-gray-600 mb-4" data-city=""></p>
+          <p class="text-gray-700 leading-relaxed mb-6" id="company-description">Beschrijving wordt geladen...</p>
         </div>
 
-        <!-- ⭐ rating -->
-        <div class="flex items-center gap-2 mb-4">
-          <span id="company-rating" class="text-yellow-500 text-lg"></span>
-          <span id="company-reviews" class="text-gray-500 text-sm"></span>
-        </div>
-
-        <p id="company-description" class="text-gray-700 leading-relaxed mb-6"></p>
-
+        <!-- 💬 Irisje Reviews -->
         <hr class="my-8" />
-
-        <!-- 💬 REVIEWS -->
         <div>
-          <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Beoordelingen</h2>
-          <div id="reviews-container" class="space-y-4 mb-6">
-            <p class="text-gray-500 italic">Reviews worden geladen...</p>
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
+          <div id="reviews-list" class="space-y-4 mb-6">
+            <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
           </div>
+        </div>
 
-          <!-- ✍ Reviewformulier -->
+        <!-- ⭐ Google Reviews -->
+        <hr class="my-8" />
+        <section id="google-reviews" class="mt-6">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">⭐ Google Reviews</h2>
+          <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
+        </section>
+
+        <!-- ✍ Reviewformulier -->
+        <hr class="my-8" />
+        <div id="review-form-wrapper">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
           <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-            <h3 class="text-lg font-medium mb-3">✍ Jouw ervaring</h3>
             <div class="grid md:grid-cols-2 gap-3">
               <input type="text" id="review-name" placeholder="Naam" class="input" required />
               <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
@@ -77,20 +73,17 @@
                 <option value="1">⭐ (1)</option>
               </select>
             </div>
-            <textarea id="review-message" placeholder="Bericht" class="input mt-3" rows="4" required></textarea>
-
+            <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
             <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
-
             <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
               Verstuur beoordeling
             </button>
           </form>
         </div>
 
-        <hr class="my-8" />
-
         <!-- 🏷️ CLAIM -->
-        <div>
+        <hr class="my-8" />
+        <div id="claim-section">
           <h2 class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
           <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
           <form id="claim-form" class="grid md:grid-cols-2 gap-3">
@@ -111,133 +104,6 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <script>
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-
-  // 🟢 Render de reviews in het DOM
-  function renderReviews(reviews) {
-    const container = document.getElementById("reviews-container");
-    if (!container) return;
-    if (!reviews || reviews.length === 0) {
-      container.innerHTML = "<p class='text-gray-500 italic'>Nog geen beoordelingen beschikbaar.</p>";
-      return;
-    }
-    container.innerHTML = reviews.map(r => {
-      const d = r.date ? new Date(r.date).toLocaleDateString("nl-NL") : "";
-      return `
-        <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <div class="text-yellow-500 text-sm font-semibold">${"⭐".repeat(r.rating || 0)}</div>
-          <p class="text-gray-800 text-sm mt-2 whitespace-pre-line">${r.message || ""}</p>
-          <div class="text-gray-500 text-xs mt-3">— ${r.name || "Anoniem"} ${d}</div>
-        </div>`;
-    }).join("");
-  }
-
-  // 🟢 Ophalen van bedrijfsinfo + reviews
-  async function loadCompany() {
-    const slug = new URLSearchParams(window.location.search).get("slug");
-    if (!slug) return;
-
-    const el = id => document.getElementById(id);
-
-    try {
-      const res = await fetch(`${API_BASE}/companies/${slug}`);
-      if (!res.ok) throw new Error("Serverfout bij ophalen bedrijf");
-      const data = await res.json();
-
-      el("company-name").textContent = data.name || "Onbekend bedrijf";
-      el("company-tagline").textContent = data.tagline || "";
-      el("company-description").textContent = data.description || "Nog geen beschrijving beschikbaar.";
-      el("company-address").lastElementChild.textContent = data.address || "Adres niet opgegeven.";
-      el("company-phone").lastElementChild.textContent = data.phone || "Geen telefoonnummer beschikbaar.";
-
-      if (data.website) {
-        const link = el("company-website");
-        const wrap = el("company-website-wrapper");
-        link.href = data.website;
-        link.textContent = data.website;
-        wrap.classList.remove("hidden");
-      }
-
-      if (data.avgRating && data.avgRating > 0) {
-        el("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
-        el("company-reviews").textContent = `(${data.reviewCount || 0} reviews)`;
-      } else {
-        el("company-rating").textContent = "Nog geen beoordelingen";
-        el("company-reviews").textContent = "";
-      }
-
-      // Reviews via nieuwe endpoint
-      const revRes = await fetch(`${API_BASE}/reviews/slug/${slug}`);
-      const revData = await revRes.json();
-      renderReviews(revData.reviews || []);
-
-      setupReviewForm(slug);
-
-    } catch (err) {
-      console.error("❌ Fout bij laden bedrijf:", err);
-      const container = document.getElementById("reviews-container");
-      if (container)
-        container.innerHTML = "<p class='text-red-600 text-sm'>❌ Er ging iets mis bij het laden van dit bedrijfsprofiel.</p>";
-    }
-  }
-
-  // 🟢 Nieuwe review verzenden
-  function setupReviewForm(slug) {
-    const form = document.getElementById("review-form");
-    const statusEl = document.getElementById("review-status");
-    const btn = document.getElementById("review-submit");
-
-    if (!form) return;
-
-    form.addEventListener("submit", async e => {
-      e.preventDefault();
-      btn.disabled = true;
-      statusEl.textContent = "⏳ Beoordeling wordt verzonden...";
-      statusEl.className = "text-gray-500 text-sm mt-2";
-
-      const payload = {
-        companySlug: slug,
-        name: form.querySelector("#review-name").value.trim(),
-        email: form.querySelector("#review-email").value.trim(),
-        rating: Number(form.querySelector("#review-rating").value),
-        message: form.querySelector("#review-message").value.trim(),
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/reviews`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-
-        if (!data.ok) throw new Error(data.message || "Onbekende fout");
-
-        statusEl.textContent = "✅ Bedankt voor je beoordeling!";
-        statusEl.className = "text-green-600 text-sm mt-2";
-        form.reset();
-
-        // vernieuw de reviews direct
-        renderReviews(data.reviews || []);
-        const el = id => document.getElementById(id);
-        if (data.avgRating) {
-          el("company-rating").textContent = "⭐".repeat(Math.round(data.avgRating));
-          el("company-reviews").textContent = `(${data.reviewCount} reviews)`;
-        }
-
-        setTimeout(() => (statusEl.textContent = ""), 3000);
-      } catch (err) {
-        console.error("❌ Fout bij versturen review:", err);
-        statusEl.textContent = "❌ Er ging iets mis bij het verzenden van je beoordeling.";
-        statusEl.className = "text-red-600 text-sm mt-2";
-      } finally {
-        btn.disabled = false;
-      }
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", loadCompany);
-  </script>
+  <script src="js/company.js?v=20251107"></script>
 </body>
 </html>
