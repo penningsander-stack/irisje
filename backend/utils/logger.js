@@ -1,4 +1,3 @@
-// backend/utils/logger.js
 /**
  * 🌸 Irisje.nl – Uitgebreide logger met automatische logrotatie
  * - Houdt 20 regels in geheugen (voor /status)
@@ -6,12 +5,8 @@
  * - Verwijdert bestanden ouder dan 14 dagen
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require("fs");
+const path = require("path");
 
 const LOG_DIR = path.join(__dirname, "../logs");
 const MAX_LOGS = 20;
@@ -54,7 +49,7 @@ function cleanupOldLogs() {
 /**
  * Voeg een nieuwe logregel toe.
  */
-export function addLog(message, level = "info") {
+function addLog(message, level = "info") {
   const entry = {
     timestamp: new Date().toISOString(),
     level,
@@ -87,7 +82,7 @@ export function addLog(message, level = "info") {
  * Geef logs in omgekeerde volgorde (nieuwste eerst).
  * Vorm compatibel met frontend (timestamp + message).
  */
-export function getLogs() {
+function getLogs() {
   return [...logs]
     .reverse()
     .map((l) => ({
@@ -99,3 +94,5 @@ export function getLogs() {
 
 // 🧹 Opruimen uitvoeren bij opstart
 cleanupOldLogs();
+
+module.exports = { addLog, getLogs };
