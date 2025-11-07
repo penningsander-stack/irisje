@@ -53,3 +53,45 @@ jobs:
           else
             echo "✅ Geen wijzigingen nodig."
           fi
+name: 🔍 Controleer en herstel HTML-layout
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  check-html-layout:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧱 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Installeer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: 📦 Installeer dependencies
+        run: npm install --prefix frontend
+
+      - name: 🔍 Controleer en herstel HTML-bestanden
+        run: |
+          node frontend/check-html-layout.js || true
+          node frontend/fix-missing-html.js || true
+
+      - name: 🧹 Verwijder backup-map (optioneel)
+        run: rm -rf frontend/backup_fixed_html || true
+
+      - name: 🧾 Commit en push eventuele fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/**/*.html || true
+          if git diff --cached --quiet; then
+            echo "✅ Geen wijzigingen gevonden, alles al up-to-date."
+          else
+            git commit -m "🤖 Auto HTML-layout fix uitgevoerd door GitHub Action"
+            git push origin main
+          fi
