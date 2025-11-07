@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const companyContainer = document.getElementById("company-details");
   const reviewsContainer = document.getElementById("reviews-list");
+  const googleContainer = document.getElementById("google-reviews");
 
   if (!companySlug) {
     if (companyContainer) {
@@ -40,10 +41,12 @@ document.addEventListener("DOMContentLoaded", async () => {
               onerror="this.src='/img/default-logo.png';"
             />
             <div>
-              <h1 class="text-2xl font-bold text-indigo-700">
+              <h1 class="text-2xl font-bold text-indigo-700" data-company-name="${company.name || ''}">
                 ${company.name || ""}
               </h1>
-              <p class="text-gray-600">${company.city || ""}</p>
+              <p class="text-gray-600" data-city="${company.city || ''}">
+                ${company.city || ""}
+              </p>
               <p class="text-sm text-gray-500 mt-2">${company.tagline || ""}</p>
               <p class="text-sm text-gray-400 mt-1">
                 ${Array.isArray(company.categories) ? company.categories.join(", ") : ""}
@@ -56,6 +59,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           </div>
         </div>
       `;
+
+      // Na het laden van het bedrijf direct Google Reviews ophalen
+      if (company.name && company.city) {
+        await loadGoogleReviews(company.name, company.city);
+      }
     } catch (err) {
       console.error("❌ Fout bij laden bedrijf:", err);
       if (companyContainer) {
@@ -65,14 +73,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // === 2. Reviews laden ===
+  // === 2. Reviews laden (Irisje reviews) ===
   async function loadReviews() {
     try {
-      // Let op: jij gebruikt momenteel /reviews/company/:companySlug
-      // Dat laten we zo staan, zodat jouw bestaande backend blijft werken.
       const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`);
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-
       const reviews = await res.json();
 
       if (!reviewsContainer) return;
@@ -139,7 +144,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn = e.target.closest(".report-btn");
     if (!btn) return;
 
-    // beveiliging: alleen bedrijf of beheerder mag melden
     if (!(userRole === "company" || userEmail === "info@irisje.nl")) {
       alert("Alleen ingelogde bedrijven kunnen reviews melden.");
       return;
@@ -157,9 +161,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         method: "PATCH",
         headers: { "Content-Type": "application/json" }
       });
-
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-
       btn.textContent = "✅ Gemeld";
       btn.classList.remove("text-red-600", "hover:text-red-800");
       btn.classList.add("text-green-600");
@@ -170,6 +172,46 @@ document.addEventListener("DOMContentLoaded", async () => {
       btn.textContent = "🚩 Meld review";
     }
   });
+
+  // === 4. Google Reviews laden ===
+  async function loadGoogleReviews(companyName, city) {
+    try {
+      const res = await fetch(
+        `${API_BASE}/google-reviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`
+      );
+      if (!res.ok) throw new Error("Kon geen Google Reviews ophalen");
+
+      const data = await res.json();
+      if (!googleContainer) return;
+
+      googleContainer.innerHTML = `
+        <h2 class="text-lg font-semibold text-indigo-700 mb-3 mt-8">
+          Google Reviews ⭐ ${data.rating || "-"} (${data.total || 0})
+        </h2>
+        ${
+          (data.reviews && data.reviews.length > 0)
+            ? data.reviews
+                .slice(0, 3)
+                .map(
+                  (r) => `
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-3">
+            <p class="text-yellow-500 mb-1">⭐ ${r.rating}</p>
+            <p class="text-gray-700 mb-1">"${r.text}"</p>
+            <p class="text-sm text-gray-500">– ${r.author_name}</p>
+          </div>`
+                )
+                .join("")
+            : "<p class='text-gray-500'>Geen Google Reviews gevonden.</p>"
+        }
+        <p class="text-xs text-gray-400 mt-2">Beoordelingen afkomstig van Google Maps.</p>
+      `;
+    } catch (err) {
+      console.warn("⚠️ Geen Google Reviews beschikbaar:", err);
+      if (googleContainer)
+        googleContainer.innerHTML =
+          "<p class='text-gray-400 text-sm mt-4'>Geen Google Reviews gevonden.</p>";
+    }
+  }
 
   // === Init ===
   await loadCompany();
