@@ -38,12 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               onerror="this.src='/img/default-logo.png';"
             />
             <div>
-              <h1 class="text-2xl font-bold text-indigo-700" data-company-name="${company.name || ''}">
-                ${company.name || ""}
-              </h1>
-              <p class="text-gray-600" data-city="${company.city || ''}">
-                ${company.city || ""}
-              </p>
+              <h1 class="text-2xl font-bold text-indigo-700">${company.name || ""}</h1>
+              <p class="text-gray-600">${company.city || ""}</p>
               <p class="text-sm text-gray-500 mt-2">${company.tagline || ""}</p>
               <p class="text-sm text-gray-400 mt-1">
                 ${Array.isArray(company.categories) ? company.categories.join(", ") : ""}
@@ -62,7 +58,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (err) {
       console.error("❌ Fout bij laden bedrijf:", err);
       if (companyContainer) {
-        companyContainer.innerHTML = "<p class='text-red-600'>Fout bij laden van het bedrijfsprofiel.</p>";
+        companyContainer.innerHTML =
+          "<p class='text-red-600'>Fout bij laden van het bedrijfsprofiel.</p>";
       }
     }
   }
@@ -170,10 +167,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       googleContainer.innerHTML = `
         <div class="mb-4">
-          <h2 class="text-lg font-semibold text-indigo-700">
+          <h3 class="text-lg font-semibold text-indigo-700">
             ⭐ Google Reviews (${data.total || 0})
-          </h2>
-          <p class="text-gray-600 text-sm mb-2">Gemiddelde score: ${data.rating || "-"}</p>
+          </h3>
+          <p class="text-gray-600 text-sm mb-3">Gemiddelde score: ${data.rating || "-"}</p>
         </div>
         <div class="space-y-3">
           ${data.reviews
