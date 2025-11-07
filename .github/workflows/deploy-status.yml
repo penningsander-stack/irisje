@@ -1,0 +1,26 @@
+name: ✅ Irisje.nl Deploy Status
+
+on:
+  workflow_run:
+    workflows:
+      - "🚀 Deploy Irisje.nl Frontend"
+      - "🚀 Deploy Irisje.nl Backend"
+    types:
+      - completed
+
+jobs:
+  notify:
+    name: Plaats samenvattende statusmelding
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: 🧾 Toon statusinformatie
+        run: |
+          echo "✅ Irisje.nl succesvol bijgewerkt – frontend en backend up-to-date."
+          echo "Workflow uitgevoerd door: ${{ github.actor }}"
+          echo "Tijdstip: $(date -u)"
+
+      - name: 💬 Voeg samenvatting toe aan Actions-overzicht
+        run: |
+          echo "✅ Irisje.nl succesvol bijgewerkt – frontend en backend up-to-date." >> $GITHUB_STEP_SUMMARY
