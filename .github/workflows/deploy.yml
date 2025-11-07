@@ -1,0 +1,48 @@
+name: 🚀 Deploy Irisje.nl Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy naar Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: ⚙️ Build frontend (indien van toepassing)
+        working-directory: frontend
+        run: |
+          if [ -f package.json ]; then
+            echo "Installeer dependencies en build..."
+            npm ci --omit=dev || npm install --omit=dev
+            if [ -f package.json ] && grep -q "\"build\":" package.json; then
+              npm run build || echo "Geen build-script gevonden."
+            else
+              echo "Geen build-script aanwezig, stap overslaan."
+            fi
+          fi
+
+      - name: 🚀 Trigger Render deploy
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK" ]; then
+            echo "❌ Geen Render webhook ingesteld. Voeg toe in Secrets als RENDER_DEPLOY_HOOK."
+            exit 1
+          fi
+          echo "Start Render-deploy..."
+          curl -X POST "$RENDER_DEPLOY_HOOK"
+          echo "✅ Deploy trigger verzonden naar Render."
