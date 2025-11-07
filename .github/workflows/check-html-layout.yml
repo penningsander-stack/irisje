@@ -2,96 +2,43 @@ name: 🔍 Controleer en herstel HTML-layout
 
 on:
   push:
-    branches: [ main ]
+    paths:
+      - "frontend/**/*.html"
+      - "frontend/js/**"
+      - "frontend/css/**"
+      - ".github/workflows/check-html-layout.yml"
   workflow_dispatch:
 
 jobs:
-  check-html:
+  check-and-fix:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧩 Repo ophalen
+      - name: 📥 Checkout repo
         uses: actions/checkout@v4
 
-      - name: ⚙️ Node installeren
+      - name: 🟣 Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22"
 
-      - name: 📦 Dependencies installeren
+      - name: 📦 Installeer frontend-deps (als nodig)
+        working-directory: frontend
         run: |
-          cd frontend
-          npm install
-
-      - name: 🧰 HTML-layout automatisch controleren en herstellen
-        id: fix
-        run: |
-          cd frontend
-          node check-html-layout.js <<< "j" | tee ../fix-report.log
-
-      - name: 🧾 Samenvattingsrapport genereren
-        run: |
-          echo "## 🔍 Controle & herstel rapport" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if grep -q "🛠️" fix-report.log; then
-            echo "### 🛠️ Herstelde bestanden:" >> $GITHUB_STEP_SUMMARY
-            grep "🛠️" fix-report.log | sed 's/^/• /' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ Geen aanpassingen nodig." >> $GITHUB_STEP_SUMMARY
+          if [ -f package.json ]; then
+            npm install --omit=dev || true
           fi
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🕓 Workflow uitgevoerd op $(date '+%d-%m-%Y %H:%M')" >> $GITHUB_STEP_SUMMARY
 
-      - name: ✅ Commit wijzigingen (indien nodig)
+      - name: 🛠️ Controle & herstel HTML
+        working-directory: frontend
         run: |
-          if [ -n "$(git status --porcelain frontend/*.html)" ]; then
-            git config user.name "github-actions"
-            git config user.email "actions@github.com"
-            git add frontend/*.html
-            git commit -m "🔧 Auto: HTML-layout automatisch bijgewerkt"
-            git push
-          else
-            echo "✅ Geen wijzigingen nodig."
-          fi
-name: 🔍 Controleer en herstel HTML-layout
+          # run jouw script dat je net hebt gebruikt in Codespace
+          node check-html-layout.js || true
 
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  check-html-layout:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 🧱 Checkout repository
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Installeer Node.js
-        uses: actions/setup-node@v4
+      - name: 📤 Upload eventuele backups
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '22.x'
-
-      - name: 📦 Installeer dependencies
-        run: npm install --prefix frontend
-
-      - name: 🔍 Controleer en herstel HTML-bestanden
-        run: |
-          node frontend/check-html-layout.js || true
-          node frontend/fix-missing-html.js || true
-
-      - name: 🧹 Verwijder backup-map (optioneel)
-        run: rm -rf frontend/backup_fixed_html || true
-
-      - name: 🧾 Commit en push eventuele fixes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/**/*.html || true
-          if git diff --cached --quiet; then
-            echo "✅ Geen wijzigingen gevonden, alles al up-to-date."
-          else
-            git commit -m "🤖 Auto HTML-layout fix uitgevoerd door GitHub Action"
-            git push origin main
-          fi
+          name: backup_fixed_html
+          path: frontend/backup_fixed_html
+          if-no-files-found: ignore
