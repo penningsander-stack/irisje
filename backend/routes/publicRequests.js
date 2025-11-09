@@ -6,7 +6,7 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-// ✅ Testroute om te bevestigen dat deze router geladen is
+// ✅ Test route
 router.get("/", (req, res) => {
   res.json({ ok: true, message: "publicRequests router actief" });
 });
@@ -16,10 +16,11 @@ router.post("/multi", async (req, res) => {
   try {
     const { customerName, customerEmail, message, companies } = req.body || {};
 
-    if (!customerName || !customerEmail) {
+    // Validaties
+    if (!customerName || !customerEmail || !message) {
       return res.status(400).json({
         ok: false,
-        error: "Naam en e-mailadres zijn verplicht.",
+        error: "Naam, e-mailadres en bericht zijn verplicht.",
       });
     }
 
@@ -62,15 +63,12 @@ router.post("/multi", async (req, res) => {
 
     // ✅ Eén aanvraag per bedrijf opslaan
     const toInsert = foundCompanies.map((c) => ({
-      customerName,
-      customerEmail,
+      name: customerName,          // model verwacht 'name'
+      email: customerEmail,        // model verwacht 'email'
       message: message || "",
       company: c._id,
-      companyName: c.name || "",
-      status: "open",
-      source: "public-multi",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      status: "Nieuw",             // model verwacht 'Nieuw' als defaultwaarde
+      date: new Date(),
     }));
 
     await Request.insertMany(toInsert);
