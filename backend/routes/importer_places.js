@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
-const Company = require("../models/Company");
+const Company = require("../models/ompany");
 require("dotenv").config();
 
 const API_KEY = process.env.GOOGLE_PLACES_API_KEY;

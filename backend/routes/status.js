@@ -2,7 +2,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const os = require("os");
-const Company = require("../models/Company");
+const Company = require("../models/ompany");
 const { getLogs } = require("../utils/logger");
 
 const router = express.Router();

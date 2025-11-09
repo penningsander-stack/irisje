@@ -3,7 +3,7 @@ const express = require("express");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-const Company = require("../models/Company");
+const Company = require("../models/ompany");
 
 const router = express.Router();
 

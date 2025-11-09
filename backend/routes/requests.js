@@ -1,7 +1,7 @@
 // backend/routes/requests.js
 const express = require("express");
 const router = express.Router();
-const Request = require("../models/Request");
+const Request = require("../models/equest");
 const { verifyToken } = require("../middleware/auth");
 
 // 📋 Alle aanvragen ophalen (alleen met token)

@@ -1,7 +1,7 @@
 // backend/routes/dashboard.js
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const Request = require("../models/Request");
+const Request = require("../models/equest");
 
 const router = express.Router();
 
