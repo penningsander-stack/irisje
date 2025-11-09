@@ -1,59 +1,67 @@
 // backend/routes/publicRequests.js
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 
-// LET OP: hier alleen kleine letters gebruiken, want je modellen heten nu zo:
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-// ✅ Publieke aanvragen ophalen
-// GET /api/publicRequests
-router.get("/", async (req, res) => {
+// POST /api/publicRequests/multi
+router.post("/multi", async (req, res) => {
   try {
-    // simpele, veilige variant: pak de nieuwste 50
-    const requests = await Request.find({})
-      .sort({ createdAt: -1 })
-      .limit(50)
-      .lean();
+    const { customerName, customerEmail, message, companies } = req.body || {};
 
-    res.json({
-      ok: true,
-      total: requests.length,
-      items: requests,
-    });
-  } catch (err) {
-    console.error("❌ Fout bij ophalen public requests:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen public requests" });
-  }
-});
-
-// ✅ Publieke aanvragen voor één bedrijf (optioneel, maar je had Company hier al nodig)
-// GET /api/publicRequests/company/:slug
-router.get("/company/:slug", async (req, res) => {
-  try {
-    const slug = req.params.slug;
-    const company = await Company.findOne({ slug }).lean();
-    if (!company) {
-      return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    if (!customerName || !customerEmail) {
+      return res.status(400).json({ ok: false, error: "Naam en e-mailadres zijn verplicht." });
     }
 
-    const requests = await Request.find({ company: company._id })
-      .sort({ createdAt: -1 })
+    if (!Array.isArray(companies) || companies.length === 0) {
+      return res.status(400).json({ ok: false, error: "Kies minstens één bedrijf." });
+    }
+
+    if (companies.length > 5) {
+      return res.status(400).json({ ok: false, error: "Je kunt maximaal 5 bedrijven selecteren." });
+    }
+
+    // check of bedrijven bestaan
+    const objectIds = companies
+      .filter((id) => typeof id === "string" && mongoose.isValidObjectId(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    if (objectIds.length === 0) {
+      return res.status(400).json({ ok: false, error: "Ongeldige bedrijfskeuze." });
+    }
+
+    const foundCompanies = await Company.find({ _id: { $in: objectIds } })
+      .select("_id name email owner")
       .lean();
 
-    res.json({
+    if (!foundCompanies.length) {
+      return res.status(404).json({ ok: false, error: "Geen van de gekozen bedrijven bestaat." });
+    }
+
+    // per bedrijf één aanvraag opslaan
+    const toInsert = foundCompanies.map((c) => ({
+      customerName,
+      customerEmail,
+      message: message || "",
+      company: c._id,
+      companyName: c.name || "",
+      status: "open",
+      source: "public-multi",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
+
+    await Request.insertMany(toInsert);
+
+    return res.json({
       ok: true,
-      company: {
-        _id: company._id,
-        name: company.name,
-        slug: company.slug,
-      },
-      total: requests.length,
-      items: requests,
+      created: toInsert.length,
     });
   } catch (err) {
-    console.error("❌ Fout bij ophalen public requests voor bedrijf:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen public requests voor bedrijf" });
+    console.error("❌ Fout bij publicRequests/multi:", err);
+    return res.status(500).json({ ok: false, error: "Serverfout bij opslaan van de aanvraag." });
   }
 });
 
