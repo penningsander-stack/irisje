@@ -1,7 +1,7 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/ompany");
+const Company = require("../models/company");
 const Review = require("../models/review");
 
 // ✅ Alle bedrijven ophalen
