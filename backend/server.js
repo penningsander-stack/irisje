@@ -47,7 +47,10 @@ mongoose
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
-app.use("/api/publicRequests", require("./routes/publicRequests"));
+
+// 👇 Belangrijk: zorg dat dit exact hetzelfde is als de bestandsnaam
+app.use("/api/publicRequests", require("./routes/publicRequests")); 
+
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/email", require("./routes/email"));
@@ -89,7 +92,6 @@ app.use(/.*\.html$/, (req, res, next) => {
 
   let html = fs.readFileSync(filePath, "utf8");
 
-  // Fonts & preload alleen injecteren als ze nog ontbreken
   if (!html.includes("fonts.googleapis.com") && html.includes("<head>")) {
     const preloadBlock = `
     <!-- Injected performance preload -->
@@ -103,12 +105,10 @@ app.use(/.*\.html$/, (req, res, next) => {
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
   }
 
-  // lazyload.js correct toevoegen (kleine letters!)
   if (!html.includes("js/lazyload.js")) {
     html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
   }
 
-  // 🌸 Extra: status-enhanced.js automatisch injecteren op statuspagina
   if (req.path === "/status.html" && !html.includes("js/status-enhanced.js")) {
     html = html.replace(/<\/body>/i, `  <script src="js/status-enhanced.js"></script>\n</body>`);
   }
@@ -116,7 +116,7 @@ app.use(/.*\.html$/, (req, res, next) => {
   res.type("html").send(html);
 });
 
-// === ✅ Frontend fallback (alle niet-API routes) ===
+// === ✅ Frontend fallback ===
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
