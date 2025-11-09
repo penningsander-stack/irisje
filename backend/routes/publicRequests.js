@@ -1,7 +1,7 @@
 // backend/routes/publicRequests.js
 const express = require("express");
 const router = express.Router();
-const Request = require("../models/equest");
+const Request = require("../models/request");
 const Company = require("../models/ompany");
 // const { sendMail } = require("../utils/mailer"); // tijdelijk uitgeschakeld
 
