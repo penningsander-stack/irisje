@@ -16,7 +16,7 @@ router.post("/multi", async (req, res) => {
   try {
     const { customerName, customerEmail, message, companies } = req.body || {};
 
-    // Validaties
+    // 🔎 Validatie
     if (!customerName || !customerEmail || !message) {
       return res.status(400).json({
         ok: false,
@@ -63,19 +63,26 @@ router.post("/multi", async (req, res) => {
 
     // ✅ Eén aanvraag per bedrijf opslaan
     const toInsert = foundCompanies.map((c) => ({
-      name: customerName,          // model verwacht 'name'
-      email: customerEmail,        // model verwacht 'email'
+      name: customerName,
+      email: customerEmail,
       message: message || "",
       company: c._id,
-      status: "Nieuw",             // model verwacht 'Nieuw' als defaultwaarde
+      status: "Nieuw",
       date: new Date(),
     }));
 
-    await Request.insertMany(toInsert);
+    const inserted = await Request.insertMany(toInsert);
+
+    // 🧾 Log naar console voor monitoring (Render Logs)
+    console.log(
+      `📩 Nieuwe openbare aanvraag ontvangen van ${customerName} <${customerEmail}> voor bedrijven: ${foundCompanies
+        .map((c) => c.name)
+        .join(", ")}`
+    );
 
     return res.json({
       ok: true,
-      created: toInsert.length,
+      created: inserted.length,
     });
   } catch (err) {
     console.error("❌ Fout bij publicRequests/multi:", err);
