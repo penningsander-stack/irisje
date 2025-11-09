@@ -8,7 +8,7 @@
   <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251106" />
+  <link rel="stylesheet" href="style.css?v=20251109" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -35,14 +35,28 @@
       </h1>
 
       <!-- FILTERS -->
-      <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Zoeken
         </button>
       </form>
-      <p id="filterMessage" class="text-xs text-gray-500 mb-4"></p>
+
+      <div class="flex items-center justify-between mb-4">
+        <p id="filterMessage" class="text-xs text-gray-500"></p>
+        <div id="selectionInfo" class="text-sm text-gray-600 font-medium">
+          0 van 5 geselecteerd
+        </div>
+      </div>
+
+      <!-- KNOP -->
+      <div class="text-center mb-6">
+        <button id="sendRequestBtn" disabled
+          class="bg-indigo-400 cursor-not-allowed text-white font-semibold rounded-xl px-6 py-3 text-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Offerte aanvragen bij geselecteerde bedrijven
+        </button>
+      </div>
 
       <!-- RESULTATEN -->
       <section id="resultsContainer" class="grid gap-6">
@@ -59,14 +73,14 @@
   <!-- SCRIPT -->
   <script>
   const API_BASE = "https://irisje-backend.onrender.com/api";
+  const MAX_SELECTION = 5;
+  let selectedCompanies = [];
 
-  // ⭐ Sterrenfunctie
   const stars = rating => {
     const r = Math.round(rating || 0);
     return r > 0 ? "⭐".repeat(r) : "—";
   };
 
-  // 🔍 Resultaten laden
   async function loadResults(category, city) {
     const container = document.getElementById("resultsContainer");
     const msg = document.getElementById("filterMessage");
@@ -76,14 +90,6 @@
     try {
       const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category || "")}&city=${encodeURIComponent(city || "")}`;
       const res = await fetch(url);
-
-      // controleer of de server JSON teruggeeft
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Server gaf geen JSON terug: " + text.slice(0, 80));
-      }
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Serverfout");
 
@@ -97,8 +103,14 @@
         return;
       }
 
+      // Sorteer op beoordeling (hoog naar laag)
+      items.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
+
       container.innerHTML = items.map(c => `
-        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5">
+        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 relative">
+          <label class="absolute top-4 right-4">
+            <input type="checkbox" class="company-select accent-indigo-600 w-5 h-5" data-id="${c._id}" data-name="${c.name}" />
+          </label>
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div>
               <h2 class="text-lg font-semibold text-indigo-700 leading-tight">${c.name || "Onbekend bedrijf"}</h2>
@@ -125,7 +137,6 @@
       `).join("");
 
       msg.textContent = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
-
     } catch (err) {
       console.error("❌ Fout bij laden resultaten:", err);
       container.innerHTML = `
@@ -135,10 +146,71 @@
     }
   }
 
+  function updateSelectionDisplay() {
+    const info = document.getElementById("selectionInfo");
+    const btn = document.getElementById("sendRequestBtn");
+    info.textContent = `${selectedCompanies.length} van ${MAX_SELECTION} geselecteerd`;
+
+    if (selectedCompanies.length > 0) {
+      btn.disabled = false;
+      btn.classList.remove("bg-indigo-400", "cursor-not-allowed");
+      btn.classList.add("bg-indigo-600", "hover:bg-indigo-700", "cursor-pointer");
+    } else {
+      btn.disabled = true;
+      btn.classList.add("bg-indigo-400", "cursor-not-allowed");
+      btn.classList.remove("bg-indigo-600", "hover:bg-indigo-700", "cursor-pointer");
+    }
+  }
+
+  // Checkbox selectie
+  document.addEventListener("change", (e) => {
+    const cb = e.target.closest(".company-select");
+    if (!cb) return;
+
+    const id = cb.dataset.id;
+    const name = cb.dataset.name;
+
+    if (cb.checked) {
+      if (selectedCompanies.length >= MAX_SELECTION) {
+        alert(`Je kunt maximaal ${MAX_SELECTION} bedrijven selecteren.`);
+        cb.checked = false;
+        return;
+      }
+      selectedCompanies.push({ id, name });
+    } else {
+      selectedCompanies = selectedCompanies.filter(c => c.id !== id);
+    }
+
+    updateSelectionDisplay();
+  });
+
+  // Knop om aanvraag te versturen
+  document.getElementById("sendRequestBtn").addEventListener("click", async () => {
+    if (selectedCompanies.length === 0) return;
+    const confirmSend = confirm(`Offerte aanvragen bij ${selectedCompanies.length} geselecteerde bedrijf${selectedCompanies.length > 1 ? "ven" : ""}?`);
+    if (!confirmSend) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/publicRequests/multi`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companies: selectedCompanies })
+      });
+      if (!res.ok) throw new Error("Serverfout bij verzenden aanvraag");
+
+      alert("✅ Aanvraag succesvol verzonden!");
+      selectedCompanies = [];
+      document.querySelectorAll(".company-select").forEach(cb => cb.checked = false);
+      updateSelectionDisplay();
+    } catch (err) {
+      console.error("❌ Fout bij verzenden aanvraag:", err);
+      alert("Er is een fout opgetreden bij het verzenden van de aanvraag.");
+    }
+  });
+
   // 🌐 Params ophalen
   const getParam = n => new URLSearchParams(window.location.search).get(n) || "";
 
-  // 📤 Filterformulier
   document.getElementById("filterForm").addEventListener("submit", e => {
     e.preventDefault();
     const cat = document.getElementById("filterCategory").value.trim();
@@ -146,7 +218,6 @@
     loadResults(cat, city);
   });
 
-  // 🟢 Initialiseren bij laden
   document.addEventListener("DOMContentLoaded", () => {
     const cat = getParam("category");
     const city = getParam("city");
@@ -154,7 +225,6 @@
     document.getElementById("filterCity").value = city;
     loadResults(cat, city);
 
-    // kleine fade-in animatie
     document.querySelectorAll("header, main section, footer").forEach((el, i) => {
       el.style.opacity = "0";
       el.style.transform = "translateY(12px)";
