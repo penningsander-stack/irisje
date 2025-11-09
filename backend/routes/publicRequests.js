@@ -1,55 +1,59 @@
 // backend/routes/publicRequests.js
 const express = require("express");
 const router = express.Router();
+
+// LET OP: hier alleen kleine letters gebruiken, want je modellen heten nu zo:
 const Request = require("../models/request");
-const Company = require("../models/ompany");
-// const { sendMail } = require("../utils/mailer"); // tijdelijk uitgeschakeld
+const Company = require("../models/company");
 
-// 📩 Nieuwe offerteaanvraag ontvangen
-router.post("/", async (req, res) => {
+// ✅ Publieke aanvragen ophalen
+// GET /api/publicRequests
+router.get("/", async (req, res) => {
   try {
-    const { companySlug, company, companyId, name, email, city, message } = req.body;
+    // simpele, veilige variant: pak de nieuwste 50
+    const requests = await Request.find({})
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
 
-    if (!name || !email || !message) {
-      return res.status(400).json({ message: "Ontbrekende velden" });
-    }
-
-    // Zoek optioneel bedrijf
-    let companyDoc = null;
-    if (companySlug) companyDoc = await Company.findOne({ slug: companySlug });
-    if (!companyDoc && (company || companyId)) companyDoc = await Company.findById(company || companyId);
-
-    // Nieuwe aanvraag opslaan
-    const newRequest = new Request({
-      company: companyDoc ? companyDoc._id : null,
-      name,
-      email,
-      city,
-      message,
-      status: "Nieuw",
-      date: new Date(),
+    res.json({
+      ok: true,
+      total: requests.length,
+      items: requests,
     });
-
-    await newRequest.save();
-
-    // 📴 Mailfunctie tijdelijk uitgeschakeld
-    // await sendMail({ ... });
-
-    res.json({ message: "✅ Aanvraag succesvol verzonden!", request: newRequest });
-  } catch (error) {
-    console.error("Fout bij versturen aanvraag:", error);
-    res.status(500).json({ message: "Serverfout bij versturen aanvraag" });
+  } catch (err) {
+    console.error("❌ Fout bij ophalen public requests:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen public requests" });
   }
 });
 
-// 📋 Alle aanvragen ophalen
-router.get("/", async (req, res) => {
+// ✅ Publieke aanvragen voor één bedrijf (optioneel, maar je had Company hier al nodig)
+// GET /api/publicRequests/company/:slug
+router.get("/company/:slug", async (req, res) => {
   try {
-    const requests = await Request.find().lean();
-    res.json(requests);
-  } catch (error) {
-    console.error("Fout bij ophalen aanvragen:", error);
-    res.status(500).json({ message: "Serverfout bij ophalen aanvragen" });
+    const slug = req.params.slug;
+    const company = await Company.findOne({ slug }).lean();
+    if (!company) {
+      return res.status(404).json({ error: "Bedrijf niet gevonden" });
+    }
+
+    const requests = await Request.find({ company: company._id })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({
+      ok: true,
+      company: {
+        _id: company._id,
+        name: company.name,
+        slug: company.slug,
+      },
+      total: requests.length,
+      items: requests,
+    });
+  } catch (err) {
+    console.error("❌ Fout bij ophalen public requests voor bedrijf:", err);
+    res.status(500).json({ error: "Serverfout bij ophalen public requests voor bedrijf" });
   }
 });
 
