@@ -1,32 +1,46 @@
 // backend/routes/claims.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const ClaimRequest = require('../models/ClaimRequest');
-const Company = require('../models/Company');
+const ClaimRequest = require("../models/claimrequest"); // ✅ juiste bestandsnaam in kleine letters
+const Company = require("../models/company"); // ✅ idem
 
-// Nieuw claim-verzoek aanmaken
-router.post('/companies/:id/claim', async (req, res) => {
+// ✅ Nieuw claimverzoek aanmaken
+router.post("/", async (req, res) => {
   try {
-    const companyId = req.params.id;
-    const { contactName, contactEmail, contactPhone, methodRequested } = req.body;
-
-    const company = await Company.findById(companyId);
-    if (!company) return res.status(404).json({ error: 'Bedrijf niet gevonden' });
+    const { name, email, phone, companyId } = req.body;
+    if (!companyId || !email || !name) {
+      return res.status(400).json({ error: "Ontbrekende velden in claimverzoek" });
+    }
 
     const claim = new ClaimRequest({
-      companyId,
-      contactName,
-      contactEmail,
-      contactPhone,
-      methodRequested: methodRequested || 'email',
-      status: 'pending'
+      name,
+      email,
+      phone,
+      company: companyId,
+      createdAt: new Date(),
     });
 
     await claim.save();
-    res.json({ success: true, message: 'Claim aangemaakt', claim });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Serverfout bij aanmaken claim' });
+
+    res.json({ ok: true, message: "Claim succesvol verzonden", claimId: claim._id });
+  } catch (error) {
+    console.error("❌ Fout bij claimverzoek:", error);
+    res.status(500).json({ ok: false, error: "Serverfout bij claimverzoek" });
+  }
+});
+
+// ✅ Alle claims ophalen (alleen voor beheerder)
+router.get("/", async (req, res) => {
+  try {
+    const claims = await ClaimRequest.find()
+      .populate("company", "name city")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ ok: true, total: claims.length, items: claims });
+  } catch (error) {
+    console.error("❌ Fout bij ophalen claims:", error);
+    res.status(500).json({ ok: false, error: "Serverfout bij ophalen claims" });
   }
 });
 
