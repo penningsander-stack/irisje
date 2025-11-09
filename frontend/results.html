@@ -9,12 +9,15 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251109" />
+  <style>
+    .error-border { border-color: #dc2626 !important; }
+    .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; }
+  </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
-
   <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
       <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
@@ -34,10 +37,10 @@
         <span class="text-3xl mr-2">🔎</span> Bedrijven in jouw regio
       </h1>
 
-      <!-- FILTERS -->
+      <!-- FILTER -->
       <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
+        <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
           Zoeken
         </button>
@@ -47,35 +50,40 @@
       <!-- SELECTIEBALK -->
       <div id="selectionBar" class="hidden bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p class="text-sm text-indigo-900 font-medium">
-            Geselecteerde bedrijven: <span id="selectedCount">0</span>/5
-          </p>
+          <p class="text-sm text-indigo-900 font-medium">Geselecteerde bedrijven: <span id="selectedCount">0</span>/5</p>
           <p class="text-xs text-indigo-700" id="selectedNames"></p>
         </div>
         <div class="flex gap-2">
-          <button id="openRequestForm" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50" disabled>
-            Offerte aanvragen
-          </button>
-          <button id="clearSelection" class="text-xs text-indigo-700 hover:underline">
-            Alles deselecteren
-          </button>
+          <button id="openRequestForm" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50" disabled>Offerte aanvragen</button>
+          <button id="clearSelection" class="text-xs text-indigo-700 hover:underline">Alles deselecteren</button>
         </div>
       </div>
 
       <!-- AANVRAAGFORM -->
       <div id="requestFormBox" class="hidden bg-white border border-gray-100 rounded-2xl shadow p-5 mb-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-2">Offerte aanvragen bij geselecteerde bedrijven</h2>
-        <p class="text-sm text-gray-500 mb-4">Je aanvraag wordt verstuurd naar de bedrijven die je hebt aangevinkt (max. 5).</p>
+        <p class="text-sm text-gray-500 mb-4">Je aanvraag wordt verstuurd naar maximaal vijf bedrijven.</p>
+
         <form id="requestForm" class="grid gap-3 md:grid-cols-2">
-          <input type="text" id="rqName" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required />
-          <input type="email" id="rqEmail" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required />
-          <input type="tel" id="rqPhone" placeholder="Telefoonnummer" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" required />
-          <textarea id="rqMessage" class="md:col-span-2 border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Beschrijf je klus of vraag..." required></textarea>
+          <div>
+            <input id="rqName" type="text" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <p id="errName" class="error-text hidden"></p>
+          </div>
+          <div>
+            <input id="rqEmail" type="email" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <p id="errEmail" class="error-text hidden"></p>
+          </div>
+          <div>
+            <input id="rqPhone" type="tel" placeholder="Telefoonnummer (10 cijfers)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <p id="errPhone" class="error-text hidden"></p>
+          </div>
+          <div class="md:col-span-2">
+            <textarea id="rqMessage" rows="3" placeholder="Beschrijf je klus of vraag..." class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 w-full" required></textarea>
+            <p id="errMessage" class="error-text hidden"></p>
+          </div>
           <p id="rqStatus" class="md:col-span-2 text-sm min-h-[1.25rem]"></p>
           <div class="md:col-span-2 flex flex-col gap-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
-              Verstuur aanvraag
-            </button>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Verstuur aanvraag</button>
             <button type="button" id="closeRequestForm" class="text-sm text-gray-500 hover:text-gray-700">Annuleren</button>
             <p class="text-xs text-gray-500 mt-1 text-center">🔒 Je gegevens worden alleen gedeeld met de geselecteerde bedrijven.</p>
           </div>
@@ -94,145 +102,120 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- SCRIPT -->
   <script>
   const API_BASE = "https://irisje-backend.onrender.com/api";
   const MAX_SELECTION = 5;
   const selectedMap = new Map();
 
-  const stars = rating => {
-    const r = Math.round(rating || 0);
-    return r > 0 ? "⭐".repeat(r) : "—";
+  const validators = {
+    rqName: val => val.trim().length >= 2 || "Voer je naam in.",
+    rqEmail: val => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
+    rqPhone: val => /^\\d{10}$/.test(val) || "Voer 10 cijfers in.",
+    rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
   };
 
+  for (const id in validators) {
+    const el = document.getElementById(id);
+    const err = document.getElementById("err" + id.slice(2));
+    el.addEventListener("input", () => {
+      const valid = validators[id](el.value);
+      if (valid === true) {
+        el.classList.remove("error-border");
+        err.classList.add("hidden");
+      } else {
+        el.classList.add("error-border");
+        err.textContent = valid;
+        err.classList.remove("hidden");
+      }
+    });
+  }
+
   function updateSelectionUI() {
-    const selectionBar = document.getElementById("selectionBar");
-    const countEl = document.getElementById("selectedCount");
-    const namesEl = document.getElementById("selectedNames");
-    const openBtn = document.getElementById("openRequestForm");
-
+    const bar = document.getElementById("selectionBar");
+    const count = document.getElementById("selectedCount");
+    const names = document.getElementById("selectedNames");
+    const btn = document.getElementById("openRequestForm");
     const arr = Array.from(selectedMap.values());
-    countEl.textContent = arr.length;
-
+    count.textContent = arr.length;
     if (arr.length === 0) {
-      selectionBar.classList.add("hidden");
-      openBtn.disabled = true;
-      namesEl.textContent = "";
+      bar.classList.add("hidden");
+      btn.disabled = true;
+      names.textContent = "";
     } else {
-      selectionBar.classList.remove("hidden");
-      openBtn.disabled = false;
-      namesEl.textContent = arr.map(c => c.name).join(", ");
+      bar.classList.remove("hidden");
+      btn.disabled = false;
+      names.textContent = arr.map(c => c.name).join(", ");
     }
   }
 
-  async function loadResults(category, city) {
+  async function loadResults(cat, city) {
     const container = document.getElementById("resultsContainer");
-    const msg = document.getElementById("filterMessage");
     container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
-    msg.textContent = "";
-
     try {
-      const res = await fetch(\`\${API_BASE}/companies/search?category=\${encodeURIComponent(category)}&city=\${encodeURIComponent(city)}\`);
+      const res = await fetch(\`\${API_BASE}/companies/search?category=\${encodeURIComponent(cat)}&city=\${encodeURIComponent(city)}\`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Serverfout");
-
       let items = data.items || [];
-      items.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
-
-      if (items.length === 0) {
-        container.innerHTML = "<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";
-        return;
-      }
-
-      container.innerHTML = items.map((c, i) => \`
-        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 \${i < 5 ? 'ring-2 ring-indigo-100' : ''}">
-          <div class="flex items-start justify-between gap-3">
-            <div>
-              <h2 class="text-lg font-semibold text-indigo-700 leading-tight">\${c.name}</h2>
-              <div class="text-gray-500 text-sm">\${c.city}</div>
-              <div class="text-gray-400 text-xs mt-1">\${(c.categories || []).join(", ")}</div>
-              <p class="text-gray-700 text-sm mt-3 leading-relaxed">\${c.tagline || ""}</p>
-            </div>
-            <div class="text-right">
-              <div class="text-yellow-500 text-sm font-semibold">\${stars(c.avgRating)}</div>
-              <div class="text-gray-500 text-xs mt-1">\${c.reviewCount || 0} reviews</div>
+      items.sort((a,b)=>(b.avgRating||0)-(a.avgRating||0)||(b.reviewCount||0)-(a.reviewCount||0));
+      if(!items.length){container.innerHTML="<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";return;}
+      container.innerHTML = items.map((c,i)=>\`
+        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 \${i<5?'ring-2 ring-indigo-100':''}">
+          <div class='flex items-start justify-between gap-3'>
+            <div><h2 class='text-lg font-semibold text-indigo-700'>\${c.name}</h2>
+              <div class='text-gray-500 text-sm'>\${c.city}</div>
+              <div class='text-gray-400 text-xs mt-1'>\${(c.categories||[]).join(", ")}</div>
+              <p class='text-gray-700 text-sm mt-3'>\${c.tagline||""}</p></div>
+            <div class='text-right'>
+              <div class='text-yellow-500 text-sm font-semibold'>\${"⭐".repeat(Math.round(c.avgRating||0))}</div>
+              <div class='text-gray-500 text-xs mt-1'>\${c.reviewCount||0} reviews</div>
             </div>
           </div>
-
-          <div class="flex items-center justify-between gap-3">
-            <a href="company.html?slug=\${encodeURIComponent(c.slug)}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs text-center transition">Bekijk profiel</a>
-            <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-              <input type="checkbox" class="company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" data-id="\${c._id}" data-name="\${c.name.replace(/"/g, '&quot;')}" /> Aanvragen
+          <div class='flex items-center justify-between gap-3'>
+            <a href='company.html?slug=\${encodeURIComponent(c.slug)}' class='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs'>Bekijk profiel</a>
+            <label class='flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none'>
+              <input type='checkbox' class='company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500' data-id='\${c._id}' data-name='\${c.name}' /> Aanvragen
             </label>
-            <div class="text-gray-400 text-[11px]">\${c.isVerified ? "✅ Geverifieerd" : "⏳ Niet geverifieerd"}</div>
+            <div class='text-gray-400 text-[11px]'>\${c.isVerified?"✅ Geverifieerd":"⏳ Niet geverifieerd"}</div>
           </div>
         </article>\`).join("");
-
-      msg.textContent = \`\${items.length} resultaat\${items.length > 1 ? "en" : ""} gevonden\`;
-
-      container.querySelectorAll(".company-select").forEach(chk => {
-        chk.addEventListener("change", e => {
-          const id = e.target.dataset.id;
-          const name = e.target.dataset.name;
-          if (e.target.checked) {
-            if (selectedMap.size >= MAX_SELECTION) {
-              e.target.checked = false;
-              alert("Je kunt maximaal 5 bedrijven selecteren.");
-              return;
-            }
-            selectedMap.set(id, { id, name });
-          } else {
-            selectedMap.delete(id);
-          }
+      container.querySelectorAll(".company-select").forEach(chk=>{
+        chk.addEventListener("change",e=>{
+          const id=e.target.dataset.id,name=e.target.dataset.name;
+          if(e.target.checked){
+            if(selectedMap.size>=MAX_SELECTION){e.target.checked=false;alert("Je kunt maximaal 5 bedrijven selecteren.");return;}
+            selectedMap.set(id,{id,name});
+          }else selectedMap.delete(id);
           updateSelectionUI();
         });
       });
-
-    } catch (err) {
-      console.error("❌ Fout bij laden resultaten:", err);
-      container.innerHTML = "<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
+    }catch(err){
+      container.innerHTML="<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
     }
   }
 
-  document.getElementById("requestForm").addEventListener("submit", async e => {
+  document.getElementById("requestForm").addEventListener("submit",async e=>{
     e.preventDefault();
-    const companies = Array.from(selectedMap.values()).map(c => c.id);
-    const name = document.getElementById("rqName").value.trim();
-    const email = document.getElementById("rqEmail").value.trim();
-    const phone = document.getElementById("rqPhone").value.trim();
-    const message = document.getElementById("rqMessage").value.trim();
-    const statusEl = document.getElementById("rqStatus");
-
-    if (companies.length === 0) {
-      statusEl.textContent = "Selecteer eerst bedrijven.";
-      statusEl.className = "text-red-600";
-      return;
-    }
-
-    try {
-      statusEl.textContent = "⏳ Aanvraag wordt verzonden...";
-      const res = await fetch(\`\${API_BASE}/publicRequests/multi\`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ customerName: name, customerEmail: email, customerPhone: phone, message, companies })
-      });
-      const data = await res.json();
-      if (!data.ok) throw new Error(data.error || "Serverfout");
-      statusEl.textContent = "✅ Aanvraag succesvol verzonden.";
-      statusEl.className = "text-green-600";
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = "❌ Er ging iets mis bij het verzenden.";
-      statusEl.className = "text-red-600";
-    }
+    const status=document.getElementById("rqStatus");
+    const data={
+      customerName:rqName.value.trim(),
+      customerEmail:rqEmail.value.trim(),
+      customerPhone:rqPhone.value.trim(),
+      message:rqMessage.value.trim(),
+      companies:Array.from(selectedMap.values()).map(c=>c.id)
+    };
+    const invalid = Object.keys(validators).find(id=>validators[id](document.getElementById(id).value)!==true);
+    if(invalid){status.textContent="❌ Controleer de invoer.";status.className="text-red-600";return;}
+    try{
+      status.textContent="⏳ Aanvraag wordt verzonden...";
+      const res=await fetch(\`\${API_BASE}/publicRequests/multi\`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+      const json=await res.json();
+      if(!json.ok)throw new Error();
+      status.textContent="✅ Aanvraag succesvol verzonden.";status.className="text-green-600";
+    }catch{status.textContent="❌ Er ging iets mis bij het verzenden.";status.className="text-red-600";}
   });
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const cat = new URLSearchParams(window.location.search).get("category") || "";
-    const city = new URLSearchParams(window.location.search).get("city") || "";
-    document.getElementById("filterCategory").value = cat;
-    document.getElementById("filterCity").value = city;
-    loadResults(cat, city);
+  document.addEventListener("DOMContentLoaded",()=>{
+    const q=new URLSearchParams(window.location.search);
+    loadResults(q.get("category")||"",q.get("city")||"");
   });
   </script>
 </body>
