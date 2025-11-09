@@ -6,30 +6,47 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-// POST /api/publicRequests/multi
+// ✅ Testroute om te bevestigen dat deze router geladen is
+router.get("/", (req, res) => {
+  res.json({ ok: true, message: "publicRequests router actief" });
+});
+
+// ✅ Multi-aanvraag (max 5 bedrijven)
 router.post("/multi", async (req, res) => {
   try {
     const { customerName, customerEmail, message, companies } = req.body || {};
 
     if (!customerName || !customerEmail) {
-      return res.status(400).json({ ok: false, error: "Naam en e-mailadres zijn verplicht." });
+      return res.status(400).json({
+        ok: false,
+        error: "Naam en e-mailadres zijn verplicht.",
+      });
     }
 
     if (!Array.isArray(companies) || companies.length === 0) {
-      return res.status(400).json({ ok: false, error: "Kies minstens één bedrijf." });
+      return res.status(400).json({
+        ok: false,
+        error: "Kies minstens één bedrijf.",
+      });
     }
 
     if (companies.length > 5) {
-      return res.status(400).json({ ok: false, error: "Je kunt maximaal 5 bedrijven selecteren." });
+      return res.status(400).json({
+        ok: false,
+        error: "Je kunt maximaal 5 bedrijven selecteren.",
+      });
     }
 
-    // check of bedrijven bestaan
+    // ✅ IDs controleren en omzetten naar ObjectId
     const objectIds = companies
       .filter((id) => typeof id === "string" && mongoose.isValidObjectId(id))
       .map((id) => new mongoose.Types.ObjectId(id));
 
     if (objectIds.length === 0) {
-      return res.status(400).json({ ok: false, error: "Ongeldige bedrijfskeuze." });
+      return res.status(400).json({
+        ok: false,
+        error: "Ongeldige bedrijfskeuze.",
+      });
     }
 
     const foundCompanies = await Company.find({ _id: { $in: objectIds } })
@@ -37,10 +54,13 @@ router.post("/multi", async (req, res) => {
       .lean();
 
     if (!foundCompanies.length) {
-      return res.status(404).json({ ok: false, error: "Geen van de gekozen bedrijven bestaat." });
+      return res.status(404).json({
+        ok: false,
+        error: "Geen van de gekozen bedrijven bestaat.",
+      });
     }
 
-    // per bedrijf één aanvraag opslaan
+    // ✅ Eén aanvraag per bedrijf opslaan
     const toInsert = foundCompanies.map((c) => ({
       customerName,
       customerEmail,
@@ -61,7 +81,10 @@ router.post("/multi", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Fout bij publicRequests/multi:", err);
-    return res.status(500).json({ ok: false, error: "Serverfout bij opslaan van de aanvraag." });
+    return res.status(500).json({
+      ok: false,
+      error: "Serverfout bij opslaan van de aanvraag.",
+    });
   }
 });
 
