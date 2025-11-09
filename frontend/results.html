@@ -100,16 +100,16 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
- <script>
+<script>
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const MAX_SELECTION = 5;
 const selectedMap = new Map();
 
 const validators = {
-  rqName: val => val.trim().length >= 2 || "Voer je naam in.",
-  rqEmail: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
-  rqPhone: val => /^\d{10}$/.test(val) || "Voer 10 cijfers in.",
-  rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
+  rqName: v => v.trim().length >= 2 || "Voer je naam in.",
+  rqEmail: v => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) || "Voer een geldig e-mailadres in.",
+  rqPhone: v => /^\\d{10}$/.test(v) || "Voer 10 cijfers in.",
+  rqMessage: v => v.trim().length >= 5 || "Geef een korte omschrijving."
 };
 
 // realtime validatie
@@ -129,7 +129,7 @@ for (const id in validators) {
   });
 }
 
-// selectie-ui bijwerken
+// selectie-ui
 function updateSelectionUI() {
   const bar = document.getElementById("selectionBar");
   const count = document.getElementById("selectedCount");
@@ -217,6 +217,16 @@ document.getElementById("closeRequestForm").addEventListener("click", () => {
   document.getElementById("requestFormBox").classList.add("hidden");
 });
 
+// subtiele melding na succesvolle verzending
+function showThankYou() {
+  const msg = document.createElement("div");
+  msg.className = "fixed top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-2 rounded-xl shadow-lg text-sm font-medium z-50 transition-opacity";
+  msg.textContent = "✅ Bedankt! De geselecteerde bedrijven nemen spoedig contact met je op.";
+  document.body.appendChild(msg);
+  setTimeout(() => msg.style.opacity = "0", 4000);
+  setTimeout(() => msg.remove(), 5000);
+}
+
 // aanvraag verzenden
 document.getElementById("requestForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -248,6 +258,13 @@ document.getElementById("requestForm").addEventListener("submit", async e => {
     status.textContent = "✅ Aanvraag succesvol verzonden.";
     status.className = "text-green-600";
     document.getElementById("requestForm").reset();
+    selectedMap.clear();
+    updateSelectionUI();
+    setTimeout(() => {
+      document.getElementById("requestFormBox").classList.add("hidden");
+      status.textContent = "";
+      showThankYou();
+    }, 1500);
   } catch {
     status.textContent = "❌ Er ging iets mis bij het verzenden.";
     status.className = "text-red-600";
