@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const Review = require("../models/review");
-const Company = require("../models/ompany");
+const Company = require("../models/company"); // ✅ juiste pad en kleine letters
 
 // ✅ Alle reviews van een bedrijf ophalen via slug of ID
 router.get("/company/:identifier", async (req, res) => {
