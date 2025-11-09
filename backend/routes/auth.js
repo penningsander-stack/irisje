@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-const User = require("../models/ser");
+const User = require("../models/user");
 
 // === Inloggen ===
 router.post("/login", async (req, res) => {
