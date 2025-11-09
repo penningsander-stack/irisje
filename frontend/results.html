@@ -10,8 +10,13 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251109" />
   <style>
-    .error-border { border-color: #dc2626 !important; }
-    .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; }
+    /* Kleine lokale styles voor validatie & highlights */
+    .error-border { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.06); }
+    .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; display:block; }
+    .hidden { display: none !important; }
+    .top-highlight { box-shadow: 0 6px 20px rgba(79,70,229,0.06); border: 1px solid rgba(99,102,241,0.12); }
+    .rq-status { transition: opacity .3s ease; }
+    .fade-out { opacity: 0; transition: opacity .6s ease; }
   </style>
 </head>
 
@@ -62,26 +67,28 @@
         <h2 class="text-lg font-semibold text-gray-800 mb-2">Offerte aanvragen bij geselecteerde bedrijven</h2>
         <p class="text-sm text-gray-500 mb-4">Je aanvraag wordt verstuurd naar maximaal vijf bedrijven.</p>
 
-        <form id="requestForm" class="grid gap-3 md:grid-cols-2">
+        <form id="requestForm" class="grid gap-3 md:grid-cols-2" novalidate>
           <div>
-            <input id="rqName" type="text" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <input id="rqName" name="rqName" type="text" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
             <p id="errName" class="error-text hidden"></p>
           </div>
           <div>
-            <input id="rqEmail" type="email" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <input id="rqEmail" name="rqEmail" type="email" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
             <p id="errEmail" class="error-text hidden"></p>
           </div>
           <div>
-            <input id="rqPhone" type="tel" placeholder="Telefoonnummer (10 cijfers)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
+            <input id="rqPhone" name="rqPhone" type="tel" placeholder="Telefoonnummer (10 cijfers)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
             <p id="errPhone" class="error-text hidden"></p>
           </div>
           <div class="md:col-span-2">
-            <textarea id="rqMessage" rows="3" placeholder="Beschrijf je klus of vraag..." class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 w-full" required></textarea>
+            <textarea id="rqMessage" name="rqMessage" rows="3" placeholder="Beschrijf je klus of vraag..." class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 w-full" required></textarea>
             <p id="errMessage" class="error-text hidden"></p>
           </div>
-          <p id="rqStatus" class="md:col-span-2 text-sm min-h-[1.25rem]"></p>
+
+          <p id="rqStatus" class="md:col-span-2 text-sm min-h-[1.25rem] rq-status"></p>
+
           <div class="md:col-span-2 flex flex-col gap-2">
-            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Verstuur aanvraag</button>
+            <button id="submitRequestBtn" type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Verstuur aanvraag</button>
             <button type="button" id="closeRequestForm" class="text-sm text-gray-500 hover:text-gray-700">Annuleren</button>
             <p class="text-xs text-gray-500 mt-1 text-center">🔒 Je gegevens worden alleen gedeeld met de geselecteerde bedrijven.</p>
           </div>
@@ -101,182 +108,303 @@
   </footer>
 
 <script>
-const API_BASE = "https://irisje-backend.onrender.com/api";
-const MAX_SELECTION = 5;
-const selectedMap = new Map();
+/* Full script wrapped to avoid race conditions and undefined references */
+document.addEventListener("DOMContentLoaded", () => {
+  const API_BASE = "https://irisje-backend.onrender.com/api";
+  const MAX_SELECTION = 5;
+  const selectedMap = new Map();
 
-const validators = {
-  rqName: v => v.trim().length >= 2 || "Voer je naam in.",
-  rqEmail: v => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) || "Voer een geldig e-mailadres in.",
-  rqPhone: v => /^\\d{10}$/.test(v) || "Voer 10 cijfers in.",
-  rqMessage: v => v.trim().length >= 5 || "Geef een korte omschrijving."
-};
-
-// realtime validatie
-for (const id in validators) {
-  const el = document.getElementById(id);
-  const err = document.getElementById("err" + id.slice(2));
-  el.addEventListener("input", () => {
-    const valid = validators[id](el.value);
-    if (valid === true) {
-      el.classList.remove("error-border");
-      err.classList.add("hidden");
-    } else {
-      el.classList.add("error-border");
-      err.textContent = valid;
-      err.classList.remove("hidden");
-    }
-  });
-}
-
-// selectie-ui
-function updateSelectionUI() {
-  const bar = document.getElementById("selectionBar");
-  const count = document.getElementById("selectedCount");
-  const names = document.getElementById("selectedNames");
-  const btn = document.getElementById("openRequestForm");
-  const arr = Array.from(selectedMap.values());
-  count.textContent = arr.length;
-  if (arr.length === 0) {
-    bar.classList.add("hidden");
-    btn.disabled = true;
-    names.textContent = "";
-  } else {
-    bar.classList.remove("hidden");
-    btn.disabled = false;
-    names.textContent = arr.map(c => c.name).join(", ");
-  }
-}
-
-// resultaten laden
-async function loadResults(cat, city) {
-  const container = document.getElementById("resultsContainer");
-  container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
-  try {
-    const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}`);
-    const data = await res.json();
-    let items = data.items || [];
-    items.sort((a,b)=>(b.avgRating||0)-(a.avgRating||0)||(b.reviewCount||0)-(a.reviewCount||0));
-    if(!items.length){
-      container.innerHTML="<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";
-      return;
-    }
-
-    container.innerHTML = items.map((c,i)=>`
-      <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 ${i<5?'ring-2 ring-indigo-100':''}">
-        <div class='flex items-start justify-between gap-3'>
-          <div>
-            <h2 class='text-lg font-semibold text-indigo-700'>${c.name}</h2>
-            <div class='text-gray-500 text-sm'>${c.city}</div>
-            <div class='text-gray-400 text-xs mt-1'>${(c.categories||[]).join(", ")}</div>
-            <p class='text-gray-700 text-sm mt-3'>${c.tagline||""}</p>
-          </div>
-          <div class='text-right'>
-            <div class='text-yellow-500 text-sm font-semibold'>${"⭐".repeat(Math.round(c.avgRating||0))}</div>
-            <div class='text-gray-500 text-xs mt-1'>${c.reviewCount||0} reviews</div>
-          </div>
-        </div>
-        <div class='flex items-center justify-between gap-3'>
-          <a href='company.html?slug=${encodeURIComponent(c.slug)}' class='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs'>Bekijk profiel</a>
-          <label class='flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none'>
-            <input type='checkbox' class='company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500' data-id='${c._id}' data-name='${c.name}' /> Aanvragen
-          </label>
-          <div class='text-gray-400 text-[11px]'>${c.isVerified?"✅ Geverifieerd":"⏳ Niet geverifieerd"}</div>
-        </div>
-      </article>`).join("");
-
-    container.querySelectorAll(".company-select").forEach(chk=>{
-      chk.addEventListener("change",e=>{
-        const id=e.target.dataset.id,name=e.target.dataset.name;
-        if(e.target.checked){
-          if(selectedMap.size>=MAX_SELECTION){
-            e.target.checked=false;
-            alert("Je kunt maximaal 5 bedrijven selecteren.");
-            return;
-          }
-          selectedMap.set(id,{id,name});
-        } else {
-          selectedMap.delete(id);
-        }
-        updateSelectionUI();
-      });
-    });
-  }catch(err){
-    console.error("❌ Fout bij laden resultaten:", err);
-    container.innerHTML="<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
-  }
-}
-
-// formulier openen/sluiten
-document.getElementById("openRequestForm").addEventListener("click", () => {
-  document.getElementById("requestFormBox").classList.remove("hidden");
-  window.scrollTo({ top: document.getElementById("requestFormBox").offsetTop - 50, behavior: "smooth" });
-});
-
-document.getElementById("closeRequestForm").addEventListener("click", () => {
-  document.getElementById("requestFormBox").classList.add("hidden");
-});
-
-// subtiele melding na succesvolle verzending
-function showThankYou() {
-  const msg = document.createElement("div");
-  msg.className = "fixed top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-5 py-2 rounded-xl shadow-lg text-sm font-medium z-50 transition-opacity";
-  msg.textContent = "✅ Bedankt! De geselecteerde bedrijven nemen spoedig contact met je op.";
-  document.body.appendChild(msg);
-  setTimeout(() => msg.style.opacity = "0", 4000);
-  setTimeout(() => msg.remove(), 5000);
-}
-
-// aanvraag verzenden
-document.getElementById("requestForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  const status = document.getElementById("rqStatus");
-  const data = {
-    customerName: rqName.value.trim(),
-    customerEmail: rqEmail.value.trim(),
-    customerPhone: rqPhone.value.trim(),
-    message: rqMessage.value.trim(),
-    companies: Array.from(selectedMap.values()).map(c => c.id)
+  // Validators (returns true or error message)
+  const validators = {
+    rqName: val => val.trim().length >= 2 || "Voer je naam in.",
+    rqEmail: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
+    rqPhone: val => /^\d{10}$/.test(val) || "Voer 10 cijfers in.",
+    rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
   };
 
-  const invalid = Object.keys(validators).find(id => validators[id](document.getElementById(id).value) !== true);
-  if (invalid) {
-    status.textContent = "❌ Controleer de invoer.";
-    status.className = "text-red-600";
-    return;
+  // helper: set error / clear error
+  function setError(el, errEl, msg) {
+    if (msg === true || !msg) {
+      el.classList.remove("error-border");
+      errEl.classList.add("hidden");
+      errEl.textContent = "";
+    } else {
+      el.classList.add("error-border");
+      errEl.classList.remove("hidden");
+      errEl.textContent = msg;
+    }
   }
 
-  try {
-    status.textContent = "⏳ Aanvraag wordt verzonden...";
-    const res = await fetch(`${API_BASE}/publicRequests/multi`, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(data)
+  // realtime validation binding
+  Object.keys(validators).forEach(id => {
+    const el = document.getElementById(id);
+    const err = document.getElementById("err" + id.slice(2));
+    if (!el || !err) return;
+    el.addEventListener("input", () => {
+      const valid = validators[id](el.value);
+      setError(el, err, valid === true ? null : valid);
     });
-    const json = await res.json();
-    if (!json.ok) throw new Error();
-    status.textContent = "✅ Aanvraag succesvol verzonden.";
-    status.className = "text-green-600";
-    document.getElementById("requestForm").reset();
+  });
+
+  // selection UI
+  function updateSelectionUI() {
+    const bar = document.getElementById("selectionBar");
+    const count = document.getElementById("selectedCount");
+    const names = document.getElementById("selectedNames");
+    const btn = document.getElementById("openRequestForm");
+    const arr = Array.from(selectedMap.values());
+    count.textContent = arr.length;
+    if (arr.length === 0) {
+      bar.classList.add("hidden");
+      if (btn) btn.disabled = true;
+      names.textContent = "";
+    } else {
+      bar.classList.remove("hidden");
+      if (btn) btn.disabled = false;
+      names.textContent = arr.map(c => c.name).join(", ");
+    }
+  }
+
+  // load results with sorting + top highlight
+  async function loadResults(cat = "", city = "") {
+    const container = document.getElementById("resultsContainer");
+    const msgEl = document.getElementById("filterMessage");
+    container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
+    if (msgEl) msgEl.textContent = "";
+
+    try {
+      const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}`);
+      if (!res.ok) {
+        const txt = await res.text().catch(()=>"");
+        throw new Error(`Serverfout: ${res.status} ${txt}`);
+      }
+      const data = await res.json();
+      let items = data.items || [];
+      // sort: rating desc -> reviewCount desc -> name asc
+      items.sort((a,b) => {
+        const ra = a.avgRating || 0, rb = b.avgRating || 0;
+        if (rb !== ra) return rb - ra;
+        const ca = a.reviewCount || 0, cb = b.reviewCount || 0;
+        if (cb !== ca) return cb - ca;
+        return (a.name||"").localeCompare(b.name||"");
+      });
+
+      if (items.length === 0) {
+        container.innerHTML = "<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";
+        if (msgEl) msgEl.textContent = "Geen resultaten gevonden";
+        return;
+      }
+
+      // render items
+      container.innerHTML = items.map((c,i) => {
+        const highlight = i < 5 ? "top-highlight" : "";
+        const stars = c.avgRating ? "⭐".repeat(Math.round(c.avgRating)) : "—";
+        const categories = Array.isArray(c.categories) ? c.categories.join(", ") : (c.categories || "");
+        return `
+        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 ${highlight}">
+          <div class='flex items-start justify-between gap-3'>
+            <div>
+              <h2 class='text-lg font-semibold text-indigo-700'>${escapeHtml(c.name)}</h2>
+              <div class='text-gray-500 text-sm'>${escapeHtml(c.city || "")}</div>
+              <div class='text-gray-400 text-xs mt-1'>${escapeHtml(categories)}</div>
+              <p class='text-gray-700 text-sm mt-3'>${escapeHtml(c.tagline || "")}</p>
+            </div>
+            <div class='text-right'>
+              <div class='text-yellow-500 text-sm font-semibold'>${stars}</div>
+              <div class='text-gray-500 text-xs mt-1'>${c.reviewCount || 0} reviews</div>
+            </div>
+          </div>
+          <div class='flex items-center justify-between gap-3'>
+            <a href='company.html?slug=${encodeURIComponent(c.slug)}' class='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs'>Bekijk profiel</a>
+            <label class='flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none'>
+              <input type='checkbox' class='company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500' data-id='${c._id}' data-name='${escapeHtmlAttr(c.name)}' />
+              Aanvragen
+            </label>
+            <div class='text-gray-400 text-[11px]'>${c.isVerified ? "✅ Geverifieerd" : "⏳ Niet geverifieerd"}</div>
+          </div>
+        </article>`;
+      }).join("");
+
+      if (msgEl) msgEl.textContent = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
+
+      // attach checkbox listeners safely
+      container.querySelectorAll(".company-select").forEach(chk => {
+        chk.addEventListener("change", e => {
+          const id = e.target.dataset.id;
+          const name = e.target.dataset.name || "Onbekend";
+          if (e.target.checked) {
+            if (selectedMap.size >= MAX_SELECTION) {
+              e.target.checked = false;
+              alert("Je kunt maximaal 5 bedrijven selecteren.");
+              return;
+            }
+            selectedMap.set(id, { id, name });
+          } else {
+            selectedMap.delete(id);
+          }
+          updateSelectionUI();
+        });
+      });
+
+    } catch (err) {
+      console.error("Fout bij loadResults:", err);
+      container.innerHTML = "<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
+      if (msgEl) msgEl.textContent = "Er is iets misgegaan";
+    }
+  }
+
+  // helper: escape html for text nodes (basic)
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>"']/g, function(m) {
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
+    });
+  }
+  // escape for attribute (minimally)
+  function escapeHtmlAttr(str){ return escapeHtml(str).replace(/"/g,'&quot;'); }
+
+  // open/close request form
+  const openBtn = document.getElementById("openRequestForm");
+  const requestBox = document.getElementById("requestFormBox");
+  const clearBtn = document.getElementById("clearSelection");
+  if (openBtn) openBtn.addEventListener("click", () => {
+    if (!requestBox) return;
+    requestBox.classList.remove("hidden");
+    // scroll into view
+    setTimeout(() => {
+      requestBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+  });
+  const closeBtn = document.getElementById("closeRequestForm");
+  if (closeBtn) closeBtn.addEventListener("click", () => {
+    if (!requestBox) return;
+    requestBox.classList.add("hidden");
+  });
+  if (clearBtn) clearBtn.addEventListener("click", () => {
+    // uncheck checkboxes
+    document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
     selectedMap.clear();
     updateSelectionUI();
-    setTimeout(() => {
-      document.getElementById("requestFormBox").classList.add("hidden");
-      status.textContent = "";
-      showThankYou();
-    }, 1500);
-  } catch {
-    status.textContent = "❌ Er ging iets mis bij het verzenden.";
-    status.className = "text-red-600";
-  }
-});
+    if (requestBox) requestBox.classList.add("hidden");
+  });
 
-// initialisatie
-document.addEventListener("DOMContentLoaded", () => {
+  // submit request
+  const requestForm = document.getElementById("requestForm");
+  const rqStatus = document.getElementById("rqStatus");
+  if (requestForm) {
+    requestForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!rqStatus) return;
+      rqStatus.style.opacity = "1";
+
+      // build payload
+      const nameEl = document.getElementById("rqName");
+      const emailEl = document.getElementById("rqEmail");
+      const phoneEl = document.getElementById("rqPhone");
+      const msgEl = document.getElementById("rqMessage");
+
+      // run validators, show first error
+      const entries = [
+        ["rqName", nameEl],
+        ["rqEmail", emailEl],
+        ["rqPhone", phoneEl],
+        ["rqMessage", msgEl]
+      ];
+      let firstInvalid = null;
+      for (const [key, el] of entries) {
+        if (!el) continue;
+        const valid = validators[key](el.value);
+        const errEl = document.getElementById("err" + key.slice(2));
+        setError(el, errEl, valid === true ? null : valid);
+        if (valid !== true && !firstInvalid) firstInvalid = el;
+      }
+      if (firstInvalid) {
+        rqStatus.textContent = "❌ Controleer de invoer.";
+        rqStatus.className = "text-red-600 rq-status";
+        firstInvalid.focus();
+        return;
+      }
+
+      const companies = Array.from(selectedMap.values()).map(c => c.id);
+      if (companies.length === 0) {
+        rqStatus.textContent = "❌ Selecteer eerst bedrijven.";
+        rqStatus.className = "text-red-600 rq-status";
+        return;
+      }
+
+      // send
+      try {
+        rqStatus.textContent = "⏳ Aanvraag wordt verzonden...";
+        rqStatus.className = "text-gray-500 rq-status";
+
+        const payload = {
+          customerName: nameEl.value.trim(),
+          customerEmail: emailEl.value.trim(),
+          customerPhone: phoneEl.value.trim(),
+          message: msgEl.value.trim(),
+          companies
+        };
+
+        const res = await fetch(`${API_BASE}/publicRequests/multi`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json().catch(()=>({ ok:false, error:"Geen JSON" }));
+        if (!res.ok || !json.ok) {
+          console.error("server error", res.status, json);
+          throw new Error(json.error || "Serverfout");
+        }
+
+        // success: clear form, uncheck and clear selection, show success briefly
+        rqStatus.textContent = "✅ Aanvraag succesvol verzonden.";
+        rqStatus.className = "text-green-600 rq-status";
+        requestForm.reset();
+        document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
+        selectedMap.clear();
+        updateSelectionUI();
+
+        // hide form after short delay and fade the status
+        setTimeout(() => {
+          if (requestBox) requestBox.classList.add("hidden");
+        }, 900);
+
+        setTimeout(() => {
+          rqStatus.classList.add("fade-out");
+          setTimeout(()=>{ rqStatus.textContent = ""; rqStatus.classList.remove("fade-out"); }, 700);
+        }, 2000);
+
+      } catch (err) {
+        console.error("Aanvraag fout:", err);
+        rqStatus.textContent = "❌ Er ging iets mis bij het verzenden.";
+        rqStatus.className = "text-red-600 rq-status";
+      }
+    });
+  }
+
+  // initial load (from query)
   const q = new URLSearchParams(window.location.search);
-  loadResults(q.get("category") || "", q.get("city") || "");
+  const initialCategory = q.get("category") || "";
+  const initialCity = q.get("city") || "";
+  // fill filter inputs
+  const fc = document.getElementById("filterCategory");
+  const fy = document.getElementById("filterCity");
+  if (fc) fc.value = initialCategory;
+  if (fy) fy.value = initialCity;
+
+  // filter form submit
+  const filterForm = document.getElementById("filterForm");
+  if (filterForm) {
+    filterForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      loadResults((fc && fc.value) || "", (fy && fy.value) || "");
+    });
+  }
+
+  // initial call
+  loadResults(initialCategory, initialCity);
 });
 </script>
-
 </body>
 </html>
