@@ -8,18 +8,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   const companyContainer = document.getElementById("company-details");
   const reviewsContainer = document.getElementById("reviews-list");
   const googleContainer = document.getElementById("google-reviews");
+  const reviewForm = document.getElementById("review-form");
+  const reviewStatus = document.getElementById("review-status");
 
   if (!companySlug) {
-    if (companyContainer) {
+    if (companyContainer)
       companyContainer.innerHTML = "<p class='text-red-600'>Geen bedrijfsprofiel gevonden.</p>";
-    }
     return;
   }
 
   const userEmail = localStorage.getItem("userEmail");
   const userRole = localStorage.getItem("userRole");
 
-  // === 1. Bedrijf laden ===
+  /* ============================================================
+     1️⃣ Bedrijf laden
+  ============================================================ */
   async function loadCompany() {
     try {
       const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
@@ -55,21 +58,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (company.name && company.city) {
         await loadGoogleReviews(company.name, company.city);
       }
+
+      // Bewaar voor gebruik bij review-verzending
+      reviewForm.dataset.companyId = company._id;
     } catch (err) {
       console.error("❌ Fout bij laden bedrijf:", err);
-      if (companyContainer) {
+      if (companyContainer)
         companyContainer.innerHTML =
           "<p class='text-red-600'>Fout bij laden van het bedrijfsprofiel.</p>";
-      }
     }
   }
 
-  // === 2. Irisje reviews laden ===
+  /* ============================================================
+     2️⃣ Irisje reviews laden (alleen bevestigde)
+  ============================================================ */
   async function loadReviews() {
     try {
       const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`);
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
-      const reviews = await res.json();
+      const data = await res.json();
+      const reviews = data.reviews || [];
 
       if (!reviewsContainer) return;
 
@@ -109,14 +117,66 @@ document.addEventListener("DOMContentLoaded", async () => {
         .join("");
     } catch (err) {
       console.error("❌ Fout bij laden reviews:", err);
-      if (reviewsContainer) {
+      if (reviewsContainer)
         reviewsContainer.innerHTML =
           "<p class='text-red-600 text-center p-4'>Fout bij laden van reviews.</p>";
-      }
     }
   }
 
-  // === 3. Review melden (🚩) ===
+  /* ============================================================
+     3️⃣ Nieuwe review versturen (met e-mailbevestiging)
+  ============================================================ */
+  reviewForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const companyId = reviewForm.dataset.companyId;
+    const name = document.getElementById("review-name").value.trim();
+    const email = document.getElementById("review-email").value.trim();
+    const rating = document.getElementById("review-rating").value.trim();
+    const message = document.getElementById("review-message").value.trim();
+
+    reviewStatus.textContent = "";
+    reviewStatus.className = "text-sm mt-2";
+
+    if (!name || !email || !rating || !message) {
+      reviewStatus.textContent = "❌ Vul alle velden in.";
+      reviewStatus.classList.add("text-red-600");
+      return;
+    }
+
+    const btn = e.target.querySelector("button");
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_BASE}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, name, email, rating, message }),
+      });
+
+      const result = await res.json();
+
+      if (result.ok) {
+        reviewStatus.textContent =
+          "✅ Review ontvangen! Bevestig je review via de link in je e-mail.";
+        reviewStatus.classList.add("text-green-600");
+        reviewForm.reset();
+      } else {
+        reviewStatus.textContent = "❌ " + (result.error || "Er ging iets mis.");
+        reviewStatus.classList.add("text-red-600");
+      }
+    } catch (err) {
+      console.error("❌ Fout bij versturen review:", err);
+      reviewStatus.textContent = "❌ Serverfout bij verzenden van review.";
+      reviewStatus.classList.add("text-red-600");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ============================================================
+     4️⃣ Review melden (🚩)
+  ============================================================ */
   document.addEventListener("click", async (e) => {
     const btn = e.target.closest(".report-btn");
     if (!btn) return;
@@ -150,7 +210,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // === 4. Google Reviews laden ===
+  /* ============================================================
+     5️⃣ Google Reviews laden
+  ============================================================ */
   async function loadGoogleReviews(companyName, city) {
     try {
       const res = await fetch(
@@ -201,7 +263,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // === Init ===
+  /* ============================================================
+     6️⃣ Init
+  ============================================================ */
   await loadCompany();
   await loadReviews();
 });
