@@ -27,23 +27,57 @@
 
   <!-- MAIN -->
   <main class="flex-grow">
-    <section class="max-w-5xl mx-auto p-6 md:p-10">
+    <section class="max-w-5xl mx-auto p-6 md:p-10 space-y-10">
 
       <!-- 🔹 Bedrijfsinformatie -->
-      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 fade-in mb-10">
+      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 fade-in">
         <p class="text-gray-500 italic">Bedrijfsgegevens worden geladen...</p>
       </div>
 
       <!-- 💬 Irisje Reviews -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
         <div id="reviews-list" class="space-y-4">
           <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
         </div>
       </section>
 
+      <!-- ✍ Reviewformulier -->
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
+        <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" id="review-name" placeholder="Naam" class="input" required />
+            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
+          </div>
+
+          <div class="mt-3">
+            <label for="review-rating" class="block text-sm text-gray-600 mb-1">Kies aantal sterren</label>
+            <select id="review-rating" class="input" required>
+              <option value="">– Kies –</option>
+              <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+              <option value="4">⭐⭐⭐⭐ (4)</option>
+              <option value="3">⭐⭐⭐ (3)</option>
+              <option value="2">⭐⭐ (2)</option>
+              <option value="1">⭐ (1)</option>
+            </select>
+          </div>
+
+          <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
+          <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
+
+          <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Verstuur beoordeling
+          </button>
+
+          <p class="text-xs text-gray-500 mt-3">
+            Je ontvangt een e-mail om je review te bevestigen voordat deze zichtbaar wordt.
+          </p>
+        </form>
+      </section>
+
       <!-- ✉️ Offerteaanvraagformulier -->
-      <section id="request-form-section" class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+      <section id="request-form-section" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">📩 Vraag een offerte aan</h2>
         <form id="company-request-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
           <input type="hidden" id="company-id" />
@@ -60,7 +94,7 @@
       </section>
 
       <!-- ⭐ Google Reviews -->
-      <section id="google-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+      <section id="google-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-xl font-semibold text-gray-800">⭐ Google Reviews</h2>
           <img src="https://www.gstatic.com/images/branding/product/2x/maps_2020q4_48dp.png" alt="Google Maps" class="w-6 h-6" />
@@ -68,35 +102,8 @@
         <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
       </section>
 
-      <!-- ✍ Reviewformulier -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
-        <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-          <div class="grid md:grid-cols-2 gap-3">
-            <input type="text" id="review-name" placeholder="Naam" class="input" required />
-            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
-          </div>
-          <div class="mt-3">
-            <label class="block text-sm text-gray-600 mb-1">Kies aantal sterren</label>
-            <select id="review-rating" class="input" required>
-              <option value="">– Kies –</option>
-              <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-              <option value="4">⭐⭐⭐⭐ (4)</option>
-              <option value="3">⭐⭐⭐ (3)</option>
-              <option value="2">⭐⭐ (2)</option>
-              <option value="1">⭐ (1)</option>
-            </select>
-          </div>
-          <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
-          <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
-          <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-            Verstuur beoordeling
-          </button>
-        </form>
-      </section>
-
       <!-- 🏷️ Claim sectie -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
         <h2 class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
         <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
         <form id="claim-form" class="grid md:grid-cols-2 gap-3">
@@ -117,59 +124,56 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- JS -->
   <script src="js/company.js?v=20251110"></script>
 
   <!-- ✅ Offerteformulier met slug→ID fix -->
-<script>
-document.getElementById("company-request-form")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = e.target.querySelector("button");
-  const statusEl = document.getElementById("req-status");
-  btn.disabled = true;
+  <script>
+    document.getElementById("company-request-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector("button");
+      const statusEl = document.getElementById("req-status");
+      btn.disabled = true;
 
-  // ✅ Correct: gebruik ?slug=
-  const slug = new URLSearchParams(window.location.search).get("slug");
+      const slug = new URLSearchParams(window.location.search).get("slug");
 
-  try {
-    // 1️⃣ Ophalen van echte company ID via slug
-    const resCompany = await fetch(`https://irisje-backend.onrender.com/api/companies/slug/${slug}`);
-    const company = await resCompany.json();
-    const companyId = company?._id;
-    if (!companyId) throw new Error("Bedrijf niet gevonden");
+      try {
+        const resCompany = await fetch(`https://irisje-backend.onrender.com/api/companies/slug/${slug}`);
+        const company = await resCompany.json();
+        const companyId = company?._id;
+        if (!companyId) throw new Error("Bedrijf niet gevonden");
 
-    // 2️⃣ Payload bouwen
-    const data = {
-      customerName: document.getElementById("req-name").value.trim(),
-      customerEmail: document.getElementById("req-email").value.trim(),
-      message: document.getElementById("req-message").value.trim(),
-      companies: [companyId],
-    };
+        const data = {
+          customerName: document.getElementById("req-name").value.trim(),
+          customerEmail: document.getElementById("req-email").value.trim(),
+          message: document.getElementById("req-message").value.trim(),
+          companies: [companyId],
+        };
 
-    // 3️⃣ Verzenden naar backend
-    const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests/multi", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+        const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests/multi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (result.ok) {
+          statusEl.textContent = "✅ Aanvraag succesvol verzonden!";
+          statusEl.className = "text-green-600 text-sm mt-2";
+          e.target.reset();
+        } else {
+          statusEl.textContent = "❌ " + (result.error || "Er ging iets mis.");
+          statusEl.className = "text-red-600 text-sm mt-2";
+        }
+      } catch (err) {
+        console.error("Aanvraagfout:", err);
+        statusEl.textContent = "❌ Er ging iets mis bij het verzenden.";
+        statusEl.className = "text-red-600 text-sm mt-2";
+      } finally {
+        btn.disabled = false;
+      }
     });
-
-    const result = await res.json();
-    if (result.ok) {
-      statusEl.textContent = "✅ Aanvraag succesvol verzonden!";
-      statusEl.className = "text-green-600 text-sm mt-2";
-      e.target.reset();
-    } else {
-      statusEl.textContent = "❌ " + (result.error || "Er ging iets mis.");
-      statusEl.className = "text-red-600 text-sm mt-2";
-    }
-  } catch (err) {
-    console.error("Aanvraagfout:", err);
-    statusEl.textContent = "❌ Er ging iets mis bij het verzenden.";
-    statusEl.className = "text-red-600 text-sm mt-2";
-  } finally {
-    btn.disabled = false;
-  }
-});
-</script>
+  </script>
 
 </body>
 </html>
