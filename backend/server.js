@@ -15,14 +15,18 @@ const { addLog } = require("./utils/logger");
 
 const app = express();
 
-// === ✅ Basis middleware ===
+/* ============================================================
+   ✅ Basis middleware
+============================================================ */
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(compression());
 app.use(corsMiddleware);
 app.use(securityHeaders);
 
-// === ✅ MongoDB connectie ===
+/* ============================================================
+   ✅ MongoDB connectie
+============================================================ */
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
   console.error("🌸 [FOUT] Geen MongoDB URI gevonden");
@@ -42,10 +46,10 @@ mongoose
   });
 
 /* ============================================================
-   📁 Nieuwe statische map voor e-mailpagina’s (review confirm/failed)
+   📁 Statische map voor e-mailpagina’s (review confirm/failed)
 ============================================================ */
 app.use(express.static(path.join(__dirname, "public")));
-// → zorgt dat /review-confirm.html en /review-failed.html correct werken
+// → maakt /review-confirm.html en /review-failed.html toegankelijk
 
 /* ============================================================
    ✅ API-routes
@@ -64,7 +68,9 @@ app.use("/api/google-reviews", require("./routes/googleReviews"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
-// === ✅ Testroute
+/* ============================================================
+   ✅ Testroute
+============================================================ */
 app.get("/api/test", (req, res) => {
   addLog("API test uitgevoerd", "debug");
   res.json({ ok: true, message: "Server ziet routes correct" });
@@ -88,9 +94,19 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 });
 
 /* ============================================================
-   ✅ Statische frontend-bestanden
+   ✅ Statische frontend-bestanden (met cache-beheer)
 ============================================================ */
-app.use(express.static(path.join(__dirname, "../frontend")));
+app.use(express.static(path.join(__dirname, "../frontend"), {
+  setHeaders: (res, filePath) => {
+    // 🌸 Cache maximaal 1 dag (24 uur) voor logo’s, CSS, JS, WebP, etc.
+    if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
+      res.setHeader("Cache-Control", "public, max-age=86400");
+    } else {
+      // HTML of JSON nooit langdurig cachen
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    }
+  }
+}));
 
 /* ============================================================
    🪄 HTML-injecties (preload + lazyload)
