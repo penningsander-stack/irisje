@@ -1,6 +1,10 @@
-# bestanden en mappen die geen nieuwe build hoeven te triggeren
+# bestanden die geen nieuwe build hoeven te triggeren
 README.md
 LICENSE
 *.md
 *.txt
-/backend/
+
+# wél backend meenemen!
+# uitsluiten van node_modules en lokale .env’s
+**/node_modules/
+**/.env
