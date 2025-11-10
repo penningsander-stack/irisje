@@ -68,6 +68,7 @@ async function fetchCompanyBySlug(slug) {
   return {
     _id: company._id,
     name: company.name,
+    slug: company.slug,
     tagline: company.tagline || "",
     description: company.description || "Nog geen beschrijving beschikbaar.",
     address: company.address || "Adres niet opgegeven.",
@@ -89,12 +90,14 @@ async function fetchCompanyBySlug(slug) {
 }
 
 /* ============================================================
-   ✅ Bedrijf ophalen via /slug/:slug (frontend compatibiliteit)
+   ✅ Bedrijf ophalen via /slug/:slug (voor frontend)
 ============================================================ */
 router.get("/slug/:slug", async (req, res) => {
   try {
     const data = await fetchCompanyBySlug(req.params.slug);
-    if (!data) return res.status(404).json({ ok: false, message: "Bedrijf niet gevonden" });
+    if (!data) {
+      return res.status(404).json({ ok: false, message: "Bedrijf niet gevonden" });
+    }
     res.json(data);
   } catch (error) {
     console.error("❌ Fout bij ophalen bedrijf via /slug/:slug:", error);
@@ -103,15 +106,17 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 /* ============================================================
-   ✅ Alternatieve route /:slug (API-compatibiliteit)
+   ✅ Alternatieve route op basis van ID (backward compatibility)
 ============================================================ */
-router.get("/:slug", async (req, res) => {
+router.get("/id/:id", async (req, res) => {
   try {
-    const data = await fetchCompanyBySlug(req.params.slug);
-    if (!data) return res.status(404).json({ ok: false, message: "Bedrijf niet gevonden" });
-    res.json(data);
+    const company = await Company.findById(req.params.id).lean();
+    if (!company) {
+      return res.status(404).json({ ok: false, message: "Bedrijf niet gevonden" });
+    }
+    res.json(company);
   } catch (error) {
-    console.error("❌ Fout bij ophalen bedrijf via /:slug:", error);
+    console.error("❌ Fout bij ophalen bedrijf via /id/:id:", error);
     res.status(500).json({ ok: false, message: "Serverfout bij ophalen bedrijf" });
   }
 });
