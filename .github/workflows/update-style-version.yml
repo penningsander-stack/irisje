@@ -1,0 +1,28 @@
+name: Update style version before deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-style-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Update version in HTML files
+        run: |
+          VERSION=$(date +%Y%m%d)
+          echo "Nieuwe versie: $VERSION"
+          find frontend -type f -name "*.html" -exec sed -i "s/style.css?v=[0-9]\+/style.css?v=$VERSION/g" {} +
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add frontend/*.html
+          git diff --cached --quiet || git commit -m "chore: bump CSS version to v$VERSION"
+          git push
