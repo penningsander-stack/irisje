@@ -1,6 +1,7 @@
 // backend/routes/reviews.js
 const express = require("express");
 const crypto = require("crypto");
+const path = require("path");
 const router = express.Router();
 
 const Review = require("../models/review");
@@ -21,20 +22,13 @@ router.get("/company/:identifier", async (req, res) => {
       return res.status(400).json({ error: "Geen bedrijfsidentifier opgegeven" });
     }
 
-    // Bepalen of het een ObjectId of slug is
     const company = /^[0-9a-fA-F]{24}$/.test(identifier)
       ? await Company.findById(identifier).lean()
       : await Company.findOne({ slug: identifier }).lean();
 
-    if (!company) {
-      return res.status(404).json({ error: "Bedrijf niet gevonden" });
-    }
+    if (!company) return res.status(404).json({ error: "Bedrijf niet gevonden" });
 
-    // Alleen bevestigde reviews tonen
-    const reviews = await Review.find({
-      company: company._id,
-      isConfirmed: true,
-    })
+    const reviews = await Review.find({ company: company._id, isConfirmed: true })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -50,7 +44,7 @@ router.get("/company/:identifier", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Fout bij ophalen reviews:", error);
-    res.status(500).json({ error: "Serverfout bij ophalen reviews" });
+    res.status(500).json({ error: "Serverfout bij ophalen reviews." });
   }
 });
 
@@ -62,7 +56,9 @@ router.post("/", async (req, res) => {
     const { companyId, name, email, rating, message } = req.body || {};
 
     if (!companyId || !name || !email || !rating || !message) {
-      return res.status(400).json({ ok: false, error: "Alle velden zijn verplicht." });
+      return res
+        .status(400)
+        .json({ ok: false, error: "Alle velden zijn verplicht." });
     }
 
     const company = await Company.findById(companyId).lean();
@@ -70,10 +66,8 @@ router.post("/", async (req, res) => {
       return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden." });
     }
 
-    // Unieke bevestigingstoken genereren
     const token = crypto.randomBytes(32).toString("hex");
 
-    // Review opslaan
     const review = new Review({
       company: company._id,
       name,
@@ -83,14 +77,13 @@ router.post("/", async (req, res) => {
       confirmToken: token,
       isConfirmed: false,
     });
-
     await review.save();
 
-    // ✅ Bevestigingslink opbouwen (altijd backend-URL)
+    // ✅ Correcte backend-URL gebruiken
     const backendBase = process.env.BACKEND_URL || "https://irisje-backend.onrender.com";
     const confirmUrl = `${backendBase}/api/reviews/confirm/${token}`;
 
-    // ✅ Verstuur bevestigingsmail naar klant
+    // ✅ Verstuur bevestigingsmail
     try {
       await sendMail({
         to: email,
@@ -119,18 +112,23 @@ router.post("/", async (req, res) => {
 router.get("/confirm/:token", async (req, res) => {
   try {
     const { token } = req.params;
-    if (!token) return res.status(400).send("Ongeldige of ontbrekende token.");
+    if (!token) {
+      return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
+    }
 
     const review = await Review.findOne({ confirmToken: token });
+
+    // ❌ Ongeldige of verlopen token
     if (!review) {
-      return res.status(404).send("<h2>Ongeldige of verlopen bevestigingslink.</h2>");
+      return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
     }
 
-    // Als al bevestigd → direct doorsturen naar bevestigingspagina
+    // ✅ Al bevestigd
     if (review.isConfirmed) {
-      return res.redirect("https://irisje.nl/review-confirm.html");
+      return res.sendFile(path.join(__dirname, "../public/review-confirm.html"));
     }
 
+    // ✅ Nieuwe bevestiging
     review.isConfirmed = true;
     review.confirmToken = null;
     await review.save();
@@ -153,11 +151,11 @@ router.get("/confirm/:token", async (req, res) => {
       console.error("⚠️ Fout bij melding beheer:", notifyErr);
     }
 
-    // ✅ Doorverwijzen naar frontendpagina
-    return res.redirect("https://irisje.nl/review-confirm.html");
+    // ✅ Toon nette bevestigingspagina
+    return res.sendFile(path.join(__dirname, "../public/review-confirm.html"));
   } catch (error) {
     console.error("❌ Fout bij bevestigen review:", error);
-    res.status(500).send("<h2>Er is een fout opgetreden bij het bevestigen van de review.</h2>");
+    return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
   }
 });
 
@@ -178,7 +176,7 @@ router.patch("/report/:id", async (req, res) => {
     res.json({ success: true, message: "Review succesvol gemeld" });
   } catch (error) {
     console.error("❌ Fout bij melden review:", error);
-    res.status(500).json({ error: "Serverfout bij melden review" });
+    res.status(500).json({ error: "Serverfout bij melden review." });
   }
 });
 
