@@ -69,11 +69,8 @@ router.post("/multi", async (req, res) => {
     const inserted = await Request.insertMany(toInsert);
 
     // 📩 Log in console
-    console.log(
-      `📩 Nieuwe openbare aanvraag van ${customerName} <${customerEmail}> voor bedrijven: ${foundCompanies
-        .map((c) => c.name)
-        .join(", ")}`
-    );
+    const companyNames = foundCompanies.map((c) => c.name).join(", ");
+    console.log(`📩 Nieuwe openbare aanvraag van ${customerName} <${customerEmail}> voor bedrijven: ${companyNames}`);
 
     /* ============================================================
        ✉️ E-mailmeldingen
@@ -88,7 +85,7 @@ router.post("/multi", async (req, res) => {
           <p><b>Naam:</b> ${customerName}</p>
           <p><b>Email:</b> ${customerEmail}</p>
           <p><b>Bericht:</b> ${message}</p>
-          <p><b>Bedrijven:</b> ${foundCompanies.map((c) => c.name).join(", ")}</p>
+          <p><b>Bedrijven:</b> ${companyNames}</p>
           <p style="font-size:12px;color:#666;">Ontvangen op ${new Date().toLocaleString("nl-NL")}</p>
         `,
       });
@@ -98,11 +95,10 @@ router.post("/multi", async (req, res) => {
     }
 
     try {
-      // 2️⃣ Professionele bevestiging naar klant
-      const firstCompany = foundCompanies[0];
+      // 2️⃣ Bevestiging naar klant – toont nu ALLE bedrijven
       await sendMail({
         to: customerEmail,
-        subject: `Je aanvraag bij ${firstCompany.name} is ontvangen`,
+        subject: `Je aanvraag via Irisje.nl is ontvangen`,
         html: `
           <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eee;">
             <div style="background:#4F46E5;color:white;padding:16px;text-align:center;">
@@ -112,7 +108,11 @@ router.post("/multi", async (req, res) => {
             <div style="padding:24px;">
               <p>Beste ${customerName},</p>
               <p>Bedankt voor je aanvraag via <b>Irisje.nl</b>.</p>
-              <p>We hebben je bericht doorgestuurd naar <b>${firstCompany.name}</b>. Zij nemen zo snel mogelijk contact met je op.</p>
+              <p>We hebben je bericht doorgestuurd naar de volgende bedrijven:</p>
+              <ul style="color:#333;margin-top:8px;margin-bottom:16px;">
+                ${foundCompanies.map((c) => `<li>${c.name}</li>`).join("")}
+              </ul>
+              <p style="color:#555;">Zij nemen zo snel mogelijk contact met je op.</p>
               <p style="margin-top:16px;color:#555;">Bericht dat je verstuurde:</p>
               <blockquote style="border-left:3px solid #4F46E5;padding-left:12px;color:#555;">${message}</blockquote>
               <p style="margin-top:16px;">Met vriendelijke groet,<br>Het team van <b>Irisje.nl</b></p>
@@ -124,6 +124,11 @@ router.post("/multi", async (req, res) => {
         `,
       });
       console.log(`📧 Bevestigingsmail verzonden naar ${customerEmail}`);
+
+      // 3️⃣ Korte tekstversie (voor toekomstige WhatsApp / SMS)
+      const shortMessage = `Hoi ${customerName}, je aanvraag via Irisje.nl is doorgestuurd naar ${companyNames}. Zij nemen zo snel mogelijk contact met je op.`;
+      console.log("💬 Korte berichttekst (WhatsApp/SMS):", shortMessage);
+
     } catch (userMailErr) {
       console.error(`⚠️ Fout bij verzenden naar klant (${customerEmail}):`, userMailErr.message);
     }
