@@ -1,7 +1,6 @@
 // backend/routes/reviews.js
 const express = require("express");
 const crypto = require("crypto");
-const path = require("path");
 const router = express.Router();
 
 const Review = require("../models/review");
@@ -112,20 +111,26 @@ router.post("/", async (req, res) => {
 router.get("/confirm/:token", async (req, res) => {
   try {
     const { token } = req.params;
+    const frontendBase = "https://irisje.nl";
+
     if (!token) {
-      return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
+      // Ongeldige token → redirect naar foutpagina
+      res.writeHead(302, { Location: `${frontendBase}/review-failed.html` });
+      return res.end();
     }
 
     const review = await Review.findOne({ confirmToken: token });
 
     // ❌ Ongeldige of verlopen token
     if (!review) {
-      return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
+      res.writeHead(302, { Location: `${frontendBase}/review-failed.html` });
+      return res.end();
     }
 
     // ✅ Al bevestigd
     if (review.isConfirmed) {
-      return res.sendFile(path.join(__dirname, "../public/review-confirm.html"));
+      res.writeHead(302, { Location: `${frontendBase}/review-confirm.html` });
+      return res.end();
     }
 
     // ✅ Nieuwe bevestiging
@@ -151,11 +156,13 @@ router.get("/confirm/:token", async (req, res) => {
       console.error("⚠️ Fout bij melding beheer:", notifyErr);
     }
 
-    // ✅ Toon nette bevestigingspagina
-    return res.sendFile(path.join(__dirname, "../public/review-confirm.html"));
+    // ✅ Doorsturen naar frontendbevestigingspagina
+    res.writeHead(302, { Location: `${frontendBase}/review-confirm.html` });
+    return res.end();
   } catch (error) {
     console.error("❌ Fout bij bevestigen review:", error);
-    return res.sendFile(path.join(__dirname, "../public/review-failed.html"));
+    res.writeHead(302, { Location: "https://irisje.nl/review-failed.html" });
+    return res.end();
   }
 });
 
