@@ -23,23 +23,23 @@ jobs:
         with:
           node-version: 22
 
-      - name: 🧩 Check en update CSS + manifest versie (cache-bump)
+      - name: 🧩 Controleer en update versies (HTML + manifest.json)
         id: bump
         run: |
           VERSION=$(date +%Y%m%d)
-          echo "Nieuwe versie: $VERSION"
-
-          # Zoek huidige CSS-versie in HTML
-          CURRENT_HTML=$(grep -ho 'style\.css?v=[0-9]\+' frontend/*.html | head -n 1 | grep -o '[0-9]\+' || echo "geen")
-          # Zoek huidige manifest-versie
-          CURRENT_MANIFEST=$(grep -o '"version": *"[0-9]\+"' frontend/manifest.json | grep -o '[0-9]\+' || echo "geen")
-
-          echo "Huidige HTML-versie: $CURRENT_HTML"
-          echo "Huidige manifest-versie: $CURRENT_MANIFEST"
-
+          echo "🔢 Nieuwe versie: $VERSION"
           CHANGED=false
 
-          # ✅ HTML versienummers bijwerken
+          CURRENT_HTML=$(grep -ho 'style\.css?v=[0-9]\+' frontend/*.html | head -n 1 | grep -o '[0-9]\+' || echo "geen")
+          echo "🔍 Huidige HTML-versie: ${CURRENT_HTML:-geen}"
+
+          if [ -f frontend/manifest.json ]; then
+            CURRENT_MANIFEST=$(grep -o '"version": *"[0-9]\+"' frontend/manifest.json | grep -o '[0-9]\+' || echo "geen")
+          else
+            CURRENT_MANIFEST="geen"
+          fi
+          echo "🔍 Huidige manifest-versie: ${CURRENT_MANIFEST:-geen}"
+
           if [ "$CURRENT_HTML" != "$VERSION" ]; then
             echo "🔄 HTML-versie bijwerken naar $VERSION..."
             find frontend -type f -name "*.html" -exec sed -i "s/style.css?v=[0-9]\+/style.css?v=$VERSION/g" {} +
@@ -48,18 +48,37 @@ jobs:
             echo "✅ HTML-versie is al actueel."
           fi
 
-          # ✅ Manifest-versie bijwerken
           if [ -f frontend/manifest.json ]; then
-            if [ "$CURRENT_MANIFEST" != "$VERSION" ]; then
-              echo "🔄 Manifest-versie bijwerken naar $VERSION..."
-              sed -i "s/\"version\": *\"[0-9]\+\"/\"version\": \"$VERSION\"/" frontend/manifest.json
-              CHANGED=true
+            if grep -q '"version":' frontend/manifest.json; then
+              if [ "$CURRENT_MANIFEST" != "$VERSION" ]; then
+                echo "🔄 Manifest-versie bijwerken naar $VERSION..."
+                sed -i "s/\"version\": *\"[0-9]\+\"/\"version\": \"$VERSION\"/" frontend/manifest.json
+                CHANGED=true
+              else
+                echo "✅ Manifest-versie is al actueel."
+              fi
             else
-              echo "✅ Manifest-versie is al actueel."
+              echo "➕ Voeg ontbrekend 'version'-veld toe aan manifest.json..."
+              sed -i "s/^{/{\n  \"version\": \"$VERSION\",/" frontend/manifest.json
+              CHANGED=true
             fi
+          else
+            echo "⚠️ Geen manifest.json gevonden. Nieuw bestand aanmaken..."
+            cat <<EOF > frontend/manifest.json
+{
+  "name": "Irisje.nl",
+  "short_name": "Irisje",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4F46E5",
+  "version": "$VERSION",
+  "description": "Vergelijk bedrijven en lees reviews via Irisje.nl."
+}
+EOF
+            CHANGED=true
           fi
 
-          # ✅ Alleen committen als er iets gewijzigd is
           if [ "$CHANGED" = true ]; then
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
@@ -67,9 +86,12 @@ jobs:
             git commit -m "chore: bump frontend version to v$VERSION"
             git push
             echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "✅ Versie geüpdatet en gepusht."
           else
-            echo "✅ Geen wijzigingen nodig, alles is actueel."
+            echo "✅ Geen aanpassingen nodig, alles is actueel."
             echo "changed=false" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
       - name: ⚙️ Build frontend (indien van toepassing)
@@ -98,3 +120,26 @@ jobs:
           echo "Start Render-deploy..."
           curl -X POST "$RENDER_DEPLOY_HOOK"
           echo "✅ Deploy trigger verzonden naar Render."
+
+      - name: 📨 Slack-notificatie bij succesvolle deploy
+        if: steps.bump.outputs.changed == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          echo ""
+          echo "🌸=============================================="
+          echo "🌸  Nieuwe frontendversie gedeployed!"
+          echo "🌸  Versie: v${{ steps.bump.outputs.version }}"
+          echo "🌸  Datum: $(date '+%d-%m-%Y %H:%M:%S')"
+          echo "🌸=============================================="
+          echo ""
+
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "💬 Stuur Slack-notificatie..."
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"🌸 *Nieuwe Irisje.nl versie live!*\\nVersie: *v${{ steps.bump.outputs.version }}*\\nDatum: $(date '+%d-%m-%Y %H:%M:%S')\\n<https://irisje.nl|Bekijk website>\"}" \
+              $SLACK_WEBHOOK_URL
+            echo "✅ Slack-notificatie verzonden."
+          else
+            echo "⚠️ Geen Slack-webhook ingesteld. Voeg 'SLACK_WEBHOOK_URL' toe aan repository secrets."
+          fi
