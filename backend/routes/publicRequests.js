@@ -5,7 +5,7 @@ const router = express.Router();
 
 const Request = require("../models/request");
 const Company = require("../models/company");
-const { sendMail } = require("../utils/mailer"); // ✅ Mailfunctie
+const { sendMail } = require("../utils/mailer");
 
 // ✅ Test route
 router.get("/", (req, res) => {
@@ -19,24 +19,13 @@ router.post("/multi", async (req, res) => {
 
     // 🔎 Validatie
     if (!customerName || !customerEmail || !message) {
-      return res.status(400).json({
-        ok: false,
-        error: "Naam, e-mailadres en bericht zijn verplicht.",
-      });
+      return res.status(400).json({ ok: false, error: "Naam, e-mailadres en bericht zijn verplicht." });
     }
-
     if (!Array.isArray(companies) || companies.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        error: "Kies minstens één bedrijf.",
-      });
+      return res.status(400).json({ ok: false, error: "Kies minstens één bedrijf." });
     }
-
     if (companies.length > 5) {
-      return res.status(400).json({
-        ok: false,
-        error: "Je kunt maximaal 5 bedrijven selecteren.",
-      });
+      return res.status(400).json({ ok: false, error: "Je kunt maximaal 5 bedrijven selecteren." });
     }
 
     // ✅ IDs controleren
@@ -65,15 +54,13 @@ router.post("/multi", async (req, res) => {
       status: "Nieuw",
       date: new Date(),
     }));
-
     const inserted = await Request.insertMany(toInsert);
 
-    // 📩 Log in console
     const companyNames = foundCompanies.map((c) => c.name).join(", ");
-    console.log(`📩 Nieuwe openbare aanvraag van ${customerName} <${customerEmail}> voor bedrijven: ${companyNames}`);
+    console.log(`📩 Nieuwe aanvraag van ${customerName} <${customerEmail}> voor bedrijven: ${companyNames}`);
 
     /* ============================================================
-       ✉️ E-mailmeldingen
+       ✉️ E-mails
     ============================================================ */
     try {
       // 1️⃣ Mail naar Irisje.nl (beheer)
@@ -81,59 +68,69 @@ router.post("/multi", async (req, res) => {
         to: process.env.SMTP_FROM,
         subject: "Nieuwe aanvraag via Irisje.nl",
         html: `
-          <h2 style="color:#4F46E5;">Nieuwe aanvraag via Irisje.nl</h2>
-          <p><b>Naam:</b> ${customerName}</p>
-          <p><b>Email:</b> ${customerEmail}</p>
-          <p><b>Bericht:</b> ${message}</p>
-          <p><b>Bedrijven:</b> ${companyNames}</p>
-          <p style="font-size:12px;color:#666;">Ontvangen op ${new Date().toLocaleString("nl-NL")}</p>
-        `,
-      });
-      console.log("📧 E-mailmelding verzonden naar info@irisje.nl");
-    } catch (mailErr) {
-      console.error("⚠️ Fout bij verzenden naar info@irisje.nl:", mailErr.message);
-    }
+          <div style="font-family:Inter,Arial,sans-serif;max-width:640px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+            <h2 style="color:#4F46E5;margin-bottom:8px;">Nieuwe aanvraag via Irisje.nl</h2>
+            <p style="color:#374151;">Er is zojuist een nieuwe aanvraag binnengekomen via <b>Irisje.nl</b>.</p>
 
-    try {
-      // 2️⃣ Bevestiging naar klant – toont nu ALLE bedrijven
-      await sendMail({
-        to: customerEmail,
-        subject: `Je aanvraag via Irisje.nl is ontvangen`,
-        html: `
-          <div style="font-family:Inter,Arial,sans-serif;max-width:600px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #eee;">
-            <div style="background:#4F46E5;color:white;padding:16px;text-align:center;">
-              <img src="https://irisje.nl/favicon.ico" alt="Irisje.nl" style="width:48px;height:48px;border-radius:8px;margin-bottom:8px;">
-              <h2 style="margin:0;font-size:20px;">Irisje.nl</h2>
-            </div>
-            <div style="padding:24px;">
-              <p>Beste ${customerName},</p>
-              <p>Bedankt voor je aanvraag via <b>Irisje.nl</b>.</p>
-              <p>We hebben je bericht doorgestuurd naar de volgende bedrijven:</p>
-              <ul style="color:#333;margin-top:8px;margin-bottom:16px;">
-                ${foundCompanies.map((c) => `<li>${c.name}</li>`).join("")}
-              </ul>
-              <p style="color:#555;">Zij nemen zo snel mogelijk contact met je op.</p>
-              <p style="margin-top:16px;color:#555;">Bericht dat je verstuurde:</p>
-              <blockquote style="border-left:3px solid #4F46E5;padding-left:12px;color:#555;">${message}</blockquote>
-              <p style="margin-top:16px;">Met vriendelijke groet,<br>Het team van <b>Irisje.nl</b></p>
-            </div>
-            <div style="background:#f9fafb;padding:12px;text-align:center;font-size:12px;color:#777;">
-              © ${new Date().getFullYear()} Irisje.nl – Alle rechten voorbehouden
-            </div>
+            <table style="width:100%;border-collapse:collapse;margin-top:16px;margin-bottom:16px;font-size:15px;">
+              <tr><td style="padding:4px 0;color:#555;">👤 <b>Naam:</b></td><td>${customerName}</td></tr>
+              <tr><td style="padding:4px 0;color:#555;">📧 <b>E-mailadres:</b></td><td>${customerEmail}</td></tr>
+              <tr><td style="padding:4px 0;color:#555;vertical-align:top;">💬 <b>Bericht:</b></td><td>${message}</td></tr>
+              <tr><td style="padding:4px 0;color:#555;vertical-align:top;">🏢 <b>Bedrijven:</b></td><td>${companyNames}</td></tr>
+            </table>
+
+            <p style="font-size:13px;color:#6b7280;">Ontvangen op ${new Date().toLocaleString("nl-NL")}</p>
+            <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+            <p style="font-size:13px;color:#9ca3af;">📮 Deze melding is automatisch gegenereerd door Irisje.nl.<br>Reageren is niet nodig.</p>
           </div>
         `,
       });
-      console.log(`📧 Bevestigingsmail verzonden naar ${customerEmail}`);
-
-      // 3️⃣ Korte tekstversie (voor toekomstige WhatsApp / SMS)
-      const shortMessage = `Hoi ${customerName}, je aanvraag via Irisje.nl is doorgestuurd naar ${companyNames}. Zij nemen zo snel mogelijk contact met je op.`;
-      console.log("💬 Korte berichttekst (WhatsApp/SMS):", shortMessage);
-
-    } catch (userMailErr) {
-      console.error(`⚠️ Fout bij verzenden naar klant (${customerEmail}):`, userMailErr.message);
+      console.log("📧 Professionele beheer-mail verzonden");
+    } catch (err) {
+      console.error("⚠️ Fout bij verzenden naar beheer:", err.message);
     }
 
-    // ✅ Succesresponse
+    try {
+      // 2️⃣ Professionele bevestiging naar klant
+      await sendMail({
+        to: customerEmail,
+        subject: "Bevestiging van je aanvraag via Irisje.nl",
+        html: `
+          <div style="font-family:Inter,Arial,sans-serif;max-width:640px;margin:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+            <img src="https://irisje.nl/favicon.ico" alt="Irisje.nl" style="width:40px;height:40px;border-radius:8px;display:block;margin:auto;margin-bottom:16px;">
+            <h2 style="text-align:center;color:#4F46E5;margin:0;">Bevestiging van je aanvraag</h2>
+            <p style="color:#374151;margin-top:24px;">Beste ${customerName},</p>
+            <p style="color:#374151;">Bedankt voor je aanvraag via <b>Irisje.nl</b>.</p>
+            <p style="color:#374151;">We hebben je bericht doorgestuurd naar de volgende bedrijven:</p>
+
+            <ul style="color:#111827;margin-top:8px;margin-bottom:16px;">
+              ${foundCompanies.map((c) => `<li>${c.name}</li>`).join("")}
+            </ul>
+
+            <p style="color:#374151;">Zij nemen zo snel mogelijk contact met je op.</p>
+
+            <p style="margin-top:16px;color:#555;">Bericht dat je verstuurde:</p>
+            <blockquote style="border-left:3px solid #4F46E5;padding-left:12px;margin:8px 0;color:#555;">
+              ${message}
+            </blockquote>
+
+            <p style="margin-top:24px;color:#374151;">Met vriendelijke groet,<br>Het team van <b>Irisje.nl</b></p>
+
+            <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
+            <p style="text-align:center;font-size:12px;color:#9ca3af;">© ${new Date().getFullYear()} Irisje.nl – Alle rechten voorbehouden</p>
+          </div>
+        `,
+      });
+      console.log(`📧 Professionele klantmail verzonden naar ${customerEmail}`);
+
+      // 3️⃣ Korte tekstversie (voor WhatsApp/SMS toekomst)
+      const shortMessage = `Hoi ${customerName}, je aanvraag via Irisje.nl is doorgestuurd naar ${companyNames}. Zij nemen binnenkort contact met je op.`;
+      console.log("💬 Korte berichttekst:", shortMessage);
+
+    } catch (err) {
+      console.error(`⚠️ Fout bij verzenden klantmail (${customerEmail}):`, err.message);
+    }
+
     res.json({ ok: true, created: inserted.length });
   } catch (err) {
     console.error("❌ Fout bij publicRequests/multi:", err);
