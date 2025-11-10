@@ -1,10 +1,17 @@
-# bestanden die geen nieuwe build hoeven te triggeren
+# Niet relevante bestanden voor backend deploy
 README.md
 LICENSE
 *.md
 *.txt
 
-# wél backend meenemen!
-# uitsluiten van node_modules en lokale .env’s
+# Geen lokale node_modules en .env’s
 **/node_modules/
 **/.env
+.env
+
+# Geen frontend-builds of -assets
+/frontend/
+tools/
+tailwind.config.js
+postcss.config.js
+package-lock.json
