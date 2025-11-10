@@ -47,13 +47,10 @@ mongoose
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
-
-// 👇 Belangrijk: zorg dat dit exact hetzelfde is als de bestandsnaam
-app.use("/api/publicRequests", require("./routes/publicRequests")); 
-
+app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));
-app.use("/api/email", require("./routes/email"));
+app.use("/api/email", require("./routes/email")); // 👈 nieuwe mailer-testroute
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/status", require("./routes/status"));
 app.use("/api/claims", require("./routes/claims"));
