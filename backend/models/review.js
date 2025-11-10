@@ -9,7 +9,11 @@ const reviewSchema = new mongoose.Schema(
     rating: { type: Number, required: true, min: 1, max: 5 },
     message: { type: String, required: true },
     reported: { type: Boolean, default: false },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
+
+    // ✅ Nieuw: reviewbevestiging
+    isConfirmed: { type: Boolean, default: false },
+    confirmToken: { type: String, index: true, required: false }
   },
   { timestamps: true }
 );
