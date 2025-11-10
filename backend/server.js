@@ -1,6 +1,6 @@
 // backend/server.js
-require("./config/validateEnv"); // ✅ controleert alle vereiste .env-velden
-const { startupBanner } = require("./utils/logHelper"); // 🌸 nette logs
+require("./config/validateEnv");
+const { startupBanner } = require("./utils/logHelper");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -10,9 +10,7 @@ const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
-// 🌸 Nieuwe centrale beveiligingsconfiguratie
 const { corsMiddleware, securityHeaders } = require("./config/security");
-// 🌸 Logger (voor status-overzicht)
 const { addLog } = require("./utils/logger");
 
 const app = express();
@@ -43,14 +41,22 @@ mongoose
     addLog("MongoDB connection error: " + err.message, "error");
   });
 
-// === ✅ API-routes ===
+/* ============================================================
+   📁 Nieuwe statische map voor e-mailpagina’s (review confirm/failed)
+============================================================ */
+app.use(express.static(path.join(__dirname, "public")));
+// → zorgt dat /review-confirm.html en /review-failed.html correct werken
+
+/* ============================================================
+   ✅ API-routes
+============================================================ */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/admin", require("./routes/admin"));
-app.use("/api/email", require("./routes/email")); // 👈 nieuwe mailer-testroute
+app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/status", require("./routes/status"));
 app.use("/api/claims", require("./routes/claims"));
@@ -58,13 +64,15 @@ app.use("/api/google-reviews", require("./routes/googleReviews"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
-// === ✅ Testroute — vóór frontend fallback ===
+// === ✅ Testroute
 app.get("/api/test", (req, res) => {
   addLog("API test uitgevoerd", "debug");
   res.json({ ok: true, message: "Server ziet routes correct" });
 });
 
-// === 🖼️ Slimme image-serve middleware (WebP-detectie) ===
+/* ============================================================
+   🖼️ Slimme image-serve middleware (WebP-detectie)
+============================================================ */
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
   const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
@@ -79,10 +87,14 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   }
 });
 
-// === ✅ Statische frontend-bestanden ===
+/* ============================================================
+   ✅ Statische frontend-bestanden
+============================================================ */
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// === 🪄 HTML-head & lazyload + status-enhanced injectie ===
+/* ============================================================
+   🪄 HTML-injecties (preload + lazyload)
+============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
   const filePath = path.join(__dirname, "../frontend", req.path);
   if (!fs.existsSync(filePath)) return next();
@@ -113,12 +125,16 @@ app.use(/.*\.html$/, (req, res, next) => {
   res.type("html").send(html);
 });
 
-// === ✅ Frontend fallback ===
+/* ============================================================
+   ✅ Frontend fallback
+============================================================ */
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
-// === ✅ Server starten ===
+/* ============================================================
+   ✅ Server starten
+============================================================ */
 const PORT = process.env.PORT || 3000;
 startupBanner();
 addLog("Server gestart op poort " + PORT, "info");
