@@ -67,3 +67,58 @@ exports.newRequestCustomer = (customerName, message, foundCompanies) => {
     </p>
   `);
 };
+
+/* ============================================================
+   📨 Reviewbevestiging – klant moet review bevestigen
+============================================================ */
+exports.reviewConfirmationCustomer = (name, companyName, message, confirmUrl) => {
+  return baseWrapper(`
+    <h2 style="color:#4F46E5;margin-bottom:12px;">Bevestig je review</h2>
+    <p style="color:#374151;">Beste ${name},</p>
+    <p style="color:#374151;margin-bottom:12px;">
+      Bedankt dat je een review hebt achtergelaten voor <b>${companyName}</b> via Irisje.nl.
+      Om misbruik te voorkomen vragen we je om je review even te bevestigen.
+    </p>
+
+    <p style="margin-bottom:20px;">
+      <a href="${confirmUrl}" style="display:inline-block;background:#4F46E5;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:500;">
+        Review bevestigen
+      </a>
+    </p>
+
+    <p style="color:#6b7280;font-size:13px;margin-bottom:16px;">
+      Werkt de knop niet? Kopieer dan deze link in je browser:<br>
+      <span style="word-break:break-all;color:#4F46E5;">${confirmUrl}</span>
+    </p>
+
+    <p style="color:#374151;margin-top:12px;">Je review:</p>
+    <blockquote style="border-left:3px solid #4F46E5;padding-left:12px;margin-top:6px;color:#555;">
+      ${message}
+    </blockquote>
+
+    <p style="margin-top:20px;color:#374151;">
+      Met vriendelijke groet,<br>
+      Het team van <b>Irisje.nl</b>
+    </p>
+  `);
+};
+
+/* ============================================================
+   🏢 Reviewbevestiging – melding aan beheer
+============================================================ */
+exports.reviewConfirmedAdmin = (companyName, reviewerName, rating, message) => {
+  return baseWrapper(`
+    <h2 style="color:#4F46E5;margin-bottom:12px;">Nieuwe bevestigde review</h2>
+    <p style="color:#374151;">
+      Er is zojuist een review bevestigd voor <b>${companyName}</b>.
+    </p>
+    <p style="color:#374151;margin-top:12px;">
+      <b>Naam:</b> ${reviewerName}<br>
+      <b>Score:</b> ${rating} / 5
+    </p>
+    <p style="margin-top:12px;color:#374151;">Reviewtekst:</p>
+    <blockquote style="border-left:3px solid #4F46E5;padding-left:12px;margin-top:6px;color:#555;">
+      ${message}
+    </blockquote>
+  `);
+};
