@@ -1,0 +1,11 @@
+# Niet relevante bestanden voor frontend deploy
+README.md
+LICENSE
+*.md
+*.txt
+
+# Geen backend of serverbestanden
+/backend/
+**/node_modules/
+**/.env
+.env
