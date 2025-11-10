@@ -144,3 +144,49 @@ footer {
   letter-spacing: 0.02em;
   box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25);
 }
+
+/* === Irisje.nl – Offerteformulier (company.html) === */
+#request-form-section {
+  animation: fadeInDashboard 0.9s ease-out forwards;
+}
+
+#company-request-form .input {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#company-request-form .input:focus {
+  border-color: var(--irisje-indigo);
+  box-shadow: 0 0 0 3px var(--irisje-indigo-light);
+  outline: none;
+}
+
+#company-request-form button {
+  width: 100%;
+  font-weight: 500;
+  background-color: var(--irisje-indigo-strong);
+  color: #fff;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#company-request-form button:hover {
+  background-color: var(--irisje-indigo);
+  transform: translateY(-1px);
+}
+
+#req-status {
+  min-height: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  #company-request-form button {
+    width: 100%;
+  }
+}
