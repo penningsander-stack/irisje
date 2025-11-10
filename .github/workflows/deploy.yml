@@ -13,6 +13,7 @@ jobs:
   deploy:
     name: Deploy naar Render
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
@@ -22,13 +23,63 @@ jobs:
         with:
           node-version: 22
 
+      - name: 🧩 Check en update CSS + manifest versie (cache-bump)
+        id: bump
+        run: |
+          VERSION=$(date +%Y%m%d)
+          echo "Nieuwe versie: $VERSION"
+
+          # Zoek huidige CSS-versie in HTML
+          CURRENT_HTML=$(grep -ho 'style\.css?v=[0-9]\+' frontend/*.html | head -n 1 | grep -o '[0-9]\+' || echo "geen")
+          # Zoek huidige manifest-versie
+          CURRENT_MANIFEST=$(grep -o '"version": *"[0-9]\+"' frontend/manifest.json | grep -o '[0-9]\+' || echo "geen")
+
+          echo "Huidige HTML-versie: $CURRENT_HTML"
+          echo "Huidige manifest-versie: $CURRENT_MANIFEST"
+
+          CHANGED=false
+
+          # ✅ HTML versienummers bijwerken
+          if [ "$CURRENT_HTML" != "$VERSION" ]; then
+            echo "🔄 HTML-versie bijwerken naar $VERSION..."
+            find frontend -type f -name "*.html" -exec sed -i "s/style.css?v=[0-9]\+/style.css?v=$VERSION/g" {} +
+            CHANGED=true
+          else
+            echo "✅ HTML-versie is al actueel."
+          fi
+
+          # ✅ Manifest-versie bijwerken
+          if [ -f frontend/manifest.json ]; then
+            if [ "$CURRENT_MANIFEST" != "$VERSION" ]; then
+              echo "🔄 Manifest-versie bijwerken naar $VERSION..."
+              sed -i "s/\"version\": *\"[0-9]\+\"/\"version\": \"$VERSION\"/" frontend/manifest.json
+              CHANGED=true
+            else
+              echo "✅ Manifest-versie is al actueel."
+            fi
+          fi
+
+          # ✅ Alleen committen als er iets gewijzigd is
+          if [ "$CHANGED" = true ]; then
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git add frontend/*.html frontend/manifest.json || true
+            git commit -m "chore: bump frontend version to v$VERSION"
+            git push
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Geen wijzigingen nodig, alles is actueel."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: ⚙️ Build frontend (indien van toepassing)
+        if: steps.bump.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         working-directory: frontend
         run: |
           if [ -f package.json ]; then
             echo "Installeer dependencies en build..."
             npm ci --omit=dev || npm install --omit=dev
-            if [ -f package.json ] && grep -q "\"build\":" package.json; then
+            if grep -q "\"build\":" package.json; then
               npm run build || echo "Geen build-script gevonden."
             else
               echo "Geen build-script aanwezig, stap overslaan."
@@ -36,6 +87,7 @@ jobs:
           fi
 
       - name: 🚀 Trigger Render deploy
+        if: steps.bump.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
