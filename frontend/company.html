@@ -42,6 +42,23 @@
         </div>
       </section>
 
+      <!-- ✉️ Offerteaanvraagformulier -->
+      <section id="request-form-section" class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">📩 Vraag een offerte aan</h2>
+        <form id="company-request-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <input type="hidden" id="company-id" />
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" id="req-name" placeholder="Naam" class="input" required />
+            <input type="email" id="req-email" placeholder="E-mailadres" class="input" required />
+          </div>
+          <textarea id="req-message" placeholder="Beschrijf je klus of vraag..." class="input mt-3" rows="4" required></textarea>
+          <p id="req-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
+          <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Verstuur aanvraag
+          </button>
+        </form>
+      </section>
+
       <!-- ⭐ Google Reviews -->
       <section id="google-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10 mb-10">
         <div class="flex items-center justify-between mb-4">
@@ -101,5 +118,44 @@
   </footer>
 
   <script src="js/company.js?v=20251107"></script>
+  <script>
+    // ⬇️ eenvoudige submit-handler voor offerteformulier
+    document.getElementById("company-request-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector("button");
+      btn.disabled = true;
+
+      const id = new URLSearchParams(window.location.search).get("id");
+      const data = {
+        customerName: document.getElementById("req-name").value.trim(),
+        customerEmail: document.getElementById("req-email").value.trim(),
+        message: document.getElementById("req-message").value.trim(),
+        companies: [id],
+      };
+
+      const statusEl = document.getElementById("req-status");
+      try {
+        const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests/multi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const result = await res.json();
+        if (result.ok) {
+          statusEl.textContent = "✅ Aanvraag succesvol verzonden!";
+          statusEl.className = "text-green-600 text-sm mt-2";
+          e.target.reset();
+        } else {
+          statusEl.textContent = "❌ " + (result.error || "Er ging iets mis.");
+          statusEl.className = "text-red-600 text-sm mt-2";
+        }
+      } catch {
+        statusEl.textContent = "❌ Serverfout bij verzenden van aanvraag.";
+        statusEl.className = "text-red-600 text-sm mt-2";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
