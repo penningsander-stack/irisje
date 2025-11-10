@@ -5,6 +5,7 @@ const router = express.Router();
 
 const Request = require("../models/request");
 const Company = require("../models/company");
+const { sendMail } = require("../utils/mailer"); // 👈 toegevoegd
 
 // ✅ Test route
 router.get("/", (req, res) => {
@@ -73,12 +74,33 @@ router.post("/multi", async (req, res) => {
 
     const inserted = await Request.insertMany(toInsert);
 
-    // 🧾 Log naar console voor monitoring (Render Logs)
+    // 📩 Console-log
     console.log(
       `📩 Nieuwe openbare aanvraag ontvangen van ${customerName} <${customerEmail}> voor bedrijven: ${foundCompanies
         .map((c) => c.name)
         .join(", ")}`
     );
+
+    // ✉️ Automatische e-mailmelding via Brevo
+    try {
+      await sendMail({
+        to: process.env.SMTP_FROM, // meestal info@irisje.nl
+        subject: "Nieuwe aanvraag via Irisje.nl",
+        html: `
+          <h2>Nieuwe aanvraag via Irisje.nl</h2>
+          <p><b>Naam:</b> ${customerName}</p>
+          <p><b>Email:</b> ${customerEmail}</p>
+          <p><b>Bericht:</b> ${message}</p>
+          <p><b>Geselecteerde bedrijven:</b> ${foundCompanies
+            .map((c) => c.name)
+            .join(", ")}</p>
+          <p>Ontvangen op: ${new Date().toLocaleString("nl-NL")}</p>
+        `,
+      });
+      console.log("📧 E-mailmelding verzonden naar info@irisje.nl");
+    } catch (mailErr) {
+      console.error("⚠️ Fout bij verzenden e-mailmelding:", mailErr);
+    }
 
     return res.json({
       ok: true,
