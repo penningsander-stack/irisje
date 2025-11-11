@@ -57,13 +57,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // ✅ Logo asynchroon met fade-in laden (zonder flikkering)
       const logoEl = document.getElementById("companyLogo");
-
       const defaultLogo = "img/default-logo.png"; // relatieve pad naar frontend/img/
       const logoToLoad = company.logoUrl || defaultLogo;
 
       const preload = new Image();
-      preload.src = logoToLoad;
-      preload.loading = "lazy";
+      preload.src = logoToLoad; // ⚠️ GEEN preload.loading = "lazy";
       preload.onload = () => {
         logoEl.src = logoToLoad;
         requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
@@ -72,6 +70,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         logoEl.src = defaultLogo;
         logoEl.classList.remove("opacity-0");
       };
+
+      // ✅ Veiligheidsfallback: verwijder opacity na 1s
+      setTimeout(() => logoEl.classList.remove("opacity-0"), 1000);
 
       // Google-reviews pas laden nadat het bedrijf zichtbaar is
       if (company.name && company.city) {
