@@ -8,7 +8,7 @@
   <meta name="description" content="Beheer gemelde reviews en ontvangen claims op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251103" />
+  <link rel="stylesheet" href="style.css?v=20251111" />
 
   <style>
     .fade-row-out { animation: fadeRow 0.45s ease-out forwards; }
@@ -20,7 +20,6 @@
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
-
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-4 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
@@ -44,9 +43,7 @@
           <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
             📊 Overzicht gemelde reviews
           </h2>
-          <p class="text-gray-500 text-sm">
-            Dit zijn alle reviews die door bedrijven zijn gemeld. Je kunt ze hieronder afhandelen.
-          </p>
+          <p class="text-gray-500 text-sm">Dit zijn alle reviews die door bedrijven zijn gemeld. Je kunt ze hieronder afhandelen.</p>
         </div>
       </div>
 
@@ -70,9 +67,7 @@
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            💬 Gemelde reviews
-          </h2>
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">💬 Gemelde reviews</h2>
           <p class="text-gray-500 text-sm">Alleen beheerders kunnen hier meldingen afhandelen.</p>
         </div>
         <button id="refreshBtn" type="button"
@@ -96,9 +91,7 @@
           </thead>
           <tbody id="reported-table-body">
             <tr>
-              <td colspan="7" class="text-center text-gray-400 p-4">
-                Gemelde reviews worden geladen...
-              </td>
+              <td colspan="7" class="text-center text-gray-400 p-4">Gemelde reviews worden geladen...</td>
             </tr>
           </tbody>
         </table>
@@ -109,13 +102,98 @@
     <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-            📥 Ontvangen claimverzoeken
-          </h2>
+          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📥 Ontvangen claimverzoeken</h2>
           <p class="text-gray-500 text-sm">Bekijk alle bedrijfseigenaren die een profielclaim hebben ingediend.</p>
         </div>
       </div>
-
       <div class="overflow-x-auto rounded-lg border border-gray-100">
         <table class="min-w-full bg-white text-sm">
-          <thead class="bg-gray-50 text-left text-gray-600 text-xs u
+          <thead class="bg-gray-50 text-left text-gray-600 text-xs uppercase tracking-wide">
+            <tr>
+              <th class="p-3">Bedrijf</th>
+              <th class="p-3">Eigenaar</th>
+              <th class="p-3">E-mail</th>
+              <th class="p-3">Datum</th>
+              <th class="p-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5" class="text-center text-gray-400 p-4">Claimverzoeken worden geladen...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 🧪 SYSTEEMTEST -->
+    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
+      <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">🧪 Systeemtest – E-mailfunctie</h2>
+      <p class="text-gray-500 text-sm mb-4">
+        Verstuur een testaanvraag via de backend om te controleren of e-mails goed worden verzonden.
+      </p>
+
+      <form id="testEmailForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Naam</label>
+          <input id="testName" type="text" required class="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bijv. Test Gebruiker" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">E-mailadres</label>
+          <input id="testEmail" type="email" required class="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="bijv. test@example.com" />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Bericht</label>
+          <textarea id="testMessage" rows="3" required class="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bijv. Dit is een testaanvraag..."></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Bedrijf-ID</label>
+          <input id="testCompany" type="text" required class="mt-1 w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bijv. 68faa3d43d2b1342ab1b1007" />
+        </div>
+
+        <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
+          📤 Testaanvraag versturen
+        </button>
+      </form>
+
+      <div id="testResult" class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"></div>
+    </section>
+  </main>
+
+  <footer class="bg-gray-100 text-center text-gray-500 text-sm py-4 mt-10 border-t border-gray-200">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <script>
+    document.getElementById("testEmailForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const result = document.getElementById("testResult");
+      result.textContent = "⏳ Bezig met verzenden...";
+
+      const payload = {
+        customerName: document.getElementById("testName").value.trim(),
+        customerEmail: document.getElementById("testEmail").value.trim(),
+        message: document.getElementById("testMessage").value.trim(),
+        companies: [document.getElementById("testCompany").value.trim()]
+      };
+
+      try {
+        const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests/multi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          result.textContent = `✅ Succesvol verzonden:\n${JSON.stringify(data, null, 2)}`;
+        } else {
+          result.textContent = `⚠️ Fout (${res.status}): ${data.error || JSON.stringify(data)}`;
+        }
+      } catch (err) {
+        result.textContent = `❌ Netwerkfout: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
