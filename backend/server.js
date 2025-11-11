@@ -94,9 +94,9 @@ app.get("/api/check", (req, res) => {
       "/api/claims",
       "/api/googlereviews",
       "/api/seed",
-      "/api/importer"
+      "/api/importer",
     ],
-    message: "✅ Alle routes zijn correct geladen en actief."
+    message: "✅ Alle routes zijn correct geladen en actief.",
   });
 });
 
@@ -116,6 +116,22 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
     next();
   }
 });
+
+/* ============================================================
+   🖼️ Extra route voor /img zodat default-logo.png zichtbaar is
+============================================================ */
+app.use(
+  "/img",
+  express.static(path.join(__dirname, "../frontend/img"), {
+    setHeaders: (res, filePath) => {
+      if (/\.(png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
+        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+      } else {
+        res.setHeader("Cache-Control", "no-store");
+      }
+    },
+  })
+);
 
 /* ============================================================
    ✅ Statische frontend-bestanden met cache-headers
