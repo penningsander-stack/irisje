@@ -1,4 +1,4 @@
-name: 🔧 Auto-fix Case Sensitivity (Require Paths)
+name: 🔧 Auto-fix Case Sensitivity & Trigger Render Build
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   fix-case:
-    name: Ensure consistent lowercase imports
+    name: Ensure consistent lowercase imports + Render trigger
     runs-on: ubuntu-latest
 
     steps:
@@ -48,3 +48,15 @@ jobs:
           else
             echo "✨ No fixes needed."
           fi
+
+      - name: 🚀 Trigger Render Deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ Geen Render hook ingesteld. Voeg 'RENDER_DEPLOY_HOOK_URL' toe bij GitHub Secrets."
+            exit 0
+          fi
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Render build triggered."
