@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userRole = localStorage.getItem("userRole");
 
   /* ============================================================
-     1️⃣ Bedrijf laden (met fade-in logo, zonder flikkering)
+     1️⃣ Bedrijf laden (logo direct zichtbaar, geen flikkering)
   ============================================================ */
   async function loadCompany() {
     try {
@@ -37,8 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <img
               id="companyLogo"
               alt="${company.name ? company.name.replace(/"/g, "&quot;") : "Bedrijfslogo"}"
-              class="w-24 h-24 rounded-xl object-cover border bg-gray-100 opacity-0 transition-opacity duration-500"
-              loading="lazy"
+              class="w-24 h-24 rounded-xl object-cover border bg-gray-100"
             />
             <div>
               <h1 class="text-2xl font-bold text-indigo-700">${company.name || ""}</h1>
@@ -55,28 +54,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
 
-      // ✅ Logo asynchroon met fade-in laden (zonder flikkering)
+      // ✅ Logo laden zonder fade/lazy-bugs
       const logoEl = document.getElementById("companyLogo");
-      const defaultLogo = "img/default-logo.png"; // relatieve pad naar frontend/img/
-      const logoToLoad = company.logoUrl || defaultLogo;
+      const defaultLogo = "img/default-logo.png";
+      const logoSrc = company.logoUrl && company.logoUrl.trim() !== "" ? company.logoUrl : defaultLogo;
 
-      // ✅ Debuglog om het pad te controleren
-      console.log("🖼️ Logo geladen:", logoToLoad);
+      console.log("🖼️ Logo geladen:", logoSrc);
 
-      const preload = new Image();
-      preload.src = logoToLoad; // ⚠️ GEEN preload.loading = "lazy";
-      preload.onload = () => {
-        logoEl.src = logoToLoad;
-        requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
+      const img = new Image();
+      img.onload = () => {
+        logoEl.src = logoSrc;
+        logoEl.style.opacity = "1";
       };
-      preload.onerror = () => {
+      img.onerror = () => {
         console.warn("⚠️ Logo niet gevonden, val terug op default-logo.png");
         logoEl.src = defaultLogo;
-        logoEl.classList.remove("opacity-0");
+        logoEl.style.opacity = "1";
       };
-
-      // ✅ Veiligheidsfallback: verwijder opacity na 1s
-      setTimeout(() => logoEl.classList.remove("opacity-0"), 1000);
+      img.src = logoSrc;
 
       // Google-reviews pas laden nadat het bedrijf zichtbaar is
       if (company.name && company.city) {
@@ -146,7 +141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* ============================================================
-     3️⃣ Nieuwe review versturen (met e-mailbevestiging)
+     3️⃣ Nieuwe review versturen
   ============================================================ */
   reviewForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
