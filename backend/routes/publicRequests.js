@@ -7,16 +7,50 @@ const Request = require("../models/Request");
 const Company = require("../models/Company");
 const { sendMail } = require("../utils/mailer");
 
-// ✅ Test route
-router.get("/", (req, res) => {
-  res.json({ ok: true, message: "publicRequests router actief" });
-});
+/* ============================================================
+   🔒 Eenvoudige in-memory rate limiter per IP
+   (max 3 aanvragen per 60 minuten)
+============================================================ */
+const rateLimitStore = new Map();
+const MAX_REQUESTS = 3;
+const WINDOW_MS = 60 * 60 * 1000; // 1 uur
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip) || { count: 0, start: now };
+  const elapsed = now - entry.start;
+
+  if (elapsed > WINDOW_MS) {
+    // reset window
+    rateLimitStore.set(ip, { count: 1, start: now });
+    return true;
+  }
+
+  if (entry.count >= MAX_REQUESTS) {
+    return false;
+  }
+
+  entry.count += 1;
+  rateLimitStore.set(ip, entry);
+  return true;
+}
 
 /* ============================================================
-   📩 Multi-aanvraag (max. 5 bedrijven)
+   📩 Multi-aanvraag (max. 5 bedrijven) + e-mail naar bedrijven
 ============================================================ */
 router.post("/multi", async (req, res) => {
   try {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
+
+    // 🔒 Rate limit controle
+    if (!checkRateLimit(ip)) {
+      return res.status(429).json({
+        ok: false,
+        error:
+          "Je hebt even te vaak een aanvraag verstuurd. Probeer het over een uur opnieuw."
+      });
+    }
+
     const { customerName, customerEmail, message, companies } = req.body || {};
 
     // 🔍 Basisvalidatie
@@ -29,7 +63,9 @@ router.post("/multi", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Kies minstens één bedrijf." });
     }
     if (companies.length > 5) {
-      return res.status(400).json({ ok: false, error: "Je kunt maximaal 5 bedrijven selecteren." });
+      return res
+        .status(400)
+        .json({ ok: false, error: "Je kunt maximaal 5 bedrijven selecteren." });
     }
 
     // 🧩 IDs controleren
@@ -47,14 +83,16 @@ router.post("/multi", async (req, res) => {
       .lean();
 
     if (!foundCompanies.length) {
-      return res.status(404).json({ ok: false, error: "Geen van de gekozen bedrijven bestaat." });
+      return res
+        .status(404)
+        .json({ ok: false, error: "Geen van de gekozen bedrijven bestaat." });
     }
 
     // 🧹 Bericht opschonen
     const cleanText = message.trim().replace(/[<>]/g, "");
+    const now = new Date();
 
     // 💾 Opslaan in database
-    const now = new Date();
     const toInsert = foundCompanies.map((c) => ({
       name: customerName.trim(),
       email: customerEmail.trim(),
@@ -66,19 +104,18 @@ router.post("/multi", async (req, res) => {
 
     const inserted = await Request.insertMany(toInsert);
     const companyNames = foundCompanies.map((c) => c.name).join(", ");
-
     console.log(
       `📩 Nieuwe aanvraag van ${customerName} <${customerEmail}> voor bedrijven: ${companyNames}`
     );
-
-    /* ============================================================
-       ✉️ E-mails verzenden
-    ============================================================ */
 
     const dateStr = new Intl.DateTimeFormat("nl-NL", {
       dateStyle: "full",
       timeStyle: "short"
     }).format(now);
+
+    /* ============================================================
+       ✉️ E-mails verzenden
+    ============================================================ */
 
     // 1️⃣ Beheermelding naar Irisje.nl
     const adminMail = sendMail({
@@ -127,19 +164,51 @@ router.post("/multi", async (req, res) => {
       `
     });
 
-    // 3️⃣ Beide mails parallel versturen, zonder blokkering
-    const results = await Promise.allSettled([adminMail, clientMail]);
+    // 3️⃣ Mails naar geselecteerde bedrijven
+    const companyMails = foundCompanies.map((c) =>
+      c.email
+        ? sendMail({
+            to: c.email,
+            subject: `Nieuwe aanvraag via Irisje.nl – ${customerName}`,
+            html: `
+              <div style="font-family:Inter,Arial,sans-serif;max-width:640px;margin:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+                <h2 style="color:#4F46E5;margin-bottom:8px;">Nieuwe aanvraag via Irisje.nl</h2>
+                <p style="color:#374151;">Beste ${c.name},</p>
+                <p style="color:#374151;">Je hebt een nieuwe aanvraag ontvangen via <b>Irisje.nl</b>:</p>
+                <table style="width:100%;border-collapse:collapse;margin-top:16px;margin-bottom:16px;font-size:15px;">
+                  <tr><td style="padding:4px 0;color:#555;">👤 <b>Naam:</b></td><td>${customerName}</td></tr>
+                  <tr><td style="padding:4px 0;color:#555;">📧 <b>E-mailadres:</b></td><td>${customerEmail}</td></tr>
+                  <tr><td style="padding:4px 0;color:#555;vertical-align:top;">💬 <b>Bericht:</b></td><td>${cleanText}</td></tr>
+                </table>
+                <p style="color:#374151;">Log in op je <b>bedrijfsdashboard</b> op <a href="https://irisje.nl/dashboard.html" style="color:#4F46E5;text-decoration:none;">irisje.nl</a> om te reageren of de status te beheren.</p>
+                <hr style="border:none;border-top:1px solid #eee;margin:20px 0;">
+                <p style="font-size:13px;color:#9ca3af;">📮 Deze melding is automatisch gegenereerd door Irisje.nl.</p>
+              </div>
+            `
+          })
+        : Promise.resolve("skip")
+    );
+
+    // Alles tegelijk uitvoeren en afvangen
+    const results = await Promise.allSettled([adminMail, clientMail, ...companyMails]);
     results.forEach((r, i) => {
-      const label = i === 0 ? "beheer" : "klant";
-      if (r.status === "fulfilled") console.log(`📧 ${label}mail succesvol verzonden`);
-      else console.error(`⚠️ Fout bij verzenden ${label}mail:`, r.reason?.message);
+      const label =
+        i === 0
+          ? "beheer"
+          : i === 1
+          ? "klant"
+          : `bedrijf ${foundCompanies[i - 2]?.name || "?"}`;
+      if (r.status === "fulfilled") console.log(`📧 Mail verzonden (${label})`);
+      else console.error(`⚠️ Fout bij verzenden (${label}):`, r.reason?.message);
     });
 
     // ✅ Response
     res.json({ ok: true, created: inserted.length });
   } catch (err) {
     console.error("❌ Fout bij POST /api/publicRequests/multi:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij opslaan van de aanvraag." });
+    res
+      .status(500)
+      .json({ ok: false, error: "Serverfout bij opslaan of verzenden van de aanvraag." });
   }
 });
 
