@@ -7,25 +7,34 @@ const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/user");
 
-// === Inloggen ===
+/* ============================================================
+   🟢 Inloggen
+============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ ok: false, error: "E-mail en wachtwoord zijn verplicht." });
+
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ ok: false, error: "Onbekende gebruiker" });
+    if (!user) return res.status(401).json({ ok: false, error: "Onbekende gebruiker." });
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ ok: false, error: "Wachtwoord onjuist" });
+    if (!match) return res.status(401).json({ ok: false, error: "Wachtwoord onjuist." });
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign(
+      { id: user._id.toString(), role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
+    // ✅ veilige cookie-instellingen voor Render/HTTPS
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.COOKIE_SECURE === "true",
-      sameSite: process.env.COOKIE_SAMESITE || "None",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: true,               // Render gebruikt altijd HTTPS
+      sameSite: "None",           // nodig bij frontend/backend op verschillend domein
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dagen
+      path: "/",                  // altijd beschikbaar
     });
 
     user.lastLogin = new Date();
@@ -44,51 +53,50 @@ router.post("/login", async (req, res) => {
     });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ ok: false, error: "Serverfout bij inloggen" });
+    res.status(500).json({ ok: false, error: "Serverfout bij inloggen." });
   }
 });
 
-// === Sessies ===
+/* ============================================================
+   🟢 Sessies controleren
+============================================================ */
 router.get("/me", async (req, res) => {
   try {
     const token = req.cookies?.token;
-    if (!token) return res.status(401).json({ ok: false, error: "Geen token" });
+    if (!token) return res.status(401).json({ ok: false, error: "Geen token aanwezig." });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select("-password");
-    if (!user) return res.status(404).json({ ok: false, error: "Gebruiker niet gevonden" });
+    if (!user) return res.status(404).json({ ok: false, error: "Gebruiker niet gevonden." });
 
     res.json({ ok: true, user });
-  } catch {
-    res.status(401).json({ ok: false, error: "Ongeldige sessie" });
+  } catch (err) {
+    console.error("Me error:", err?.message);
+    res.status(401).json({ ok: false, error: "Ongeldige of verlopen sessie." });
   }
 });
 
+/* ============================================================
+   🟢 Uitloggen
+============================================================ */
 router.post("/logout", (_req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.COOKIE_SECURE === "true",
-    sameSite: process.env.COOKIE_SAMESITE || "None",
+    secure: true,
+    sameSite: "None",
+    path: "/",
   });
-  res.json({ ok: true, message: "Uitgelogd" });
+  res.json({ ok: true, message: "Uitgelogd." });
 });
 
+/* ============================================================
+   🔧 Healthcheck
+============================================================ */
 router.get("/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
 
-// === Extra routes voor registratie en wachtwoordherstel ===
-
-// 📩 SMTP-transporter (volledig compatibel met WebReus)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: process.env.SMTP_SECURE === "true",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
-// 1️⃣ Registratie
+/* ============================================================
+   🧩 Registratie
+============================================================ */
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -103,7 +111,6 @@ router.post("/register", async (req, res) => {
     const user = new User({ name, email, password: hashed, role: "company" });
     await user.save();
 
-    // Eventueel later e-mailbevestiging toevoegen
     res.json({ ok: true, message: "✅ Account aangemaakt. Je kunt nu inloggen." });
   } catch (err) {
     console.error("Register error:", err);
@@ -111,7 +118,19 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// 2️⃣ Wachtwoord vergeten
+/* ============================================================
+   🔑 Wachtwoordherstel
+============================================================ */
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === "true",
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
@@ -133,9 +152,8 @@ router.post("/forgot-password", async (req, res) => {
       html: `
         <p>Beste ${user.name || "gebruiker"},</p>
         <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen.</p>
-        <p>Klik op onderstaande link om een nieuw wachtwoord in te stellen:</p>
+        <p>Klik op onderstaande link om een nieuw wachtwoord in te stellen (30 minuten geldig):</p>
         <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
-        <p>Deze link is 30 minuten geldig.</p>
         <p>Groet,<br><strong>Irisje.nl</strong></p>
       `,
     });
@@ -147,11 +165,11 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
-// 3️⃣ Nieuw wachtwoord instellen
 router.post("/reset-password/:token", async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
+    if (!password) return res.status(400).json({ ok: false, message: "Geen nieuw wachtwoord opgegeven." });
 
     const user = await User.findOne({
       resetToken: token,
@@ -161,8 +179,7 @@ router.post("/reset-password/:token", async (req, res) => {
     if (!user)
       return res.status(400).json({ ok: false, message: "Ongeldige of verlopen link." });
 
-    const hashed = await bcrypt.hash(password, 10);
-    user.password = hashed;
+    user.password = await bcrypt.hash(password, 10);
     user.resetToken = undefined;
     user.resetExpires = undefined;
     await user.save();
