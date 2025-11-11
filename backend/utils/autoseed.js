@@ -1,4 +1,4 @@
-// backend/utils/autoSeed.js
+// backe../utils/autoseed.js
 const Request = require("../models/Request");
 const Review = require("../models/review");
 
