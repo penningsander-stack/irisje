@@ -82,7 +82,7 @@ app.get("/api/test", (req, res) => {
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
   const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-  const acceptsWebp = req.headers.accept && req.headers.accept.includes("image/webp");
+  const acceptsWebp = req.headers.accept?.includes("image/webp");
 
   if (acceptsWebp && fs.existsSync(webpPath)) {
     res.sendFile(webpPath);
@@ -94,16 +94,17 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 });
 
 /* ============================================================
-   ✅ Statische frontend-bestanden (met cache-beheer)
+   ✅ Statische frontend-bestanden met cache-headers
 ============================================================ */
-app.use(express.static(path.join(__dirname, "../frontend"), {
+const frontendPath = path.join(__dirname, "../frontend");
+app.use(express.static(frontendPath, {
   setHeaders: (res, filePath) => {
-    // 🌸 Cache maximaal 1 dag (24 uur) voor logo’s, CSS, JS, WebP, etc.
+    // 📦 Cache statische assets 7 dagen, behalve HTML
     if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
-      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.setHeader("Cache-Control", "public, max-age=604800, immutable");
     } else {
-      // HTML of JSON nooit langdurig cachen
-      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      // HTML & JSON nooit langdurig cachen
+      res.setHeader("Cache-Control", "no-store");
     }
   }
 }));
@@ -124,7 +125,7 @@ app.use(/.*\.html$/, (req, res, next) => {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preload" as="style" href="style.css?v=20251030">
+    <link rel="preload" as="style" href="style.css?v=20251110">
     <link rel="preload" as="image" href="favicon.ico">
     `;
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
@@ -145,7 +146,7 @@ app.use(/.*\.html$/, (req, res, next) => {
    ✅ Frontend fallback
 ============================================================ */
 app.get(/^\/(?!api\/).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 /* ============================================================
