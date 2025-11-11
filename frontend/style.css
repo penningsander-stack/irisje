@@ -8,6 +8,7 @@ body {
   background-color: #f9fafb;
   color: #1f2937;
   line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* === KLEUREN Irisje === */
@@ -24,6 +25,16 @@ body {
 @keyframes fadeInDashboard {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInSimple {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Gebruikt op company.html voor soepele instap */
+.animate-fadeIn {
+  animation: fadeInSimple 0.6s ease-out forwards;
 }
 
 .fade-seq section {
@@ -122,7 +133,7 @@ footer {
 @media (max-width: 640px) {
   main { padding: 1.25rem; }
   section { padding: 1rem !important; }
-  h1, h2 { font-size: 1rem !important; }
+  h1, h2 { font-size: 1.1rem !important; }
   #exportCsvBtn { font-size: 0.85rem; }
 }
 
@@ -189,4 +200,20 @@ footer {
   #company-request-form button {
     width: 100%;
   }
+}
+
+/* === LOGO FADE-IN FIX === */
+#companyLogo {
+  display: block;
+  width: 6rem;   /* w-24 */
+  height: 6rem;  /* h-24 */
+  border-radius: 0.75rem; /* rounded-xl */
+  object-fit: cover;
+  background-color: #f3f4f6; /* bg-gray-100 */
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+#companyLogo[src] {
+  opacity: 1;
 }
