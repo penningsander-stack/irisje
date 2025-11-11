@@ -1,6 +1,6 @@
 // backend/server.js
-require("./config/validateEnv");
-const { startupBanner } = require("./utils/logHelper");
+require("./config/validateenv");
+const { startupBanner } = require("./utils/loghelper");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -49,7 +49,6 @@ mongoose
    📁 Statische map voor e-mailpagina’s (review confirm/failed)
 ============================================================ */
 app.use(express.static(path.join(__dirname, "public")));
-// → maakt /review-confirm.html en /review-failed.html toegankelijk
 
 /* ============================================================
    ✅ API-routes
@@ -64,7 +63,7 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/status", require("./routes/status"));
 app.use("/api/claims", require("./routes/claims"));
-app.use("/api/google-reviews", require("./routes/googlereviews"));
+app.use("/api/googlereviews", require("./routes/googlereviews")); // ✅ lowercase
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
@@ -74,6 +73,31 @@ app.use("/api/importer", require("./routes/importer_places"));
 app.get("/api/test", (req, res) => {
   addLog("API test uitgevoerd", "debug");
   res.json({ ok: true, message: "Server ziet routes correct" });
+});
+
+/* ============================================================
+   🔍 Systeemcontrole – Controleer of alle routes werken
+============================================================ */
+app.get("/api/check", (req, res) => {
+  res.json({
+    ok: true,
+    routes: [
+      "/api/auth",
+      "/api/companies",
+      "/api/requests",
+      "/api/publicrequests",
+      "/api/reviews",
+      "/api/admin",
+      "/api/email",
+      "/api/payments",
+      "/api/status",
+      "/api/claims",
+      "/api/googlereviews",
+      "/api/seed",
+      "/api/importer"
+    ],
+    message: "✅ Alle routes zijn correct geladen en actief."
+  });
 });
 
 /* ============================================================
@@ -97,17 +121,17 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
    ✅ Statische frontend-bestanden met cache-headers
 ============================================================ */
 const frontendPath = path.join(__dirname, "../frontend");
-app.use(express.static(frontendPath, {
-  setHeaders: (res, filePath) => {
-    // 📦 Cache statische assets 7 dagen, behalve HTML
-    if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
-      res.setHeader("Cache-Control", "public, max-age=604800, immutable");
-    } else {
-      // HTML & JSON nooit langdurig cachen
-      res.setHeader("Cache-Control", "no-store");
-    }
-  }
-}));
+app.use(
+  express.static(frontendPath, {
+    setHeaders: (res, filePath) => {
+      if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
+        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+      } else {
+        res.setHeader("Cache-Control", "no-store");
+      }
+    },
+  })
+);
 
 /* ============================================================
    🪄 HTML-injecties (preload + lazyload)
@@ -125,7 +149,7 @@ app.use(/.*\.html$/, (req, res, next) => {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preload" as="style" href="style.css?v=20251110">
+    <link rel="preload" as="style" href="style.css?v=20251111">
     <link rel="preload" as="image" href="favicon.ico">
     `;
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
@@ -157,5 +181,7 @@ startupBanner();
 addLog("Server gestart op poort " + PORT, "info");
 
 app.listen(PORT, () => {
-  console.log(`🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`);
+  console.log(
+    `🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`
+  );
 });
