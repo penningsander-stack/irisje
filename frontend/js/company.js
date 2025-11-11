@@ -58,22 +58,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       // ✅ Logo asynchroon met fade-in laden (zonder flikkering)
       const logoEl = document.getElementById("companyLogo");
 
-      if (company.logoUrl) {
-        const preload = new Image();
-        preload.src = company.logoUrl;
-        preload.loading = "lazy";
-        preload.onload = () => {
-          logoEl.src = company.logoUrl;
-          logoEl.classList.remove("opacity-0");
-        };
-        preload.onerror = () => {
-          logoEl.src = "/img/default-logo.png";
-          logoEl.classList.remove("opacity-0");
-        };
-      } else {
-        logoEl.src = "/img/default-logo.png";
+      const defaultLogo = "img/default-logo.png"; // relatieve pad naar frontend/img/
+      const logoToLoad = company.logoUrl || defaultLogo;
+
+      const preload = new Image();
+      preload.src = logoToLoad;
+      preload.loading = "lazy";
+      preload.onload = () => {
+        logoEl.src = logoToLoad;
+        requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
+      };
+      preload.onerror = () => {
+        logoEl.src = defaultLogo;
         logoEl.classList.remove("opacity-0");
-      }
+      };
 
       // Google-reviews pas laden nadat het bedrijf zichtbaar is
       if (company.name && company.city) {
@@ -261,7 +259,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               (r) => `
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-              <img src="${r.profile_photo_url || '/img/default-user.png'}"
+              <img src="${r.profile_photo_url || 'img/default-user.png'}"
                    alt="${r.author_name || 'Gebruiker'}"
                    class="w-10 h-10 rounded-full object-cover border"
                    loading="lazy" />
