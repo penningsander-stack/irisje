@@ -1,0 +1,50 @@
+name: 🔧 Auto-fix Case Sensitivity (Require Paths)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  fix-case:
+    name: Ensure consistent lowercase imports
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧭 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🔍 Scan & auto-fix require paths
+        run: |
+          echo "🔍 Scanning JS files for case issues..."
+          find . -type f -name "*.js" | while read -r file; do
+            sed -i 's|require("./config/ValidateEnv")|require("./config/validateEnv")|g' "$file"
+            sed -i 's|require("./config/VALIDATEENV")|require("./config/validateEnv")|g' "$file"
+            sed -i 's|require("./config/validatEnv")|require("./config/validateEnv")|g' "$file"
+
+            sed -i 's|require("./routes/publicRequests")|require("./routes/publicrequests")|g' "$file"
+            sed -i 's|require("./routes/googleReviews")|require("./routes/googlereviews")|g' "$file"
+            sed -i 's|require("../models/Request")|require("../models/request")|g' "$file"
+            sed -i 's|require("../models/Company")|require("../models/company")|g' "$file"
+            sed -i 's|require("../models/User")|require("../models/user")|g' "$file"
+            sed -i 's|require("../models/Review")|require("../models/review")|g' "$file"
+            sed -i 's|require("../utils/AutoSeed")|require("../utils/autoseed")|g' "$file"
+          done
+          echo "✅ Scanning & fixes complete."
+
+      - name: 💾 Commit any automatic fixes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "Irisje AutoFixer"
+            git config user.email "bot@irisje.nl"
+            git add .
+            git commit -m "chore: auto-fix case-sensitive require paths for Render compatibility"
+            git push
+            echo "✅ Auto-fix commit pushed."
+          else
+            echo "✨ No fixes needed."
+          fi
