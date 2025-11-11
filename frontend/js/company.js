@@ -25,20 +25,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   ============================================================ */
   async function loadCompany() {
     try {
-      const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
+      const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`, { cache: "no-cache" });
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const company = await res.json();
 
       if (!companyContainer) return;
 
-      // Eerst de HTML met placeholder renderen (geen flits)
       companyContainer.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-md p-6 fade-in">
+        <div class="bg-white rounded-2xl shadow-md p-6 animate-fadeIn">
           <div class="flex flex-col sm:flex-row sm:items-center gap-6">
             <img
               id="companyLogo"
               src="/img/default-logo.png"
-              alt="${company.name || ''}"
+              alt="${company.name ? company.name.replace(/"/g, "&quot;") : "Bedrijfslogo"}"
               class="w-24 h-24 rounded-xl object-cover border bg-gray-100 opacity-0 transition-opacity duration-500"
               loading="lazy"
             />
@@ -57,51 +56,48 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
 
-      // Logo pas daarna asynchroon laden met fade-in
+      // Logo asynchroon met fade-in laden
       const logoEl = document.getElementById("companyLogo");
       if (company.logoUrl) {
-        const img = new Image();
-        img.src = company.logoUrl;
-        img.loading = "lazy";
-        img.onload = () => {
+        const preload = new Image();
+        preload.src = company.logoUrl;
+        preload.loading = "lazy";
+        preload.onload = () => {
           logoEl.src = company.logoUrl;
-          logoEl.classList.remove("opacity-0");
+          requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
         };
-        img.onerror = () => {
-          logoEl.src = "/img/default-logo.png";
-          logoEl.classList.remove("opacity-0");
-        };
+        preload.onerror = () => logoEl.classList.remove("opacity-0");
       } else {
         logoEl.classList.remove("opacity-0");
       }
 
+      // Google-reviews pas laden nadat het bedrijf zichtbaar is
       if (company.name && company.city) {
         await loadGoogleReviews(company.name, company.city);
       }
 
-      // Bewaar voor gebruik bij review-verzending
-      reviewForm.dataset.companyId = company._id;
+      // Bewaar bedrijf-ID voor reviewformulier
+      if (reviewForm) reviewForm.dataset.companyId = company._id;
     } catch (err) {
       console.error("❌ Fout bij laden bedrijf:", err);
       if (companyContainer)
-        companyContainer.innerHTML =
-          "<p class='text-red-600'>Fout bij laden van het bedrijfsprofiel.</p>";
+        companyContainer.innerHTML = `<p class="text-red-600">Fout bij laden van het bedrijfsprofiel.</p>`;
     }
   }
 
   /* ============================================================
-     2️⃣ Irisje reviews laden (alleen bevestigde)
+     2️⃣ Irisje-reviews laden (alleen bevestigde)
   ============================================================ */
   async function loadReviews() {
     try {
-      const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`);
+      const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`, { cache: "no-cache" });
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
-      const reviews = data.reviews || [];
+      const reviews = Array.isArray(data.reviews) ? data.reviews : [];
 
       if (!reviewsContainer) return;
 
-      if (!Array.isArray(reviews) || reviews.length === 0) {
+      if (reviews.length === 0) {
         reviewsContainer.innerHTML =
           "<p class='text-gray-500 text-center p-4'>Nog geen reviews geplaatst.</p>";
         return;
@@ -206,10 +202,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const reviewId = btn.getAttribute("data-id");
-    const bevestig = confirm("Weet je zeker dat je deze review wilt melden?");
-    if (!bevestig) return;
+    if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
 
     btn.disabled = true;
+    const originalText = btn.textContent;
     btn.textContent = "⏳ Bezig...";
 
     try {
@@ -225,17 +221,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error("❌ Fout bij melden review:", err);
       alert("Er is een fout opgetreden bij het melden van deze review.");
       btn.disabled = false;
-      btn.textContent = "🚩 Meld review";
+      btn.textContent = originalText;
     }
   });
 
   /* ============================================================
-     5️⃣ Google Reviews laden
+     5️⃣ Google-reviews laden
   ============================================================ */
   async function loadGoogleReviews(companyName, city) {
     try {
       const res = await fetch(
-        `${API_BASE}/google-reviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`
+        `${API_BASE}/google-reviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`,
+        { cache: "force-cache" }
       );
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
@@ -260,7 +257,10 @@ document.addEventListener("DOMContentLoaded", async () => {
               (r) => `
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-              <img src="${r.profile_photo_url || '/img/default-user.png'}" alt="${r.author_name}" class="w-10 h-10 rounded-full object-cover border" loading="lazy" />
+              <img src="${r.profile_photo_url || '/img/default-user.png'}"
+                   alt="${r.author_name || 'Gebruiker'}"
+                   class="w-10 h-10 rounded-full object-cover border"
+                   loading="lazy" />
               <div>
                 <p class="font-medium text-gray-800">${r.author_name || "Gebruiker"}</p>
                 <p class="text-yellow-500 text-sm">${"⭐".repeat(r.rating || 0)}</p>
