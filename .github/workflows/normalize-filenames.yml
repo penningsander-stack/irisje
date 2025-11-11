@@ -1,0 +1,81 @@
+name: 🧹 Normalize Filenames to Lowercase
+
+on:
+  workflow_dispatch:  # handmatig starten via GitHub Actions
+
+jobs:
+  normalize:
+    name: Normalize all backend filenames to lowercase
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧭 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🔍 Find and rename files with uppercase letters
+        run: |
+          echo "🔍 Searching for files with uppercase letters..."
+          find backend -type f | grep -E '[A-Z]' || echo "✨ No uppercase filenames found."
+
+          # Hernoem bestanden naar lowercase
+          find backend -type f | grep -E '[A-Z]' | while read -r file; do
+            lowercase="$(dirname "$file")/$(basename "$file" | tr 'A-Z' 'a-z')"
+            if [ "$file" != "$lowercase" ]; then
+              echo "↘️ Renaming: $file → $lowercase"
+              git mv -f "$file" "$lowercase" 2>/dev/null || mv "$file" "$lowercase"
+            fi
+          done
+
+          echo "✅ Filenames normalized."
+
+      - name: 🧩 Fix require() import paths to match lowercase filenames
+        run: |
+          echo "🔧 Adjusting require() imports..."
+          find backend -type f -name "*.js" | while read -r file; do
+            sed -i 's|require("./config/ValidateEnv")|require("./config/validateenv")|g' "$file"
+            sed -i 's|require("./config/VALIDATEENV")|require("./config/validateenv")|g' "$file"
+            sed -i 's|require("./config/validatEnv")|require("./config/validateenv")|g' "$file"
+
+            sed -i 's|require("./utils/LogHelper")|require("./utils/loghelper")|g' "$file"
+            sed -i 's|require("./utils/Loghelper")|require("./utils/loghelper")|g' "$file"
+
+            sed -i 's|require("./routes/PublicRequests")|require("./routes/publicrequests")|g' "$file"
+            sed -i 's|require("./routes/GoogleReviews")|require("./routes/googlereviews")|g' "$file"
+
+            sed -i 's|require("../models/Request")|require("../models/request")|g' "$file"
+            sed -i 's|require("../models/Company")|require("../models/company")|g' "$file"
+            sed -i 's|require("../models/Review")|require("../models/review")|g' "$file"
+            sed -i 's|require("../models/User")|require("../models/user")|g' "$file"
+            sed -i 's|require("../utils/AutoSeed")|require("../utils/autoseed")|g' "$file"
+          done
+          echo "✅ Import paths fixed."
+
+      - name: 💾 Commit and push normalization changes
+        run: |
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git config user.name "Irisje AutoFixer"
+            git config user.email "bot@irisje.nl"
+            git add .
+            git commit -m "chore: normalize backend filenames and imports to lowercase"
+            git push
+            echo "✅ Changes committed & pushed."
+          else
+            echo "✨ Nothing to commit; everything already normalized."
+          fi
+
+      - name: 🚀 Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ Geen Render hook ingesteld (geen automatische deploy)."
+            exit 0
+          fi
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Render build triggered."
