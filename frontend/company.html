@@ -7,6 +7,10 @@
   <title>Bedrijf – Irisje.nl</title>
   <meta name="description" content="Bekijk bedrijfsinformatie, reviews en Google-beoordelingen via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
+
+  <!-- Preconnects voor performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251110" />
 </head>
@@ -16,7 +20,10 @@
   <!-- HEADER -->
   <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
     <div class="max-w-6xl mx-auto flex justify-between items-center p-4">
-      <a href="index.html" class="text-xl font-semibold text-indigo-600">Irisje.nl</a>
+      <a href="index.html" class="text-xl font-semibold text-indigo-600 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        Irisje.nl
+      </a>
       <nav class="flex items-center gap-6 text-sm">
         <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
         <a href="results.html" class="hover:text-indigo-600 transition">Bedrijven</a>
@@ -30,25 +37,25 @@
     <section class="max-w-5xl mx-auto p-6 md:p-10 space-y-10">
 
       <!-- 🔹 Bedrijfsinformatie -->
-      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 fade-in">
+      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 animate-fadeIn">
         <p class="text-gray-500 italic">Bedrijfsgegevens worden geladen...</p>
       </div>
 
       <!-- 💬 Irisje Reviews -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
+      <section aria-labelledby="irisje-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="irisje-reviews" class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
         <div id="reviews-list" class="space-y-4">
           <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
         </div>
       </section>
 
       <!-- ✍ Reviewformulier -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
+      <section aria-labelledby="review-form-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="review-form-title" class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
         <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
           <div class="grid md:grid-cols-2 gap-3">
-            <input type="text" id="review-name" placeholder="Naam" class="input" required />
-            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required />
+            <input type="text" id="review-name" placeholder="Naam" class="input" required aria-label="Naam" />
+            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required aria-label="E-mailadres" />
           </div>
 
           <div class="mt-3">
@@ -66,7 +73,8 @@
           <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
           <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
 
-          <button type="submit" id="review-submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+          <button type="submit" id="review-submit"
+            class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
             Verstuur beoordeling
           </button>
 
@@ -77,8 +85,8 @@
       </section>
 
       <!-- ✉️ Offerteaanvraagformulier -->
-      <section id="request-form-section" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">📩 Vraag een offerte aan</h2>
+      <section id="request-form-section" aria-labelledby="offer-form" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="offer-form" class="text-xl font-semibold mb-4 text-gray-800">📩 Vraag een offerte aan</h2>
         <form id="company-request-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
           <input type="hidden" id="company-id" />
           <div class="grid md:grid-cols-2 gap-3">
@@ -87,30 +95,33 @@
           </div>
           <textarea id="req-message" placeholder="Beschrijf je klus of vraag..." class="input mt-3" rows="4" required></textarea>
           <p id="req-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
-          <button type="submit" class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+          <button type="submit"
+            class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 transition">
             Verstuur aanvraag
           </button>
         </form>
       </section>
 
       <!-- ⭐ Google Reviews -->
-      <section id="google-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+      <section id="google-reviews" aria-labelledby="google-reviews-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
         <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-semibold text-gray-800">⭐ Google Reviews</h2>
-          <img src="https://www.gstatic.com/images/branding/product/2x/maps_2020q4_48dp.png" alt="Google Maps" class="w-6 h-6" />
+          <h2 id="google-reviews-title" class="text-xl font-semibold text-gray-800">⭐ Google Reviews</h2>
+          <img src="https://www.gstatic.com/images/branding/product/2x/maps_2020q4_48dp.png"
+               alt="Google Maps logo" class="w-6 h-6" loading="lazy" />
         </div>
         <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
       </section>
 
       <!-- 🏷️ Claim sectie -->
-      <section class="bg-white rounded-2xl shadow-md p-6 md:p-10">
-        <h2 class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
+      <section aria-labelledby="claim-form-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="claim-form-title" class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
         <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
         <form id="claim-form" class="grid md:grid-cols-2 gap-3">
           <input type="text" id="claim-name" placeholder="Naam contactpersoon" class="input" required />
           <input type="email" id="claim-email" placeholder="Zakelijk e-mailadres" class="input" required />
           <input type="tel" id="claim-phone" placeholder="Telefoonnummer" class="input md:col-span-2" />
-          <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition md:col-span-2">
+          <button type="submit"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 transition md:col-span-2">
             Claim dit bedrijf
           </button>
         </form>
