@@ -136,7 +136,8 @@
   </footer>
 
   <!-- JS -->
-  <script src="js/company.js?v=20251110"></script>
+  <!-- versie opgehoogd zodat nieuwe company.js zeker wordt geladen -->
+  <script src="js/company.js?v=20251111"></script>
 
   <!-- ✅ Offerteformulier met slug→ID fix -->
   <script>
@@ -161,7 +162,8 @@
           companies: [companyId],
         };
 
-        const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests/multi", {
+        // 👇 hier stond publicRequests met hoofdletter, nu lowercase zoals backend
+        const res = await fetch("https://irisje-backend.onrender.com/api/publicrequests/multi", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
