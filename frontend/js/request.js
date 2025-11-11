@@ -1,8 +1,6 @@
 // frontend/js/request.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("requestForm");
-
   if (!form) {
     console.error("❌ Formulier met id='requestForm' niet gevonden.");
     return;
@@ -11,40 +9,59 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // Basisvelden
     const name = document.getElementById("name")?.value?.trim();
     const email = document.getElementById("email")?.value?.trim();
+    const city = document.getElementById("city")?.value?.trim();
     const message = document.getElementById("message")?.value?.trim();
-    const companyId = form.dataset.companyId;
+    const companyId = form.dataset.companyId || null;
 
+    // Nieuwe aanvraagvelden
+    const category = document.getElementById("category")?.value?.trim() || "";
+    const specialty = document.getElementById("specialty")?.value?.trim() || "";
+    const communication = document.querySelector("input[name='communication']:checked")?.value || "";
+    const experience = document.querySelector("input[name='experience']:checked")?.value || "";
+    const approach = document.querySelector("input[name='approach']:checked")?.value || "";
+    const involvement = document.querySelector("input[name='involvement']:checked")?.value || "";
+
+    // Validatie
     if (!name || !email || !message) {
-      alert("❌ Vul alle velden in voordat je de aanvraag verzendt.");
+      alert("❌ Vul ten minste naam, e-mail en bericht in voordat je de aanvraag verzendt.");
       return;
     }
 
-    const data = { name, email, message, companyId };
+    const data = {
+      name,
+      email,
+      city,
+      message,
+      company: companyId,
+      category,
+      specialty,
+      communication,
+      experience,
+      approach,
+      involvement,
+    };
 
     try {
       const response = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        throw new Error(`Serverfout: ${response.status}`);
-      }
-
       const result = await response.json();
-
-      if (result && result.success) {
-        alert("✅ Aanvraag succesvol verzonden!");
+      if (response.ok && result.success) {
+        alert("✅ Aanvraag succesvol verzonden! Je ontvangt een bevestiging per e-mail.");
         form.reset();
       } else {
-        alert("❌ Er ging iets mis bij het verzenden. Probeer het later opnieuw.");
+        console.error(result);
+        alert("❌ Er ging iets mis bij het verzenden van de aanvraag.");
       }
     } catch (err) {
       console.error("❌ Fout bij verzenden:", err);
-      alert("❌ Er ging iets mis bij het verzenden. Controleer je internetverbinding en probeer het opnieuw.");
+      alert("❌ Serverfout bij verzenden. Controleer je verbinding en probeer opnieuw.");
     }
   });
 });
