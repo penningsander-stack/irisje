@@ -231,7 +231,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadGoogleReviews(companyName, city) {
     try {
       const res = await fetch(
-        `${API_BASE}/google-reviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`,
+        `${API_BASE}/googlereviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`,
         { cache: "force-cache" }
       );
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
