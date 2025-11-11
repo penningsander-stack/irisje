@@ -1,0 +1,33 @@
+name: 🚀 Auto Deploy to Render
+
+on:
+  push:
+    branches:
+      - main           # ✅ telkens bij een push naar main
+  workflow_dispatch:    # ✅ ook handmatig te starten via Actions-tab
+
+jobs:
+  trigger-deploy:
+    name: Trigger Render redeploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧭 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🚀 Trigger Render build
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ Geen Render hook ingesteld (geen automatische deploy)."
+            exit 0
+          fi
+
+          echo "📦 Preparing Render redeploy..."
+          curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "{\"trigger\":\"github-auto\"}"
+
+          echo "✅ Render build triggered successfully."
