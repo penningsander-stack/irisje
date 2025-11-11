@@ -8,9 +8,13 @@ const companySchema = new mongoose.Schema(
     tagline: { type: String, default: "" },
     description: { type: String, default: "" },
     categories: [{ type: String }],
+
+    // ✅ Nieuw veld: specialismen binnen de categorie
+    specialties: [{ type: String, trim: true }],
+
     city: { type: String, default: "" },
     phone: { type: String, default: "" },
-    email: { type: String, default: "" }, // toegevoegd (niet uniek)
+    email: { type: String, default: "" }, // niet uniek, bewust toegestaan
     website: { type: String, default: "" },
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
@@ -23,5 +27,8 @@ const companySchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Index voor snellere zoekopdrachten op categorie + specialisme
+companySchema.index({ categories: 1, specialties: 1 });
 
 module.exports = mongoose.model("Company", companySchema);
