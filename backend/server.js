@@ -64,7 +64,7 @@ app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/status", require("./routes/status"));
 app.use("/api/claims", require("./routes/claims"));
-app.use("/api/google-reviews", require("./routes/googleReviews"));
+app.use("/api/google-reviews", require("./routes/googlereviews"));
 app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
