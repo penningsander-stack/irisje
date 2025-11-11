@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userRole = localStorage.getItem("userRole");
 
   /* ============================================================
-     1️⃣ Bedrijf laden
+     1️⃣ Bedrijf laden (met fade-in logo)
   ============================================================ */
   async function loadCompany() {
     try {
@@ -31,14 +31,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       if (!companyContainer) return;
 
+      // Eerst de HTML met placeholder renderen (geen flits)
       companyContainer.innerHTML = `
         <div class="bg-white rounded-2xl shadow-md p-6 fade-in">
           <div class="flex flex-col sm:flex-row sm:items-center gap-6">
             <img
-              src="${company.logoUrl || '/img/default-logo.png'}"
+              id="companyLogo"
+              src="/img/default-logo.png"
               alt="${company.name || ''}"
-              class="w-24 h-24 rounded-xl object-cover border bg-gray-100"
-              onerror="this.src='/img/default-logo.png';"
+              class="w-24 h-24 rounded-xl object-cover border bg-gray-100 opacity-0 transition-opacity duration-500"
+              loading="lazy"
             />
             <div>
               <h1 class="text-2xl font-bold text-indigo-700">${company.name || ""}</h1>
@@ -54,6 +56,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           </div>
         </div>
       `;
+
+      // Logo pas daarna asynchroon laden met fade-in
+      const logoEl = document.getElementById("companyLogo");
+      if (company.logoUrl) {
+        const img = new Image();
+        img.src = company.logoUrl;
+        img.loading = "lazy";
+        img.onload = () => {
+          logoEl.src = company.logoUrl;
+          logoEl.classList.remove("opacity-0");
+        };
+        img.onerror = () => {
+          logoEl.src = "/img/default-logo.png";
+          logoEl.classList.remove("opacity-0");
+        };
+      } else {
+        logoEl.classList.remove("opacity-0");
+      }
 
       if (company.name && company.city) {
         await loadGoogleReviews(company.name, company.city);
@@ -98,7 +118,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             : "-";
 
           const showReportButton = userRole === "company" || userEmail === "info@irisje.nl";
-
           const reportButtonHTML = showReportButton
             ? `<button class="inline-block text-xs text-red-600 hover:text-red-800 font-medium ml-2 report-btn" data-id="${r._id}">🚩 Meld review</button>`
             : "";
@@ -241,7 +260,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               (r) => `
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-              <img src="${r.profile_photo_url || '/img/default-user.png'}" alt="${r.author_name}" class="w-10 h-10 rounded-full object-cover border" />
+              <img src="${r.profile_photo_url || '/img/default-user.png'}" alt="${r.author_name}" class="w-10 h-10 rounded-full object-cover border" loading="lazy" />
               <div>
                 <p class="font-medium text-gray-800">${r.author_name || "Gebruiker"}</p>
                 <p class="text-yellow-500 text-sm">${"⭐".repeat(r.rating || 0)}</p>
