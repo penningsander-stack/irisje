@@ -1,4 +1,4 @@
-// backend/utils/logHelper.js
+// backend/utils/loghelper.js
 /**
  * 🌸 Irisje.nl – LogHelper
  * Zorgt voor nette, korte logregels bij startup
