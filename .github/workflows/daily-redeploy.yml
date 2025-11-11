@@ -1,0 +1,22 @@
+name: ⏰ Daily redeploy to Render
+
+on:
+  schedule:
+    - cron: "0 5 * * *"   # elke dag om 05:00 UTC → 06:00 NL (winter) / 07:00 (zomer)
+  workflow_dispatch:       # ook handmatig te draaien
+
+jobs:
+  daily-redeploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Trigger Render build
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ Geen Render hook ingesteld (RENDER_DEPLOY_HOOK_URL ontbreekt)."
+            exit 0
+          fi
+          echo "⏰ Daily trigger → Render"
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Render daily redeploy triggered."
