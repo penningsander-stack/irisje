@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userRole = localStorage.getItem("userRole");
 
   /* ============================================================
-     1️⃣ Bedrijf laden (met fade-in logo)
+     1️⃣ Bedrijf laden (met fade-in logo, zonder flikkering)
   ============================================================ */
   async function loadCompany() {
     try {
@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="flex flex-col sm:flex-row sm:items-center gap-6">
             <img
               id="companyLogo"
-              src="/img/default-logo.png"
               alt="${company.name ? company.name.replace(/"/g, "&quot;") : "Bedrijfslogo"}"
               class="w-24 h-24 rounded-xl object-cover border bg-gray-100 opacity-0 transition-opacity duration-500"
               loading="lazy"
@@ -56,18 +55,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
       `;
 
-      // Logo asynchroon met fade-in laden
+      // ✅ Logo asynchroon met fade-in laden (zonder flikkering)
       const logoEl = document.getElementById("companyLogo");
+
       if (company.logoUrl) {
         const preload = new Image();
         preload.src = company.logoUrl;
         preload.loading = "lazy";
         preload.onload = () => {
           logoEl.src = company.logoUrl;
-          requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
+          logoEl.classList.remove("opacity-0");
         };
-        preload.onerror = () => logoEl.classList.remove("opacity-0");
+        preload.onerror = () => {
+          logoEl.src = "/img/default-logo.png";
+          logoEl.classList.remove("opacity-0");
+        };
       } else {
+        logoEl.src = "/img/default-logo.png";
         logoEl.classList.remove("opacity-0");
       }
 
