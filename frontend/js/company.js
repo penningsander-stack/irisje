@@ -60,6 +60,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const defaultLogo = "img/default-logo.png"; // relatieve pad naar frontend/img/
       const logoToLoad = company.logoUrl || defaultLogo;
 
+      // ✅ Debuglog om het pad te controleren
+      console.log("🖼️ Logo geladen:", logoToLoad);
+
       const preload = new Image();
       preload.src = logoToLoad; // ⚠️ GEEN preload.loading = "lazy";
       preload.onload = () => {
@@ -67,6 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         requestAnimationFrame(() => logoEl.classList.remove("opacity-0"));
       };
       preload.onerror = () => {
+        console.warn("⚠️ Logo niet gevonden, val terug op default-logo.png");
         logoEl.src = defaultLogo;
         logoEl.classList.remove("opacity-0");
       };
