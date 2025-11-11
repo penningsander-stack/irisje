@@ -1,5 +1,5 @@
 // backend/server.js
-require("./config/validatEnv");
+require("./config/validateEnv");
 const { startupBanner } = require("./utils/loghelper");
 
 const express = require("express");
