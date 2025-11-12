@@ -1,6 +1,6 @@
 {
   "name": "irisje-backend",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Backend van Irisje.nl – platform voor bedrijven, aanvragen en reviews.",
   "main": "server.js",
   "type": "commonjs",
@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "optimize:images": "node utils/optimizeImages.js",
     "prebuild": "npm run optimize:images",
-    "preinstall": "npm install qs@6.11.0 math-intrinsics@1.0.0 get-intrinsic@1.2.4 --force",
+    "preinstall": "rm -rf node_modules package-lock.json && npm cache clean --force",
+    "postinstall": "npm install express@4.19.2 qs@6.11.0 get-intrinsic@1.2.4 gopd@1.0.1 math-intrinsics@1.0.0 side-channel@1.0.6 --force",
     "rebuild": "rm -rf node_modules package-lock.json && npm install"
   },
   "dependencies": {
