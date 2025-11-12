@@ -1,0 +1,47 @@
+# .github/workflows/update-sitemap.yml
+name: 🔍 Check & Validate Sitemap
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"  # elke maandag om 06:00 controleren
+
+jobs:
+  sitemap-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📦 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧩 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🌐 Controleer sitemap beschikbaarheid
+        run: |
+          echo "Testen of sitemap bereikbaar is..."
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://irisje.nl/sitemap.xml)
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Sitemap niet bereikbaar (status: $STATUS)"
+            exit 1
+          fi
+          echo "✅ Sitemap bereikbaar (status: $STATUS)"
+
+      - name: 🔍 Valideer XML structuur
+        run: |
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+          curl -s https://irisje.nl/sitemap.xml -o sitemap.xml
+          xmllint --noout sitemap.xml
+          echo "✅ XML validatie geslaagd"
+
+      - name: 📜 Toon voorbeeld van sitemap
+        run: |
+          echo "Eerste 15 regels van sitemap.xml:"
+          head -n 15 sitemap.xml
+
+      - name: ✅ Resultaat loggen
+        run: echo "Sitemap gecontroleerd en gevalideerd op $(date)"
