@@ -1,14 +1,13 @@
 // backend/config/validateEnv.js
 /**
- * Controleer vereiste environment-variabelen vóór opstart.
- * Dit voorkomt stille fouten op Render (bijv. SMTP of JWT ontbreekt).
+ * 🌸 Irisje.nl – Veilige .env-validatie
+ * Controleert verplichte variabelen, maar blokkeert server alleen bij kritieke waarden.
  */
 
 require("dotenv").config();
 
-const requiredVars = [
-  "MONGO_URI",
-  "JWT_SECRET",
+const criticalVars = ["MONGO_URI", "JWT_SECRET"];
+const optionalVars = [
   "SMTP_HOST",
   "SMTP_PORT",
   "SMTP_USER",
@@ -16,17 +15,31 @@ const requiredVars = [
   "SMTP_FROM"
 ];
 
-let missing = [];
+let missingCritical = [];
+let missingOptional = [];
 
-for (const v of requiredVars) {
-  if (!process.env[v]) missing.push(v);
+// Controleer kritieke waarden
+for (const v of criticalVars) {
+  if (!process.env[v]) missingCritical.push(v);
 }
 
-if (missing.length > 0) {
-  console.error("❌ Ontbrekende .env variabelen:");
-  missing.forEach((v) => console.error("  -", v));
+// Controleer optionele waarden
+for (const v of optionalVars) {
+  if (!process.env[v]) missingOptional.push(v);
+}
+
+if (missingCritical.length > 0) {
+  console.error("❌ Kritieke .env variabelen ontbreken:");
+  missingCritical.forEach((v) => console.error("  -", v));
   console.error("🚫 Server wordt gestopt. Controleer je Render environment settings.");
   process.exit(1);
 } else {
-  console.log("✅ Alle vereiste .env variabelen aanwezig.");
+  console.log("✅ Alle kritieke .env variabelen aanwezig.");
+}
+
+if (missingOptional.length > 0) {
+  console.warn("⚠️ Optionele SMTP-variabelen ontbreken (mailfunctie uitgeschakeld):");
+  missingOptional.forEach((v) => console.warn("  -", v));
+} else {
+  console.log("✅ Alle SMTP-variabelen aanwezig.");
 }
