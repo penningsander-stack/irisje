@@ -10,6 +10,8 @@ const path = require("path");
 
 const router = express.Router();
 
+console.log("✅ [DEBUG] sitemap-route geladen");
+
 // === Basisinstellingen ===
 const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
 const BASE_URL = "https://irisje.nl";
@@ -49,9 +51,9 @@ ${xmlUrls}
 }
 
 /**
- * 🚀 Route /sitemap.xml
+ * 🚀 Route handler voor sitemap.xml
  */
-router.get("/", (req, res) => {
+function handleSitemap(req, res) {
   try {
     const urls = [];
 
@@ -63,7 +65,6 @@ router.get("/", (req, res) => {
       }
     }
 
-    // Geen bestanden gevonden → foutmelding loggen
     if (urls.length === 0) {
       console.warn("⚠️ Geen frontendbestanden gevonden voor sitemap.");
     }
@@ -76,6 +77,11 @@ router.get("/", (req, res) => {
     console.error("❌ Fout bij genereren sitemap:", err);
     res.status(500).send("Fout bij genereren sitemap.xml");
   }
-});
+}
+
+// === Routes registreren ===
+// Zowel / als /sitemap.xml werken
+router.get("/", handleSitemap);
+router.get("/sitemap.xml", handleSitemap);
 
 module.exports = router;
