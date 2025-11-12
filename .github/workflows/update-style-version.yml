@@ -1,28 +1,52 @@
-name: Update style version before deploy
+name: 🧩 Update Style Version Before Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   bump-style-version:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repo
+      - name: 🧭 Checkout repository
         uses: actions/checkout@v4
 
-      - name: Update version in HTML files
-        run: |
-          VERSION=$(date +%Y%m%d)
-          echo "Nieuwe versie: $VERSION"
-          find frontend -type f -name "*.html" -exec sed -i "s/style.css?v=[0-9]\+/style.css?v=$VERSION/g" {} +
+      - name: 🧰 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Commit and push version bump
+      - name: 🔢 Update style.css version query
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add frontend/*.html
-          git diff --cached --quiet || git commit -m "chore: bump CSS version to v$VERSION"
-          git push
+          echo "🔄 Updating style.css version tag..."
+          ts=$(date +%Y%m%d%H%M)
+          find frontend -type f -name "*.html" -exec sed -i "s/style\.css?v=[0-9]*/style.css?v=${ts}/g" {} +
+          echo "✅ Updated version tag to ${ts}"
+
+      - name: 💾 Commit and push updated files (with retry)
+        run: |
+          git config user.name "Irisje AutoUpdater"
+          git config user.email "bot@irisje.nl"
+          git add frontend
+          git commit -m "chore: bump style.css version automatically" || echo "ℹ️ No changes to commit."
+
+          n=0
+          until git push || [ $n -ge 3 ]; do
+            echo "⚠️ Push failed (possible concurrent workflow). Retrying in 10s..."
+            n=$((n+1))
+            sleep 10
+          done
+          echo "✅ Push completed or skipped after ${n} retries."
+
+      - name: 🚀 Trigger Render Deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ No Render deploy hook configured."
+            exit 0
+          fi
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Render build triggered successfully."
