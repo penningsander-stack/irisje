@@ -1,8 +1,12 @@
+// backend/utils/logger.js
 /**
- * 🌸 Irisje.nl – Uitgebreide logger met automatische logrotatie
- * - Houdt 20 regels in geheugen (voor /status)
- * - Maakt dagelijks een nieuw logbestand
- * - Verwijdert bestanden ouder dan 14 dagen
+ * 🌸 Irisje.nl – Verbeterde logger met kleuren, logrotatie en route-weergave
+ * ---------------------------------------------------------------
+ * ✅ Houdt laatste 20 logs in geheugen (voor /status)
+ * ✅ Schrijft dagelijks logbestand naar /logs/
+ * ✅ Verwijdert bestanden ouder dan 14 dagen
+ * ✅ Kleurige console-output met iconen
+ * ✅ logger.route(method, path, status, ms) voor HTTP-verzoeken
  */
 
 const fs = require("fs");
@@ -16,17 +20,17 @@ if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
 
 let logs = [];
 
-/**
- * Geef pad van het huidige daglogbestand terug.
- */
+/* ------------------------------------------------------------
+   🔧 Helper: Huidig daglogbestand bepalen
+------------------------------------------------------------ */
 function currentLogFile() {
-  const date = new Date().toISOString().slice(0, 10); // 2025-11-01
+  const date = new Date().toISOString().slice(0, 10);
   return path.join(LOG_DIR, `irisje-${date}.log`);
 }
 
-/**
- * Verwijder oude logbestanden (ouder dan LOG_RETENTION_DAYS).
- */
+/* ------------------------------------------------------------
+   🧹 Oude logbestanden opruimen
+------------------------------------------------------------ */
 function cleanupOldLogs() {
   const files = fs.readdirSync(LOG_DIR);
   const now = Date.now();
@@ -46,30 +50,39 @@ function cleanupOldLogs() {
   }
 }
 
-/**
- * Voeg een nieuwe logregel toe.
- */
-function addLog(message, level = "info") {
-  const entry = {
-    timestamp: new Date().toISOString(),
-    level,
-    message
-  };
+/* ------------------------------------------------------------
+   🕒 Tijdnotatie + kleurdefinities
+------------------------------------------------------------ */
+const COLORS = {
+  reset: "\x1b[0m",
+  gray: "\x1b[90m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  cyan: "\x1b[36m",
+};
 
-  // Bewaar laatste 20 regels voor de statuspagina
+function time() {
+  return new Date().toLocaleTimeString("nl-NL", { hour12: false });
+}
+
+/* ------------------------------------------------------------
+   🧩 Log toevoegen (console + bestand + geheugen)
+------------------------------------------------------------ */
+function addLog(message, level = "info") {
+  const entry = { timestamp: new Date().toISOString(), level, message };
   logs.push(entry);
   if (logs.length > MAX_LOGS) logs.shift();
 
-  // Kleuren in console
-  const colors = {
-    info: "\x1b[36m", // blauw
-    debug: "\x1b[33m", // geel
-    error: "\x1b[31m"  // rood
-  };
-  const color = colors[level] || "\x1b[0m";
-  console.log(`${color}[${level.toUpperCase()}] ${message}\x1b[0m`);
+  // Kleurige consoleoutput
+  const icons = { info: "✅", debug: "🟡", error: "❌" };
+  const colors = { info: COLORS.cyan, debug: COLORS.yellow, error: COLORS.red };
+  const color = colors[level] || COLORS.reset;
+  const icon = icons[level] || "ℹ️";
 
-  // Schrijf naar huidig daglog
+  console.log(`${COLORS.gray}[${time()}]${COLORS.reset} ${color}${icon}${COLORS.reset} ${message}`);
+
+  // Schrijf naar daglog
   try {
     const line = `[${entry.timestamp}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
     fs.appendFileSync(currentLogFile(), line, "utf8");
@@ -78,21 +91,31 @@ function addLog(message, level = "info") {
   }
 }
 
-/**
- * Geef logs in omgekeerde volgorde (nieuwste eerst).
- * Vorm compatibel met frontend (timestamp + message).
- */
+/* ------------------------------------------------------------
+   📡 Route logging – overzichtelijk in Render
+------------------------------------------------------------ */
+function route(method, path, status, ms = 0) {
+  const color =
+    status >= 500 ? COLORS.red : status >= 400 ? COLORS.yellow : COLORS.green;
+  console.log(
+    `${COLORS.gray}[${time()}]${COLORS.reset} ${COLORS.cyan}${method.toUpperCase()}${COLORS.reset} ${path} → ${color}${status}${COLORS.reset} ${COLORS.gray}(${ms}ms)${COLORS.reset}`
+  );
+}
+
+/* ------------------------------------------------------------
+   🔁 Laatste logs ophalen (voor /status)
+------------------------------------------------------------ */
 function getLogs() {
   return [...logs]
     .reverse()
     .map((l) => ({
-      timestamp: l.timestamp || l.time || new Date().toISOString(),
+      timestamp: l.timestamp || new Date().toISOString(),
       message: l.message || "",
-      level: l.level || "info"
+      level: l.level || "info",
     }));
 }
 
 // 🧹 Opruimen uitvoeren bij opstart
 cleanupOldLogs();
 
-module.exports = { addLog, getLogs };
+module.exports = { addLog, getLogs, route };
