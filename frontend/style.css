@@ -32,7 +32,6 @@ body {
   to { opacity: 1; }
 }
 
-/* Gebruikt op company.html voor soepele instap */
 .animate-fadeIn {
   animation: fadeInSimple 0.6s ease-out forwards;
 }
@@ -47,6 +46,27 @@ body {
 .fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
 .fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
 .fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
+
+/* === RESULTAATKAARTEN (results.html) === */
+@keyframes fadeInCard {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.card-fade-in {
+  animation: fadeInCard 0.55s ease-out forwards;
+  opacity: 0;
+}
+
+/* ✨ Stagger-effect voor opeenvolgende kaarten */
+#results > div:nth-child(1) { animation-delay: 0.05s; }
+#results > div:nth-child(2) { animation-delay: 0.10s; }
+#results > div:nth-child(3) { animation-delay: 0.15s; }
+#results > div:nth-child(4) { animation-delay: 0.20s; }
+#results > div:nth-child(5) { animation-delay: 0.25s; }
+#results > div:nth-child(6) { animation-delay: 0.30s; }
+#results > div:nth-child(7) { animation-delay: 0.35s; }
+#results > div:nth-child(8) { animation-delay: 0.40s; }
 
 /* === HEADER & NAV === */
 .bg-indigo-600,
