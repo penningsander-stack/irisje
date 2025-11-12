@@ -1,0 +1,32 @@
+name: 🧩 Fix Case-Sensitive Imports (Backend)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  fix-case:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧭 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 🩺 Run case-sensitive import fixer
+        run: node backend/tools/fix-case-sensitive-imports.js
+
+      - name: 🚀 Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "🚀 Triggering Render deployment..."
+            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          else
+            echo "⚠️ Geen Render hook ingesteld (geen auto-deploy)."
+          fi
