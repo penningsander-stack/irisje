@@ -71,7 +71,7 @@ app.use("/api/importer", require("./routes/importer_places"));
    ✅ Sitemap-route (blijft boven fallback!)
    Automatisch gegenereerde sitemap.xml met publieke pagina’s
 ============================================================ */
-app.use("/sitemap.xml", require("./routes/sitemap"));
+app.get("/sitemap.xml", require("./routes/sitemap"));
 
 /* ============================================================
    ✅ Testroute
