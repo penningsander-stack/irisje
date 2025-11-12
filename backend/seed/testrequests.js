@@ -2,8 +2,8 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const Request = require('../models/Request');
-const Company = require('../models/Company');
+const Request = require('../models/request');
+const Company = require('../models/company');
 
 (async () => {
   try {
