@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="manifest" href="/manifest.json" />
-  <link rel="stylesheet" href="style.css?v=20251106" />
+  <link rel="stylesheet" href="style.css?v=20251112" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
@@ -33,8 +33,9 @@
 
   <!-- MAIN -->
   <main class="flex-1">
+
     <!-- HERO -->
-    <section class="bg-white">
+    <section class="bg-white animate-fadeIn">
       <div class="max-w-6xl mx-auto px-4 py-14 lg:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
         <div class="max-w-xl">
           <h1 class="text-4xl sm:text-5xl font-extrabold text-indigo-700 leading-tight">
@@ -51,7 +52,7 @@
           </ul>
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 lg:py-8 lg:px-8 w-full max-w-md lg:ml-auto">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-6 lg:py-8 lg:px-8 w-full max-w-md lg:ml-auto card-fade-in">
           <h2 class="text-base font-semibold text-gray-800 mb-4 text-center">🔍 Zoek een bedrijf</h2>
           <form id="searchForm" class="grid gap-4" novalidate>
             <input id="categoryInput" type="text" placeholder="Categorie (bijv. loodgieter, schilder...)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
@@ -70,7 +71,7 @@
     </section>
 
     <!-- POPULAIRE CATEGORIEËN -->
-    <section class="max-w-6xl mx-auto px-4 py-12">
+    <section class="max-w-6xl mx-auto px-4 py-12 card-fade-in">
       <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
         <span class="text-xl mr-2">🔎</span> Populaire categorieën
       </h2>
@@ -78,7 +79,7 @@
     </section>
 
     <!-- HOE HET WERKT -->
-    <section class="bg-white border-y border-gray-200">
+    <section class="bg-white border-y border-gray-200 card-fade-in">
       <div class="max-w-6xl mx-auto px-4 py-12">
         <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
           <span class="text-xl mr-2">⚡</span> Hoe het werkt
@@ -93,7 +94,7 @@
     </section>
 
     <!-- ERVARINGEN -->
-    <section class="max-w-6xl mx-auto px-4 py-12">
+    <section class="max-w-6xl mx-auto px-4 py-12 card-fade-in">
       <h2 class="text-lg font-semibold text-indigo-700 flex items-center mb-6">
         <span class="text-xl mr-2">💬</span> Ervaringen van anderen
       </h2>
@@ -101,7 +102,7 @@
     </section>
 
     <!-- CTA VOOR BEDRIJVEN -->
-    <section class="bg-indigo-600 text-white">
+    <section class="bg-indigo-600 text-white card-fade-in">
       <div class="max-w-6xl mx-auto px-4 py-12 lg:py-14 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div>
           <h2 class="text-2xl font-bold mb-3 leading-tight">Ben je een bedrijf?</h2>
@@ -120,7 +121,7 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100">
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 card-fade-in">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
@@ -149,105 +150,6 @@
   </script>
 
   <!-- ✅ FUNCTIONAL SCRIPT -->
-  <script>
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-
-  // Zoeken via formulier
-  document.getElementById("searchForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const category = categoryInput.value.trim();
-    const city = cityInput.value.trim();
-    const resultDiv = document.getElementById("searchResult");
-
-    if (!category && !city) {
-      resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3'>Voer een categorie of plaats in.</p>";
-      return;
-    }
-
-    resultDiv.innerHTML = "<span class='text-gray-600'>⏳ Zoeken...</span>";
-
-    try {
-      const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`;
-      const res = await fetch(url);
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) throw new Error("Geen JSON");
-      const data = await res.json();
-
-      if (!res.ok || !data.items?.length) {
-        resultDiv.innerHTML = "<p class='text-gray-600 text-sm mt-3'>Geen resultaten gevonden.</p>";
-        return;
-      }
-
-      resultDiv.innerHTML = data.items.slice(0, 3).map(c => `
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-left mt-3 shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="font-semibold text-indigo-700 text-sm leading-snug">${c.name || ""}</div>
-            <div class="text-yellow-500 text-xs leading-none">${"⭐".repeat(Math.round(c.avgRating || 0))}</div>
-          </div>
-          <div class="text-gray-600 text-xs mt-1">${c.city || ""}</div>
-          <div class="text-gray-500 text-xs mt-1 leading-relaxed">${c.tagline || ""}</div>
-          <a class="text-indigo-600 hover:text-indigo-700 text-xs font-medium block mt-2" href="company.html?slug=${encodeURIComponent(c.slug)}">Bekijk profiel →</a>
-        </div>
-      `).join("") + `
-        <div class="text-center mt-4">
-          <a class="inline-block text-indigo-600 hover:text-indigo-700 text-xs font-semibold" href="results.html?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}">
-            Alle resultaten bekijken →
-          </a>
-        </div>`;
-    } catch (err) {
-      console.error("Fout bij zoeken:", err);
-      resultDiv.innerHTML = "<p class='text-red-600 text-sm mt-3 leading-relaxed'>❌ Er ging iets mis bij het laden van resultaten.</p>";
-    }
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Populaire categorieën
-    const categories = ["Loodgieter", "CV / Verwarming", "Elektricien", "Schoonmaak", "Slotenmaker", "Glazenwasser"];
-    document.getElementById("popularCategories").innerHTML = categories.map(cat => `
-      <a href="results.html?category=${encodeURIComponent(cat)}"
-         class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-4 text-center">
-        <div class="font-semibold text-gray-800 group-hover:text-indigo-700">${cat}</div>
-      </a>
-    `).join("");
-
-    // Stappenplan
-    const steps = [
-      ["1. Vertel wat je nodig hebt", "Beschrijf je klus of probleem. Hoe duidelijker je bent, hoe sneller je geholpen wordt."],
-      ["2. Bedrijven reageren", "Betrouwbare bedrijven ontvangen je aanvraag en reageren vaak dezelfde dag."],
-      ["3. Jij kiest", "Vergelijk prijs, snelheid en beoordelingen. Jij beslist wie de klus krijgt."]
-    ];
-    document.getElementById("howItWorks").innerHTML = steps.map(([title, text]) => `
-      <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
-        <div class="text-indigo-600 font-semibold mb-2 text-sm">${title}</div>
-        <p class="text-gray-700 leading-relaxed">${text}</p>
-      </div>
-    `).join("");
-
-    // Reviews (statisch)
-    const reviews = [
-      ["⭐⭐⭐⭐⭐", "“Binnen een uur een loodgieter geregeld. Super snel en eerlijk geprijsd.”", "Sanne, Amsterdam"],
-      ["⭐⭐⭐⭐", "“Duidelijke communicatie en ze waren supernetjes bij ons thuis.”", "Peter, Utrecht"],
-      ["⭐⭐⭐⭐⭐", "“Volgende keer bel ik weer via Irisje in plaats van Googlen.”", "Linda, Rotterdam"]
-    ];
-    document.getElementById("reviews").innerHTML = reviews.map(([stars, msg, name]) => `
-      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-        <div class="text-yellow-500 text-sm font-semibold leading-none">${stars}</div>
-        <p class="text-gray-800 mt-2 leading-relaxed">${msg}</p>
-        <div class="text-gray-500 text-xs mt-3">— ${name}</div>
-      </div>
-    `).join("");
-
-    // Fade-in animatie
-    document.querySelectorAll("header, main section, footer").forEach((el, i) => {
-      el.style.opacity = "0";
-      el.style.transform = "translateY(12px)";
-      setTimeout(() => {
-        el.style.transition = "opacity .8s ease, transform .8s ease";
-        el.style.opacity = "1";
-        el.style.transform = "translateY(0)";
-      }, 150 * i);
-    });
-  });
-  </script>
+  <script src="js/index.js?v=20251112"></script>
 </body>
 </html>
