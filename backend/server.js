@@ -1,7 +1,7 @@
 // backend/server.js
 /**
  * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
- * Verbeterd met kleurige request-logging, sitemap redirect en uniforme logstructuur.
+ * Inclusief robots.txt, sitemap redirect en uniforme logstructuur.
  */
 
 require("dotenv").config();
@@ -88,21 +88,28 @@ for (const route of routes) {
 }
 
 /* ============================================================
-   🌍 Sitemap redirect naar backend
-   Zorgt dat https://irisje.nl/sitemap.xml altijd de backendversie toont
-============================================================ */
-app.get("/sitemap.xml", (req, res, next) => {
-  if (req.hostname === "irisje.nl") {
-    // 301 Permanent redirect zodat Google de juiste sitemap ziet
-    return res.redirect(301, "https://irisje-backend.onrender.com/sitemap.xml");
-  }
-  next();
-});
-
-/* ============================================================
-   ✅ Sitemap (moet vóór fallback staan)
+   🤖 Robots.txt – verwijst naar sitemap.xml
 ============================================================ */
 try {
+  app.get("/robots.txt", require("./routes/robots"));
+  addLog("Robots.txt-route actief (/robots.txt)", "info");
+} catch (err) {
+  addLog("⚠️ Robots.txt kon niet worden geladen: " + err.message, "error");
+}
+
+/* ============================================================
+   🌍 Sitemap redirect en dynamische route
+============================================================ */
+try {
+  // Redirect vanaf hoofddomein → backend sitemap
+  app.get("/sitemap.xml", (req, res, next) => {
+    if (req.hostname === "irisje.nl") {
+      return res.redirect(301, "https://irisje-backend.onrender.com/sitemap.xml");
+    }
+    next();
+  });
+
+  // Backend sitemap generator
   app.get("/sitemap.xml", require("./routes/sitemap"));
   addLog("Sitemap-route actief (/sitemap.xml)", "info");
 } catch (err) {
@@ -123,7 +130,7 @@ app.get("/api/test", (req, res) => {
 app.get("/api/check", (req, res) => {
   res.json({
     ok: true,
-    routes: routes.map((r) => `/api/${r}`).concat(["/sitemap.xml"]),
+    routes: routes.map((r) => `/api/${r}`).concat(["/sitemap.xml", "/robots.txt"]),
     message: "✅ Alle routes zijn correct geladen en actief.",
   });
 });
@@ -211,9 +218,9 @@ app.use(/.*\.html$/, (req, res, next) => {
 });
 
 /* ============================================================
-   ✅ Frontend fallback (behalve .xml)
+   ✅ Frontend fallback (behalve .xml en .txt)
 ============================================================ */
-app.get(/^\/(?!api\/|.*\.xml$).*/, (req, res) => {
+app.get(/^\/(?!api\/|.*\.(xml|txt)$).*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
