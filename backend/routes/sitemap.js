@@ -1,16 +1,14 @@
-// backend/routes/sitemap.js
 /**
- * 🌸 Irisje.nl – Dynamische sitemap generator (geoptimaliseerd)
- * Genereert automatisch sitemap.xml op basis van bestaande frontendbestanden.
+ * 🌸 Irisje.nl – Dynamische sitemap generator (definitieve versie)
+ * Genereert een nette XML zonder lege <url>-tags
  */
 
 const fs = require("fs");
 const path = require("path");
 
-// === Basisinstellingen ===
 const FRONTEND_DIR = path.join(__dirname, "../../frontend");
+const BASE_URL = "https://irisje.nl";
 
-// Alleen publieke HTML-pagina’s (géén admin/dashboard)
 const PUBLIC_PAGES = [
   "index.html",
   "over.html",
@@ -23,24 +21,18 @@ const PUBLIC_PAGES = [
   "error.html",
 ];
 
-/**
- * 🚀 Handlerfunctie voor /sitemap.xml
- */
 module.exports = (req, res) => {
   try {
-    const BASE_URL = `${req.protocol}://${req.get("host")}` || "https://irisje.nl";
-
-    const urls = PUBLIC_PAGES.filter((file) => fs.existsSync(path.join(FRONTEND_DIR, file)))
+    const urls = PUBLIC_PAGES
+      .filter((file) => fs.existsSync(path.join(FRONTEND_DIR, file)))
       .map((file) => {
-        const route = file === "index.html" ? "/" : `/${file.replace(".html", "")}`;
         const stats = fs.statSync(path.join(FRONTEND_DIR, file));
         const lastmod = stats.mtime.toISOString().split("T")[0]; // yyyy-mm-dd
+        const route = file === "index.html" ? "/" : `/${file.replace(".html", "")}`;
         return { route, lastmod };
       });
 
-    if (urls.length === 0) {
-      console.warn("⚠️ [Sitemap] Geen publieke frontendbestanden gevonden.");
-    }
+    if (urls.length === 0) console.warn("⚠️ [Sitemap] Geen publieke bestanden gevonden.");
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -54,16 +46,13 @@ ${urls
   </url>`
   )
   .join("\n")}
-</urlset>
-`;
+</urlset>`;
 
     res
       .status(200)
       .type("application/xml")
-      .set("Cache-Control", "public, max-age=86400") // 1 dag caching
+      .set("Cache-Control", "public, max-age=86400") // 24 uur cache
       .send(xml);
-
-    console.log(`✅ [Sitemap] Verzonden (${urls.length} pagina’s)`);
   } catch (err) {
     console.error("❌ [Sitemap] Fout bij genereren:", err);
     res.status(500).send("Fout bij genereren sitemap.xml");
