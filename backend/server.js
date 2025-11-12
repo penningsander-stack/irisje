@@ -1,17 +1,12 @@
 // backend/server.js
 /**
  * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
- * Volledig case-correcte en .env-veilige versie.
+ * Verbeterd met kleurige request-logging en uniforme logstructuur.
  */
 
-// 1️⃣ .env altijd eerst laden (voorkomt ontbrekende variabelen)
 require("dotenv").config();
-
-// 2️⃣ Vereiste configuratiecontrole (nu in lowercase-bestand)
 require("./config/validateenv");
 
-// 3️⃣ Basisimports
-const { startupBanner } = require("./utils/loghelper");
 const express = require("express");
 const mongoose = require("mongoose");
 const compression = require("compression");
@@ -20,7 +15,8 @@ const fs = require("fs");
 const path = require("path");
 
 const { corsMiddleware, securityHeaders } = require("./config/security");
-const { addLog } = require("./utils/logger");
+const { addLog, route: logRoute } = require("./utils/logger");
+const { startupBanner } = require("./utils/loghelper");
 
 const app = express();
 
@@ -34,11 +30,22 @@ app.use(corsMiddleware);
 app.use(securityHeaders);
 
 /* ============================================================
+   🌈 Request logging middleware
+============================================================ */
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const ms = Date.now() - start;
+    logRoute(req.method, req.originalUrl, res.statusCode, ms);
+  });
+  next();
+});
+
+/* ============================================================
    ✅ MongoDB connectie
 ============================================================ */
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 if (!uri) {
-  console.error("🌸 [FOUT] Geen MongoDB URI gevonden");
   addLog("Geen MongoDB URI gevonden", "error");
   process.exit(1);
 }
@@ -46,39 +53,40 @@ if (!uri) {
 mongoose
   .connect(uri)
   .then(() => {
-    console.log("🌸 [Irisje] ✅ MongoDB connected");
     addLog("MongoDB connected", "info");
   })
   .catch((err) => {
-    console.error("🌸 [FOUT] MongoDB error:", err.message);
     addLog("MongoDB connection error: " + err.message, "error");
   });
 
 /* ============================================================
-   📁 Statische map voor e-mailpagina’s (review confirm/failed)
+   📁 Publieke bestanden (bv. e-mailsjablonen)
 ============================================================ */
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ============================================================
    ✅ API-routes
 ============================================================ */
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/companies", require("./routes/companies"));
-app.use("/api/requests", require("./routes/requests"));
-app.use("/api/publicrequests", require("./routes/publicrequests"));
-app.use("/api/reviews", require("./routes/reviews"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/email", require("./routes/email"));
-app.use("/api/payments", require("./routes/payments"));
-app.use("/api/status", require("./routes/status"));
-app.use("/api/claims", require("./routes/claims"));
-app.use("/api/googlereviews", require("./routes/googlereviews")); // ✅ lowercase
-app.use("/api/seed", require("./routes/seed"));
-app.use("/api/importer", require("./routes/importer_places"));
+const routes = [
+  "auth",
+  "companies",
+  "requests",
+  "publicrequests",
+  "reviews",
+  "admin",
+  "email",
+  "payments",
+  "status",
+  "claims",
+  "googlereviews",
+  "seed",
+  "importer_places",
+];
 
-/* ============================================================
-   ✅ Sitemap-route (moet boven fallback staan)
-============================================================ */
+for (const route of routes) {
+  app.use(`/api/${route}`, require(`./routes/${route}`));
+}
+
 app.get("/sitemap.xml", require("./routes/sitemap"));
 
 /* ============================================================
@@ -90,33 +98,18 @@ app.get("/api/test", (req, res) => {
 });
 
 /* ============================================================
-   🔍 Systeemcontrole
+   🔍 Systeemcheck
 ============================================================ */
 app.get("/api/check", (req, res) => {
   res.json({
     ok: true,
-    routes: [
-      "/api/auth",
-      "/api/companies",
-      "/api/requests",
-      "/api/publicrequests",
-      "/api/reviews",
-      "/api/admin",
-      "/api/email",
-      "/api/payments",
-      "/api/status",
-      "/api/claims",
-      "/api/googlereviews",
-      "/api/seed",
-      "/api/importer",
-      "/sitemap.xml",
-    ],
+    routes: routes.map((r) => `/api/${r}`).concat(["/sitemap.xml"]),
     message: "✅ Alle routes zijn correct geladen en actief.",
   });
 });
 
 /* ============================================================
-   🖼️ Slimme image-serve middleware (WebP-detectie)
+   🖼️ Slimme image-handler (WebP)
 ============================================================ */
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const originalPath = path.join(__dirname, "../frontend", req.path);
@@ -133,7 +126,7 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 });
 
 /* ============================================================
-   🖼️ Extra route voor /img
+   🖼️ /img map
 ============================================================ */
 app.use(
   "/img",
@@ -149,7 +142,7 @@ app.use(
 );
 
 /* ============================================================
-   ✅ Statische frontend-bestanden
+   ✅ Frontend statische bestanden
 ============================================================ */
 const frontendPath = path.join(__dirname, "../frontend");
 app.use(
@@ -165,7 +158,7 @@ app.use(
 );
 
 /* ============================================================
-   🪄 HTML-injecties (preload + lazyload)
+   🪄 HTML-optimalisatie (preload + lazyload)
 ============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
   const filePath = path.join(__dirname, "../frontend", req.path);
@@ -180,7 +173,7 @@ app.use(/.*\.html$/, (req, res, next) => {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preload" as="style" href="style.css?v=20251111">
+    <link rel="preload" as="style" href="style.css?v=20251112">
     <link rel="preload" as="image" href="favicon.ico">
     `;
     html = html.replace(/<head>/i, `<head>${preloadBlock}`);
@@ -198,21 +191,20 @@ app.use(/.*\.html$/, (req, res, next) => {
 });
 
 /* ============================================================
-   ✅ Frontend fallback (behalve .xml-bestanden)
+   ✅ Frontend fallback (behalve .xml)
 ============================================================ */
 app.get(/^\/(?!api\/|.*\.xml$).*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 /* ============================================================
-   ✅ Server starten
+   🚀 Server starten
 ============================================================ */
 const PORT = process.env.PORT || 3000;
+
 startupBanner();
-addLog("Server gestart op poort " + PORT, "info");
+addLog(`Server gestart op poort ${PORT}`, "info");
 
 app.listen(PORT, () => {
-  console.log(
-    `🌸 [Irisje] 🚀 Server running on port ${PORT} (${process.env.NODE_ENV || "development"})`
-  );
+  addLog(`Server actief op poort ${PORT} (${process.env.NODE_ENV || "development"})`, "info");
 });
