@@ -11,21 +11,41 @@ const companySchema = new mongoose.Schema(
 
     /* 🔹 Categorie en specialisaties */
     categories: [{ type: String, trim: true }],
-    specialties: [{ type: String, trim: true }], // bestaand veld
-    specializations: [{ type: String, trim: true }], // extra: detailniveaus binnen specialisme
+    specialties: [{ type: String, trim: true }], // hoofdgroepen
+    specializations: [{ type: String, trim: true }], // detailniveaus binnen specialisme
 
     /* 🔹 Bereik & regio’s */
-    regions: [{ type: String, trim: true }], // provincies/steden
+    regions: {
+      type: [String],
+      default: [],
+      set: (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",").map(s => s.trim()) : []),
+    },
     worksNationwide: { type: Boolean, default: false },
 
     /* 🔹 Erkenningen en certificeringen */
-    certifications: [{ type: String, trim: true }], // bv. VCA, ISO
-    recognitions: [{ type: String, trim: true }], // bv. Erkend installateur
-    memberships: [{ type: String, trim: true }], // bv. Techniek Nederland
+    certifications: {
+      type: [String],
+      default: [],
+      set: (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",").map(s => s.trim()) : []),
+    },
+    recognitions: {
+      type: [String],
+      default: [],
+      set: (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",").map(s => s.trim()) : []),
+    },
+    memberships: {
+      type: [String],
+      default: [],
+      set: (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",").map(s => s.trim()) : []),
+    },
 
     /* 🔹 Communicatie & talen */
-    languages: [{ type: String, trim: true }], // bv. Nederlands, Engels
-    availability: { type: String, trim: true, default: "" }, // bv. 24/7 of alleen werkdagen
+    languages: {
+      type: [String],
+      default: [],
+      set: (v) => (Array.isArray(v) ? v : typeof v === "string" ? v.split(",").map(s => s.trim()) : []),
+    },
+    availability: { type: String, trim: true, default: "" },
 
     /* 🔹 Contactinformatie */
     city: { type: String, default: "" },
@@ -38,7 +58,7 @@ const companySchema = new mongoose.Schema(
     reviewCount: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
 
-    /* 🔹 Koppeling naar eigenaar (bedrijfseigenaar / gebruiker) */
+    /* 🔹 Koppeling naar eigenaar */
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
