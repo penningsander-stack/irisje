@@ -1,13 +1,9 @@
-# .github/workflows/normalize-filenames.yml
 name: 🧹 Normalize Filenames to Lowercase (Safe, Backend + Frontend)
 
 on:
   push:
-    branches: [ main ]       # ✅ automatisch bij elke push
-  workflow_dispatch:          # ✅ handmatig te starten via Actions-tab
-
-permissions:
-  contents: write             # ✅ geeft github-actions[bot] schrijfrechten
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   normalize:
@@ -17,9 +13,6 @@ jobs:
     steps:
       - name: 🧭 Checkout repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true     # ✅ behoudt token voor push
-          fetch-depth: 0
 
       - name: 🧰 Setup environment
         uses: actions/setup-node@v4
@@ -40,17 +33,18 @@ jobs:
             echo "$FILES" | tee -a $LOGFILE
           fi
 
+          # Detect conflicts (two files that would collide when lowercased)
           CONFLICTS=$(echo "$FILES" | while read -r f; do
             echo "$(dirname "$f")/$(basename "$f" | tr 'A-Z' 'a-z')"
           done | sort | uniq -d)
 
           if [ -n "$CONFLICTS" ]; then
-            echo "🚫 Conflict detected! The following files would collide after renaming:" | tee -a $LOGFILE
+            echo "🚫 Conflict detected! Skipping rename to prevent data loss." | tee -a $LOGFILE
             echo "$CONFLICTS" | tee -a $LOGFILE
-            echo "❌ Aborting rename to prevent data loss." | tee -a $LOGFILE
             exit 1
           fi
 
+          # Rename safely
           echo "$FILES" | while read -r file; do
             lowercase="$(dirname "$file")/$(basename "$file" | tr 'A-Z' 'a-z')"
             if [ "$file" != "$lowercase" ]; then
@@ -67,10 +61,8 @@ jobs:
           find backend frontend -type f \( -name "*.js" -o -name "*.html" \) | while read -r file; do
             # Backend requires
             sed -i 's|require("./config/ValidateEnv")|require("./config/validateenv")|g' "$file"
-            sed -i 's|require("./config/VALIDATEENV")|require("./config/validateenv")|g' "$file"
-            sed -i 's|require("./config/validatEnv")|require("./config/validateenv")|g' "$file"
             sed -i 's|require("./utils/LogHelper")|require("./utils/loghelper")|g' "$file"
-            sed -i 's|require("./utils/Loghelper")|require("./utils/loghelper")|g' "$file"
+            sed -i 's|require("../utils/EmailTemplates")|require("../utils/emailtemplates")|g' "$file"
             sed -i 's|require("./routes/PublicRequests")|require("./routes/publicrequests")|g' "$file"
             sed -i 's|require("./routes/GoogleReviews")|require("./routes/googlereviews")|g' "$file"
             sed -i 's|require("../models/Request")|require("../models/request")|g' "$file"
@@ -87,21 +79,27 @@ jobs:
           done
           echo "✅ Import paths fixed." | tee -a $LOGFILE
 
-      - name: 💾 Commit and push normalization changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # ✅ geeft schrijfrechten
+      - name: 💾 Commit and push normalization changes (with retry & empty check)
         run: |
           LOGFILE="logs/normalized-files.log"
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git config user.name "Irisje AutoFixer"
-            git config user.email "bot@irisje.nl"
-            git add .
-            git commit -m "chore: normalize all filenames and imports to lowercase (safe mode)"
-            git push
-            echo "✅ Changes committed & pushed." | tee -a $LOGFILE
-          else
-            echo "✨ Nothing to commit; everything already normalized." | tee -a $LOGFILE
+          git config user.name "Irisje AutoFixer"
+          git config user.email "bot@irisje.nl"
+
+          if git diff --quiet; then
+            echo "✨ No changes detected, skipping commit and push." | tee -a $LOGFILE
+            exit 0
           fi
+
+          git add .
+          git commit -m "chore: normalize filenames and imports to lowercase (safe mode)"
+
+          n=0
+          until git push || [ $n -ge 3 ]; do
+            echo "⚠️ Push failed (possibly concurrent workflow). Retrying in 10s..." | tee -a $LOGFILE
+            n=$((n+1))
+            sleep 10
+          done
+          echo "✅ Push completed or safely skipped after ${n} retries." | tee -a $LOGFILE
 
       - name: 📦 Upload normalization log as artifact
         uses: actions/upload-artifact@v4
@@ -114,9 +112,9 @@ jobs:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
           if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "⚠️ Geen Render hook ingesteld (geen automatische deploy)."
+            echo "⚠️ No Render hook configured (no auto-deploy)."
             exit 0
           fi
           echo "🚀 Triggering Render deployment..."
           curl -X POST "$RENDER_DEPLOY_HOOK_URL"
-          echo "✅ Render build triggered."
+          echo "✅ Render build triggered successfully."
