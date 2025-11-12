@@ -1,9 +1,13 @@
+# .github/workflows/normalize-filenames.yml
 name: 🧹 Normalize Filenames to Lowercase (Safe, Backend + Frontend)
 
 on:
   push:
     branches: [ main ]       # ✅ automatisch bij elke push
   workflow_dispatch:          # ✅ handmatig te starten via Actions-tab
+
+permissions:
+  contents: write             # ✅ geeft github-actions[bot] schrijfrechten
 
 jobs:
   normalize:
@@ -13,6 +17,9 @@ jobs:
     steps:
       - name: 🧭 Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true     # ✅ behoudt token voor push
+          fetch-depth: 0
 
       - name: 🧰 Setup environment
         uses: actions/setup-node@v4
@@ -33,7 +40,6 @@ jobs:
             echo "$FILES" | tee -a $LOGFILE
           fi
 
-          # Detecteer mogelijke conflicts (twee bestanden die hetzelfde worden na lowercase)
           CONFLICTS=$(echo "$FILES" | while read -r f; do
             echo "$(dirname "$f")/$(basename "$f" | tr 'A-Z' 'a-z')"
           done | sort | uniq -d)
@@ -45,7 +51,6 @@ jobs:
             exit 1
           fi
 
-          # Voer veilige rename uit
           echo "$FILES" | while read -r file; do
             lowercase="$(dirname "$file")/$(basename "$file" | tr 'A-Z' 'a-z')"
             if [ "$file" != "$lowercase" ]; then
@@ -83,6 +88,8 @@ jobs:
           echo "✅ Import paths fixed." | tee -a $LOGFILE
 
       - name: 💾 Commit and push normalization changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}     # ✅ geeft schrijfrechten
         run: |
           LOGFILE="logs/normalized-files.log"
           if [[ -n "$(git status --porcelain)" ]]; then
