@@ -2,7 +2,7 @@
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");
-const Company = require("../models/Company");
+const Company = require("../models/company");
 require("dotenv").config();
 
 const MONGO_URI = process.env.MONGO_URI;

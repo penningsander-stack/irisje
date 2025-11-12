@@ -1,5 +1,5 @@
 // backe../utils/autoseed.js
-const Request = require("../models/Request");
+const Request = require("../models/request");
 const Review = require("../models/review");
 
 /**
