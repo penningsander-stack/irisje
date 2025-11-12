@@ -68,7 +68,7 @@ app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
 /* ============================================================
-   ✅ Sitemap-route (nieuw)
+   ✅ Sitemap-route (blijft boven fallback!)
    Automatisch gegenereerde sitemap.xml met publieke pagina’s
 ============================================================ */
 app.use("/sitemap.xml", require("./routes/sitemap"));
@@ -190,9 +190,9 @@ app.use(/.*\.html$/, (req, res, next) => {
 });
 
 /* ============================================================
-   ✅ Frontend fallback
+   ✅ Frontend fallback (behalve .xml-bestanden)
 ============================================================ */
-app.get(/^\/(?!api\/).*/, (req, res) => {
+app.get(/^\/(?!api\/|.*\.xml$).*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
