@@ -3,17 +3,29 @@ name: 🚀 Auto Deploy to Render
 on:
   push:
     branches:
-      - main           # ✅ telkens bij een push naar main
-  workflow_dispatch:    # ✅ ook handmatig te starten via Actions-tab
+      - main           # ✅ automatisch bij elke push naar main
+  workflow_dispatch:    # ✅ ook handmatig via Actions-tab
 
 jobs:
   trigger-deploy:
     name: Trigger Render redeploy
     runs-on: ubuntu-latest
 
+    # ✅ Wacht tot eerdere workflows klaar zijn (voorkomt race-conditions)
+    needs: 
+      - fix-imports
+      - normalize
+      - bump-style-version
+    if: ${{ always() }}
+
     steps:
       - name: 🧭 Checkout repository
         uses: actions/checkout@v4
+
+      - name: 🕓 Wait a few seconds (safety delay)
+        run: |
+          echo "⏳ Waiting 15 seconds to ensure all previous commits are pushed..."
+          sleep 15
 
       - name: 🚀 Trigger Render build
         env:
