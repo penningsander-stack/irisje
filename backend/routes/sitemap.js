@@ -1,18 +1,17 @@
 // backend/routes/sitemap.js
 /**
- * 🌸 Irisje.nl – Dynamische Sitemap Route
+ * 🌸 Irisje.nl – Dynamische Sitemap Route (CommonJS-versie)
  * Doel: Automatisch sitemap.xml genereren met publieke pagina’s.
- * Wordt gebruikt door Google Search Console.
  */
 
-import express from "express";
-import fs from "fs";
-import path from "path";
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
 
 const router = express.Router();
 
 // === Basisinstellingen ===
-const FRONTEND_DIR = path.join(process.cwd(), "frontend");
+const FRONTEND_DIR = path.join(__dirname, "../../frontend");
 const BASE_URL = "https://irisje.nl";
 
 // Alleen publieke HTML-pagina’s (géén admin/dashboard)
@@ -54,7 +53,6 @@ router.get("/", async (req, res) => {
   try {
     const urls = [];
 
-    // Controleer of bestanden bestaan
     for (const file of PUBLIC_PAGES) {
       const filePath = path.join(FRONTEND_DIR, file);
       if (fs.existsSync(filePath)) {
@@ -73,4 +71,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
