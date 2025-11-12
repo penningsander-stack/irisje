@@ -9,7 +9,7 @@ const { sendMail } = require("../utils/mailer");
 const {
   reviewConfirmationCustomer,
   reviewConfirmedAdmin,
-} = require("../utils/emailTemplates");
+} = require("../utils/emailtemplates");
 
 /* ============================================================
    ✅ Reviews ophalen (alleen bevestigde)
