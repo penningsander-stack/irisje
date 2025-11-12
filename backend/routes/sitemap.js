@@ -11,7 +11,7 @@ const path = require("path");
 const router = express.Router();
 
 // === Basisinstellingen ===
-const FRONTEND_DIR = path.join(__dirname, "../../frontend");
+const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
 const BASE_URL = "https://irisje.nl";
 
 // Alleen publieke HTML-pagina’s (géén admin/dashboard)
@@ -27,7 +27,9 @@ const PUBLIC_PAGES = [
   "error.html",
 ];
 
-// === Helperfunctie: XML genereren ===
+/**
+ * 🧩 Helperfunctie: XML genereren
+ */
 function buildSitemapXml(urls) {
   const xmlUrls = urls
     .map(
@@ -41,15 +43,15 @@ function buildSitemapXml(urls) {
     .join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  ${xmlUrls}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${xmlUrls}
 </urlset>`;
 }
 
-// === Route /sitemap.xml ===
-router.get("/", async (req, res) => {
+/**
+ * 🚀 Route /sitemap.xml
+ */
+router.get("/", (req, res) => {
   try {
     const urls = [];
 
@@ -61,10 +63,15 @@ router.get("/", async (req, res) => {
       }
     }
 
+    // Geen bestanden gevonden → foutmelding loggen
+    if (urls.length === 0) {
+      console.warn("⚠️ Geen frontendbestanden gevonden voor sitemap.");
+    }
+
     const sitemapXml = buildSitemapXml(urls);
 
-    res.header("Content-Type", "application/xml");
-    res.send(sitemapXml);
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.status(200).send(sitemapXml);
   } catch (err) {
     console.error("❌ Fout bij genereren sitemap:", err);
     res.status(500).send("Fout bij genereren sitemap.xml");
