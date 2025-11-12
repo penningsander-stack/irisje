@@ -1,4 +1,3 @@
-// backend/server.js
 /**
  * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
  * Verbeterd met kleurige request-logging en uniforme logstructuur.
@@ -36,7 +35,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const ms = Date.now() - start;
-    logRoute(req.method, req.originalUrl, res.statusCode, ms);
+    logRoute?.(req.method, req.originalUrl, res.statusCode, ms);
   });
   next();
 });
@@ -52,12 +51,8 @@ if (!uri) {
 
 mongoose
   .connect(uri)
-  .then(() => {
-    addLog("MongoDB connected", "info");
-  })
-  .catch((err) => {
-    addLog("MongoDB connection error: " + err.message, "error");
-  });
+  .then(() => addLog("MongoDB connected", "info"))
+  .catch((err) => addLog("MongoDB connection error: " + err.message, "error"));
 
 /* ============================================================
    📁 Publieke bestanden (bv. e-mailsjablonen)
@@ -84,10 +79,22 @@ const routes = [
 ];
 
 for (const route of routes) {
-  app.use(`/api/${route}`, require(`./routes/${route}`));
+  try {
+    app.use(`/api/${route}`, require(`./routes/${route}`));
+  } catch (err) {
+    addLog(`⚠️ Route '${route}' kon niet geladen worden: ${err.message}`, "error");
+  }
 }
 
-app.get("/sitemap.xml", require("./routes/sitemap"));
+/* ============================================================
+   ✅ Sitemap (moet vóór fallback staan)
+============================================================ */
+try {
+  app.get("/sitemap.xml", require("./routes/sitemap"));
+  addLog("Sitemap-route actief (/sitemap.xml)", "info");
+} catch (err) {
+  addLog("⚠️ Sitemap-route kon niet worden geladen: " + err.message, "error");
+}
 
 /* ============================================================
    ✅ Testroute
@@ -161,7 +168,7 @@ app.use(
    🪄 HTML-optimalisatie (preload + lazyload)
 ============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
-  const filePath = path.join(__dirname, "../frontend", req.path);
+  const filePath = path.join(frontendPath, req.path);
   if (!fs.existsSync(filePath)) return next();
 
   let html = fs.readFileSync(filePath, "utf8");
@@ -201,7 +208,6 @@ app.get(/^\/(?!api\/|.*\.xml$).*/, (req, res) => {
    🚀 Server starten
 ============================================================ */
 const PORT = process.env.PORT || 3000;
-
 startupBanner();
 addLog(`Server gestart op poort ${PORT}`, "info");
 
