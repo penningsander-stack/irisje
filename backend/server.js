@@ -1,6 +1,7 @@
+// backend/server.js
 /**
  * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
- * Verbeterd met kleurige request-logging en uniforme logstructuur.
+ * Verbeterd met kleurige request-logging, sitemap redirect en uniforme logstructuur.
  */
 
 require("dotenv").config();
@@ -85,6 +86,18 @@ for (const route of routes) {
     addLog(`⚠️ Route '${route}' kon niet geladen worden: ${err.message}`, "error");
   }
 }
+
+/* ============================================================
+   🌍 Sitemap redirect naar backend
+   Zorgt dat https://irisje.nl/sitemap.xml altijd de backendversie toont
+============================================================ */
+app.get("/sitemap.xml", (req, res, next) => {
+  if (req.hostname === "irisje.nl") {
+    // 301 Permanent redirect zodat Google de juiste sitemap ziet
+    return res.redirect(301, "https://irisje-backend.onrender.com/sitemap.xml");
+  }
+  next();
+});
 
 /* ============================================================
    ✅ Sitemap (moet vóór fallback staan)
