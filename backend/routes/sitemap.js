@@ -1,4 +1,3 @@
-// backend/routes/sitemap.js
 /**
  * 🌸 Irisje.nl – Dynamische sitemap generator
  * Directe handler voor /sitemap.xml
@@ -7,10 +6,8 @@
 const fs = require("fs");
 const path = require("path");
 
-console.log("✅ [DEBUG] sitemap-handler geladen");
-
 // === Basisinstellingen ===
-const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
+const FRONTEND_DIR = path.join(__dirname, "../../frontend"); // ✅ iets netter genormaliseerd
 const BASE_URL = "https://irisje.nl";
 
 // Alleen publieke HTML-pagina’s (géén admin/dashboard)
@@ -31,18 +28,16 @@ const PUBLIC_PAGES = [
  */
 module.exports = (req, res) => {
   try {
-    const urls = [];
-
-    for (const file of PUBLIC_PAGES) {
-      const filePath = path.join(FRONTEND_DIR, file);
-      if (fs.existsSync(filePath)) {
-        const route = file === "index.html" ? "/" : `/${file.replace(".html", "")}`;
-        urls.push(route);
-      }
-    }
+    const urls = PUBLIC_PAGES.filter((file) => {
+      // Alleen opnemen als bestand daadwerkelijk bestaat
+      return fs.existsSync(path.join(FRONTEND_DIR, file));
+    }).map((file) => {
+      // index.html → "/", anders /bestandsnaam
+      return file === "index.html" ? "/" : `/${file.replace(".html", "")}`;
+    });
 
     if (urls.length === 0) {
-      console.warn("⚠️ Geen frontendbestanden gevonden voor sitemap.");
+      console.warn("⚠️ [Sitemap] Geen publieke frontendbestanden gevonden.");
     }
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -58,10 +53,13 @@ ${urls
   .join("\n")}
 </urlset>`;
 
-    res.setHeader("Content-Type", "application/xml; charset=utf-8");
-    res.status(200).send(xml);
+    res
+      .status(200)
+      .type("application/xml")
+      .set("Cache-Control", "public, max-age=86400") // ✅ 1 dag cache
+      .send(xml);
   } catch (err) {
-    console.error("❌ Fout bij genereren sitemap:", err);
+    console.error("❌ [Sitemap] Fout bij genereren:", err);
     res.status(500).send("Fout bij genereren sitemap.xml");
   }
 };
