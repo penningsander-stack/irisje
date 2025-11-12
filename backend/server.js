@@ -68,6 +68,12 @@ app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
 /* ============================================================
+   ✅ Sitemap-route (nieuw)
+   Automatisch gegenereerde sitemap.xml met publieke pagina’s
+============================================================ */
+app.use("/sitemap.xml", require("./routes/sitemap"));
+
+/* ============================================================
    ✅ Testroute
 ============================================================ */
 app.get("/api/test", (req, res) => {
@@ -95,6 +101,7 @@ app.get("/api/check", (req, res) => {
       "/api/googlereviews",
       "/api/seed",
       "/api/importer",
+      "/sitemap.xml",
     ],
     message: "✅ Alle routes zijn correct geladen en actief.",
   });
