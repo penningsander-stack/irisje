@@ -1,16 +1,13 @@
 // backend/routes/sitemap.js
 /**
- * 🌸 Irisje.nl – Dynamische Sitemap Route (CommonJS-versie)
- * Doel: Automatisch sitemap.xml genereren met publieke pagina’s.
+ * 🌸 Irisje.nl – Dynamische sitemap generator
+ * Directe handler voor /sitemap.xml
  */
 
-const express = require("express");
 const fs = require("fs");
 const path = require("path");
 
-const router = express.Router();
-
-console.log("✅ [DEBUG] sitemap-route geladen");
+console.log("✅ [DEBUG] sitemap-handler geladen");
 
 // === Basisinstellingen ===
 const FRONTEND_DIR = path.join(__dirname, "..", "..", "frontend");
@@ -30,30 +27,9 @@ const PUBLIC_PAGES = [
 ];
 
 /**
- * 🧩 Helperfunctie: XML genereren
+ * 🚀 Handlerfunctie voor /sitemap.xml
  */
-function buildSitemapXml(urls) {
-  const xmlUrls = urls
-    .map(
-      (url) => `
-  <url>
-    <loc>${BASE_URL}${url}</loc>
-    <changefreq>weekly</changefreq>
-    <priority>${url === "/" ? "1.0" : "0.8"}</priority>
-  </url>`
-    )
-    .join("");
-
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${xmlUrls}
-</urlset>`;
-}
-
-/**
- * 🚀 Route handler voor sitemap.xml
- */
-function handleSitemap(req, res) {
+module.exports = (req, res) => {
   try {
     const urls = [];
 
@@ -69,19 +45,23 @@ function handleSitemap(req, res) {
       console.warn("⚠️ Geen frontendbestanden gevonden voor sitemap.");
     }
 
-    const sitemapXml = buildSitemapXml(urls);
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls
+  .map(
+    (u) => `  <url>
+    <loc>${BASE_URL}${u}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>${u === "/" ? "1.0" : "0.8"}</priority>
+  </url>`
+  )
+  .join("\n")}
+</urlset>`;
 
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
-    res.status(200).send(sitemapXml);
+    res.status(200).send(xml);
   } catch (err) {
     console.error("❌ Fout bij genereren sitemap:", err);
     res.status(500).send("Fout bij genereren sitemap.xml");
   }
-}
-
-// === Routes registreren ===
-// Zowel / als /sitemap.xml werken
-router.get("/", handleSitemap);
-router.get("/sitemap.xml", handleSitemap);
-
-module.exports = router;
+};
