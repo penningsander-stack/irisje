@@ -2,24 +2,23 @@
 const express = require("express");
 const router = express.Router();
 const Company = require("../models/company");
-const authMiddleware = require("../middleware/auth"); // 👈 geen destructuring
+const authMiddleware = require("../middleware/auth");
 
 /* ============================================================
-   🔹 Vaste lijst met toegestane specialismen
-   (kan later eenvoudig worden aangepast)
+   🔹 Toegestane waarden (kan later worden uitgebreid)
 ============================================================ */
 const ALLOWED_SPECIALTIES = [
-  "Arbeidsrecht",
-  "Strafrecht",
-  "Familierecht",
-  "Huurrecht",
-  "Ondernemingsrecht",
-  "Bestuursrecht",
-  "Letselschade",
-  "Contractenrecht",
-  "Vastgoedrecht",
-  "Sociaal zekerheidsrecht",
-  "Overig",
+  "Arbeidsrecht", "Strafrecht", "Familierecht", "Huurrecht",
+  "Ondernemingsrecht", "Bestuursrecht", "Letselschade",
+  "Contractenrecht", "Vastgoedrecht", "Sociaal zekerheidsrecht", "Overig",
+];
+
+const ALLOWED_CERTIFICATIONS = [
+  "VCA", "ISO 9001", "Erkend Installateur", "BOVAG", "Techniek Nederland",
+];
+
+const ALLOWED_LANGUAGES = [
+  "Nederlands", "Engels", "Duits", "Frans", "Pools", "Turks", "Arabisch",
 ];
 
 /* ============================================================
@@ -36,26 +35,18 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================================================
-   🔍 Zoeken op categorie, stad en specialisme
+   🔍 Uitgebreid zoeken op categorie, stad, regio, specialisme, certificering
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
-    const { category = "", city = "", specialty = "" } = req.query;
-
+    const { category = "", city = "", region = "", specialty = "", certification = "" } = req.query;
     const filters = {};
 
-    if (category) {
-      filters.categories = { $regex: new RegExp(category, "i") };
-    }
-
-    if (city) {
-      filters.city = { $regex: new RegExp(city, "i") };
-    }
-
-    if (specialty) {
-      // zoeken in veld specialties
-      filters.specialties = { $regex: new RegExp(specialty, "i") };
-    }
+    if (category) filters.categories = { $regex: new RegExp(category, "i") };
+    if (city) filters.city = { $regex: new RegExp(city, "i") };
+    if (region) filters.regions = { $regex: new RegExp(region, "i") };
+    if (specialty) filters.specialties = { $regex: new RegExp(specialty, "i") };
+    if (certification) filters.certifications = { $regex: new RegExp(certification, "i") };
 
     const companies = await Company.find(filters)
       .sort({ avgRating: -1, reviewCount: -1 })
@@ -77,10 +68,12 @@ router.get("/slug/:slug", async (req, res) => {
     if (!company) {
       return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
     }
-    // zorg dat frontend altijd een array heeft
-    if (!Array.isArray(company.specialties)) {
-      company.specialties = [];
-    }
+
+    // Zorg dat frontend arrays ontvangt
+    ["specialties", "regions", "certifications", "languages"].forEach((f) => {
+      if (!Array.isArray(company[f])) company[f] = [];
+    });
+
     res.json(company);
   } catch (error) {
     console.error("❌ Fout bij ophalen bedrijf via slug:", error);
@@ -100,6 +93,13 @@ router.post("/", authMiddleware, async (req, res) => {
       description = "",
       categories = [],
       specialties = [],
+      regions = [],
+      worksNationwide = false,
+      certifications = [],
+      recognitions = [],
+      memberships = [],
+      languages = [],
+      availability = "",
       city = "",
       phone = "",
       email = "",
@@ -110,9 +110,12 @@ router.post("/", authMiddleware, async (req, res) => {
       return res.status(400).json({ ok: false, error: "Naam en slug zijn verplicht" });
     }
 
-    // ✅ alleen toegestane specialismen opslaan
     const validSpecialties = (Array.isArray(specialties) ? specialties : [])
       .filter((s) => ALLOWED_SPECIALTIES.includes(s));
+    const validCertifications = (Array.isArray(certifications) ? certifications : [])
+      .filter((c) => ALLOWED_CERTIFICATIONS.includes(c));
+    const validLanguages = (Array.isArray(languages) ? languages : [])
+      .filter((l) => ALLOWED_LANGUAGES.includes(l));
 
     const company = new Company({
       name,
@@ -121,6 +124,13 @@ router.post("/", authMiddleware, async (req, res) => {
       description,
       categories: Array.isArray(categories) ? categories : [],
       specialties: validSpecialties,
+      regions: Array.isArray(regions) ? regions : [],
+      worksNationwide: !!worksNationwide,
+      certifications: validCertifications,
+      recognitions: Array.isArray(recognitions) ? recognitions : [],
+      memberships: Array.isArray(memberships) ? memberships : [],
+      languages: validLanguages,
+      availability,
       city,
       phone,
       email,
@@ -133,7 +143,6 @@ router.post("/", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("❌ Fout bij aanmaken bedrijf:", error);
 
-    // duplicate key (bijv. slug bestaat al)
     if (error.code === 11000) {
       return res.status(400).json({ ok: false, error: "Slug bestaat al, kies een andere." });
     }
@@ -158,9 +167,17 @@ router.put("/:id", authMiddleware, async (req, res) => {
 
     const updates = { ...req.body };
 
-    // ✅ specialties filteren op toegestane lijst
+    // ✅ filter arrays op toegestane waarden
     if (Array.isArray(updates.specialties)) {
       updates.specialties = updates.specialties.filter((s) => ALLOWED_SPECIALTIES.includes(s));
+    }
+    if (Array.isArray(updates.certifications)) {
+      updates.certifications = updates.certifications.filter((c) =>
+        ALLOWED_CERTIFICATIONS.includes(c)
+      );
+    }
+    if (Array.isArray(updates.languages)) {
+      updates.languages = updates.languages.filter((l) => ALLOWED_LANGUAGES.includes(l));
     }
 
     Object.assign(company, updates);
@@ -196,10 +213,15 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 });
 
 /* ============================================================
-   📋 Endpoint om toegestane specialismen op te halen
+   📋 Endpoint voor toegestane waarden
 ============================================================ */
-router.get("/specialties/list", (req, res) => {
-  res.json({ ok: true, specialties: ALLOWED_SPECIALTIES });
+router.get("/lists", (req, res) => {
+  res.json({
+    ok: true,
+    specialties: ALLOWED_SPECIALTIES,
+    certifications: ALLOWED_CERTIFICATIONS,
+    languages: ALLOWED_LANGUAGES,
+  });
 });
 
 module.exports = router;
