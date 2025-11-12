@@ -6,7 +6,7 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected for seeding'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-const Company = require('./models/Company');
+const Company = require('./models/company');
 
 const seedData = [
   {
