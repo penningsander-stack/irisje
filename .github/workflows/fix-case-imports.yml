@@ -6,27 +6,78 @@ on:
   workflow_dispatch:
 
 jobs:
-  fix-case:
+  fix-imports:
     runs-on: ubuntu-latest
+
     steps:
       - name: 🧭 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🧰 Setup Node
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: 🩺 Run case-sensitive import fixer
-        run: node backend/tools/fix-case-sensitive-imports.js
+      - name: 🔧 Fix require() and import paths (case-insensitive cleanup)
+        run: |
+          mkdir -p logs
+          LOGFILE="logs/fix-case-imports.log"
+          echo "🔧 Scanning backend for case-sensitive import mismatches..." | tee -a $LOGFILE
+
+          find backend -type f -name "*.js" | while read -r file; do
+            sed -i 's|require("./config/ValidateEnv")|require("./config/validateenv")|g' "$file"
+            sed -i 's|require("./config/VALIDATEENV")|require("./config/validateenv")|g' "$file"
+            sed -i 's|require("./config/ValidatEnv")|require("./config/validateenv")|g' "$file"
+            sed -i 's|require("./utils/LogHelper")|require("./utils/loghelper")|g' "$file"
+            sed -i 's|require("./utils/Loghelper")|require("./utils/loghelper")|g' "$file"
+            sed -i 's|require("../utils/EmailTemplates")|require("../utils/emailtemplates")|g' "$file"
+            sed -i 's|require("../utils/AutoSeed")|require("../utils/autoseed")|g' "$file"
+            sed -i 's|require("./routes/PublicRequests")|require("./routes/publicrequests")|g' "$file"
+            sed -i 's|require("./routes/GoogleReviews")|require("./routes/googlereviews")|g' "$file"
+            sed -i 's|require("../models/Request")|require("../models/request")|g' "$file"
+            sed -i 's|require("../models/Company")|require("../models/company")|g' "$file"
+            sed -i 's|require("../models/Review")|require("../models/review")|g' "$file"
+            sed -i 's|require("../models/User")|require("../models/user")|g' "$file"
+          done
+
+          echo "✅ Import paths corrected." | tee -a $LOGFILE
+
+      - name: 💾 Commit and push changes (with retry & empty-commit check)
+        run: |
+          LOGFILE="logs/fix-case-imports.log"
+          git config user.name "Irisje AutoFixer"
+          git config user.email "bot@irisje.nl"
+
+          if git diff --quiet; then
+            echo "✨ No changes detected, skipping commit and push." | tee -a $LOGFILE
+            exit 0
+          fi
+
+          git add backend
+          git commit -m "chore: fix case-sensitive backend import paths"
+
+          n=0
+          until git push || [ $n -ge 3 ]; do
+            echo "⚠️ Push failed (possibly concurrent workflow). Retrying in 10s..." | tee -a $LOGFILE
+            n=$((n+1))
+            sleep 10
+          done
+          echo "✅ Push completed or safely skipped after ${n} retries." | tee -a $LOGFILE
+
+      - name: 📦 Upload fix log as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fix-case-imports.log
+          path: logs/fix-case-imports.log
 
       - name: 🚀 Trigger Render deployment
         env:
           RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
-            echo "🚀 Triggering Render deployment..."
-            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
-          else
-            echo "⚠️ Geen Render hook ingesteld (geen auto-deploy)."
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ No Render deploy hook configured."
+            exit 0
           fi
+          echo "🚀 Triggering Render deployment..."
+          curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          echo "✅ Render build triggered successfully."
