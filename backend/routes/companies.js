@@ -1,11 +1,11 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/company");
+const Company = require("../models/Company");
 const authMiddleware = require("../middleware/auth");
 
 /* ============================================================
-   🔹 Toegestane waarden (kan later worden uitgebreid)
+   🔹 Toegestane waarden
 ============================================================ */
 const ALLOWED_SPECIALTIES = [
   "Arbeidsrecht", "Strafrecht", "Familierecht", "Huurrecht",
@@ -35,7 +35,7 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================================================
-   🔍 Uitgebreid zoeken op categorie, stad, regio, specialisme, certificering
+   🔍 Zoeken op categorie, stad, regio, specialisme, certificering
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
@@ -65,12 +65,13 @@ router.get("/search", async (req, res) => {
 router.get("/slug/:slug", async (req, res) => {
   try {
     const company = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!company) {
-      return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
-    }
+    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
 
-    // Zorg dat frontend arrays ontvangt
-    ["specialties", "regions", "certifications", "languages"].forEach((f) => {
+    // Frontend verwacht altijd arrays
+    [
+      "specialties", "regions", "certifications",
+      "recognitions", "memberships", "languages"
+    ].forEach((f) => {
       if (!Array.isArray(company[f])) company[f] = [];
     });
 
@@ -82,33 +83,21 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 /* ============================================================
-   🧩 Nieuw bedrijf aanmaken (alleen ingelogde gebruiker)
+   🧩 Nieuw bedrijf aanmaken
 ============================================================ */
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const {
-      name,
-      slug,
-      tagline = "",
-      description = "",
-      categories = [],
-      specialties = [],
-      regions = [],
-      worksNationwide = false,
-      certifications = [],
-      recognitions = [],
-      memberships = [],
-      languages = [],
-      availability = "",
-      city = "",
-      phone = "",
-      email = "",
+      name, slug, tagline = "", description = "",
+      categories = [], specialties = [], regions = [],
+      worksNationwide = false, certifications = [],
+      recognitions = [], memberships = [], languages = [],
+      availability = "", city = "", phone = "", email = "",
       website = "",
     } = req.body || {};
 
-    if (!name || !slug) {
+    if (!name || !slug)
       return res.status(400).json({ ok: false, error: "Naam en slug zijn verplicht" });
-    }
 
     const validSpecialties = (Array.isArray(specialties) ? specialties : [])
       .filter((s) => ALLOWED_SPECIALTIES.includes(s));
@@ -142,10 +131,8 @@ router.post("/", authMiddleware, async (req, res) => {
     res.json({ ok: true, company });
   } catch (error) {
     console.error("❌ Fout bij aanmaken bedrijf:", error);
-
-    if (error.code === 11000) {
+    if (error.code === 11000)
       return res.status(400).json({ ok: false, error: "Slug bestaat al, kies een andere." });
-    }
 
     res.status(500).json({ ok: false, error: "Serverfout bij aanmaken bedrijf" });
   }
@@ -157,32 +144,37 @@ router.post("/", authMiddleware, async (req, res) => {
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
-    if (!company) {
-      return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
-    }
-
-    if (company.owner.toString() !== req.user.id) {
+    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
+    if (company.owner.toString() !== req.user.id)
       return res.status(403).json({ ok: false, error: "Geen toegang" });
-    }
 
     const updates = { ...req.body };
+    const normalizeArray = (v) =>
+      Array.isArray(v)
+        ? v
+        : typeof v === "string"
+        ? v.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
 
-    // ✅ filter arrays op toegestane waarden
-    if (Array.isArray(updates.specialties)) {
+    if (Array.isArray(updates.specialties))
       updates.specialties = updates.specialties.filter((s) => ALLOWED_SPECIALTIES.includes(s));
-    }
-    if (Array.isArray(updates.certifications)) {
-      updates.certifications = updates.certifications.filter((c) =>
-        ALLOWED_CERTIFICATIONS.includes(c)
-      );
-    }
-    if (Array.isArray(updates.languages)) {
+    if (Array.isArray(updates.certifications))
+      updates.certifications = updates.certifications.filter((c) => ALLOWED_CERTIFICATIONS.includes(c));
+    if (Array.isArray(updates.languages))
       updates.languages = updates.languages.filter((l) => ALLOWED_LANGUAGES.includes(l));
-    }
+
+    updates.categories = normalizeArray(updates.categories);
+    updates.specializations = normalizeArray(updates.specializations);
+    updates.regions = normalizeArray(updates.regions);
+    updates.recognitions = normalizeArray(updates.recognitions);
+    updates.memberships = normalizeArray(updates.memberships);
+    updates.languages = normalizeArray(updates.languages);
+
+    if (typeof updates.worksNationwide === "string")
+      updates.worksNationwide = updates.worksNationwide === "true";
 
     Object.assign(company, updates);
     await company.save();
-
     res.json({ ok: true, company });
   } catch (error) {
     console.error("❌ Fout bij bijwerken bedrijf:", error);
@@ -191,18 +183,14 @@ router.put("/:id", authMiddleware, async (req, res) => {
 });
 
 /* ============================================================
-   🗑️ Bedrijf verwijderen (alleen eigenaar)
+   🗑️ Bedrijf verwijderen
 ============================================================ */
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const company = await Company.findById(req.params.id);
-    if (!company) {
-      return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
-    }
-
-    if (company.owner.toString() !== req.user.id) {
+    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
+    if (company.owner.toString() !== req.user.id)
       return res.status(403).json({ ok: false, error: "Geen toegang" });
-    }
 
     await company.deleteOne();
     res.json({ ok: true, message: "Bedrijf verwijderd" });
