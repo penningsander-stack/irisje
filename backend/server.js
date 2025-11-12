@@ -1,14 +1,23 @@
 // backend/server.js
-require("./config/validateEnv");
-const { startupBanner } = require("./utils/loghelper");
+/**
+ * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
+ * Volledig case-correcte en .env-veilige versie.
+ */
 
+// 1️⃣ .env altijd eerst laden (voorkomt ontbrekende variabelen)
+require("dotenv").config();
+
+// 2️⃣ Vereiste configuratiecontrole (nu in lowercase-bestand)
+require("./config/validateenv");
+
+// 3️⃣ Basisimports
+const { startupBanner } = require("./utils/loghelper");
 const express = require("express");
 const mongoose = require("mongoose");
 const compression = require("compression");
 const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
 
 const { corsMiddleware, securityHeaders } = require("./config/security");
 const { addLog } = require("./utils/logger");
@@ -68,8 +77,7 @@ app.use("/api/seed", require("./routes/seed"));
 app.use("/api/importer", require("./routes/importer_places"));
 
 /* ============================================================
-   ✅ Sitemap-route (blijft boven fallback!)
-   Automatisch gegenereerde sitemap.xml met publieke pagina’s
+   ✅ Sitemap-route (moet boven fallback staan)
 ============================================================ */
 app.get("/sitemap.xml", require("./routes/sitemap"));
 
@@ -82,7 +90,7 @@ app.get("/api/test", (req, res) => {
 });
 
 /* ============================================================
-   🔍 Systeemcontrole – Controleer of alle routes werken
+   🔍 Systeemcontrole
 ============================================================ */
 app.get("/api/check", (req, res) => {
   res.json({
@@ -125,7 +133,7 @@ app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
 });
 
 /* ============================================================
-   🖼️ Extra route voor /img zodat default-logo.png zichtbaar is
+   🖼️ Extra route voor /img
 ============================================================ */
 app.use(
   "/img",
@@ -141,7 +149,7 @@ app.use(
 );
 
 /* ============================================================
-   ✅ Statische frontend-bestanden met cache-headers
+   ✅ Statische frontend-bestanden
 ============================================================ */
 const frontendPath = path.join(__dirname, "../frontend");
 app.use(
