@@ -1,19 +1,28 @@
 // frontend/sw.js
-/* 🌸 Irisje.nl – Service Worker v7 (compleet & stabiel)
+/* 🌸 Irisje.nl – Service Worker v8 (stabiel & geoptimaliseerd)
    Functies:
-   ✅ Cacht alleen veilige same-origin HTTP(S)-resources
+   ✅ Cache van essentiële bestanden (inclusief maskable icon)
    ✅ Offline fallback (offline.html)
    ✅ Automatische refresh bij nieuwe versies
    ✅ Melding aan gebruiker bij update
+   ✅ Minder console-logging in productie
 */
 
-const CACHE_NAME = "irisje-cache-v7";
+const CACHE_NAME = "irisje-cache-v8";
 const OFFLINE_URL = "/offline.html";
 const PRECACHE = [
   "/", "/index.html", OFFLINE_URL,
   "/style.css", "/manifest.json",
-  "/favicon.ico", "/icons/icon-192.png", "/icons/icon-512.png"
+  "/favicon.ico",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/maskable-512.png" // ✅ nieuw toegevoegd
 ];
+
+/* === Logging beperken buiten localhost === */
+if (self.location.hostname !== "localhost") {
+  console.log = () => {};
+}
 
 /* === INSTALL === */
 self.addEventListener("install", (event) => {
@@ -34,7 +43,7 @@ self.addEventListener("activate", (event) => {
     await Promise.all(keys.map(k => (k !== CACHE_NAME ? caches.delete(k) : null)));
     self.clients.claim();
 
-    // 🔄 Meld clients dat een nieuwe versie actief is
+    // 🔄 Nieuwe versie-melding aan clients
     const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const client of clientsList) {
       client.postMessage({ type: "NEW_VERSION" });
@@ -51,7 +60,7 @@ self.addEventListener("fetch", (event) => {
   const isHttp = url.protocol === "http:" || url.protocol === "https:";
   const isSameOrigin = url.origin === self.location.origin;
 
-  // Navigatieverzoeken → network-first met offline fallback
+  // 🧭 Navigatie: network-first met offline fallback
   if (req.mode === "navigate") {
     event.respondWith((async () => {
       try {
@@ -66,7 +75,7 @@ self.addEventListener("fetch", (event) => {
   // Alleen same-origin HTTP(S)
   if (!isHttp || !isSameOrigin) return;
 
-  // Cache-first voor statische bestanden
+  // 📦 Cache-first strategie voor statische bestanden
   event.respondWith((async () => {
     const cached = await caches.match(req);
     if (cached) return cached;
@@ -83,7 +92,7 @@ self.addEventListener("fetch", (event) => {
   })());
 });
 
-/* === Melding tonen bij nieuwe versie === */
+/* === Berichtverwerking (voor toekomstige uitbreidingen) === */
 self.addEventListener("message", (event) => {
-  // Kan worden uitgebreid als client iets terugstuurt
+  // eventueel uitbreiden met client-communicatie
 });
