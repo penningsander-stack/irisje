@@ -5,33 +5,57 @@
   document.addEventListener("DOMContentLoaded", initDashboard);
 
   async function initDashboard() {
-    console.log("📊 Dashboard gestart (v20251113)");
+    console.log("📊 Dashboard gestart (v20251113-final)");
 
     const email = localStorage.getItem("userEmail");
+    const role = localStorage.getItem("userRole");
+    const token = localStorage.getItem("token");
     let companyId = localStorage.getItem("companyId");
-
-    /* ============================================================
-       🟣 Beheerdersfallback (info@irisje.nl)
-    ============================================================ */
-    if (email === "info@irisje.nl" && !companyId) {
-      try {
-        const res = await fetch(`${API_BASE}/companies`);
-        const data = await res.json();
-        if (res.ok && data.items?.length) {
-          companyId = data.items[0]._id;
-          localStorage.setItem("companyId", companyId);
-          console.log("✅ Beheerder gekoppeld aan bedrijf:", companyId);
-        }
-      } catch (err) {
-        console.warn("⚠️ Geen bedrijf gevonden voor beheerder:", err);
-      }
-    }
 
     const $reqBody = byId("request-table-body");
     const $revBody = byId("review-table-body");
 
     /* ============================================================
-       🔔 Universele notificatie
+       🧠 1. SESSIEVALIDATIE
+    ============================================================ */
+    if (!token || !email) {
+      console.warn("⚠️ Geen geldige sessie — doorsturen naar login.html");
+      redirectToLogin("Je sessie is verlopen, log opnieuw in.");
+      return;
+    }
+
+    const isSessionValid = await verifySession(token);
+    if (!isSessionValid) {
+      redirectToLogin("Je sessie is verlopen, log opnieuw in.");
+      return;
+    }
+
+    /* ============================================================
+       🧠 2. ADMIN-DETECTIE & REDIRECT
+    ============================================================ */
+    const isAdmin =
+      role === "admin" ||
+      (email && email.toLowerCase() === "info@irisje.nl");
+
+    if (isAdmin) {
+      console.log("🛠️ Beheerder gedetecteerd → redirect naar admin.html");
+      showAdminRedirectNotice();
+      setTimeout(() => {
+        window.location.href = "admin.html";
+      }, 1200);
+      return;
+    }
+
+    /* ============================================================
+       🚪 3. LOGOUTKNOP
+    ============================================================ */
+    const logoutBtn = byId("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", logout);
+    }
+
+    /* ============================================================
+       🔔 4. NOTIFICATIE ELEMENT
     ============================================================ */
     const notif = document.createElement("div");
     notif.id = "notif";
@@ -53,8 +77,11 @@
       }, 2500);
     }
 
+    /* ============================================================
+       🏢 5. BEDRIJFSPROFIEL
+    ============================================================ */
     if (!companyId) {
-      console.warn("❌ Geen bedrijfId gevonden — inloggen vereist");
+      console.warn("❌ Geen companyId gevonden — opnieuw inloggen nodig.");
       if ($reqBody)
         $reqBody.innerHTML =
           "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
@@ -64,9 +91,6 @@
       return;
     }
 
-    /* ============================================================
-       🏢 Bedrijfsprofiel laden
-    ============================================================ */
     const form = byId("companyForm");
     const $specialtiesList = byId("companySpecialties");
     const $certificationsList = byId("companyCertifications");
@@ -87,9 +111,21 @@
 
         if (!companyRes) throw new Error("Bedrijf niet gevonden");
         fillCompanyForm(companyRes);
-        renderSelectOptions($specialtiesList, listRes.specialties, companyRes.specialties);
-        renderSelectOptions($certificationsList, listRes.certifications, companyRes.certifications);
-        renderSelectOptions($languagesList, listRes.languages, companyRes.languages);
+        renderSelectOptions(
+          $specialtiesList,
+          listRes.specialties,
+          companyRes.specialties
+        );
+        renderSelectOptions(
+          $certificationsList,
+          listRes.certifications,
+          companyRes.certifications
+        );
+        renderSelectOptions(
+          $languagesList,
+          listRes.languages,
+          companyRes.languages
+        );
       } catch (err) {
         console.error("❌ Fout bij laden bedrijfsprofiel:", err);
         showNotif("Kon bedrijfsprofiel niet laden", false);
@@ -133,9 +169,15 @@
           .filter(Boolean),
         availability: form.companyAvailability.value.trim(),
         worksNationwide: form.companyWorksNationwide.checked,
-        specialties: Array.from(form.companySpecialties.selectedOptions).map((o) => o.value),
-        certifications: Array.from(form.companyCertifications.selectedOptions).map((o) => o.value),
-        languages: Array.from(form.companyLanguages.selectedOptions).map((o) => o.value),
+        specialties: Array.from(form.companySpecialties.selectedOptions).map(
+          (o) => o.value
+        ),
+        certifications: Array.from(
+          form.companyCertifications.selectedOptions
+        ).map((o) => o.value),
+        languages: Array.from(form.companyLanguages.selectedOptions).map(
+          (o) => o.value
+        ),
       };
 
       try {
@@ -155,8 +197,10 @@
     await loadCompanyProfile();
 
     /* ============================================================
-       📬 AANVRAGEN LADEN
+       📬 6. AANVRAGEN & REVIEWS
     ============================================================ */
+    await Promise.all([loadRequests(), loadReviews()]);
+
     async function loadRequests() {
       try {
         const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
@@ -189,14 +233,17 @@
           return `<tr class="border-b border-gray-50 hover:bg-gray-50">
             <td class="p-3">${esc(r.name)}</td>
             <td class="p-3">${esc(r.email)}</td>
-            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
+            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(
+            r.message
+          )}</td>
             <td class="p-3">
               <select data-id="${r._id}" class="statusSelect border rounded px-2 py-1 text-sm">
                 ${options
                   .map(
-                    (opt) => `<option value="${opt}" ${
-                      r.status === opt ? "selected" : ""
-                    }>${opt}</option>`
+                    (opt) =>
+                      `<option value="${opt}" ${
+                        r.status === opt ? "selected" : ""
+                      }>${opt}</option>`
                   )
                   .join("")}
               </select>
@@ -232,9 +279,6 @@
       updateCharts();
     }
 
-    /* ============================================================
-       ⭐ REVIEWS LADEN
-    ============================================================ */
     async function loadReviews() {
       try {
         const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
@@ -265,7 +309,9 @@
           return `<tr class="border-b border-gray-50 hover:bg-gray-50">
             <td class="p-3">${esc(r.reviewerName || r.name || "Onbekend")}</td>
             <td class="p-3">${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
-            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
+            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(
+            r.message
+          )}</td>
             <td class="p-3 whitespace-nowrap">${datum}</td>
             <td class="p-3">${
               r.reported
@@ -279,7 +325,7 @@
     }
 
     /* ============================================================
-       📈 GRAFIEKEN
+       📊 7. GRAFIEKEN
     ============================================================ */
     function updateCharts() {
       const total = allRequests.length;
@@ -321,12 +367,10 @@
         options: { plugins: { legend: { position: "bottom" } } },
       });
     }
-
-    await Promise.all([loadRequests(), loadReviews()]);
   }
 
   /* ============================================================
-     🔧 HULPFUNCTIES
+     🧩 HULPFUNCTIES
   ============================================================ */
   function byId(id) {
     return document.getElementById(id);
@@ -339,5 +383,32 @@
     return String(v ?? "").replace(/[&<>"']/g, (s) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
     );
+  }
+  function showAdminRedirectNotice() {
+    const div = document.createElement("div");
+    div.className =
+      "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-6 py-4 rounded-xl shadow-lg text-center text-sm";
+    div.textContent = "Beheerdersdashboard wordt geopend...";
+    document.body.appendChild(div);
+  }
+  async function verifySession(token) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/verify`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+  function redirectToLogin(msg) {
+    alert(msg || "Log opnieuw in.");
+    localStorage.clear();
+    window.location.href = "login.html";
+  }
+  function logout() {
+    localStorage.clear();
+    alert("Je bent uitgelogd.");
+    window.location.href = "login.html";
   }
 })();
