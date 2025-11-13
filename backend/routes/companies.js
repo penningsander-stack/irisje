@@ -1,124 +1,210 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/company");
-const authMiddleware = require("../middleware/auth");
+
+const company = require("../models/company");
+const auth = require("../middleware/auth");
 
 /* ============================================================
-   🔹 Toegestane waarden
+   toegestane waarden
 ============================================================ */
-const ALLOWED_SPECIALTIES = [
-  "Arbeidsrecht", "Strafrecht", "Familierecht", "Huurrecht",
-  "Ondernemingsrecht", "Bestuursrecht", "Letselschade",
-  "Contractenrecht", "Vastgoedrecht", "Sociaal zekerheidsrecht", "Overig",
+const allowed_specialties = [
+  "Arbeidsrecht",
+  "Strafrecht",
+  "Familierecht",
+  "Huurrecht",
+  "Ondernemingsrecht",
+  "Bestuursrecht",
+  "Letselschade",
+  "Contractenrecht",
+  "Vastgoedrecht",
+  "Sociaal zekerheidsrecht",
+  "Overig",
 ];
 
-const ALLOWED_CERTIFICATIONS = [
-  "VCA", "ISO 9001", "Erkend Installateur", "BOVAG", "Techniek Nederland",
+const allowed_certifications = [
+  "VCA",
+  "ISO 9001",
+  "Erkend Installateur",
+  "BOVAG",
+  "Techniek Nederland",
 ];
 
-const ALLOWED_LANGUAGES = [
-  "Nederlands", "Engels", "Duits", "Frans", "Pools", "Turks", "Arabisch",
+const allowed_languages = [
+  "Nederlands",
+  "Engels",
+  "Duits",
+  "Frans",
+  "Pools",
+  "Turks",
+  "Arabisch",
 ];
+
+/* helper: altijd een array teruggeven */
+function ensure_array(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") {
+    return v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
 
 /* ============================================================
-   ✅ Alle bedrijven ophalen (openbaar)
+   alle bedrijven ophalen (openbaar)
 ============================================================ */
 router.get("/", async (req, res) => {
   try {
-    const companies = await Company.find().lean();
-    res.json({ ok: true, total: companies.length, items: companies });
-  } catch (error) {
-    console.error("❌ Fout bij ophalen bedrijven:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij ophalen bedrijven" });
+    const items = await company.find({}).lean();
+    res.json({ ok: true, total: items.length, items });
+  } catch (err) {
+    console.error("fout bij ophalen bedrijven:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij ophalen bedrijven" });
   }
 });
 
 /* ============================================================
-   🔍 Zoeken op categorie, stad, regio, specialisme, certificering
+   zoeken op categorie, stad, regio, specialisme, certificering
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
-    const { category = "", city = "", region = "", specialty = "", certification = "" } = req.query;
+    const {
+      category = "",
+      city = "",
+      region = "",
+      specialty = "",
+      certification = "",
+    } = req.query;
+
     const filters = {};
 
     if (category) filters.categories = { $regex: new RegExp(category, "i") };
     if (city) filters.city = { $regex: new RegExp(city, "i") };
     if (region) filters.regions = { $regex: new RegExp(region, "i") };
     if (specialty) filters.specialties = { $regex: new RegExp(specialty, "i") };
-    if (certification) filters.certifications = { $regex: new RegExp(certification, "i") };
+    if (certification)
+      filters.certifications = { $regex: new RegExp(certification, "i") };
 
-    const companies = await Company.find(filters)
+    const items = await company
+      .find(filters)
       .sort({ avgRating: -1, reviewCount: -1 })
       .lean();
 
-    res.json({ ok: true, items: companies });
-  } catch (error) {
-    console.error("❌ Fout bij zoeken bedrijven:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij zoeken bedrijven" });
+    res.json({ ok: true, items });
+  } catch (err) {
+    console.error("fout bij zoeken bedrijven:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij zoeken bedrijven" });
   }
 });
 
 /* ============================================================
-   ✅ Bedrijf ophalen via slug
+   bedrijf ophalen via slug
 ============================================================ */
 router.get("/slug/:slug", async (req, res) => {
   try {
-    const company = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
+    const item = await company.findOne({ slug: req.params.slug }).lean();
+    if (!item) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "bedrijf niet gevonden" });
+    }
 
-    // Frontend verwacht altijd arrays
-    [
-      "specialties", "regions", "certifications",
-      "recognitions", "memberships", "languages"
-    ].forEach((f) => {
-      if (!Array.isArray(company[f])) company[f] = [];
-    });
+    // frontend verwacht altijd arrays
+    ["specialties", "regions", "certifications", "recognitions", "memberships", "languages"].forEach(
+      (field) => {
+        if (!Array.isArray(item[field])) item[field] = [];
+      }
+    );
 
-    res.json(company);
-  } catch (error) {
-    console.error("❌ Fout bij ophalen bedrijf via slug:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij ophalen bedrijf" });
+    res.json(item);
+  } catch (err) {
+    console.error("fout bij ophalen bedrijf via slug:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij ophalen bedrijf" });
   }
 });
 
 /* ============================================================
-   🧩 Nieuw bedrijf aanmaken
+   bedrijf ophalen via id (nieuw, handig voor dashboard/admin)
 ============================================================ */
-router.post("/", authMiddleware, async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
+    const item = await company.findById(req.params.id).lean();
+    if (!item) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "bedrijf niet gevonden" });
+    }
+
+    ["specialties", "regions", "certifications", "recognitions", "memberships", "languages"].forEach(
+      (field) => {
+        if (!Array.isArray(item[field])) item[field] = [];
+      }
+    );
+
+    res.json(item);
+  } catch (err) {
+    console.error("fout bij ophalen bedrijf via id:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij ophalen bedrijf" });
+  }
+});
+
+/* ============================================================
+   nieuw bedrijf aanmaken
+============================================================ */
+router.post("/", auth, async (req, res) => {
+  try {
+    const body = req.body || {};
     const {
-      name, slug, tagline = "", description = "",
-      categories = [], specialties = [], regions = [],
-      worksNationwide = false, certifications = [],
-      recognitions = [], memberships = [], languages = [],
-      availability = "", city = "", phone = "", email = "",
+      name,
+      slug,
+      tagline = "",
+      description = "",
+      categories = [],
+      specialties = [],
+      regions = [],
+      worksNationwide = false,
+      certifications = [],
+      recognitions = [],
+      memberships = [],
+      languages = [],
+      availability = "",
+      city = "",
+      phone = "",
+      email = "",
       website = "",
-    } = req.body || {};
+    } = body;
 
-    if (!name || !slug)
-      return res.status(400).json({ ok: false, error: "Naam en slug zijn verplicht" });
+    if (!name || !slug) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "naam en slug zijn verplicht" });
+    }
 
-    const validSpecialties = (Array.isArray(specialties) ? specialties : [])
-      .filter((s) => ALLOWED_SPECIALTIES.includes(s));
-    const validCertifications = (Array.isArray(certifications) ? certifications : [])
-      .filter((c) => ALLOWED_CERTIFICATIONS.includes(c));
-    const validLanguages = (Array.isArray(languages) ? languages : [])
-      .filter((l) => ALLOWED_LANGUAGES.includes(l));
+    const valid_specialties = ensure_array(specialties).filter((s) =>
+      allowed_specialties.includes(s)
+    );
+    const valid_certifications = ensure_array(certifications).filter((c) =>
+      allowed_certifications.includes(c)
+    );
+    const valid_languages = ensure_array(languages).filter((l) =>
+      allowed_languages.includes(l)
+    );
 
-    const company = new Company({
+    const doc = new company({
       name,
       slug,
       tagline,
       description,
-      categories: Array.isArray(categories) ? categories : [],
-      specialties: validSpecialties,
-      regions: Array.isArray(regions) ? regions : [],
+      categories: ensure_array(categories),
+      specialties: valid_specialties,
+      regions: ensure_array(regions),
       worksNationwide: !!worksNationwide,
-      certifications: validCertifications,
-      recognitions: Array.isArray(recognitions) ? recognitions : [],
-      memberships: Array.isArray(memberships) ? memberships : [],
-      languages: validLanguages,
+      certifications: valid_certifications,
+      recognitions: ensure_array(recognitions),
+      memberships: ensure_array(memberships),
+      languages: valid_languages,
       availability,
       city,
       phone,
@@ -127,88 +213,110 @@ router.post("/", authMiddleware, async (req, res) => {
       owner: req.user.id,
     });
 
-    await company.save();
-    res.json({ ok: true, company });
-  } catch (error) {
-    console.error("❌ Fout bij aanmaken bedrijf:", error);
-    if (error.code === 11000)
-      return res.status(400).json({ ok: false, error: "Slug bestaat al, kies een andere." });
-
-    res.status(500).json({ ok: false, error: "Serverfout bij aanmaken bedrijf" });
+    await doc.save();
+    res.json({ ok: true, company: doc });
+  } catch (err) {
+    console.error("fout bij aanmaken bedrijf:", err);
+    if (err.code === 11000) {
+      return res.status(400).json({
+        ok: false,
+        error: "slug bestaat al, kies een andere",
+      });
+    }
+    res.status(500).json({ ok: false, error: "serverfout bij aanmaken bedrijf" });
   }
 });
 
 /* ============================================================
-   ✏️ Bedrijf bijwerken (alleen eigenaar)
+   bedrijf bijwerken (alleen eigenaar)
 ============================================================ */
-router.put("/:id", authMiddleware, async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
-    const company = await Company.findById(req.params.id);
-    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
-    if (company.owner.toString() !== req.user.id)
-      return res.status(403).json({ ok: false, error: "Geen toegang" });
+    const doc = await company.findById(req.params.id);
+    if (!doc) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "bedrijf niet gevonden" });
+    }
 
-    const updates = { ...req.body };
-    const normalizeArray = (v) =>
-      Array.isArray(v)
-        ? v
-        : typeof v === "string"
-        ? v.split(",").map((s) => s.trim()).filter(Boolean)
-        : [];
+    if (doc.owner.toString() !== req.user.id) {
+      return res.status(403).json({ ok: false, error: "geen toegang" });
+    }
 
-    if (Array.isArray(updates.specialties))
-      updates.specialties = updates.specialties.filter((s) => ALLOWED_SPECIALTIES.includes(s));
-    if (Array.isArray(updates.certifications))
-      updates.certifications = updates.certifications.filter((c) => ALLOWED_CERTIFICATIONS.includes(c));
-    if (Array.isArray(updates.languages))
-      updates.languages = updates.languages.filter((l) => ALLOWED_LANGUAGES.includes(l));
+    const updates = { ...(req.body || {}) };
 
-    updates.categories = normalizeArray(updates.categories);
-    updates.specializations = normalizeArray(updates.specializations);
-    updates.regions = normalizeArray(updates.regions);
-    updates.recognitions = normalizeArray(updates.recognitions);
-    updates.memberships = normalizeArray(updates.memberships);
-    updates.languages = normalizeArray(updates.languages);
+    if (updates.specialties) {
+      updates.specialties = ensure_array(updates.specialties).filter((s) =>
+        allowed_specialties.includes(s)
+      );
+    }
+    if (updates.certifications) {
+      updates.certifications = ensure_array(updates.certifications).filter((c) =>
+        allowed_certifications.includes(c)
+      );
+    }
+    if (updates.languages) {
+      updates.languages = ensure_array(updates.languages).filter((l) =>
+        allowed_languages.includes(l)
+      );
+    }
 
-    if (typeof updates.worksNationwide === "string")
+    if (updates.categories) updates.categories = ensure_array(updates.categories);
+    if (updates.specializations)
+      updates.specializations = ensure_array(updates.specializations);
+    if (updates.regions) updates.regions = ensure_array(updates.regions);
+    if (updates.recognitions)
+      updates.recognitions = ensure_array(updates.recognitions);
+    if (updates.memberships)
+      updates.memberships = ensure_array(updates.memberships);
+
+    if (typeof updates.worksNationwide === "string") {
       updates.worksNationwide = updates.worksNationwide === "true";
+    }
 
-    Object.assign(company, updates);
-    await company.save();
-    res.json({ ok: true, company });
-  } catch (error) {
-    console.error("❌ Fout bij bijwerken bedrijf:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij bijwerken bedrijf" });
+    Object.assign(doc, updates);
+    await doc.save();
+
+    res.json({ ok: true, company: doc });
+  } catch (err) {
+    console.error("fout bij bijwerken bedrijf:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij bijwerken bedrijf" });
   }
 });
 
 /* ============================================================
-   🗑️ Bedrijf verwijderen
+   bedrijf verwijderen
 ============================================================ */
-router.delete("/:id", authMiddleware, async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const company = await Company.findById(req.params.id);
-    if (!company) return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
-    if (company.owner.toString() !== req.user.id)
-      return res.status(403).json({ ok: false, error: "Geen toegang" });
+    const doc = await company.findById(req.params.id);
+    if (!doc) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "bedrijf niet gevonden" });
+    }
 
-    await company.deleteOne();
-    res.json({ ok: true, message: "Bedrijf verwijderd" });
-  } catch (error) {
-    console.error("❌ Fout bij verwijderen bedrijf:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij verwijderen bedrijf" });
+    if (doc.owner.toString() !== req.user.id) {
+      return res.status(403).json({ ok: false, error: "geen toegang" });
+    }
+
+    await doc.deleteOne();
+    res.json({ ok: true, message: "bedrijf verwijderd" });
+  } catch (err) {
+    console.error("fout bij verwijderen bedrijf:", err);
+    res.status(500).json({ ok: false, error: "serverfout bij verwijderen bedrijf" });
   }
 });
 
 /* ============================================================
-   📋 Endpoint voor toegestane waarden
+   lijsten met toegestane waarden
 ============================================================ */
 router.get("/lists", (req, res) => {
   res.json({
     ok: true,
-    specialties: ALLOWED_SPECIALTIES,
-    certifications: ALLOWED_CERTIFICATIONS,
-    languages: ALLOWED_LANGUAGES,
+    specialties: allowed_specialties,
+    certifications: allowed_certifications,
+    languages: allowed_languages,
   });
 });
 
