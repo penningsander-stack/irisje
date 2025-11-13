@@ -2,88 +2,100 @@
 const express = require("express");
 const router = express.Router();
 
-const claimrequest = require("../models/claimrequest");
-const company = require("../models/company");
+const ClaimRequest = require("../models/claimrequest");
+const Company = require("../models/company");
+
+/**
+ * irisje.nl – claims routes
+ * volledig gesynchroniseerd met claimrequest.js (camelCase)
+ * - claim aanmaken
+ * - claim overzicht
+ * - status wijzigen
+ */
 
 /* ============================================================
    POST /api/claims
-   Nieuw claimverzoek indienen door een bedrijf
+   Nieuw claimverzoek indienen
 ============================================================ */
 router.post("/", async (req, res) => {
   try {
     const {
-      companyid,
-      contactname,
-      contactemail,
-      contactphone,
-      kvknumber,
-      methodrequested
+      companyId,
+      contactName,
+      contactEmail,
+      contactPhone,
+      kvkNumber,
+      methodRequested
     } = req.body;
 
-    if (!companyid || !contactname || !contactemail) {
+    // verplichte velden
+    if (!companyId || !contactName || !contactEmail) {
       return res
         .status(400)
         .json({ ok: false, error: "verplichte velden ontbreken" });
     }
 
-    const exists = await company.findById(companyid);
+    // controleer of bedrijf bestaat
+    const exists = await Company.findById(companyId);
     if (!exists) {
       return res.status(404).json({ ok: false, error: "bedrijf niet gevonden" });
     }
 
-    const claim = await claimrequest.create({
-      companyid,
-      contactname,
-      contactemail,
-      contactphone,
-      kvknumber: kvknumber || "",
-      methodrequested: methodrequested || "email",
+    // claim opslaan
+    const claim = await ClaimRequest.create({
+      companyId,
+      contactName,
+      contactEmail,
+      contactPhone: contactPhone || "",
+      kvkNumber: kvkNumber || "",
+      methodRequested: methodRequested || "email",
       status: "pending"
     });
 
-    res.json({ ok: true, claimid: claim._id });
+    return res.json({ ok: true, claimId: claim._id });
   } catch (err) {
     console.error("❌ fout bij claim-aanmaken:", err);
-    res.status(500).json({ ok: false, error: "serverfout bij claim-aanmaken" });
+    return res.status(500).json({ ok: false, error: "serverfout bij claim-aanmaken" });
   }
 });
 
 /* ============================================================
    GET /api/claims/all
-   Alle claimverzoeken voor beheerder
+   Overzicht van alle claims
 ============================================================ */
 router.get("/all", async (req, res) => {
   try {
-    const claims = await claimrequest
-      .find({})
-      .populate("companyid", "name city")
+    const claims = await ClaimRequest.find({})
+      .populate("companyId", "name city")
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json({
+    return res.json({
       ok: true,
       total: claims.length,
       items: claims
     });
   } catch (err) {
     console.error("❌ fout bij claim-opvragen:", err);
-    res.status(500).json({ ok: false, error: "serverfout bij claim-opvragen" });
+    return res.status(500).json({ ok: false, error: "serverfout bij claim-opvragen" });
   }
 });
 
 /* ============================================================
    PUT /api/claims/status/:id
-   Admin verandert status (pending → verified/rejected)
+   claim-status wijzigen
 ============================================================ */
 router.put("/status/:id", async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (!["pending", "verified", "rejected", "cancelled"].includes(status)) {
+    // toegestane waardes uit model
+    const allowed = ["pending", "verified", "rejected", "cancelled"];
+    if (!allowed.includes(status)) {
       return res.status(400).json({ ok: false, error: "ongeldige status" });
     }
 
-    const updated = await claimrequest.findByIdAndUpdate(
+    const updated = await ClaimRequest.findByIdAndUpdate(
       req.params.id,
       { status },
       { new: true }
@@ -93,10 +105,10 @@ router.put("/status/:id", async (req, res) => {
       return res.status(404).json({ ok: false, error: "claim niet gevonden" });
     }
 
-    res.json({ ok: true, item: updated });
+    return res.json({ ok: true, item: updated });
   } catch (err) {
     console.error("❌ fout bij status-update:", err);
-    res.status(500).json({ ok: false, error: "serverfout bij status-update" });
+    return res.status(500).json({ ok: false, error: "serverfout bij status-update" });
   }
 });
 
