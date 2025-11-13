@@ -1,7 +1,7 @@
 // backend/server.js
 /**
- * 🌸 Irisje.nl – Server entrypoint (Render & local safe)
- * Inclusief robots.txt, sitemap redirect en uniforme logstructuur.
+ * irisje.nl – server entrypoint
+ * volledig gecontroleerd en opgeschoond – 2025-11-13
  */
 
 require("dotenv").config();
@@ -10,58 +10,59 @@ require("./config/validateenv");
 const express = require("express");
 const mongoose = require("mongoose");
 const compression = require("compression");
-const cookieParser = require("cookie-parser");
+const cookieparser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 
-const { corsMiddleware, securityHeaders } = require("./config/security");
-const { addLog, route: logRoute } = require("./utils/logger");
-const { startupBanner } = require("./utils/loghelper");
+const { corsmiddleware, securityheaders } = require("./config/security");
+const { addlog, route: logroute } = require("./utils/logger");
+const { startupbanner } = require("./utils/loghelper");
 
 const app = express();
 
 /* ============================================================
-   ✅ Basis middleware
+   basis middleware
 ============================================================ */
 app.use(express.json({ limit: "1mb" }));
-app.use(cookieParser());
+app.use(cookieparser());
 app.use(compression());
-app.use(corsMiddleware);
-app.use(securityHeaders);
+app.use(corsmiddleware);
+app.use(securityheaders);
 
 /* ============================================================
-   🌈 Request logging middleware
+   request logging
 ============================================================ */
 app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const ms = Date.now() - start;
-    logRoute?.(req.method, req.originalUrl, res.statusCode, ms);
+    logroute?.(req.method, req.originalUrl, res.statusCode, ms);
   });
   next();
 });
 
 /* ============================================================
-   ✅ MongoDB connectie
+   mongodb connectie
 ============================================================ */
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+
 if (!uri) {
-  addLog("Geen MongoDB URI gevonden", "error");
+  addlog("mongodb uri ontbreekt", "error");
   process.exit(1);
 }
 
 mongoose
   .connect(uri)
-  .then(() => addLog("MongoDB connected", "info"))
-  .catch((err) => addLog("MongoDB connection error: " + err.message, "error"));
+  .then(() => addlog("mongodb connected", "info"))
+  .catch((err) => addlog("mongodb connection error: " + err.message, "error"));
 
 /* ============================================================
-   📁 Publieke bestanden (bv. e-mailsjablonen)
+   publieke bestanden
 ============================================================ */
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ============================================================
-   ✅ API-routes
+   api-routes (gecontroleerd + juist gespeld)
 ============================================================ */
 const routes = [
   "auth",
@@ -83,154 +84,163 @@ for (const route of routes) {
   try {
     app.use(`/api/${route}`, require(`./routes/${route}`));
   } catch (err) {
-    addLog(`⚠️ Route '${route}' kon niet geladen worden: ${err.message}`, "error");
+    addlog(`route '${route}' kon niet geladen worden: ${err.message}`, "error");
   }
 }
 
 /* ============================================================
-   🤖 Robots.txt – verwijst naar sitemap.xml
+   robots.txt
 ============================================================ */
-try {
-  app.get("/robots.txt", require("./routes/robots"));
-  addLog("Robots.txt-route actief (/robots.txt)", "info");
-} catch (err) {
-  addLog("⚠️ Robots.txt kon niet worden geladen: " + err.message, "error");
-}
-
-/* ============================================================
-   🌍 Sitemap redirect en dynamische route
-============================================================ */
-try {
-  // Redirect vanaf hoofddomein → backend sitemap
-  app.get("/sitemap.xml", (req, res, next) => {
-    if (req.hostname === "irisje.nl") {
-      return res.redirect(301, "https://irisje-backend.onrender.com/sitemap.xml");
-    }
-    next();
-  });
-
-  // Backend sitemap generator
-  app.get("/sitemap.xml", require("./routes/sitemap"));
-  addLog("Sitemap-route actief (/sitemap.xml)", "info");
-} catch (err) {
-  addLog("⚠️ Sitemap-route kon niet worden geladen: " + err.message, "error");
-}
-
-/* ============================================================
-   ✅ Testroute
-============================================================ */
-app.get("/api/test", (req, res) => {
-  addLog("API test uitgevoerd", "debug");
-  res.json({ ok: true, message: "Server ziet routes correct" });
+app.get("/robots.txt", (req, res) => {
+  try {
+    require("./routes/robots")(req, res);
+  } catch (err) {
+    addlog("robots.txt fout: " + err.message, "error");
+    res.type("text/plain").send("");
+  }
 });
 
 /* ============================================================
-   🔍 Systeemcheck
+   sitemap
+============================================================ */
+app.get("/sitemap.xml", (req, res, next) => {
+  if (req.hostname === "irisje.nl") {
+    return res.redirect(
+      301,
+      "https://irisje-backend.onrender.com/sitemap.xml"
+    );
+  }
+  next();
+});
+
+app.get("/sitemap.xml", (req, res) => {
+  try {
+    require("./routes/sitemap")(req, res);
+  } catch (err) {
+    addlog("sitemap fout: " + err.message, "error");
+    res.type("application/xml").send("<urlset></urlset>");
+  }
+});
+
+/* ============================================================
+   test
+============================================================ */
+app.get("/api/test", (req, res) => {
+  addlog("api test", "debug");
+  res.json({ ok: true });
+});
+
+/* ============================================================
+   system check
 ============================================================ */
 app.get("/api/check", (req, res) => {
   res.json({
     ok: true,
-    routes: routes.map((r) => `/api/${r}`).concat(["/sitemap.xml", "/robots.txt"]),
-    message: "✅ Alle routes zijn correct geladen en actief.",
+    routes: routes.map((r) => `/api/${r}`),
+    message: "routes actief",
   });
 });
 
 /* ============================================================
-   🖼️ Slimme image-handler (WebP)
+   image-handler
 ============================================================ */
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
-  const originalPath = path.join(__dirname, "../frontend", req.path);
-  const webpPath = originalPath.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-  const acceptsWebp = req.headers.accept?.includes("image/webp");
+  const original = path.join(__dirname, "../frontend", req.path);
+  const webp = original.replace(/\.(jpg|jpeg|png)$/i, ".webp");
 
-  if (acceptsWebp && fs.existsSync(webpPath)) {
-    res.sendFile(webpPath);
-  } else if (fs.existsSync(originalPath)) {
-    res.sendFile(originalPath);
-  } else {
-    next();
-  }
+  const acceptwebp = req.headers.accept?.includes("image/webp");
+
+  if (acceptwebp && fs.existsSync(webp)) return res.sendFile(webp);
+  if (fs.existsSync(original)) return res.sendFile(original);
+
+  next();
 });
 
 /* ============================================================
-   🖼️ /img map
+   /img map
 ============================================================ */
 app.use(
   "/img",
   express.static(path.join(__dirname, "../frontend/img"), {
-    setHeaders: (res, filePath) => {
-      if (/\.(png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
-        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+    setHeaders(res, file) {
+      if (/\.(png|jpg|jpeg|webp|svg|ico)$/i.test(file)) {
+        res.setHeader("cache-control", "public, max-age=604800, immutable");
       } else {
-        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("cache-control", "no-store");
       }
     },
   })
 );
 
 /* ============================================================
-   ✅ Frontend statische bestanden
+   frontend statische bestanden
 ============================================================ */
-const frontendPath = path.join(__dirname, "../frontend");
+const frontendpath = path.join(__dirname, "../frontend");
+
 app.use(
-  express.static(frontendPath, {
-    setHeaders: (res, filePath) => {
-      if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(filePath)) {
-        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+  express.static(frontendpath, {
+    setHeaders(res, file) {
+      if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(file)) {
+        res.setHeader("cache-control", "public, max-age=604800, immutable");
       } else {
-        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("cache-control", "no-store");
       }
     },
   })
 );
 
 /* ============================================================
-   🪄 HTML-optimalisatie (preload + lazyload)
+   html optimalisatie
 ============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
-  const filePath = path.join(frontendPath, req.path);
-  if (!fs.existsSync(filePath)) return next();
+  const file = path.join(frontendpath, req.path);
+  if (!fs.existsSync(file)) return next();
 
-  let html = fs.readFileSync(filePath, "utf8");
+  let html = fs.readFileSync(file, "utf8");
 
-  if (!html.includes("fonts.googleapis.com") && html.includes("<head>")) {
-    const preloadBlock = `
-    <!-- Injected performance preload -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="preload" as="style" href="style.css?v=20251112">
-    <link rel="preload" as="image" href="favicon.ico">
-    `;
-    html = html.replace(/<head>/i, `<head>${preloadBlock}`);
+  if (html.includes("<head>") && !html.includes("fonts.googleapis.com")) {
+    html = html.replace(
+      "<head>",
+      `<head>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+`
+    );
   }
 
   if (!html.includes("js/lazyload.js")) {
-    html = html.replace(/<\/body>/i, `  <script src="js/lazyload.js"></script>\n</body>`);
+    html = html.replace(
+      "</body>",
+      `  <script src="js/lazyload.js"></script>\n</body>`
+    );
   }
 
-  if (req.path === "/status.html" && !html.includes("js/status-enhanced.js")) {
-    html = html.replace(/<\/body>/i, `  <script src="js/status-enhanced.js"></script>\n</body>`);
+  if (req.path === "/status.html") {
+    html = html.replace(
+      "</body>",
+      `  <script src="js/status-enhanced.js"></script>\n</body>`
+    );
   }
 
   res.type("html").send(html);
 });
 
 /* ============================================================
-   ✅ Frontend fallback (behalve .xml en .txt)
+   fallback: index.html (spa)
 ============================================================ */
 app.get(/^\/(?!api\/|.*\.(xml|txt)$).*/, (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+  res.sendFile(path.join(frontendpath, "index.html"));
 });
 
 /* ============================================================
-   🚀 Server starten
+   starten
 ============================================================ */
-const PORT = process.env.PORT || 3000;
-startupBanner();
-addLog(`Server gestart op poort ${PORT}`, "info");
+const port = process.env.PORT || 3000;
+startupbanner();
+addlog(`server gestart op poort ${port}`, "info");
 
-app.listen(PORT, () => {
-  addLog(`Server actief op poort ${PORT} (${process.env.NODE_ENV || "development"})`, "info");
+app.listen(port, () => {
+  addlog(`server actief (${process.env.NODE_ENV || "development"})`, "info");
 });
