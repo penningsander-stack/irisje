@@ -1,46 +1,91 @@
 // backend/routes/claims.js
 const express = require("express");
 const router = express.Router();
-const ClaimRequest = require("../models/claimrequest"); // ✅ juiste bestandsnaam in kleine letters
-const Company = require("../models/company"); // ✅ idem
 
-// ✅ Nieuw claimverzoek aanmaken
+const claimrequest = require("../models/claimrequest");
+const company = require("../models/company");
+
+/* ============================================================
+   POST /api/claims
+   Nieuw claimverzoek indienen door een bedrijf
+============================================================ */
 router.post("/", async (req, res) => {
   try {
-    const { name, email, phone, companyId } = req.body;
-    if (!companyId || !email || !name) {
-      return res.status(400).json({ error: "Ontbrekende velden in claimverzoek" });
+    const { contactname, contactemail, contactphone, message, companyid } = req.body;
+
+    if (!companyid || !contactname || !contactemail) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "Verplichte velden ontbreken." });
     }
 
-    const claim = new ClaimRequest({
-      name,
-      email,
-      phone,
-      company: companyId,
-      createdAt: new Date(),
+    const exists = await company.findById(companyid);
+    if (!exists) {
+      return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden." });
+    }
+
+    const claim = await claimrequest.create({
+      companyid,
+      contactname,
+      contactemail,
+      contactphone,
+      message,
+      status: "pending",
+      createdAt: new Date()
     });
 
-    await claim.save();
-
-    res.json({ ok: true, message: "Claim succesvol verzonden", claimId: claim._id });
-  } catch (error) {
-    console.error("❌ Fout bij claimverzoek:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij claimverzoek" });
+    res.json({ ok: true, claimid: claim._id });
+  } catch (err) {
+    console.error("❌ Fout bij claim-aanmaken:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij claim-aanmaken." });
   }
 });
 
-// ✅ Alle claims ophalen (alleen voor beheerder)
-router.get("/", async (req, res) => {
+/* ============================================================
+   GET /api/claims/all
+   Alle claimverzoeken voor beheerder
+============================================================ */
+router.get("/all", async (req, res) => {
   try {
-    const claims = await ClaimRequest.find()
-      .populate("company", "name city")
+    const claims = await claimrequest
+      .find({})
+      .populate("companyid", "name city")
       .sort({ createdAt: -1 })
       .lean();
 
-    res.json({ ok: true, total: claims.length, items: claims });
-  } catch (error) {
-    console.error("❌ Fout bij ophalen claims:", error);
-    res.status(500).json({ ok: false, error: "Serverfout bij ophalen claims" });
+    res.json(claims);
+  } catch (err) {
+    console.error("❌ Fout bij claim-opvragen:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij claim-opvragen." });
+  }
+});
+
+/* ============================================================
+   PUT /api/claims/status/:id
+   Admin verandert status (pending → verified/rejected)
+============================================================ */
+router.put("/status/:id", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["pending", "verified", "rejected"].includes(status)) {
+      return res.status(400).json({ ok: false, error: "Ongeldige statuswaarde." });
+    }
+
+    const updated = await claimrequest.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ ok: false, error: "Claim niet gevonden." });
+    }
+
+    res.json({ ok: true, claim: updated });
+  } catch (err) {
+    console.error("❌ Fout bij status-update:", err);
+    res.status(500).json({ ok: false, error: "Serverfout bij status-update." });
   }
 });
 
