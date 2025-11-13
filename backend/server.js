@@ -1,3 +1,4 @@
+// backend/server.js
 /**
  * irisje.nl – server entrypoint
  * volledig gecontroleerd en opgeschoond – 2025-11-13
@@ -9,13 +10,13 @@ require("./config/validateenv");
 const express = require("express");
 const mongoose = require("mongoose");
 const compression = require("compression");
-const cookieparser = require("cookie-parser");
+const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 
-const { corsemiddleware, securityheaders } = require("./config/security");
-const { addlog, route: logroute } = require("./utils/logger");
-const { startupbanner } = require("./utils/loghelper");
+const { corsMiddleware, securityHeaders } = require("./config/security");
+const { addLog, route: logRoute } = require("./utils/logger");
+const { startupBanner } = require("./utils/loghelper");
 
 const app = express();
 
@@ -23,10 +24,10 @@ const app = express();
    basis middleware
 ============================================================ */
 app.use(express.json({ limit: "1mb" }));
-app.use(cookieparser());
+app.use(cookieParser());
 app.use(compression());
-app.use(corsemiddleware);
-app.use(securityheaders);
+app.use(corsMiddleware);
+app.use(securityHeaders);
 
 /* ============================================================
    request logging
@@ -35,7 +36,7 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const ms = Date.now() - start;
-    logroute?.(req.method, req.originalUrl, res.statusCode, ms);
+    logRoute?.(req.method, req.originalUrl, res.statusCode, ms);
   });
   next();
 });
@@ -46,14 +47,14 @@ app.use((req, res, next) => {
 const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 if (!uri) {
-  addlog("mongodb uri ontbreekt", "error");
+  addLog("mongodb uri ontbreekt", "error");
   process.exit(1);
 }
 
 mongoose
   .connect(uri)
-  .then(() => addlog("mongodb connected", "info"))
-  .catch((err) => addlog("mongodb connection error: " + err.message, "error"));
+  .then(() => addLog("mongodb connected", "info"))
+  .catch((err) => addLog("mongodb connection error: " + err.message, "error"));
 
 /* ============================================================
    publieke bestanden
@@ -83,7 +84,7 @@ for (const route of routes) {
   try {
     app.use(`/api/${route}`, require(`./routes/${route}`));
   } catch (err) {
-    addlog(`route '${route}' kon niet geladen worden: ${err.message}`, "error");
+    addLog(`route '${route}' kon niet geladen worden: ${err.message}`, "error");
   }
 }
 
@@ -94,7 +95,7 @@ app.get("/robots.txt", (req, res) => {
   try {
     require("./routes/robots")(req, res);
   } catch (err) {
-    addlog("robots.txt fout: " + err.message, "error");
+    addLog("robots.txt fout: " + err.message, "error");
     res.type("text/plain").send("");
   }
 });
@@ -102,7 +103,6 @@ app.get("/robots.txt", (req, res) => {
 /* ============================================================
    sitemap (1 consistente handler, geen dubbele mapping!)
 ============================================================ */
-
 app.get("/sitemap.xml", (req, res) => {
   try {
     // redirect alleen wanneer frontend wordt bezocht
@@ -115,9 +115,8 @@ app.get("/sitemap.xml", (req, res) => {
 
     // backend sitemap generator
     require("./routes/sitemap")(req, res);
-
   } catch (err) {
-    addlog("sitemap fout: " + err.message, "error");
+    addLog("sitemap fout: " + err.message, "error");
     res.type("application/xml").send("<urlset></urlset>");
   }
 });
@@ -126,7 +125,7 @@ app.get("/sitemap.xml", (req, res) => {
    test
 ============================================================ */
 app.get("/api/test", (req, res) => {
-  addlog("api test", "debug");
+  addLog("api test", "debug");
   res.json({ ok: true });
 });
 
@@ -147,9 +146,9 @@ app.get("/api/check", (req, res) => {
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const original = path.join(__dirname, "../frontend", req.path);
   const webp = original.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-  const acceptwebp = req.headers.accept?.includes("image/webp");
+  const acceptWebp = req.headers.accept?.includes("image/webp");
 
-  if (acceptwebp && fs.existsSync(webp)) return res.sendFile(webp);
+  if (acceptWebp && fs.existsSync(webp)) return res.sendFile(webp);
   if (fs.existsSync(original)) return res.sendFile(original);
 
   next();
@@ -174,10 +173,10 @@ app.use(
 /* ============================================================
    frontend statische bestanden
 ============================================================ */
-const frontendpath = path.join(__dirname, "../frontend");
+const frontendPath = path.join(__dirname, "../frontend");
 
 app.use(
-  express.static(frontendpath, {
+  express.static(frontendPath, {
     setHeaders(res, file) {
       if (/\.(css|js|png|jpg|jpeg|webp|svg|ico)$/i.test(file)) {
         res.setHeader("cache-control", "public, max-age=604800, immutable");
@@ -192,7 +191,7 @@ app.use(
    html optimalisatie
 ============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
-  const file = path.join(frontendpath, req.path);
+  const file = path.join(frontendPath, req.path);
   if (!fs.existsSync(file)) return next();
 
   let html = fs.readFileSync(file, "utf8");
@@ -230,16 +229,16 @@ app.use(/.*\.html$/, (req, res, next) => {
    fallback: index.html (spa)
 ============================================================ */
 app.get(/^\/(?!api\/|.*\.(xml|txt)$).*/, (req, res) => {
-  res.sendFile(path.join(frontendpath, "index.html"));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 /* ============================================================
    starten
 ============================================================ */
 const port = process.env.PORT || 3000;
-startupbanner();
-addlog(`server gestart op poort ${port}`, "info");
+startupBanner();
+addLog(`server gestart op poort ${port}`, "info");
 
 app.listen(port, () => {
-  addlog(`server actief (${process.env.NODE_ENV || "development"})`, "info");
+  addLog(`server actief (${process.env.NODE_ENV || "development"})`, "info");
 });
