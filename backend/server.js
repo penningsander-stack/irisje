@@ -101,11 +101,10 @@ app.get("/robots.txt", (req, res) => {
 });
 
 /* ============================================================
-   sitemap (1 consistente handler, geen dubbele mapping!)
+   sitemap
 ============================================================ */
 app.get("/sitemap.xml", (req, res) => {
   try {
-    // redirect alleen wanneer frontend wordt bezocht
     if (req.hostname === "irisje.nl") {
       return res.redirect(
         301,
@@ -113,7 +112,6 @@ app.get("/sitemap.xml", (req, res) => {
       );
     }
 
-    // backend sitemap generator
     require("./routes/sitemap")(req, res);
   } catch (err) {
     addLog("sitemap fout: " + err.message, "error");
