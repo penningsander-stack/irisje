@@ -1,4 +1,3 @@
-// backend/server.js
 /**
  * irisje.nl – server entrypoint
  * volledig gecontroleerd en opgeschoond – 2025-11-13
@@ -14,7 +13,7 @@ const cookieparser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 
-const { corsmiddleware, securityheaders } = require("./config/security");
+const { corsemiddleware, securityheaders } = require("./config/security");
 const { addlog, route: logroute } = require("./utils/logger");
 const { startupbanner } = require("./utils/loghelper");
 
@@ -26,7 +25,7 @@ const app = express();
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieparser());
 app.use(compression());
-app.use(corsmiddleware);
+app.use(corsemiddleware);
 app.use(securityheaders);
 
 /* ============================================================
@@ -101,21 +100,22 @@ app.get("/robots.txt", (req, res) => {
 });
 
 /* ============================================================
-   sitemap
+   sitemap (1 consistente handler, geen dubbele mapping!)
 ============================================================ */
-app.get("/sitemap.xml", (req, res, next) => {
-  if (req.hostname === "irisje.nl") {
-    return res.redirect(
-      301,
-      "https://irisje-backend.onrender.com/sitemap.xml"
-    );
-  }
-  next();
-});
 
 app.get("/sitemap.xml", (req, res) => {
   try {
+    // redirect alleen wanneer frontend wordt bezocht
+    if (req.hostname === "irisje.nl") {
+      return res.redirect(
+        301,
+        "https://irisje-backend.onrender.com/sitemap.xml"
+      );
+    }
+
+    // backend sitemap generator
     require("./routes/sitemap")(req, res);
+
   } catch (err) {
     addlog("sitemap fout: " + err.message, "error");
     res.type("application/xml").send("<urlset></urlset>");
@@ -147,7 +147,6 @@ app.get("/api/check", (req, res) => {
 app.get(/\.(jpg|jpeg|png)$/i, (req, res, next) => {
   const original = path.join(__dirname, "../frontend", req.path);
   const webp = original.replace(/\.(jpg|jpeg|png)$/i, ".webp");
-
   const acceptwebp = req.headers.accept?.includes("image/webp");
 
   if (acceptwebp && fs.existsSync(webp)) return res.sendFile(webp);
