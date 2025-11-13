@@ -1,0 +1,13 @@
+# 🌸 Irisje.nl – Robots-configuratie voor zoekmachines
+User-agent: *
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /js/
+Disallow: /css/
+Disallow: /img/
+
+# Toegang toegestaan tot alle publieke pagina’s
+Allow: /
+
+# Sitemap-verwijzing
+Sitemap: https://irisje.nl/sitemap.xml
