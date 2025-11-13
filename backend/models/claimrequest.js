@@ -1,33 +1,51 @@
-// backend/models/ClaimRequest.js
-const mongoose = require('mongoose');
+// backend/models/claimrequest.js
+const mongoose = require("mongoose");
 
-const ClaimRequestSchema = new mongoose.Schema(
+const claimrequestschema = new mongoose.Schema(
   {
-    companyId: {
+    companyid: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Company',
+      ref: "company",
       required: true
     },
-    contactName: String,
-    contactEmail: String,
-    contactPhone: String,
-    kvkNumber: String,
-    methodRequested: {
+
+    contactname: {
       type: String,
-      enum: ['email', 'sms', 'kvk', 'doc'],
-      default: 'email'
+      required: true
     },
+
+    contactemail: {
+      type: String,
+      required: true
+    },
+
+    contactphone: {
+      type: String
+    },
+
+    kvknumber: {
+      type: String
+    },
+
+    methodrequested: {
+      type: String,
+      enum: ["email", "sms", "kvk", "doc"],
+      default: "email"
+    },
+
     status: {
       type: String,
-      enum: ['pending', 'verified', 'rejected', 'cancelled'],
-      default: 'pending'
+      enum: ["pending", "verified", "rejected", "cancelled"],
+      default: "pending"
     },
-    verificationCode: String, // wordt later gehasht opgeslagen
-    verificationSentAt: Date,
-    verifiedAt: Date,
-    adminNotes: String
+
+    verificationcode: String,
+    verificationsentat: Date,
+    verifiedat: Date,
+
+    adminnotes: String
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('ClaimRequest', ClaimRequestSchema);
+module.exports = mongoose.model("claimrequest", claimrequestschema);
