@@ -1,29 +1,23 @@
 // backend/models/claim.js
 const mongoose = require("mongoose");
-const { Schema } = mongoose;
+const { schema } = mongoose;
 
-/**
- * 🌸 Irisje.nl – Claimmodel
- * Bedrijven kunnen een claim indienen op hun profiel (bijv. verificatie).
- * Admin kan claim requests bekijken, verifiëren, afwijzen.
- */
-
-const ClaimSchema = new Schema(
+const claimSchema = new mongoose.Schema(
   {
-    companyId: {
-      type: Schema.Types.ObjectId,
-      ref: "Company",
+    companyid: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "company",
       required: true,
     },
 
-    contactName: {
+    contactname: {
       type: String,
       required: true,
       trim: true,
       maxlength: 120,
     },
 
-    contactEmail: {
+    contactemail: {
       type: String,
       required: true,
       trim: true,
@@ -31,7 +25,7 @@ const ClaimSchema = new Schema(
       maxlength: 150,
     },
 
-    contactPhone: {
+    contactphone: {
       type: String,
       trim: true,
       maxlength: 40,
@@ -43,12 +37,6 @@ const ClaimSchema = new Schema(
       maxlength: 2000,
     },
 
-    /**
-     * status:
-     * - pending   → claim is nieuw
-     * - verified  → admin heeft verificatie goedgekeurd
-     * - rejected  → claim is afgewezen
-     */
     status: {
       type: String,
       enum: ["pending", "verified", "rejected"],
@@ -56,8 +44,8 @@ const ClaimSchema = new Schema(
     },
   },
   {
-    timestamps: true, // createdAt + updatedAt
+    timestamps: true,
   }
 );
 
-module.exports = mongoose.model("Claim", ClaimSchema);
+module.exports = mongoose.model("claim", claimSchema);
