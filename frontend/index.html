@@ -5,40 +5,61 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt</title>
-  <meta name="description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl. Snel geholpen door vakmensen bij jou in de buurt." />
-  <meta name="keywords" content="offerte aanvragen, vakman, bedrijven vergelijken, Irisje.nl, loodgieter, schilder, elektricien, aannemer, betrouwbare bedrijven, reviews" />
+  <!-- 🧭 SEO & Metadata -->
+  <title>Irisje.nl – Vergelijk bedrijven, lees reviews en vraag gratis offertes aan</title>
+  <meta name="description" content="Vind betrouwbare vakmensen bij jou in de buurt. Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl – snel geholpen, zonder gedoe." />
+  <meta name="keywords" content="offerte aanvragen, vakman, bedrijven vergelijken, Irisje.nl, loodgieter, schilder, elektricien, aannemer, betrouwbare bedrijven, reviews, vakmensen Nederland" />
   <meta name="author" content="Irisje.nl" />
-
-  <!-- ✅ Canonical & robots -->
-  <link rel="canonical" href="https://irisje.nl/" />
   <meta name="robots" content="index, follow" />
   <meta name="googlebot" content="index, follow" />
+  <link rel="canonical" href="https://irisje.nl/" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="https://irisje-backend.onrender.com/sitemap.xml" />
+  <link rel="robots" type="text/plain" href="https://irisje.nl/robots.txt" />
 
-  <!-- ✅ Open Graph / Facebook / WhatsApp -->
+  <!-- 🪩 Open Graph / Social -->
   <meta property="og:title" content="Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt" />
-  <meta property="og:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl." />
+  <meta property="og:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl." />
   <meta property="og:url" content="https://irisje.nl/" />
   <meta property="og:site_name" content="Irisje.nl" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://irisje.nl/icons/icon-512.png" />
 
-  <!-- ✅ Twitter Cards -->
+  <!-- 🐦 Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt" />
-  <meta name="twitter:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis een offerte aan via Irisje.nl." />
+  <meta name="twitter:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl." />
   <meta name="twitter:image" content="https://irisje.nl/icons/icon-512.png" />
 
-  <!-- ✅ Sitemap & robots -->
-  <link rel="sitemap" type="application/xml" title="Sitemap" href="https://irisje.nl/sitemap.xml" />
-  <link rel="robots" type="text/plain" href="https://irisje.nl/robots.txt" />
+  <!-- 🎯 Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Irisje.nl",
+    "url": "https://irisje.nl/",
+    "description": "Vergelijk bedrijven, lees reviews en vraag gratis offertes aan via Irisje.nl.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://irisje.nl/results.html?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Irisje.nl",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://irisje.nl/icons/icon-512.png"
+      }
+    }
+  }
+  </script>
 
-  <!-- ✅ Thema & favicon -->
+  <!-- 🎨 Thema & favicon -->
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="manifest" href="/manifest.json" />
 
-  <!-- ✅ Fonts & styles -->
+  <!-- 🖋️ Fonts & styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -66,7 +87,6 @@
 
   <!-- MAIN -->
   <main class="flex-1">
-
     <!-- HERO -->
     <section class="bg-white animate-fadeIn">
       <div class="max-w-6xl mx-auto px-4 py-14 lg:py-20 grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
