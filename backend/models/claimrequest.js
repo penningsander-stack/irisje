@@ -5,26 +5,30 @@ const claimrequestschema = new mongoose.Schema(
   {
     companyid: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "company",
+      ref: "company",        // altijd lowercase zoals afgesproken
       required: true
     },
 
     contactname: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     contactemail: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     contactphone: {
-      type: String
+      type: String,
+      default: ""
     },
 
     kvknumber: {
-      type: String
+      type: String,
+      default: ""
     },
 
     methodrequested: {
@@ -39,11 +43,25 @@ const claimrequestschema = new mongoose.Schema(
       default: "pending"
     },
 
-    verificationcode: String,
-    verificationsentat: Date,
-    verifiedat: Date,
+    verificationcode: {
+      type: String,
+      default: null
+    },
 
-    adminnotes: String
+    verificationsentat: {
+      type: Date,
+      default: null
+    },
+
+    verifiedat: {
+      type: Date,
+      default: null
+    },
+
+    adminnotes: {
+      type: String,
+      default: ""
+    }
   },
   { timestamps: true }
 );
