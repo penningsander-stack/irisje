@@ -18,6 +18,7 @@
     }
     .dropdown-item { padding: 0.5rem 0.75rem; cursor: pointer; }
     .dropdown-item:hover { background: #f3f4f6; }
+
     /* Modal */
     .modal-overlay {
       position: fixed; inset: 0;
@@ -32,8 +33,26 @@
       animation: fadeIn 0.2s ease-out;
     }
     @keyframes fadeIn { from {opacity:0;transform:scale(.95);} to {opacity:1;transform:scale(1);} }
-    .fade-enter { opacity: 0; transform: translateY(8px); transition: all .3s ease-out; }
-    .fade-enter.active { opacity: 1; transform: translateY(0); }
+
+    /* Sidebar active state */
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      color: #e5e7eb;
+    }
+    .sidebar-link:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .sidebar-link.active {
+      background: #eef2ff;
+      color: #312e81;
+      font-weight: 600;
+    }
   </style>
 </head>
 
@@ -41,95 +60,207 @@
   <!-- HEADER -->
   <header class="bg-indigo-600 text-white py-4 shadow-md">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <h1 class="text-lg font-semibold flex items-center gap-2">🛠️ <span>Beheerdersdashboard</span></h1>
-      <button id="logoutBtn" class="bg-white text-indigo-700 rounded-lg px-4 py-2 font-medium hover:bg-indigo-50 transition">Uitloggen</button>
+      <h1 class="text-lg font-semibold flex items-center gap-2">
+        🛠️ <span>Beheerdersdashboard</span>
+      </h1>
+      <button
+        id="logoutBtn"
+        class="bg-white text-indigo-700 rounded-lg px-4 py-2 font-medium hover:bg-indigo-50 transition"
+      >
+        Uitloggen
+      </button>
     </div>
   </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
-    <!-- 🧪 SYSTEEMTEST -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">🧪 Systeemtest – E-mailfunctie</h2>
-      <p class="text-gray-500 text-sm mb-4">Verstuur een testaanvraag via de backend om te controleren of e-mails goed worden verzonden.</p>
+  <!-- MAIN LAYOUT: SIDEBAR + CONTENT -->
+  <main class="flex-1 max-w-6xl mx-auto px-4 py-8 flex gap-6">
+    <!-- SIDEBAR -->
+    <aside class="w-56 bg-indigo-700 text-indigo-50 rounded-2xl p-4 shadow-md h-fit">
+      <div class="mb-4">
+        <div class="text-xs uppercase tracking-wide text-indigo-200 mb-1">Admin</div>
+        <div class="text-sm font-semibold">Irisje.nl</div>
+      </div>
 
-      <form id="testEmailForm" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Naam</label>
-          <input id="testName" type="text" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bijv. Test Gebruiker">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">E-mailadres</label>
-          <input id="testEmail" type="email" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="bijv. test@example.com">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Bericht</label>
-          <textarea id="testMessage" rows="3" required class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Bijv. Dit is een testaanvraag..."></textarea>
-        </div>
+      <nav class="space-y-1 text-sm">
+        <button
+          class="sidebar-link active"
+          data-section-target="email-test"
+        >
+          📧 <span>E-mailtest</span>
+        </button>
+        <button
+          class="sidebar-link"
+          data-section-target="companies"
+        >
+          🏢 <span>Bedrijvenbeheer</span>
+        </button>
+      </nav>
+    </aside>
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijf kiezen</label>
-          <button id="loadCompaniesBtn" type="button" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
-            🔄 Bedrijven laden
-          </button>
+    <!-- CONTENT -->
+    <div class="flex-1 space-y-8">
+      <!-- 🧪 SYSTEEMTEST -->
+      <section
+        class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl"
+        data-section="email-test"
+      >
+        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+          🧪 Systeemtest – E-mailfunctie
+        </h2>
+        <p class="text-gray-500 text-sm mb-4">
+          Verstuur een testaanvraag via de backend om te controleren of e-mails goed worden verzonden.
+        </p>
 
-          <div id="companyDropdownContainer" class="mt-3 hidden">
-            <input type="text" id="searchCompany" placeholder="Zoek bedrijf..." class="w-full border border-gray-300 rounded-lg p-2 mb-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            <div id="companyList" class="dropdown-list"></div>
+        <form id="testEmailForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Naam</label>
+            <input
+              id="testName"
+              type="text"
+              required
+              class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Bijv. Test Gebruiker"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">E-mailadres</label>
+            <input
+              id="testEmail"
+              type="email"
+              required
+              class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="bijv. test@example.com"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Bericht</label>
+            <textarea
+              id="testMessage"
+              rows="3"
+              required
+              class="w-full border border-gray-300 rounded-lg p-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Bijv. Dit is een testaanvraag..."
+            ></textarea>
           </div>
 
-          <input type="hidden" id="selectedCompanyId" required />
-          <p id="selectedCompanyName" class="text-sm text-gray-500 mt-1"></p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijf kiezen</label>
+            <button
+              id="loadCompaniesBtn"
+              type="button"
+              class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+            >
+              🔄 Bedrijven laden
+            </button>
+
+            <div id="companyDropdownContainer" class="mt-3 hidden">
+              <input
+                type="text"
+                id="searchCompany"
+                placeholder="Zoek bedrijf..."
+                class="w-full border border-gray-300 rounded-lg p-2 mb-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <div id="companyList" class="dropdown-list"></div>
+            </div>
+
+            <input type="hidden" id="selectedCompanyId" required />
+            <p id="selectedCompanyName" class="text-sm text-gray-500 mt-1"></p>
+          </div>
+
+          <button
+            id="openConfirmBtn"
+            type="button"
+            class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
+          >
+            📤 Testaanvraag versturen
+          </button>
+        </form>
+
+        <div
+          id="testResult"
+          class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"
+        ></div>
+      </section>
+
+      <!-- 🏢 BEDRIJFSOVERZICHT -->
+      <section
+        class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl hidden"
+        data-section="companies"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              🏢 Bedrijvenbeheer
+            </h2>
+            <p class="text-gray-500 text-sm">
+              Overzicht van alle geregistreerde bedrijven. Je kunt profielen bekijken, verifiëren of verwijderen.
+            </p>
+          </div>
+          <button
+            id="refreshCompanies"
+            class="text-sm text-indigo-600 hover:text-indigo-800"
+            type="button"
+          >
+            🔄 Vernieuwen
+          </button>
         </div>
 
-        <button id="openConfirmBtn" type="button" class="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
-          📤 Testaanvraag versturen
-        </button>
-      </form>
-
-      <div id="testResult" class="mt-4 text-sm text-gray-700 whitespace-pre-wrap"></div>
-    </section>
-
-    <!-- 🏢 BEDRIJFSOVERZICHT -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">🏢 Bedrijvenbeheer</h2>
-        <button id="refreshCompanies" class="text-sm text-indigo-600 hover:text-indigo-800">🔄 Vernieuwen</button>
-      </div>
-      <div class="overflow-x-auto border rounded-lg">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
-            <tr>
-              <th class="p-3 text-left">Naam</th>
-              <th class="p-3 text-left">Eigenaar</th>
-              <th class="p-3 text-left">Status</th>
-              <th class="p-3 text-left">Reviews</th>
-              <th class="p-3 text-left">Acties</th>
-            </tr>
-          </thead>
-          <tbody id="adminCompanyTable">
-            <tr><td colspan="5" class="text-center text-gray-400 p-4">Laden...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <div class="overflow-x-auto border rounded-lg">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+              <tr>
+                <th class="p-3 text-left">Naam</th>
+                <th class="p-3 text-left">Eigenaar</th>
+                <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-left">Reviews</th>
+                <th class="p-3 text-left">Acties</th>
+              </tr>
+            </thead>
+            <tbody id="adminCompanyTable">
+              <tr>
+                <td colspan="5" class="text-center text-gray-400 p-4">
+                  Laden...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-gray-100 text-center text-gray-500 text-sm py-4 mt-10 border-t border-gray-200">
+  <footer class="bg-gray-100 text-center text-gray-500 text-sm py-4 mt-4 border-t border-gray-200">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
   <!-- Modal -->
   <div id="confirmModal" class="modal-overlay hidden">
     <div class="modal-box">
-      <h3 class="text-lg font-semibold text-gray-800 mb-3">Weet je zeker dat je deze actie wilt uitvoeren?</h3>
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">
+        Weet je zeker dat je deze actie wilt uitvoeren?
+      </h3>
       <p id="modalMessage" class="text-sm text-gray-600 mb-4"></p>
       <div class="flex justify-center gap-4 mt-4">
-        <button id="confirmYes" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">Bevestigen</button>
-        <button id="confirmNo" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition">Annuleren</button>
+        <button
+          id="confirmYes"
+          class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition"
+        >
+          Bevestigen
+        </button>
+        <button
+          id="confirmNo"
+          class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition"
+        >
+          Annuleren
+        </button>
       </div>
-      <p id="confirmMsg" class="text-green-600 font-medium mt-4 hidden">✅ Actie uitgevoerd</p>
+      <p
+        id="confirmMsg"
+        class="text-green-600 font-medium mt-4 hidden"
+      >
+        ✅ Actie uitgevoerd
+      </p>
     </div>
   </div>
 
@@ -149,55 +280,100 @@
     const refreshBtn = document.getElementById("refreshCompanies");
 
     /* =======================
+       🔹 Sidebar navigatie
+    ======================= */
+    const sidebarLinks = document.querySelectorAll("[data-section-target]");
+    const sections = document.querySelectorAll("[data-section]");
+
+    sidebarLinks.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.sectionTarget;
+        // active state sidebar
+        sidebarLinks.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        // section toggling
+        sections.forEach((sec) => {
+          sec.classList.toggle("hidden", sec.dataset.section !== target);
+        });
+      });
+    });
+
+    /* =======================
+       🔹 Logout knop
+    ======================= */
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "login.html";
+      });
+    }
+
+    /* =======================
        🔹 E-mail testgedeelte
     ======================= */
-    document.getElementById("loadCompaniesBtn").addEventListener("click", async () => {
-      const btn = event.target;
-      btn.disabled = true;
-      btn.textContent = "⏳ Laden...";
-      try {
-        const res = await fetch(`${apiBase}/companies`);
-        const data = await res.json();
-        allCompanies = data.items || [];
-        const dropdown = document.getElementById("companyDropdownContainer");
-        dropdown.classList.remove("hidden");
-        renderList(allCompanies);
-        btn.textContent = "✅ Bedrijven geladen";
-      } catch (err) {
-        btn.textContent = "⚠️ Fout bij laden";
-      }
-    });
+    const loadCompaniesBtn = document.getElementById("loadCompaniesBtn");
+    const companyDropdownContainer = document.getElementById("companyDropdownContainer");
+    const searchCompanyInput = document.getElementById("searchCompany");
+
+    if (loadCompaniesBtn) {
+      loadCompaniesBtn.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = "⏳ Laden...";
+        try {
+          const res = await fetch(\`\${apiBase}/companies\`);
+          const data = await res.json();
+          allCompanies = data.items || [];
+          companyDropdownContainer.classList.remove("hidden");
+          renderList(allCompanies);
+          btn.textContent = "✅ Bedrijven geladen";
+        } catch (err) {
+          btn.textContent = "⚠️ Fout bij laden";
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
 
     function renderList(items) {
       list.innerHTML = "";
-      items.forEach(c => {
+      items.forEach((c) => {
         const div = document.createElement("div");
         div.className = "dropdown-item";
         div.textContent = c.name;
         div.addEventListener("click", () => {
           selectedId.value = c._id;
-          selectedName.textContent = `Geselecteerd: ${c.name}`;
+          selectedName.textContent = \`Geselecteerd: \${c.name}\`;
           list.innerHTML = "";
         });
         list.appendChild(div);
       });
     }
 
-    document.getElementById("searchCompany").addEventListener("input", e => {
-      const term = e.target.value.toLowerCase();
-      const filtered = allCompanies.filter(c => c.name.toLowerCase().includes(term));
-      renderList(filtered);
-    });
+    if (searchCompanyInput) {
+      searchCompanyInput.addEventListener("input", (e) => {
+        const term = e.target.value.toLowerCase();
+        const filtered = allCompanies.filter((c) =>
+          c.name.toLowerCase().includes(term)
+        );
+        renderList(filtered);
+      });
+    }
 
-    document.getElementById("openConfirmBtn").addEventListener("click", () => {
-      if (!selectedId.value) {
-        result.textContent = "⚠️ Kies eerst een bedrijf.";
-        return;
-      }
-      modalMsg.textContent = "Een testmail wordt verzonden naar het gekozen bedrijf.";
-      modal.dataset.action = "sendTest";
-      modal.classList.remove("hidden");
-    });
+    const openConfirmBtn = document.getElementById("openConfirmBtn");
+    if (openConfirmBtn) {
+      openConfirmBtn.addEventListener("click", () => {
+        if (!selectedId.value) {
+          result.textContent = "⚠️ Kies eerst een bedrijf.";
+          return;
+        }
+        modalMsg.textContent =
+          "Een testmail wordt verzonden naar het gekozen bedrijf.";
+        modal.dataset.action = "sendTest";
+        modal.classList.remove("hidden");
+      });
+    }
 
     noBtn.addEventListener("click", () => modal.classList.add("hidden"));
 
@@ -205,31 +381,36 @@
       msg.classList.add("hidden");
       result.textContent = "";
       const action = modal.dataset.action;
+
       if (action === "sendTest") {
         result.textContent = "⏳ Bezig met verzenden...";
         const payload = {
           customerName: document.getElementById("testName").value.trim(),
           customerEmail: document.getElementById("testEmail").value.trim(),
           message: document.getElementById("testMessage").value.trim(),
-          companies: [selectedId.value.trim()]
+          companies: [selectedId.value.trim()],
         };
         try {
-          const res = await fetch(`${apiBase}/publicRequests/multi`, {
+          const res = await fetch(\`\${apiBase}/publicRequests/multi\`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
           });
           const data = await res.json();
           if (res.ok) {
-            result.textContent = `✅ Succesvol verzonden:\n${JSON.stringify(data, null, 2)}`;
+            result.textContent = \`✅ Succesvol verzonden:\\n\${JSON.stringify(
+              data,
+              null,
+              2
+            )}\`;
             msg.textContent = "✅ Testmail verzonden";
             msg.classList.remove("hidden");
             setTimeout(() => modal.classList.add("hidden"), 1200);
           } else {
-            result.textContent = `⚠️ Fout (${res.status}): ${data.error}`;
+            result.textContent = \`⚠️ Fout (\${res.status}): \${data.error}\`;
           }
         } catch (err) {
-          result.textContent = `❌ Netwerkfout: ${err.message}`;
+          result.textContent = \`❌ Netwerkfout: \${err.message}\`;
         }
       } else if (action === "deleteCompany") {
         await deleteCompany(modal.dataset.id);
@@ -242,64 +423,74 @@
        🏢 Admin: Bedrijvenbeheer
     ======================= */
     async function loadAdminCompanies() {
-      adminTable.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 p-4">Laden...</td></tr>`;
+      adminTable.innerHTML =
+        '<tr><td colspan="5" class="text-center text-gray-400 p-4">Laden...</td></tr>';
       try {
-        const res = await fetch(`${apiBase}/admin/overview`);
+        const res = await fetch(\`\${apiBase}/admin/overview\`);
         const data = await res.json();
         const companies = data.companies || [];
         if (!companies.length) {
-          adminTable.innerHTML = `<tr><td colspan="5" class="text-center text-gray-400 p-4">Geen bedrijven gevonden.</td></tr>`;
+          adminTable.innerHTML =
+            '<tr><td colspan="5" class="text-center text-gray-400 p-4">Geen bedrijven gevonden.</td></tr>';
           return;
         }
-        adminTable.innerHTML = companies.map(c => `
+        adminTable.innerHTML = companies
+          .map(
+            (c) => \`
           <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
-            <td class="p-3 font-medium">${c.name}</td>
-            <td class="p-3">${c.owner?.email || "-"}</td>
+            <td class="p-3 font-medium">\${c.name}</td>
+            <td class="p-3">\${c.owner?.email || "-"}</td>
             <td class="p-3">
-              ${c.isVerified
+              \${c.isVerified
                 ? '<span class="text-green-700 bg-green-100 px-2 py-1 rounded text-xs font-medium">Geverifieerd</span>'
                 : '<span class="text-gray-700 bg-gray-100 px-2 py-1 rounded text-xs font-medium">Niet geverifieerd</span>'}
             </td>
-            <td class="p-3 text-center">${c.reviewCount || 0}</td>
+            <td class="p-3 text-center">\${c.reviewCount || 0}</td>
             <td class="p-3 flex gap-2">
-              <a href="company.html?slug=${c.slug}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">🔍 Bekijken</a>
-              <button data-id="${c._id}" class="verifyBtn text-sm text-green-600 hover:text-green-800">✔️ Verifiëren</button>
-              <button data-id="${c._id}" class="deleteBtn text-sm text-red-600 hover:text-red-800">🗑️ Verwijderen</button>
+              <a href="company.html?slug=\${c.slug}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">🔍 Bekijken</a>
+              <button data-id="\${c._id}" class="verifyBtn text-sm text-green-600 hover:text-green-800">✔️ Verifiëren</button>
+              <button data-id="\${c._id}" class="deleteBtn text-sm text-red-600 hover:text-red-800">🗑️ Verwijderen</button>
             </td>
-          </tr>
-        `).join("");
+          </tr>\`
+          )
+          .join("");
 
-        document.querySelectorAll(".deleteBtn").forEach(btn =>
+        document.querySelectorAll(".deleteBtn").forEach((btn) =>
           btn.addEventListener("click", () => {
-            modalMsg.textContent = "Weet je zeker dat je dit bedrijf wilt verwijderen?";
+            modalMsg.textContent =
+              "Weet je zeker dat je dit bedrijf wilt verwijderen?";
             modal.dataset.action = "deleteCompany";
             modal.dataset.id = btn.dataset.id;
             modal.classList.remove("hidden");
           })
         );
 
-        document.querySelectorAll(".verifyBtn").forEach(btn =>
+        document.querySelectorAll(".verifyBtn").forEach((btn) =>
           btn.addEventListener("click", () => {
-            modalMsg.textContent = "Wil je de verificatiestatus van dit bedrijf wijzigen?";
+            modalMsg.textContent =
+              "Wil je de verificatiestatus van dit bedrijf wijzigen?";
             modal.dataset.action = "verifyCompany";
             modal.dataset.id = btn.dataset.id;
             modal.classList.remove("hidden");
           })
         );
       } catch (err) {
-        adminTable.innerHTML = `<tr><td colspan="5" class="text-center text-red-600 p-4">❌ Fout bij laden bedrijven.</td></tr>`;
+        adminTable.innerHTML =
+          '<tr><td colspan="5" class="text-center text-red-600 p-4">❌ Fout bij laden bedrijven.</td></tr>';
       }
     }
 
     async function deleteCompany(id) {
       try {
-        const res = await fetch(`${apiBase}/admin/company/${id}`, { method: "DELETE" });
+        const res = await fetch(\`\${apiBase}/admin/company/\${id}\`, {
+          method: "DELETE",
+        });
         const data = await res.json();
         if (res.ok) {
           msg.textContent = "✅ Bedrijf verwijderd";
           msg.classList.remove("hidden");
           await loadAdminCompanies();
-        } else throw new Error(data.error);
+        } else throw new Error(data.error || "Onbekende fout");
       } catch (err) {
         alert("Fout: " + err.message);
       } finally {
@@ -309,13 +500,15 @@
 
     async function toggleVerify(id) {
       try {
-        const res = await fetch(`${apiBase}/admin/verify/${id}`, { method: "PUT" });
+        const res = await fetch(\`\${apiBase}/admin/verify/\${id}\`, {
+          method: "PUT",
+        });
         const data = await res.json();
         if (res.ok) {
           msg.textContent = "✅ Verificatie gewijzigd";
           msg.classList.remove("hidden");
           await loadAdminCompanies();
-        } else throw new Error(data.error);
+        } else throw new Error(data.error || "Onbekende fout");
       } catch (err) {
         alert("Fout: " + err.message);
       } finally {
@@ -323,7 +516,11 @@
       }
     }
 
-    refreshBtn.addEventListener("click", loadAdminCompanies);
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", loadAdminCompanies);
+    }
+
+    // Init bedrijven bij laden pagina
     loadAdminCompanies();
   </script>
 </body>
