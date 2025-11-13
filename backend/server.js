@@ -62,7 +62,7 @@ mongoose
 app.use(express.static(path.join(__dirname, "public")));
 
 /* ============================================================
-   api-routes (gecontroleerd + juist gespeld)
+   api-routes
 ============================================================ */
 const routes = [
   "auth",
