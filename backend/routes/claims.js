@@ -7,10 +7,7 @@ const Company = require("../models/company");
 
 /**
  * irisje.nl – claims routes
- * volledig gesynchroniseerd met claimrequest.js (camelCase)
- * - claim aanmaken
- * - claim overzicht
- * - status wijzigen
+ * volledig gesynchroniseerd met admin.js
  */
 
 /* ============================================================
@@ -28,20 +25,15 @@ router.post("/", async (req, res) => {
       methodRequested
     } = req.body;
 
-    // verplichte velden
     if (!companyId || !contactName || !contactEmail) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "verplichte velden ontbreken" });
+      return res.status(400).json({ ok: false, error: "verplichte velden ontbreken" });
     }
 
-    // controleer of bedrijf bestaat
     const exists = await Company.findById(companyId);
     if (!exists) {
       return res.status(404).json({ ok: false, error: "bedrijf niet gevonden" });
     }
 
-    // claim opslaan
     const claim = await ClaimRequest.create({
       companyId,
       contactName,
@@ -60,8 +52,29 @@ router.post("/", async (req, res) => {
 });
 
 /* ============================================================
+   GET /api/claims       ← ⭐ NIEUWE ROUTE
+   (compatibel met admin.js)
+============================================================ */
+router.get("/", async (req, res) => {
+  try {
+    const claims = await ClaimRequest.find({})
+      .populate("companyId", "name city")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      ok: true,
+      claims
+    });
+  } catch (err) {
+    console.error("❌ fout bij claim-opvragen:", err);
+    return res.status(500).json({ ok: false, error: "serverfout bij claim-opvragen" });
+  }
+});
+
+/* ============================================================
    GET /api/claims/all
-   Overzicht van alle claims
+   (oude route – mag blijven)
 ============================================================ */
 router.get("/all", async (req, res) => {
   try {
@@ -89,7 +102,6 @@ router.put("/status/:id", async (req, res) => {
   try {
     const { status } = req.body;
 
-    // toegestane waardes uit model
     const allowed = ["pending", "verified", "rejected", "cancelled"];
     if (!allowed.includes(status)) {
       return res.status(400).json({ ok: false, error: "ongeldige status" });
