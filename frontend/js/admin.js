@@ -1,4 +1,5 @@
 // frontend/js/admin.js
+// v20251114-STABLE-CLEAN
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -11,16 +12,20 @@ const ENDPOINT_GET_CLAIMS = `${API_BASE}/admin/claims`;
 document.addEventListener("DOMContentLoaded", initAdmin);
 
 async function initAdmin() {
-  console.log("🛠️ Admin-dashboard geladen (v20251114-FINAL-FIX-REVIEWS-RETRY)");
+  console.log("🛠️ Admin-dashboard geladen (v20251114-STABLE)");
 
   const logoutBtn = byId("logoutBtn");
+  const refreshCompaniesBtn = byId("refreshCompanies");
+  const adminTable = byId("adminCompanyTable");
+
   const refreshReviewsBtn = byId("refreshBtn");
+  const reportedTableBody = byId("reported-table-body");
+
+  const refreshClaimsBtn = byId("refreshClaims");
+  const claimTableBody = byId("claimTableBody");
+
   const refreshLogsBtn = byId("refreshLogsBtn");
   const logsContainer = byId("logs-container");
-  const adminTable = byId("adminCompanyTable");
-  const refreshCompaniesBtn = byId("refreshCompanies");
-  const claimTableBody = byId("claimTableBody");
-  const refreshClaimsBtn = byId("refreshClaims");
 
   /* ============================================================
      NOTIFICATIEBALK
@@ -29,432 +34,261 @@ async function initAdmin() {
   notif.id = "notif";
   notif.className =
     "hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50";
-  notif.textContent = "✅ Handeling voltooid";
   document.body.appendChild(notif);
 
-  function showNotif(message = "✅ Handeling voltooid", success = true) {
+  function showNotif(message = "✔ Handeling voltooid", success = true) {
     notif.textContent = message;
     notif.classList.remove("hidden");
     notif.classList.toggle("bg-green-600", success);
     notif.classList.toggle("bg-red-600", !success);
-    notif.style.opacity = "0";
-    notif.style.transition = "opacity 0.3s";
-    setTimeout(() => (notif.style.opacity = "1"), 10);
+
+    notif.style.opacity = "1";
     setTimeout(() => {
       notif.style.opacity = "0";
       setTimeout(() => notif.classList.add("hidden"), 300);
-    }, 2500);
+    }, 1800);
   }
 
   /* ============================================================
-     SIDEBAR NAVIGATIE
-  ============================================================ */
-  const nav = byId("adminNav");
-  if (nav) {
-    nav.querySelectorAll(".nav-item").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const target = btn.dataset.section;
-
-        nav.querySelectorAll(".nav-item").forEach((b) =>
-          b.classList.remove("bg-indigo-50", "text-indigo-700")
-        );
-        btn.classList.add("bg-indigo-50", "text-indigo-700");
-
-        document
-          .querySelectorAll("main section[id^='section-']")
-          .forEach((s) => s.classList.add("hidden"));
-
-        const active = byId(target);
-        if (active) active.classList.remove("hidden");
-      });
-    });
-  }
-
-  /* ============================================================
-     LOGOUT
+     LOGOUT — FIXED (nooit meer auto-login)
   ============================================================ */
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-      localStorage.removeItem("token");
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie.split(";").forEach(function (c) {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/");
+      });
       window.location.href = "login.html";
     });
   }
 
   /* ============================================================
-     BEDRIJVEN LADEN (ADMIN OVERVIEW) — **MET RETRY LOGIC**
+     BEDRIJVEN LADEN
   ============================================================ */
   async function loadAdminCompanies(retry = 0) {
-    if (!adminTable) return;
     adminTable.innerHTML =
-      '<tr><td colspan="5" class="text-center p-4 text-gray-400">Laden...</td></tr>';
+      '<tr><td colspan="5" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
     try {
       const res = await fetch(ENDPOINT_GET_COMPANIES, { cache: "no-store" });
+      const data = await res.json();
 
-      if (!res.ok) {
-        // Backend koud? Geef 2s om op te starten
-        if (retry < 3) {
-          console.warn(`loadAdminCompanies → retry ${retry + 1} binnen 2s...`);
-          return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
-        }
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const data = await res.json().catch(() => null);
-      if (!data || !Array.isArray(data.companies)) {
-        if (retry < 3) {
-          console.warn(`loadAdminCompanies → invalid JSON retry ${retry + 1}`);
-          return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
-        }
-        throw new Error("Ongeldig antwoord van /admin/overview");
+      if (!res.ok || !data || !Array.isArray(data.companies)) {
+        throw new Error("Ongeldig antwoord");
       }
 
       const companies = data.companies;
 
-      if (!companies.length) {
-        adminTable.innerHTML =
-          '<tr><td colspan="5" class="text-center p-4 text-gray-400">Geen bedrijven gevonden.</td></tr>';
-        return;
-      }
-
       adminTable.innerHTML = companies
         .map((c) => {
-          const statusBadge = c.isVerified
-            ? '<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700">Geverifieerd</span>'
-            : '<span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">Niet geverifieerd</span>';
+          const status = c.isVerified
+            ? `<span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Geverifieerd</span>`
+            : `<span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">Niet geverifieerd</span>`;
 
           return `
-        <tr class="border-b hover:bg-gray-50">
-          <td class="p-3 font-medium">${esc(c.name || "(naam onbekend)")}</td>
-          <td class="p-3">${esc(c.ownerEmail || "-")}</td>
-          <td class="p-3">${statusBadge}</td>
-          <td class="p-3 text-center">${c.reviewCount || 0}</td>
-          <td class="p-3 flex gap-2">
-            <button class="verifyBtn text-green-600 text-sm" data-id="${c._id}">✔️ Verifiëren</button>
-            <button class="deleteBtn text-red-600 text-sm" data-id="${c._id}">🗑️ Verwijderen</button>
-          </td>
-        </tr>`;
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 font-medium">${esc(c.name || "(naam onbekend)")}</td>
+            <td class="p-3">${esc(c.ownerEmail || "-")}</td>
+            <td class="p-3">${status}</td>
+            <td class="p-3 text-center">${c.reviewCount || 0}</td>
+            <td class="p-3 flex gap-3">
+              <button class="verifyBtn text-green-600 text-sm" data-id="${c._id}">✔</button>
+              <button class="deleteBtn text-red-600 text-sm" data-id="${c._id}">🗑</button>
+            </td>
+          </tr>`;
         })
         .join("");
-
-      document.querySelectorAll(".deleteBtn").forEach((btn) =>
-        btn.addEventListener("click", () => doDeleteCompany(btn.dataset.id))
-      );
 
       document.querySelectorAll(".verifyBtn").forEach((btn) =>
         btn.addEventListener("click", () => doVerifyCompany(btn.dataset.id))
       );
-    } catch (err) {
-      console.error("❌ fout bedrijven:", err);
-
-      if (retry < 3) {
-        console.warn(
-          `loadAdminCompanies → laatste retry binnen 2s (poging ${
-            retry + 1
-          })`
-        );
-        return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
-      }
-
-      adminTable.innerHTML =
-        '<tr><td colspan="5" class="text-center p-4 text-red-600">❌ Fout bij laden van bedrijven.</td></tr>';
-    }
-  }
-
-  /* ============================================================
-     BEDRIJVEN: Verwijderen & Verifiëren
-  ============================================================ */
-  async function doDeleteCompany(id) {
-    if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
-
-    try {
-      const res = await fetch(
-        `${API_BASE}/admin/company/${encodeURIComponent(id)}`,
-        { method: "DELETE" }
+      document.querySelectorAll(".deleteBtn").forEach((btn) =>
+        btn.addEventListener("click", () => doDeleteCompany(btn.dataset.id))
       );
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) throw new Error(data?.error || "Serverfout (verwijderen)");
-
-      showNotif("✅ Bedrijf verwijderd");
-      await loadAdminCompanies();
     } catch (err) {
-      console.error(err);
-      showNotif("❌ Fout bij verwijderen van bedrijf", false);
+      if (retry < 3) {
+        return setTimeout(() => loadAdminCompanies(retry + 1), 1500);
+      }
+      adminTable.innerHTML =
+        '<tr><td colspan="5" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     }
   }
 
   async function doVerifyCompany(id) {
-    if (!confirm("Wil je de verificatiestatus wijzigen?")) return;
+    if (!confirm("Verificatiestatus wijzigen?")) return;
 
     try {
-      const res = await fetch(
-        `${API_BASE}/admin/verify/${encodeURIComponent(id)}`,
-        { method: "PUT" }
-      );
-      const data = await res.json().catch(() => null);
+      const res = await fetch(`${API_BASE}/admin/verify/${id}`, {
+        method: "PUT",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Fout");
 
-      if (!res.ok) throw new Error(data?.error || "Serverfout (verificatie)");
-
-      showNotif("✅ Verificatie gewijzigd");
-      await loadAdminCompanies();
-    } catch (err) {
-      console.error(err);
-      showNotif("❌ Fout bij wijzigen verificatie", false);
+      showNotif("✔ Verificatie gewijzigd");
+      loadAdminCompanies();
+    } catch {
+      showNotif("❌ Fout bij verificatie", false);
     }
   }
 
-  if (refreshCompaniesBtn) {
-    refreshCompaniesBtn.addEventListener("click", loadAdminCompanies);
+  async function doDeleteCompany(id) {
+    if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/admin/company/${id}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Fout");
+
+      showNotif("✔ Bedrijf verwijderd");
+      loadAdminCompanies();
+    } catch {
+      showNotif("❌ Fout bij verwijderen", false);
+    }
   }
+
+  if (refreshCompaniesBtn)
+    refreshCompaniesBtn.addEventListener("click", loadAdminCompanies);
 
   /* ============================================================
-     GEMELDE REVIEWS (BLIJFT IDENTIEK)
+     GEMELDE REVIEWS
   ============================================================ */
-  const reportedTableBody = byId("reported-table-body");
-
   async function loadReportedReviews() {
-    if (reportedTableBody) {
-      reportedTableBody.innerHTML =
-        '<tr><td colspan="7" class="text-center p-4 text-gray-400">Laden...</td></tr>';
-    }
+    reportedTableBody.innerHTML =
+      '<tr><td colspan="7" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
     try {
       const res = await fetch(ENDPOINT_GET_REPORTED);
-      const data = await res.json();
+      const list = await res.json();
 
-      if (!res.ok || !Array.isArray(data)) {
-        throw new Error("Ongeldig antwoord voor gemelde reviews");
-      }
+      if (!res.ok || !Array.isArray(list)) throw new Error();
 
-      renderReportedTable(data);
-      updateReportedStats(data);
-    } catch (err) {
-      console.error("❌ fout gemelde reviews:", err);
-      if (reportedTableBody) {
+      if (!list.length) {
         reportedTableBody.innerHTML =
-          '<tr><td colspan="7" class="text-center p-4 text-red-600">❌ Fout bij laden.</td></tr>';
+          '<tr><td colspan="7" class="p-4 text-center text-gray-400">Geen gemelde reviews.</td></tr>';
+        return;
       }
-      updateReportedStats([]);
-    }
-  }
 
-  function renderReportedTable(list) {
-    if (!reportedTableBody) return;
+      reportedTableBody.innerHTML = list
+        .map((r) => {
+          const resolved = r.status === "resolved" || r.reported === false;
 
-    if (!list.length) {
+          return `
+          <tr class="border-b">
+            <td class="p-3">${esc(r.company?.name || "Onbekend")}</td>
+            <td class="p-3">${esc(r.reviewerName || "Onbekend")}</td>
+            <td class="p-3">${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
+            <td class="p-3 max-w-xs truncate">${esc(r.message || "")}</td>
+            <td class="p-3">${formatDate(r.createdAt)}</td>
+            <td class="p-3">
+              ${resolved
+                ? `<span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Afgehandeld</span>`
+                : `<button class="resolveBtn bg-green-600 text-white text-xs px-2 py-1 rounded" data-id="${r._id}">Markeer</button>`}
+            </td>
+          </tr>`;
+        })
+        .join("");
+
+      document.querySelectorAll(".resolveBtn").forEach((btn) =>
+        btn.addEventListener("click", () =>
+          markReviewAsResolved(btn.dataset.id)
+        )
+      );
+    } catch {
       reportedTableBody.innerHTML =
-        '<tr><td colspan="7" class="text-center p-4 text-gray-400">Geen gemelde reviews.</td></tr>';
-      return;
+        '<tr><td colspan="7" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     }
-
-    reportedTableBody.innerHTML = list
-      .map((r) => {
-        const id = r._id;
-        const companyName = r.company?.name || r.companyId?.name || "Onbekend";
-        const reviewer =
-          r.reviewerName || r.user?.name || r.userName || "Onbekend";
-        const rating = r.rating ? "⭐".repeat(r.rating) : "-";
-        const msg = esc(r.message || r.text || "");
-        const d = formatDate(r.createdAt || r.date);
-        const resolved = r.reported === false || r.status === "resolved";
-
-        return `
-        <tr class="border-b" data-id="${id}">
-          <td class="p-3">${esc(companyName)}</td>
-          <td class="p-3">${esc(reviewer)}</td>
-          <td class="p-3">${rating}</td>
-          <td class="p-3 max-w-xs truncate" title="${msg}">${msg}</td>
-          <td class="p-3 whitespace-nowrap">${d}</td>
-          <td class="p-3">
-            <span class="px-2 py-1 rounded text-xs font-medium ${
-              resolved
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }">
-              ${resolved ? "Afgehandeld" : "In behandeling"}
-            </span>
-          </td>
-          <td class="p-3">
-            ${
-              resolved
-                ? `<span class="text-xs text-gray-400">✔ Gereed</span>`
-                : `<button class="mark-done bg-green-600 text-white px-2 py-1 rounded text-xs">Markeer als afgehandeld</button>`
-            }
-          </td>
-        </tr>`;
-      })
-      .join("");
-
-    reportedTableBody.querySelectorAll(".mark-done").forEach((btn) =>
-      btn.addEventListener("click", () =>
-        markReviewAsResolved(btn.closest("tr").dataset.id)
-      )
-    );
   }
 
   async function markReviewAsResolved(id) {
-    if (!confirm("Weet je zeker dat je deze melding wilt afhandelen?")) return;
-
+    if (!confirm("Review afhandelen?")) return;
     try {
       const res = await fetch(ENDPOINT_RESOLVE_REPORTED(id), {
         method: "PATCH",
       });
-
-      if (!res.ok) throw new Error("Serverfout bij resolve");
-
-      showNotif("✅ Review afgehandeld");
-      await loadReportedReviews();
-    } catch (err) {
-      console.error(err);
-      showNotif("❌ Fout bij afhandelen review", false);
+      if (!res.ok) throw new Error();
+      showNotif("✔ Review afgehandeld");
+      loadReportedReviews();
+    } catch {
+      showNotif("❌ Fout bij afhandelen", false);
     }
   }
 
-  function updateReportedStats(list) {
-    const totalEl = byId("total-reported");
-    const openEl = byId("open-reported");
-    const resolvedEl = byId("resolved-reported");
-
-    const total = list.length;
-    const resolved = list.filter(
-      (r) => r.reported === false || r.status === "resolved"
-    ).length;
-    const open = total - resolved;
-
-    if (totalEl) totalEl.textContent = total;
-    if (openEl) openEl.textContent = open;
-    if (resolvedEl) resolvedEl.textContent = resolved;
-  }
-
-  if (refreshReviewsBtn) {
+  if (refreshReviewsBtn)
     refreshReviewsBtn.addEventListener("click", loadReportedReviews);
-  }
 
   /* ============================================================
-     CLAIMVERZOEKEN — ONGEWIJZIGD
+     CLAIMS
   ============================================================ */
   async function loadClaims() {
-    if (!claimTableBody) return;
-
     claimTableBody.innerHTML =
       '<tr><td colspan="6" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
     try {
       const res = await fetch(ENDPOINT_GET_CLAIMS);
-      const data = await res.json();
+      const json = await res.json();
 
-      if (!res.ok || !Array.isArray(data.items)) {
-        throw new Error("Ongeldig antwoord van /admin/claims");
-      }
+      if (!res.ok || !Array.isArray(json.items)) throw new Error();
 
-      const list = data.items;
-
-      if (!list.length) {
-        claimTableBody.innerHTML =
-          '<tr><td colspan="6" class="p-4 text-center text-gray-400">Geen claimverzoeken.</td></tr>';
-        return;
-      }
+      const list = json.items;
 
       claimTableBody.innerHTML = list
         .map((c) => {
-          const created = formatDate(c.createdAt || c.date);
-          const company =
-            c.companyId?.name ||
-            c.company?.name ||
-            c.companyName ||
-            "(onbekend)";
-          const contactName = c.contactName || c.name || "";
-          const contactEmail = c.contactEmail || c.email || "";
-          const contactPhone = c.contactPhone || c.phone || "";
-          const status = (c.status || "in behandeling").toString();
-
-          let badgeClass = "bg-yellow-100 text-yellow-700";
-          if (status === "verified" || status === "goedgekeurd") {
-            badgeClass = "bg-green-100 text-green-700";
-          } else if (status === "rejected" || status === "afgewezen") {
-            badgeClass = "bg-red-100 text-red-700";
-          }
-
           return `
           <tr class="border-b hover:bg-gray-50">
-            <td class="p-3 whitespace-nowrap">${created}</td>
-            <td class="p-3">${esc(company)}</td>
-            <td class="p-3">${esc(contactName)}</td>
-            <td class="p-3">${esc(contactEmail)}</td>
-            <td class="p-3">${esc(contactPhone)}</td>
-            <td class="p-3">
-              <span class="px-2 py-1 rounded text-xs font-medium ${badgeClass}">
-                ${esc(status)}
-              </span>
-            </td>
+            <td class="p-3">${formatDate(c.createdAt)}</td>
+            <td class="p-3">${esc(c.companyId?.name || "(onbekend)")}</td>
+            <td class="p-3">${esc(c.contactName || "")}</td>
+            <td class="p-3">${esc(c.contactEmail || "")}</td>
+            <td class="p-3">${esc(c.contactPhone || "")}</td>
+            <td class="p-3">${esc(c.status || "in behandeling")}</td>
           </tr>`;
         })
         .join("");
-    } catch (err) {
-      console.error("❌ fout claims:", err);
+    } catch {
       claimTableBody.innerHTML =
-        '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Fout bij laden van claimverzoeken.</td></tr>';
+        '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     }
   }
 
-  if (refreshClaimsBtn) {
+  if (refreshClaimsBtn)
     refreshClaimsBtn.addEventListener("click", loadClaims);
-  }
 
   /* ============================================================
-     SERVERLOGS (ONVERANDERD)
+     SERVERLOGS
   ============================================================ */
   async function loadServerLogs() {
-    if (!logsContainer) return;
-
-    logsContainer.textContent = "Logs worden geladen...";
-
+    logsContainer.innerHTML = "Laden...";
     try {
       const res = await fetch(ENDPOINT_GET_LOGS);
       const logs = await res.json();
-
-      if (!res.ok || !Array.isArray(logs)) {
-        throw new Error("Ongeldig antwoord voor logs");
-      }
+      if (!res.ok || !Array.isArray(logs)) throw new Error();
 
       logsContainer.innerHTML = logs
-        .slice(-50)
+        .slice(-40)
         .reverse()
-        .map((l) => {
-          if (typeof l === "string") {
-            return `<div class="mb-1 text-sm">${esc(l)}</div>`;
-          }
-          const ts = formatDate(l.timestamp || l.date);
-          const msg = esc(l.message || JSON.stringify(l));
-          return `<div class="mb-1 text-sm"><span class="text-gray-500">${ts}:</span> ${msg}</div>`;
-        })
+        .map((l) => `<div class="text-sm mb-1">${esc(l)}</div>`)
         .join("");
-    } catch (err) {
-      console.error("❌ fout logs:", err);
+    } catch {
       logsContainer.innerHTML =
-        '<div class="text-red-600">❌ Kon serverlogs niet laden.</div>';
+        '<div class="text-red-600">❌ Kan logs niet laden</div>';
     }
   }
 
-  if (refreshLogsBtn) {
+  if (refreshLogsBtn)
     refreshLogsBtn.addEventListener("click", loadServerLogs);
-  }
 
   /* ============================================================
-     INIT LOADS — laat bedrijven als eerste retried worden
+     INIT LOAD
   ============================================================ */
-  try {
-    await loadAdminCompanies(); // retry logic first
-    await Promise.allSettled([
-      loadReportedReviews(),
-      loadClaims(),
-      loadServerLogs(),
-    ]);
-  } catch (e) {
-    console.warn("Init-lading had fouten, maar dashboard blijft werken.");
-  }
-
+  loadAdminCompanies();
+  loadReportedReviews();
+  loadClaims();
+  loadServerLogs();
   setInterval(loadServerLogs, 30000);
 }
 
