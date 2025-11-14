@@ -223,9 +223,10 @@ app.use(/.*\.html$/, (req, res, next) => {
 });
 
 /* ============================================================
-   fallback
+   ⚠️ Fallback (SPA)
+   FIXED REGEX → laat nu ALLE /api/... routes door
 ============================================================ */
-app.get(/^\/(?!api\/|.*\.(xml|txt)$).*/, (req, res) => {
+app.get(/^(?!\/api\/|.*\.(xml|txt)$).*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
