@@ -79,8 +79,7 @@ router.get("/lists", (req, res) => {
 });
 
 /* ============================================================
-   2️⃣ ADMIN: ALLE BEDRIJVEN (/api/companies/all)
-   ⚠️ Belangrijk: moet HOGER staan dan /slug/:slug en /:id
+   2️⃣ ADMIN: /api/companies/all
 ============================================================ */
 router.get("/all", async (req, res) => {
   try {
@@ -102,7 +101,7 @@ router.get("/all", async (req, res) => {
       reviewCount: c.reviewCount || 0,
     }));
 
-    return res.json(companies);
+    return res.json({ companies });
   } catch (err) {
     console.error("❌ FOUT in /companies/all:", err);
     return res
@@ -112,7 +111,7 @@ router.get("/all", async (req, res) => {
 });
 
 /* ============================================================
-   3️⃣ ZOEKEN
+   3️⃣ ZOEKFUNCTIE  (MOET BOVEN slug EN id)
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
@@ -150,7 +149,7 @@ router.get("/search", async (req, res) => {
 });
 
 /* ============================================================
-   4️⃣ SLUG ROUTE
+   4️⃣ SLUG ROUTE  (MOET BOVEN /:id)
 ============================================================ */
 router.get("/slug/:slug", async (req, res) => {
   try {
@@ -170,7 +169,7 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 /* ============================================================
-   5️⃣ PUBLIEKE LIJST (LET OP: / MOET BOVEN /:id)
+   5️⃣ PUBLIEKE LIJST  (MOET BOVEN /:id)
 ============================================================ */
 router.get("/", async (req, res) => {
   try {
@@ -187,7 +186,7 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================================================
-   6️⃣ OPHALEN VIA ID (MOET ALTIJD ALS ALLERLAATSTE!)
+   6️⃣ OPHALEN VIA ID (ALTIJD ALS LAATSTE!)
 ============================================================ */
 router.get("/:id", async (req, res) => {
   try {
@@ -205,6 +204,7 @@ router.get("/:id", async (req, res) => {
       .json({ ok: false, error: "serverfout bij ophalen bedrijf" });
   }
 });
+
 
 /* ============================================================
    7️⃣ AANMAKEN
