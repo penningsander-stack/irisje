@@ -43,16 +43,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (companyId) {
         localStorage.setItem("companyId", companyId);
       } else {
-        localStorage.removeItem("companyId"); // belangrijk voor admin accounts
+        localStorage.removeItem("companyId");
       }
 
       msg.textContent = "✅ Ingelogd! Even geduld...";
       msg.className = "text-green-600 text-center text-sm";
 
-      // 🚀 Door naar dashboard
+      // 🧠 **Belangrijk**
+      // Admin moet DIRECT naar admin.html
+      if (role === "admin" || email === "admin@irisje.nl") {
+        return setTimeout(() => {
+          window.location.href = "admin.html";
+        }, 500);
+      }
+
+      // ➡ Normale bedrijven → dashboard
       setTimeout(() => {
         window.location.href = "dashboard.html";
-      }, 800);
+      }, 500);
 
     } catch (err) {
       console.error("❌ Login error:", err);
