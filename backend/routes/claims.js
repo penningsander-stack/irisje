@@ -3,11 +3,18 @@ const express = require("express");
 const router = express.Router();
 
 const ClaimRequest = require("../models/claimrequest");
-const Company = require("../models/company");
 
 /**
  * irisje.nl – claims routes
- * volledig gesynchroniseerd met admin.js
+ * - claim aanmaken
+ * - claim overzicht
+ * - status wijzigen
+ * 
+ * Let op:
+ * We gebruiken hier GEEN populate meer om 500-fouten door
+ * schema/model-mismatches te voorkomen. De admin-frontend
+ * krijgt een simpele, voorspelbare structuur terug:
+ * { ok: true, total, items: [...] }.
  */
 
 /* ============================================================
@@ -23,17 +30,16 @@ router.post("/", async (req, res) => {
       contactPhone,
       kvkNumber,
       methodRequested
-    } = req.body;
+    } = req.body || {};
 
+    // verplichte velden
     if (!companyId || !contactName || !contactEmail) {
-      return res.status(400).json({ ok: false, error: "verplichte velden ontbreken" });
+      return res
+        .status(400)
+        .json({ ok: false, error: "verplichte velden ontbreken" });
     }
 
-    const exists = await Company.findById(companyId);
-    if (!exists) {
-      return res.status(404).json({ ok: false, error: "bedrijf niet gevonden" });
-    }
-
+    // claim opslaan (zonder afhankelijk te zijn van populate / Company)
     const claim = await ClaimRequest.create({
       companyId,
       contactName,
@@ -41,56 +47,38 @@ router.post("/", async (req, res) => {
       contactPhone: contactPhone || "",
       kvkNumber: kvkNumber || "",
       methodRequested: methodRequested || "email",
-      status: "pending"
+      status: "pending",
     });
 
     return res.json({ ok: true, claimId: claim._id });
   } catch (err) {
     console.error("❌ fout bij claim-aanmaken:", err);
-    return res.status(500).json({ ok: false, error: "serverfout bij claim-aanmaken" });
-  }
-});
-
-/* ============================================================
-   GET /api/claims       ← ⭐ NIEUWE ROUTE
-   (compatibel met admin.js)
-============================================================ */
-router.get("/", async (req, res) => {
-  try {
-    const claims = await ClaimRequest.find({})
-      .populate("companyId", "name city")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return res.json({
-      ok: true,
-      claims
-    });
-  } catch (err) {
-    console.error("❌ fout bij claim-opvragen:", err);
-    return res.status(500).json({ ok: false, error: "serverfout bij claim-opvragen" });
+    return res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij claim-aanmaken" });
   }
 });
 
 /* ============================================================
    GET /api/claims/all
-   (oude route – mag blijven)
+   Overzicht van alle claims
 ============================================================ */
-router.get("/all", async (req, res) => {
+router.get("/all", async (_req, res) => {
   try {
     const claims = await ClaimRequest.find({})
-      .populate("companyId", "name city")
       .sort({ createdAt: -1 })
       .lean();
 
     return res.json({
       ok: true,
       total: claims.length,
-      items: claims
+      items: claims,
     });
   } catch (err) {
     console.error("❌ fout bij claim-opvragen:", err);
-    return res.status(500).json({ ok: false, error: "serverfout bij claim-opvragen" });
+    return res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij claim-opvragen" });
   }
 });
 
@@ -100,7 +88,7 @@ router.get("/all", async (req, res) => {
 ============================================================ */
 router.put("/status/:id", async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status } = req.body || {};
 
     const allowed = ["pending", "verified", "rejected", "cancelled"];
     if (!allowed.includes(status)) {
@@ -120,7 +108,9 @@ router.put("/status/:id", async (req, res) => {
     return res.json({ ok: true, item: updated });
   } catch (err) {
     console.error("❌ fout bij status-update:", err);
-    return res.status(500).json({ ok: false, error: "serverfout bij status-update" });
+    return res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij status-update" });
   }
 });
 
