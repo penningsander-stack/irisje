@@ -11,17 +11,17 @@
 
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Algemene site-styling -->
+  <!-- Algemene styling -->
   <link rel="stylesheet" href="style.css?v=20251114" />
 
-  <!-- Admin-specifieke extra CSS -->
+  <!-- Admin-specifieke styling -->
   <link rel="stylesheet" href="css/admin.css?v=20251114" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
   <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 admin-header-shadow">
     <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-3">
       <a href="index.html" class="flex items-center gap-2">
         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-semibold">I</span>
@@ -74,7 +74,7 @@
     <section class="flex-1 flex flex-col gap-6">
 
       <!-- BEDRIJVEN -->
-      <section id="section-overview" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+      <section id="section-overview" class="admin-card">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h1 class="text-lg font-semibold text-gray-900">Bedrijvenoverzicht</h1>
@@ -90,7 +90,7 @@
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm admin-table">
             <thead>
-              <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+              <tr class="border-b">
                 <th class="text-left p-3">Bedrijf</th>
                 <th class="text-left p-3">E-mail</th>
                 <th class="text-left p-3">Status</th>
@@ -101,7 +101,7 @@
 
             <tbody id="adminCompanyTable">
               <tr>
-                <td colspan="5" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
+                <td colspan="5" class="admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
@@ -109,7 +109,7 @@
       </section>
 
       <!-- GEMELDE REVIEWS -->
-      <section id="section-reported" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
+      <section id="section-reported" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Gemelde reviews</h2>
@@ -123,23 +123,15 @@
         </div>
 
         <div class="flex items-center gap-4 mb-4 text-xs">
-          <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-50 border border-gray-200">
-            Totaal: <span id="total-reported" class="font-semibold">0</span>
-          </span>
-
-          <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-yellow-50 border border-yellow-200">
-            Open: <span id="open-reported" class="font-semibold">0</span>
-          </span>
-
-          <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-50 border border-green-200">
-            Afgehandeld: <span id="resolved-reported" class="font-semibold">0</span>
-          </span>
+          <span class="badge badge-gray">Totaal: <span id="total-reported">0</span></span>
+          <span class="badge badge-yellow">Open: <span id="open-reported">0</span></span>
+          <span class="badge badge-green">Afgehandeld: <span id="resolved-reported">0</span></span>
         </div>
 
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm admin-table">
             <thead>
-              <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+              <tr class="border-b">
                 <th class="text-left p-3">Bedrijf</th>
                 <th class="text-left p-3">Reviewer</th>
                 <th class="text-left p-3">Rating</th>
@@ -152,7 +144,7 @@
 
             <tbody id="reported-table-body">
               <tr>
-                <td colspan="7" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
+                <td colspan="7" class="admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
@@ -160,11 +152,11 @@
       </section>
 
       <!-- CLAIMS -->
-      <section id="section-claims" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
+      <section id="section-claims" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Claimverzoeken</h2>
-            <p class="text-xs text-gray-500">Bedrijven die een claim op hun vermelding hebben ingediend.</p>
+            <p class="text-xs text-gray-500">Door bedrijven ingediende claims.</p>
           </div>
 
           <button id="refreshClaims"
@@ -176,7 +168,7 @@
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm admin-table">
             <thead>
-              <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+              <tr class="border-b">
                 <th class="text-left p-3">Datum</th>
                 <th class="text-left p-3">Bedrijf</th>
                 <th class="text-left p-3">Contactpersoon</th>
@@ -188,7 +180,7 @@
 
             <tbody id="claimTableBody">
               <tr>
-                <td colspan="6" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
+                <td colspan="6" class="admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
@@ -196,11 +188,11 @@
       </section>
 
       <!-- LOGS -->
-      <section id="section-logs" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
+      <section id="section-logs" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Serverlogs</h2>
-            <p class="text-xs text-gray-500">Laatste logregels van de backend-server.</p>
+            <p class="text-xs text-gray-500">Laatste logregels.</p>
           </div>
 
           <button id="refreshLogsBtn"
@@ -218,7 +210,6 @@
     </section>
   </main>
 
-  <!-- SCRIPT -->
   <script src="js/admin.js?v=20251114"></script>
 </body>
 </html>
