@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin-dashboard – Irisje.nl</title>
+
   <meta name="description" content="Beheer gemelde reviews, bedrijven, claims en logs in het admin-dashboard van Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
@@ -20,9 +21,13 @@
         <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-semibold">I</span>
         <span class="font-semibold text-lg text-gray-900">Irisje.nl – Admin</span>
       </a>
+
       <div class="flex items-center gap-3">
         <span class="hidden sm:inline text-sm text-gray-500">Beheeromgeving</span>
-        <button id="logoutBtn" class="px-3 py-1.5 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white">
+
+        <!-- LOGOUT → volledig compatibel met admin.js -->
+        <button id="logoutBtn"
+          class="px-3 py-1.5 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white transition">
           Uitloggen
         </button>
       </div>
@@ -34,41 +39,46 @@
 
     <!-- SIDEBAR -->
     <aside class="w-56 shrink-0">
-      <nav id="adminNav" class="bg-white border border-gray-200 rounded-xl shadow-sm p-2 flex flex-col gap-1 text-sm">
-        <button
-          class="nav-item flex items-center justify-between px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700"
+      <nav id="adminNav"
+        class="bg-white border border-gray-200 rounded-xl shadow-sm p-2 flex flex-col gap-1 text-sm">
+
+        <!-- Default active -->
+        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700"
           data-section="section-overview">
           <span>Bedrijven</span>
         </button>
-        <button
-          class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
+
+        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
           data-section="section-reported">
           <span>Gemelde reviews</span>
         </button>
-        <button
-          class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
+
+        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
           data-section="section-claims">
           <span>Claimverzoeken</span>
         </button>
-        <button
-          class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
+
+        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
           data-section="section-logs">
           <span>Serverlogs</span>
         </button>
+
       </nav>
     </aside>
 
     <!-- CONTENT SECTIONS -->
     <section class="flex-1 flex flex-col gap-6">
 
-      <!-- BEDRIJVEN -->
+      <!-- ======================== BEDRIJVEN ======================== -->
       <section id="section-overview" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h1 class="text-lg font-semibold text-gray-900">Bedrijvenoverzicht</h1>
             <p class="text-xs text-gray-500">Overzicht van alle geregistreerde bedrijven.</p>
           </div>
-          <button id="refreshCompanies" class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
+
+          <button id="refreshCompanies"
+            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuwen
           </button>
         </div>
@@ -84,36 +94,39 @@
                 <th class="text-left p-3">Acties</th>
               </tr>
             </thead>
+
             <tbody id="adminCompanyTable">
               <tr>
-                <td colspan="5" class="p-4 text-center text-gray-400 text-sm">
-                  Laden...
-                </td>
+                <td colspan="5" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- GEMELDE REVIEWS -->
+      <!-- ====================== GEMELDE REVIEWS ====================== -->
       <section id="section-reported" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Gemelde reviews</h2>
-            <p class="text-xs text-gray-500">Overzicht van reviews die door bedrijven zijn gemeld.</p>
+            <p class="text-xs text-gray-500">Overzicht van reviews die zijn gemeld.</p>
           </div>
-          <button id="refreshBtn" class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
+
+          <button id="refreshBtn"
+            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuwen
           </button>
         </div>
 
-        <div class="flex items-center gap-4 mb-3 text-xs">
+        <div class="flex items-center gap-4 mb-4 text-xs">
           <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-50 border border-gray-200">
             Totaal: <span id="total-reported" class="font-semibold">0</span>
           </span>
+
           <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-yellow-50 border border-yellow-200">
             Open: <span id="open-reported" class="font-semibold">0</span>
           </span>
+
           <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-50 border border-green-200">
             Afgehandeld: <span id="resolved-reported" class="font-semibold">0</span>
           </span>
@@ -132,25 +145,26 @@
                 <th class="text-left p-3">Actie</th>
               </tr>
             </thead>
+
             <tbody id="reported-table-body">
               <tr>
-                <td colspan="7" class="p-4 text-center text-gray-400 text-sm">
-                  Laden...
-                </td>
+                <td colspan="7" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- CLAIMS -->
+      <!-- =========================== CLAIMS =========================== -->
       <section id="section-claims" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Claimverzoeken</h2>
-            <p class="text-xs text-gray-500">Bedrijven die een claim op een vermelding hebben ingediend.</p>
+            <p class="text-xs text-gray-500">Bedrijven die een claim op hun vermelding hebben ingediend.</p>
           </div>
-          <button id="refreshClaims" class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
+
+          <button id="refreshClaims"
+            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuwen
           </button>
         </div>
@@ -167,30 +181,32 @@
                 <th class="text-left p-3">Status</th>
               </tr>
             </thead>
+
             <tbody id="claimTableBody">
               <tr>
-                <td colspan="6" class="p-4 text-center text-gray-400 text-sm">
-                  Laden...
-                </td>
+                <td colspan="6" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- LOGS -->
+      <!-- =========================== LOGS ============================ -->
       <section id="section-logs" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Serverlogs</h2>
             <p class="text-xs text-gray-500">Laatste logregels van de backend-server.</p>
           </div>
-          <button id="refreshLogsBtn" class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
+
+          <button id="refreshLogsBtn"
+            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuw logs
           </button>
         </div>
 
-        <div id="logs-container" class="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto">
+        <div id="logs-container"
+          class="text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto">
           Logs worden geladen...
         </div>
       </section>
@@ -198,6 +214,7 @@
     </section>
   </main>
 
+  <!-- SCRIPT -->
   <script src="js/admin.js?v=20251114"></script>
 </body>
 </html>
