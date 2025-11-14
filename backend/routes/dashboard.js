@@ -1,28 +1,31 @@
 // backend/routes/dashboard.js
 const express = require("express");
 const jwt = require("jsonwebtoken");
-const Request = require("../models/Request");
+
+const Request = require("../models/request");   // <<< JUIST!
 
 const router = express.Router();
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: "Geen token meegegeven" });
+  if (!authHeader) return res.status(401).json({ error: "Geen token" });
+
   const token = authHeader.split(" ")[1];
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.companyId = decoded.companyId;
     next();
   } catch {
-    return res.status(401).json({ error: "Ongeldig of verlopen token" });
+    return res.status(401).json({ error: "Token ongeldig" });
   }
 }
 
-// Dashboard data ophalen
 router.get("/data", verifyToken, async (req, res) => {
   try {
     const companyId = req.companyId;
-    const requests = await Request.find({ companyId }).sort({ date: -1 });
+    const requests = await Request.find({ companyId })
+      .sort({ date: -1 });
 
     const stats = {
       total: requests.length,
@@ -34,19 +37,18 @@ router.get("/data", verifyToken, async (req, res) => {
     res.json({ ...stats, requests });
   } catch (err) {
     console.error("Dashboard-fout:", err);
-    res.status(500).json({ error: "Serverfout bij ophalen dashboarddata" });
+    res.status(500).json({ error: "serverfout" });
   }
 });
 
-// ✅ Status van aanvraag bijwerken
 router.put("/status/:id", verifyToken, async (req, res) => {
   try {
     const { status } = req.body;
     await Request.findByIdAndUpdate(req.params.id, { status });
     res.json({ success: true });
   } catch (err) {
-    console.error("Fout bij updaten status:", err);
-    res.status(500).json({ error: "Serverfout bij statusupdate" });
+    console.error("Status update fout:", err);
+    res.status(500).json({ error: "serverfout" });
   }
 });
 
