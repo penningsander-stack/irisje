@@ -1,4 +1,3 @@
-// backend/routes/auth.js
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
@@ -6,13 +5,15 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const User = require("../models/user");
+const Company = require("../models/company");
 
 /* ============================================================
-   🟢 Inloggen
+   🟢 Inloggen (JWT met role + companyId)
 ============================================================ */
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
     if (!email || !password)
       return res.status(400).json({ ok: false, error: "E-mail en wachtwoord zijn verplicht." });
 
@@ -22,19 +23,38 @@ router.post("/login", async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ ok: false, error: "Wachtwoord onjuist." });
 
+    /* --------------------------------------------------------
+       🔍 companyId ophalen (alleen voor bedrijven)
+    -------------------------------------------------------- */
+    let companyId = null;
+
+    if (user.role === "company") {
+      const company = await Company.findOne({ owner: user._id }).select("_id");
+      if (company) companyId = company._id.toString();
+    }
+
+    /* --------------------------------------------------------
+       🔑 JWT met role + companyId
+    -------------------------------------------------------- */
     const token = jwt.sign(
-      { id: user._id.toString(), role: user.role },
+      {
+        id: user._id.toString(),
+        role: user.role,
+        companyId: companyId || null,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    // ✅ veilige cookie-instellingen voor Render/HTTPS
+    /* --------------------------------------------------------
+       🍪 Cookie zetten
+    -------------------------------------------------------- */
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,               // Render gebruikt altijd HTTPS
-      sameSite: "None",           // nodig bij frontend/backend op verschillend domein
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dagen
-      path: "/",                  // altijd beschikbaar
+      secure: true,
+      sameSite: "None",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
     });
 
     user.lastLogin = new Date();
@@ -43,13 +63,8 @@ router.post("/login", async (req, res) => {
     res.json({
       ok: true,
       message: "Inloggen geslaagd",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        lastLogin: user.lastLogin,
-      },
+      role: user.role,
+      companyId,
     });
   } catch (err) {
     console.error("Login error:", err);
@@ -58,7 +73,7 @@ router.post("/login", async (req, res) => {
 });
 
 /* ============================================================
-   🟢 Sessies controleren
+   🟢 /me – sessie controleren
 ============================================================ */
 router.get("/me", async (req, res) => {
   try {
@@ -66,12 +81,23 @@ router.get("/me", async (req, res) => {
     if (!token) return res.status(401).json({ ok: false, error: "Geen token aanwezig." });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return res.status(404).json({ ok: false, error: "Gebruiker niet gevonden." });
 
-    res.json({ ok: true, user });
+    res.json({
+      ok: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: decoded.role,
+        companyId: decoded.companyId || null,
+        lastLogin: user.lastLogin,
+      },
+    });
   } catch (err) {
-    console.error("Me error:", err?.message);
+    console.error("Me error:", err.message);
     res.status(401).json({ ok: false, error: "Ongeldige of verlopen sessie." });
   }
 });
@@ -90,12 +116,12 @@ router.post("/logout", (_req, res) => {
 });
 
 /* ============================================================
-   🔧 Healthcheck
+   🟢 Healthcheck
 ============================================================ */
 router.get("/ping", (_req, res) => res.json({ ok: true, service: "auth" }));
 
 /* ============================================================
-   🧩 Registratie
+   🧩 Registreren (standaard role=company)
 ============================================================ */
 router.post("/register", async (req, res) => {
   try {
@@ -108,10 +134,16 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ ok: false, message: "E-mailadres is al geregistreerd." });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = new User({ name, email, password: hashed, role: "company" });
+    const user = new User({
+      name,
+      email,
+      password: hashed,
+      role: "company",
+    });
+
     await user.save();
 
-    res.json({ ok: true, message: "✅ Account aangemaakt. Je kunt nu inloggen." });
+    res.json({ ok: true, message: "Account aangemaakt. Je kunt nu inloggen." });
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ ok: false, message: "Serverfout bij registreren." });
@@ -119,7 +151,7 @@ router.post("/register", async (req, res) => {
 });
 
 /* ============================================================
-   🔑 Wachtwoordherstel
+   🔑 Wachtwoord vergeten
 ============================================================ */
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -134,6 +166,7 @@ const transporter = nodemailer.createTransport({
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
+
     const user = await User.findOne({ email });
     if (!user)
       return res.status(404).json({ ok: false, message: "Geen gebruiker met dit e-mailadres." });
@@ -151,25 +184,25 @@ router.post("/forgot-password", async (req, res) => {
       subject: "Wachtwoordherstel – Irisje.nl",
       html: `
         <p>Beste ${user.name || "gebruiker"},</p>
-        <p>Je hebt een verzoek ingediend om je wachtwoord te herstellen.</p>
-        <p>Klik op onderstaande link om een nieuw wachtwoord in te stellen (30 minuten geldig):</p>
-        <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
-        <p>Groet,<br><strong>Irisje.nl</strong></p>
+        <p>Klik op deze link om je wachtwoord te herstellen:</p>
+        <p><a href="${resetLink}">${resetLink}</a></p>
       `,
     });
 
-    res.json({ ok: true, message: "📩 E-mail met herstelinstructies verzonden." });
+    res.json({ ok: true, message: "E-mail verzonden." });
   } catch (err) {
     console.error("Forgot-password error:", err);
     res.status(500).json({ ok: false, message: "Kon geen e-mail verzenden." });
   }
 });
 
+/* ============================================================
+   🔑 Nieuw wachtwoord instellen
+============================================================ */
 router.post("/reset-password/:token", async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
-    if (!password) return res.status(400).json({ ok: false, message: "Geen nieuw wachtwoord opgegeven." });
 
     const user = await User.findOne({
       resetToken: token,
@@ -182,9 +215,10 @@ router.post("/reset-password/:token", async (req, res) => {
     user.password = await bcrypt.hash(password, 10);
     user.resetToken = undefined;
     user.resetExpires = undefined;
+
     await user.save();
 
-    res.json({ ok: true, message: "✅ Wachtwoord succesvol gewijzigd." });
+    res.json({ ok: true, message: "Wachtwoord gewijzigd." });
   } catch (err) {
     console.error("Reset-password error:", err);
     res.status(500).json({ ok: false, message: "Fout bij wachtwoord wijzigen." });
