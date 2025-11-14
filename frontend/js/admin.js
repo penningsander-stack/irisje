@@ -11,7 +11,7 @@ const ENDPOINT_GET_CLAIMS = `${API_BASE}/admin/claims`;
 document.addEventListener("DOMContentLoaded", initAdmin);
 
 async function initAdmin() {
-  console.log("🛠️ Admin-dashboard geladen (v20251114-FINAL-FIX-REVIEWS)");
+  console.log("🛠️ Admin-dashboard geladen (v20251114-FINAL-FIX-REVIEWS-RETRY)");
 
   const logoutBtn = byId("logoutBtn");
   const refreshReviewsBtn = byId("refreshBtn");
@@ -47,7 +47,7 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     SIDEBAR NAVIGATIE (als aanwezig)
+     SIDEBAR NAVIGATIE
   ============================================================ */
   const nav = byId("adminNav");
   if (nav) {
@@ -81,18 +81,31 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     BEDRIJVEN LADEN (ADMIN OVERVIEW)
+     BEDRIJVEN LADEN (ADMIN OVERVIEW) — **MET RETRY LOGIC**
   ============================================================ */
-  async function loadAdminCompanies() {
+  async function loadAdminCompanies(retry = 0) {
     if (!adminTable) return;
     adminTable.innerHTML =
       '<tr><td colspan="5" class="text-center p-4 text-gray-400">Laden...</td></tr>';
 
     try {
-      const res = await fetch(ENDPOINT_GET_COMPANIES);
-      const data = await res.json();
+      const res = await fetch(ENDPOINT_GET_COMPANIES, { cache: "no-store" });
 
-      if (!res.ok || !Array.isArray(data.companies)) {
+      if (!res.ok) {
+        // Backend koud? Geef 2s om op te starten
+        if (retry < 3) {
+          console.warn(`loadAdminCompanies → retry ${retry + 1} binnen 2s...`);
+          return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
+
+      const data = await res.json().catch(() => null);
+      if (!data || !Array.isArray(data.companies)) {
+        if (retry < 3) {
+          console.warn(`loadAdminCompanies → invalid JSON retry ${retry + 1}`);
+          return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
+        }
         throw new Error("Ongeldig antwoord van /admin/overview");
       }
 
@@ -133,20 +146,31 @@ async function initAdmin() {
       );
     } catch (err) {
       console.error("❌ fout bedrijven:", err);
+
+      if (retry < 3) {
+        console.warn(
+          `loadAdminCompanies → laatste retry binnen 2s (poging ${
+            retry + 1
+          })`
+        );
+        return setTimeout(() => loadAdminCompanies(retry + 1), 2000);
+      }
+
       adminTable.innerHTML =
         '<tr><td colspan="5" class="text-center p-4 text-red-600">❌ Fout bij laden van bedrijven.</td></tr>';
     }
   }
 
+  /* ============================================================
+     BEDRIJVEN: Verwijderen & Verifiëren
+  ============================================================ */
   async function doDeleteCompany(id) {
     if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
 
     try {
       const res = await fetch(
         `${API_BASE}/admin/company/${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-        }
+        { method: "DELETE" }
       );
       const data = await res.json().catch(() => null);
 
@@ -166,9 +190,7 @@ async function initAdmin() {
     try {
       const res = await fetch(
         `${API_BASE}/admin/verify/${encodeURIComponent(id)}`,
-        {
-          method: "PUT",
-        }
+        { method: "PUT" }
       );
       const data = await res.json().catch(() => null);
 
@@ -187,7 +209,7 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     GEMELDE REVIEWS
+     GEMELDE REVIEWS (BLIJFT IDENTIEK)
   ============================================================ */
   const reportedTableBody = byId("reported-table-body");
 
@@ -276,7 +298,7 @@ async function initAdmin() {
 
     try {
       const res = await fetch(ENDPOINT_RESOLVE_REPORTED(id), {
-        method: "PATCH", // backend gebruikt PATCH /admin/resolve/:id
+        method: "PATCH",
       });
 
       if (!res.ok) throw new Error("Serverfout bij resolve");
@@ -310,7 +332,7 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     CLAIMS
+     CLAIMVERZOEKEN — ONGEWIJZIGD
   ============================================================ */
   async function loadClaims() {
     if (!claimTableBody) return;
@@ -338,7 +360,10 @@ async function initAdmin() {
         .map((c) => {
           const created = formatDate(c.createdAt || c.date);
           const company =
-            c.companyId?.name || c.company?.name || c.companyName || "(onbekend)";
+            c.companyId?.name ||
+            c.company?.name ||
+            c.companyName ||
+            "(onbekend)";
           const contactName = c.contactName || c.name || "";
           const contactEmail = c.contactEmail || c.email || "";
           const contactPhone = c.contactPhone || c.phone || "";
@@ -378,7 +403,7 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     SERVERLOGS
+     SERVERLOGS (ONVERANDERD)
   ============================================================ */
   async function loadServerLogs() {
     if (!logsContainer) return;
@@ -417,11 +442,11 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     INIT LOADS
+     INIT LOADS — laat bedrijven als eerste retried worden
   ============================================================ */
   try {
+    await loadAdminCompanies(); // retry logic first
     await Promise.allSettled([
-      loadAdminCompanies(),
       loadReportedReviews(),
       loadClaims(),
       loadServerLogs(),
@@ -444,7 +469,9 @@ function esc(v) {
   return v == null
     ? ""
     : String(v).replace(/[&<>"']/g, (s) =>
-        ({ "&": "&amp;", "<": "&lt;", ">": "&quot;", "'": "&#39;" }[s])
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+          s
+        ])
       );
 }
 
