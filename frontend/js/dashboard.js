@@ -1,131 +1,65 @@
-// frontend/js/dashboard.js
 (() => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
   document.addEventListener("DOMContentLoaded", initDashboard);
 
   async function initDashboard() {
-    console.log("📊 Dashboard gestart (v20251113-final)");
+    console.log("📊 Dashboard gestart (v20251114-fixed)");
 
     const email = localStorage.getItem("userEmail");
     const role = localStorage.getItem("userRole");
-    const token = localStorage.getItem("token");
     let companyId = localStorage.getItem("companyId");
 
     const $reqBody = byId("request-table-body");
     const $revBody = byId("review-table-body");
 
     /* ============================================================
-       🧠 1. SESSIEVALIDATIE
-    ============================================================ */
-    if (!token || !email) {
-      console.warn("⚠️ Geen geldige sessie — doorsturen naar login.html");
-      redirectToLogin("Je sessie is verlopen, log opnieuw in.");
-      return;
-    }
-
-    const isSessionValid = await verifySession(token);
-    if (!isSessionValid) {
-      redirectToLogin("Je sessie is verlopen, log opnieuw in.");
-      return;
-    }
-
-    /* ============================================================
-       🧠 2. ADMIN-DETECTIE & REDIRECT
+       1. ADMIN CHECK
     ============================================================ */
     const isAdmin =
       role === "admin" ||
       (email && email.toLowerCase() === "info@irisje.nl");
 
     if (isAdmin) {
-      console.log("🛠️ Beheerder gedetecteerd → redirect naar admin.html");
+      console.log("🛠️ Admin → redirect");
       showAdminRedirectNotice();
-      setTimeout(() => {
-        window.location.href = "admin.html";
-      }, 1200);
+      setTimeout(() => (window.location.href = "admin.html"), 800);
       return;
     }
 
     /* ============================================================
-       🚪 3. LOGOUTKNOP
-    ============================================================ */
-    const logoutBtn = byId("logoutBtn");
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", logout);
-    }
-
-    /* ============================================================
-       🔔 4. NOTIFICATIE ELEMENT
-    ============================================================ */
-    const notif = document.createElement("div");
-    notif.id = "notif";
-    notif.className =
-      "hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50";
-    document.body.appendChild(notif);
-
-    function showNotif(msg = "✅ Opgeslagen", success = true) {
-      notif.textContent = msg;
-      notif.classList.remove("hidden");
-      notif.classList.toggle("bg-green-600", success);
-      notif.classList.toggle("bg-red-600", !success);
-      notif.style.opacity = "0";
-      notif.style.transition = "opacity 0.3s ease";
-      setTimeout(() => (notif.style.opacity = "1"), 10);
-      setTimeout(() => {
-        notif.style.opacity = "0";
-        setTimeout(() => notif.classList.add("hidden"), 300);
-      }, 2500);
-    }
-
-    /* ============================================================
-       🏢 5. BEDRIJFSPROFIEL
+       2. COMPANY VALIDATIE
     ============================================================ */
     if (!companyId) {
-      console.warn("❌ Geen companyId gevonden — opnieuw inloggen nodig.");
+      console.warn("❌ Geen companyId opgeslagen");
       if ($reqBody)
         $reqBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden (log opnieuw in).</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4'>Geen bedrijf gevonden</td></tr>";
       if ($revBody)
         $revBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen bedrijf gevonden.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4'>Geen bedrijf gevonden</td></tr>";
       return;
     }
 
-    const form = byId("companyForm");
-    const $specialtiesList = byId("companySpecialties");
-    const $certificationsList = byId("companyCertifications");
-    const $languagesList = byId("companyLanguages");
-
-    let allRequests = [];
-    let allReviews = [];
-    let statusChart;
-
+    /* ============================================================
+       3. LOAD COMPANY PROFILE (⚠️ FIXED — NIET MEER SLUG!)
+    ============================================================ */
     async function loadCompanyProfile() {
       try {
-        const [companyRes, listRes] = await Promise.all([
-          fetch(`${API_BASE}/companies/slug/${companyId}`).then((r) =>
-            r.ok ? r.json() : null
-          ),
-          fetch(`${API_BASE}/companies/lists`).then((r) => r.json()),
-        ]);
+        const companyRes = await fetch(`${API_BASE}/companies/${companyId}`);
+        if (!companyRes.ok) throw new Error("Bedrijf niet gevonden");
 
-        if (!companyRes) throw new Error("Bedrijf niet gevonden");
-        fillCompanyForm(companyRes);
-        renderSelectOptions(
-          $specialtiesList,
-          listRes.specialties,
-          companyRes.specialties
-        );
-        renderSelectOptions(
-          $certificationsList,
-          listRes.certifications,
-          companyRes.certifications
-        );
-        renderSelectOptions(
-          $languagesList,
-          listRes.languages,
-          companyRes.languages
-        );
+        const company = await companyRes.json();
+
+        // Lists ophalen
+        const listRes = await fetch(`${API_BASE}/companies/lists`);
+        const lists = await listRes.json();
+
+        fillCompanyForm(company);
+        renderSelectOptions(byId("companySpecialties"), lists.specialties, company.specialties);
+        renderSelectOptions(byId("companyCertifications"), lists.certifications, company.certifications);
+        renderSelectOptions(byId("companyLanguages"), lists.languages, company.languages);
+
       } catch (err) {
         console.error("❌ Fout bij laden bedrijfsprofiel:", err);
         showNotif("Kon bedrijfsprofiel niet laden", false);
@@ -133,7 +67,9 @@
     }
 
     function fillCompanyForm(c) {
+      const form = byId("companyForm");
       if (!form) return;
+
       form.companyName.value = c.name || "";
       form.companyCity.value = c.city || "";
       form.companyPhone.value = c.phone || "";
@@ -149,107 +85,68 @@
       if (!select) return;
       select.innerHTML = options
         .map(
-          (opt) => `<option value="${opt}" ${
-            selected?.includes(opt) ? "selected" : ""
-          }>${opt}</option>`
+          (opt) =>
+            `<option value="${opt}" ${
+              selected?.includes(opt) ? "selected" : ""
+            }>${opt}</option>`
         )
         .join("");
     }
 
-    form?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const body = {
-        name: form.companyName.value.trim(),
-        city: form.companyCity.value.trim(),
-        phone: form.companyPhone.value.trim(),
-        website: form.companyWebsite.value.trim(),
-        regions: form.companyRegions.value
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        availability: form.companyAvailability.value.trim(),
-        worksNationwide: form.companyWorksNationwide.checked,
-        specialties: Array.from(form.companySpecialties.selectedOptions).map(
-          (o) => o.value
-        ),
-        certifications: Array.from(
-          form.companyCertifications.selectedOptions
-        ).map((o) => o.value),
-        languages: Array.from(form.companyLanguages.selectedOptions).map(
-          (o) => o.value
-        ),
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/companies/${companyId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) throw new Error();
-        showNotif("✅ Bedrijfsprofiel opgeslagen");
-      } catch (err) {
-        console.error("❌ Opslaan mislukt:", err);
-        showNotif("Opslaan mislukt", false);
-      }
-    });
-
     await loadCompanyProfile();
 
     /* ============================================================
-       📬 6. AANVRAGEN & REVIEWS
+       4. LOAD REQUESTS
     ============================================================ */
-    await Promise.all([loadRequests(), loadReviews()]);
+    let allRequests = [];
 
     async function loadRequests() {
       try {
         const res = await fetch(`${API_BASE}/requests/company/${companyId}`);
         const data = await res.json();
+
         allRequests = Array.isArray(data)
           ? data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           : [];
+
         renderRequestTable();
       } catch (err) {
-        console.error("❌ Fout bij laden aanvragen:", err);
+        console.error("❌ Fout bij aanvragen:", err);
         $reqBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden aanvragen.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4 text-red-600'>Fout bij laden aanvragen.</td></tr>";
       }
     }
 
     function renderRequestTable() {
       if (!$reqBody) return;
+
       if (!allRequests.length) {
         $reqBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Geen aanvragen gevonden.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4 text-gray-500'>Geen aanvragen gevonden.</td></tr>";
         updateCharts();
         return;
       }
 
       const options = ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"];
+
       $reqBody.innerHTML = allRequests
         .map((r) => {
-          const d = new Date(r.createdAt || r.date);
-          const datum = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL");
-          return `<tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="p-3">${esc(r.name)}</td>
-            <td class="p-3">${esc(r.email)}</td>
-            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(
-            r.message
-          )}</td>
-            <td class="p-3">
-              <select data-id="${r._id}" class="statusSelect border rounded px-2 py-1 text-sm">
-                ${options
-                  .map(
-                    (opt) =>
-                      `<option value="${opt}" ${
-                        r.status === opt ? "selected" : ""
-                      }>${opt}</option>`
-                  )
-                  .join("")}
-              </select>
-            </td>
-            <td class="p-3 whitespace-nowrap">${datum}</td>
-          </tr>`;
+          const d = new Date(r.createdAt);
+          const date = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL");
+
+          return `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="p-3">${esc(r.name)}</td>
+              <td class="p-3">${esc(r.email)}</td>
+              <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
+              <td class="p-3">
+                <select data-id="${r._id}" class="statusSelect border rounded px-2 py-1 text-sm">
+                  ${options.map((o) => `<option value="${o}" ${o === r.status ? "selected" : ""}>${o}</option>`).join("")}
+                </select>
+              </td>
+              <td class="p-3">${date}</td>
+            </tr>
+          `;
         })
         .join("");
 
@@ -257,20 +154,23 @@
         sel.addEventListener("change", async (e) => {
           const id = e.target.dataset.id;
           const status = e.target.value;
+
           try {
             const res = await fetch(`${API_BASE}/dashboard/status/${id}`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ status }),
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Fout");
-            const index = allRequests.findIndex((r) => r._id === id);
-            if (index >= 0) allRequests[index].status = status;
+
+            if (!res.ok) throw new Error();
+
+            const idx = allRequests.findIndex((r) => r._id === id);
+            if (idx >= 0) allRequests[idx].status = status;
+
             updateCharts();
-            showNotif("✅ Status bijgewerkt");
+            showNotif("Status opgeslagen");
+
           } catch (err) {
-            console.error("❌ Status-update mislukt:", err);
             showNotif("Fout bij statusupdate", false);
           }
         })
@@ -279,59 +179,73 @@
       updateCharts();
     }
 
+    /* ============================================================
+       5. LOAD REVIEWS
+    ============================================================ */
+    let allReviews = [];
+
     async function loadReviews() {
       try {
         const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
         const data = await res.json();
+
         allReviews = Array.isArray(data)
           ? data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           : [];
+
         renderReviewsTable();
       } catch (err) {
-        console.error("❌ Fout bij laden reviews:", err);
+        console.error("❌ Fout bij reviews:", err);
         $revBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-red-600 p-4'>Fout bij laden reviews.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4 text-red-600'>Fout bij laden reviews.</td></tr>";
       }
     }
 
     function renderReviewsTable() {
       if (!$revBody) return;
+
       if (!allReviews.length) {
         $revBody.innerHTML =
-          "<tr><td colspan='5' class='text-center text-gray-500 p-4'>Nog geen reviews.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4 text-gray-500'>Nog geen reviews.</td></tr>";
         return;
       }
 
       $revBody.innerHTML = allReviews
         .map((r) => {
           const d = new Date(r.createdAt);
-          const datum = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL");
-          return `<tr class="border-b border-gray-50 hover:bg-gray-50">
-            <td class="p-3">${esc(r.reviewerName || r.name || "Onbekend")}</td>
-            <td class="p-3">${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
-            <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(
-            r.message
-          )}</td>
-            <td class="p-3 whitespace-nowrap">${datum}</td>
-            <td class="p-3">${
-              r.reported
-                ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
-                : `<button onclick="meldReview('${r._id}')"
-                  class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition">
-                  Melden</button>`
-            }</td></tr>`;
+          const date = isNaN(d) ? "-" : d.toLocaleDateString("nl-NL");
+
+          return `
+            <tr class="border-b hover:bg-gray-50">
+              <td class="p-3">${esc(r.reviewerName || "Onbekend")}</td>
+              <td class="p-3">${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
+              <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
+              <td class="p-3">${date}</td>
+              <td class="p-3">
+                ${r.reported
+                  ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
+                  : `<button onclick="meldReview('${r._id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs">Melden</button>`
+                }
+              </td>
+            </tr>
+          `;
         })
         .join("");
     }
 
+    await Promise.all([loadRequests(), loadReviews()]);
+
     /* ============================================================
-       📊 7. GRAFIEKEN
+       6. CHARTS
     ============================================================ */
+    let statusChart;
+
     function updateCharts() {
       const total = allRequests.length;
       const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
       const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
       const followed = allRequests.filter((r) => r.status === "Opgevolgd").length;
+
       setText("total", total);
       setText("accepted", accepted);
       setText("rejected", rejected);
@@ -340,75 +254,46 @@
       const ctx = byId("statusChart");
       if (!ctx || typeof Chart === "undefined") return;
 
-      const statusData = {
-        Nieuw: allRequests.filter((r) => !r.status || r.status === "Nieuw").length,
+      const data = {
+        Nieuw: total - accepted - rejected - followed,
         Geaccepteerd: accepted,
         Afgewezen: rejected,
         Opgevolgd: followed,
       };
 
       if (statusChart) statusChart.destroy();
+
       statusChart = new Chart(ctx, {
         type: "doughnut",
         data: {
-          labels: Object.keys(statusData),
-          datasets: [
-            {
-              data: Object.values(statusData),
-              backgroundColor: [
-                "rgba(99,102,241,0.7)",
-                "rgba(34,197,94,0.7)",
-                "rgba(239,68,68,0.7)",
-                "rgba(234,179,8,0.7)",
-              ],
-            },
-          ],
+          labels: Object.keys(data),
+          datasets: [{ data: Object.values(data) }],
         },
         options: { plugins: { legend: { position: "bottom" } } },
       });
     }
   }
 
-  /* ============================================================
-     🧩 HULPFUNCTIES
-  ============================================================ */
-  function byId(id) {
-    return document.getElementById(id);
-  }
-  function setText(id, val) {
+  /* UTIL */
+  const byId = (id) => document.getElementById(id);
+  const setText = (id, val) => {
     const el = byId(id);
     if (el) el.textContent = val;
-  }
-  function esc(v) {
-    return String(v ?? "").replace(/[&<>"']/g, (s) =>
+  };
+  const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (s) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
     );
-  }
+
   function showAdminRedirectNotice() {
     const div = document.createElement("div");
     div.className =
-      "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-6 py-4 rounded-xl shadow-lg text-center text-sm";
+      "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-6 py-4 rounded shadow text-sm";
     div.textContent = "Beheerdersdashboard wordt geopend...";
     document.body.appendChild(div);
   }
-  async function verifySession(token) {
-    try {
-      const res = await fetch(`${API_BASE}/auth/verify`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }
-  function redirectToLogin(msg) {
-    alert(msg || "Log opnieuw in.");
-    localStorage.clear();
-    window.location.href = "login.html";
-  }
-  function logout() {
-    localStorage.clear();
-    alert("Je bent uitgelogd.");
-    window.location.href = "login.html";
+
+  function showNotif(msg, success = true) {
+    console.log(msg);
   }
 })();
