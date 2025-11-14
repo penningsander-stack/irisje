@@ -31,9 +31,6 @@ function startupBanner() {
   addLog("irisje backend succesvol gestart", "info");
 }
 
-/**
- * hulploggers
- */
 function irisLog(...args) {
   console.log(`${colors.magenta}🌸 [irisje]${colors.reset}`, ...args);
 }
