@@ -74,6 +74,7 @@ const routes = [
   "payments",
   "status",
   "claims",
+  "dashboard",        // ✅ TOEGEVOEGD
   "googlereviews",
   "seed",
   "importer_places",
@@ -224,7 +225,6 @@ app.use(/.*\.html$/, (req, res, next) => {
 
 /* ============================================================
    ⚠️ Fallback (SPA)
-   FIXED REGEX → laat nu ALLE /api/... routes door
 ============================================================ */
 app.get(/^(?!\/api\/|.*\.(xml|txt)$).*/, (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
