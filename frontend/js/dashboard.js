@@ -1,10 +1,29 @@
 (() => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
+  /* ============================================================
+     0. SUPER-VROEGE CHECK — voorkomt flicker!
+  ============================================================ */
+  const earlyEmail = localStorage.getItem("userEmail");
+  const earlyRole = localStorage.getItem("userRole");
+
+  const earlyIsAdmin =
+    earlyRole === "admin" ||
+    (earlyEmail && earlyEmail.toLowerCase() === "info@irisje.nl");
+
+  // 🚀 Admin? DIRECT redirect, nog vóór DOM geladen is
+  if (earlyIsAdmin) {
+    window.location.href = "admin.html";
+    return;
+  }
+
+  /* ============================================================
+     Hoofd-initialisatie
+  ============================================================ */
   document.addEventListener("DOMContentLoaded", initDashboard);
 
   async function initDashboard() {
-    console.log("📊 Dashboard gestart (v20251114-fixed)");
+    console.log("📊 Dashboard gestart (v20251114-noflicker)");
 
     const email = localStorage.getItem("userEmail");
     const role = localStorage.getItem("userRole");
@@ -14,24 +33,22 @@
     const $revBody = byId("review-table-body");
 
     /* ============================================================
-       1. ADMIN CHECK
+       1. Tweede admin check (veiligheidsnet)
     ============================================================ */
     const isAdmin =
       role === "admin" ||
       (email && email.toLowerCase() === "info@irisje.nl");
 
     if (isAdmin) {
-      console.log("🛠️ Admin → redirect");
-      showAdminRedirectNotice();
-      setTimeout(() => (window.location.href = "admin.html"), 800);
+      window.location.href = "admin.html";
       return;
     }
 
     /* ============================================================
-       2. COMPANY VALIDATIE
+       2. Bedrijf-validatie
     ============================================================ */
     if (!companyId) {
-      console.warn("❌ Geen companyId opgeslagen");
+      console.warn("❌ Geen companyId gevonden");
       if ($reqBody)
         $reqBody.innerHTML =
           "<tr><td colspan='5' class='text-center p-4'>Geen bedrijf gevonden</td></tr>";
@@ -42,16 +59,14 @@
     }
 
     /* ============================================================
-       3. LOAD COMPANY PROFILE (⚠️ FIXED — NIET MEER SLUG!)
+       3. Company profile laden
     ============================================================ */
     async function loadCompanyProfile() {
       try {
         const companyRes = await fetch(`${API_BASE}/companies/${companyId}`);
         if (!companyRes.ok) throw new Error("Bedrijf niet gevonden");
-
         const company = await companyRes.json();
 
-        // Lists ophalen
         const listRes = await fetch(`${API_BASE}/companies/lists`);
         const lists = await listRes.json();
 
@@ -61,7 +76,7 @@
         renderSelectOptions(byId("companyLanguages"), lists.languages, company.languages);
 
       } catch (err) {
-        console.error("❌ Fout bij laden bedrijfsprofiel:", err);
+        console.error("❌ Fout bij bedrijfsprofiel:", err);
         showNotif("Kon bedrijfsprofiel niet laden", false);
       }
     }
@@ -96,7 +111,7 @@
     await loadCompanyProfile();
 
     /* ============================================================
-       4. LOAD REQUESTS
+       4. Aanvragen
     ============================================================ */
     let allRequests = [];
 
@@ -111,7 +126,7 @@
 
         renderRequestTable();
       } catch (err) {
-        console.error("❌ Fout bij aanvragen:", err);
+        console.error("❌ Fout aanvragen:", err);
         $reqBody.innerHTML =
           "<tr><td colspan='5' class='text-center p-4 text-red-600'>Fout bij laden aanvragen.</td></tr>";
       }
@@ -122,7 +137,7 @@
 
       if (!allRequests.length) {
         $reqBody.innerHTML =
-          "<tr><td colspan='5' class='text-center p-4 text-gray-500'>Geen aanvragen gevonden.</td></tr>";
+          "<tr><td colspan='5' class='text-center p-4 text-gray-500'>Geen aanvragen.</td></tr>";
         updateCharts();
         return;
       }
@@ -169,8 +184,7 @@
 
             updateCharts();
             showNotif("Status opgeslagen");
-
-          } catch (err) {
+          } catch {
             showNotif("Fout bij statusupdate", false);
           }
         })
@@ -180,7 +194,7 @@
     }
 
     /* ============================================================
-       5. LOAD REVIEWS
+       5. Reviews
     ============================================================ */
     let allReviews = [];
 
@@ -236,7 +250,7 @@
     await Promise.all([loadRequests(), loadReviews()]);
 
     /* ============================================================
-       6. CHARTS
+       6. Charts
     ============================================================ */
     let statusChart;
 
@@ -274,7 +288,9 @@
     }
   }
 
-  /* UTIL */
+  /* ============================================================
+     UTIL
+  ============================================================ */
   const byId = (id) => document.getElementById(id);
   const setText = (id, val) => {
     const el = byId(id);
@@ -284,14 +300,6 @@
     String(v ?? "").replace(/[&<>"']/g, (s) =>
       ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
     );
-
-  function showAdminRedirectNotice() {
-    const div = document.createElement("div");
-    div.className =
-      "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-indigo-600 text-white px-6 py-4 rounded shadow text-sm";
-    div.textContent = "Beheerdersdashboard wordt geopend...";
-    document.body.appendChild(div);
-  }
 
   function showNotif(msg, success = true) {
     console.log(msg);
