@@ -1,14 +1,17 @@
 // frontend/js/admin.js
+
 const API_BASE = "https://irisje-backend.onrender.com/api";
+
 const ENDPOINT_GET_REPORTED = `${API_BASE}/admin/reported`;
 const ENDPOINT_RESOLVE_REPORTED = (id) => `${API_BASE}/admin/resolve/${id}`;
 const ENDPOINT_GET_LOGS = `${API_BASE}/admin/logs`;
+const ENDPOINT_GET_COMPANIES = `${API_BASE}/companies/all`;
 const ENDPOINT_GET_CLAIMS = `${API_BASE}/claims/all`;
 
 document.addEventListener("DOMContentLoaded", initAdmin);
 
 async function initAdmin() {
-  console.log("🛠️ Admin-dashboard geladen (v20251114-FINAL)");
+  console.log("🛠️ Admin-dashboard geladen (v20251114-STABLE)");
 
   const logoutBtn = byId("logoutBtn");
   const refreshReviewsBtn = byId("refreshBtn");
@@ -16,10 +19,11 @@ async function initAdmin() {
   const logsContainer = byId("logs-container");
   const adminTable = byId("adminCompanyTable");
   const refreshCompaniesBtn = byId("refreshCompanies");
-  const claimTable = byId("claimTableBody");
+  const claimTableBody = byId("claimTableBody");
+  const refreshClaimsBtn = byId("refreshClaims");
 
   /* ============================================================
-     NOTIFICATIE
+     NOTIFICATIEBALK
   ============================================================ */
   const notif = document.createElement("div");
   notif.id = "notif";
@@ -56,9 +60,9 @@ async function initAdmin() {
         );
         btn.classList.add("bg-indigo-50", "text-indigo-700");
 
-        document.querySelectorAll("main section[id^='section-']").forEach((s) =>
-          s.classList.add("hidden")
-        );
+        document
+          .querySelectorAll("main section[id^='section-']")
+          .forEach((s) => s.classList.add("hidden"));
 
         const active = byId(target);
         if (active) active.classList.remove("hidden");
@@ -71,13 +75,13 @@ async function initAdmin() {
   ============================================================ */
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
-      localStorage.clear();
+      localStorage.removeItem("token");
       window.location.href = "login.html";
     });
   }
 
   /* ============================================================
-     🧾 LOAD COMPANIES (ADMIN OVERVIEW)
+     BEDRIJVEN – ADMIN OVERZICHT
   ============================================================ */
   async function loadAdminCompanies() {
     if (!adminTable) return;
@@ -85,12 +89,28 @@ async function initAdmin() {
       '<tr><td colspan="5" class="text-center p-4 text-gray-400">Laden...</td></tr>';
 
     try {
-      const res = await fetch(`${API_BASE}/admin/overview`);
-      const data = await res.json();
+      const res = await fetch(ENDPOINT_GET_COMPANIES);
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Ongeldige JSON van /companies/all");
+      }
 
-      if (!res.ok || !data.companies) throw new Error("Ongeldig antwoord");
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
 
-      const companies = data.companies;
+      // Backend kan ofwel een array, ofwel { companies: [...] } teruggeven
+      let companies = [];
+      if (Array.isArray(data)) {
+        companies = data;
+      } else if (Array.isArray(data.companies)) {
+        companies = data.companies;
+      } else {
+        throw new Error("Onverwacht antwoordformaat voor bedrijven");
+      }
+
       if (!companies.length) {
         adminTable.innerHTML =
           '<tr><td colspan="5" class="text-center p-4 text-gray-400">Geen bedrijven gevonden.</td></tr>';
@@ -98,30 +118,37 @@ async function initAdmin() {
       }
 
       adminTable.innerHTML = companies
-        .map(
-          (c) => `
-        <tr class="border-b hover:bg-gray-50">
-          <td class="p-3 font-medium">${esc(c.name)}</td>
-          <td class="p-3">${esc(c.owner?.email || "-")}</td>
-          <td class="p-3">
-            ${
-              c.isVerified
-                ? '<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700">Geverifieerd</span>'
-                : '<span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">Niet geverifieerd</span>'
-            }
-          </td>
-          <td class="p-3 text-center">${c.reviewCount || 0}</td>
-          <td class="p-3 flex gap-2">
-            <a href="company.html?slug=${encodeURIComponent(
-              c.slug
-            )}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
-              🔍 Bekijken
-            </a>
-            <button class="verifyBtn text-green-600 text-sm" data-id="${c._id}">✔️ Verifiëren</button>
-            <button class="deleteBtn text-red-600 text-sm" data-id="${c._id}">🗑️ Verwijderen</button>
-          </td>
-        </tr>`
-        )
+        .map((c) => {
+          const email = c.owner?.email || c.email || "-";
+          const statusBadge = c.isVerified
+            ? '<span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700">Geverifieerd</span>'
+            : '<span class="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">Niet geverifieerd</span>';
+
+          return `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3 font-medium">${esc(c.name || "(naam onbekend)")}</td>
+            <td class="p-3">${esc(email)}</td>
+            <td class="p-3">${statusBadge}</td>
+            <td class="p-3 text-center">${c.reviewCount || 0}</td>
+            <td class="p-3 flex gap-2">
+              ${
+                c.slug
+                  ? `<a href="company.html?slug=${encodeURIComponent(
+                      c.slug
+                    )}" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                    🔍 Bekijken
+                  </a>`
+                  : ""
+              }
+              <button class="verifyBtn text-green-600 text-sm" data-id="${
+                c._id
+              }">✔️ Verifiëren</button>
+              <button class="deleteBtn text-red-600 text-sm" data-id="${
+                c._id
+              }">🗑️ Verwijderen</button>
+            </td>
+          </tr>`;
+        })
         .join("");
 
       document.querySelectorAll(".deleteBtn").forEach((btn) =>
@@ -132,9 +159,9 @@ async function initAdmin() {
         btn.addEventListener("click", () => doVerifyCompany(btn.dataset.id))
       );
     } catch (err) {
-      console.error("❌ fout:", err);
+      console.error("❌ fout bedrijven:", err);
       adminTable.innerHTML =
-        '<tr><td colspan="5" class="text-center p-4 text-red-600">❌ Fout bij laden.</td></tr>';
+        '<tr><td colspan="5" class="text-center p-4 text-red-600">❌ Fout bij laden van bedrijven.</td></tr>';
     }
   }
 
@@ -142,18 +169,24 @@ async function initAdmin() {
     if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/admin/company/${id}`, {
+      const res = await fetch(`${API_BASE}/admin/company/${encodeURIComponent(id)}`, {
         method: "DELETE",
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Serverfout");
+      let data;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+
+      if (!res.ok) throw new Error(data?.error || "Serverfout (verwijderen)");
 
       showNotif("✅ Bedrijf verwijderd");
       await loadAdminCompanies();
     } catch (err) {
       console.error(err);
-      showNotif("❌ Fout bij verwijderen", false);
+      showNotif("❌ Fout bij verwijderen van bedrijf", false);
     }
   }
 
@@ -161,18 +194,24 @@ async function initAdmin() {
     if (!confirm("Wil je de verificatiestatus wijzigen?")) return;
 
     try {
-      const res = await fetch(`${API_BASE}/admin/verify/${id}`, {
+      const res = await fetch(`${API_BASE}/admin/verify/${encodeURIComponent(id)}`, {
         method: "PUT",
       });
-      const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Serverfout");
+      let data;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+
+      if (!res.ok) throw new Error(data?.error || "Serverfout (verificatie)");
 
       showNotif("✅ Verificatie gewijzigd");
       await loadAdminCompanies();
     } catch (err) {
       console.error(err);
-      showNotif("❌ Fout bij verificatie", false);
+      showNotif("❌ Fout bij wijzigen verificatie", false);
     }
   }
 
@@ -181,28 +220,37 @@ async function initAdmin() {
   }
 
   /* ============================================================
-     ⭐ GEMELDE REVIEWS
+     GEMELDE REVIEWS
   ============================================================ */
   const reportedTableBody = byId("reported-table-body");
 
   async function loadReportedReviews() {
-    if (reportedTableBody)
+    if (reportedTableBody) {
       reportedTableBody.innerHTML =
         '<tr><td colspan="7" class="text-center p-4 text-gray-400">Laden...</td></tr>';
+    }
 
     try {
       const res = await fetch(ENDPOINT_GET_REPORTED);
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Ongeldige JSON van /admin/reported");
+      }
 
-      if (!res.ok || !Array.isArray(data)) throw new Error("ongeldig antwoord");
+      if (!res.ok || !Array.isArray(data)) {
+        throw new Error("Ongeldig antwoord voor gemelde reviews");
+      }
 
       renderReportedTable(data);
       updateReportedStats(data);
     } catch (err) {
-      console.error("❌ fout reviews:", err);
-      if (reportedTableBody)
+      console.error("❌ fout gemelde reviews:", err);
+      if (reportedTableBody) {
         reportedTableBody.innerHTML =
           '<tr><td colspan="7" class="text-center p-4 text-red-600">❌ Fout bij laden.</td></tr>';
+      }
       updateReportedStats([]);
     }
   }
@@ -219,12 +267,13 @@ async function initAdmin() {
     reportedTableBody.innerHTML = list
       .map((r) => {
         const id = r._id;
-        const companyName = r.company?.name || "Onbekend";
-        const reviewer = r.reviewerName || "Onbekend";
+        const companyName = r.company?.name || r.companyId?.name || "Onbekend";
+        const reviewer =
+          r.reviewerName || r.user?.name || r.userName || "Onbekend";
         const rating = r.rating ? "⭐".repeat(r.rating) : "-";
-        const msg = esc(r.message || "");
-        const d = formatDate(r.createdAt);
-        const resolved = !r.reported;
+        const msg = esc(r.message || r.text || "");
+        const d = formatDate(r.createdAt || r.date);
+        const resolved = r.reported === false || r.status === "resolved";
 
         return `
         <tr class="border-b" data-id="${id}">
@@ -238,7 +287,9 @@ async function initAdmin() {
               resolved
                 ? "bg-green-100 text-green-700"
                 : "bg-yellow-100 text-yellow-700"
-            }">${resolved ? "Afgehandeld" : "In behandeling"}</span>
+            }">
+              ${resolved ? "Afgehandeld" : "In behandeling"}
+            </span>
           </td>
           <td class="p-3">
             ${
@@ -263,10 +314,10 @@ async function initAdmin() {
 
     try {
       const res = await fetch(ENDPOINT_RESOLVE_REPORTED(id), {
-        method: "PATCH",
+        method: "POST", // backend-route is POST /admin/resolve/:id
       });
 
-      if (!res.ok) throw new Error("Serverfout");
+      if (!res.ok) throw new Error("Serverfout bij resolve");
 
       showNotif("✅ Review afgehandeld");
       await loadReportedReviews();
@@ -282,7 +333,9 @@ async function initAdmin() {
     const resolvedEl = byId("resolved-reported");
 
     const total = list.length;
-    const resolved = list.filter((r) => !r.reported).length;
+    const resolved = list.filter(
+      (r) => r.reported === false || r.status === "resolved"
+    ).length;
     const open = total - resolved;
 
     if (totalEl) totalEl.textContent = total;
@@ -298,51 +351,82 @@ async function initAdmin() {
      CLAIMS
   ============================================================ */
   async function loadClaims() {
-    if (!claimTable) return;
-    claimTable.innerHTML =
+    if (!claimTableBody) return;
+    claimTableBody.innerHTML =
       '<tr><td colspan="6" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
     try {
       const res = await fetch(ENDPOINT_GET_CLAIMS);
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error("Ongeldige JSON van /claims/all");
+      }
 
-      if (!res.ok || !data.ok || !Array.isArray(data.items))
-        throw new Error("ongeldig antwoord");
+      if (!res.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
 
-      const list = data.items;
+      // Backend kan: array, { items: [...] }, of { claims: [...] } teruggeven
+      let list = [];
+      if (Array.isArray(data)) {
+        list = data;
+      } else if (Array.isArray(data.items)) {
+        list = data.items;
+      } else if (Array.isArray(data.claims)) {
+        list = data.claims;
+      } else {
+        throw new Error("Ongeldig antwoord voor claims");
+      }
 
       if (!list.length) {
-        claimTable.innerHTML =
+        claimTableBody.innerHTML =
           '<tr><td colspan="6" class="p-4 text-center text-gray-400">Geen claimverzoeken.</td></tr>';
         return;
       }
 
-      claimTable.innerHTML = list
-        .map(
-          (c) => `
+      claimTableBody.innerHTML = list
+        .map((c) => {
+          const created = formatDate(c.createdAt || c.date);
+          const company =
+            c.companyId?.name || c.company?.name || c.companyName || "(onbekend)";
+          const contactName = c.contactName || c.name || "";
+          const contactEmail = c.contactEmail || c.email || "";
+          const contactPhone = c.contactPhone || c.phone || "";
+          const status = (c.status || "in behandeling").toString();
+
+          let badgeClass = "bg-yellow-100 text-yellow-700";
+          if (status === "verified" || status === "goedgekeurd") {
+            badgeClass = "bg-green-100 text-green-700";
+          } else if (status === "rejected" || status === "afgewezen") {
+            badgeClass = "bg-red-100 text-red-700";
+          }
+
+          return `
           <tr class="border-b hover:bg-gray-50">
-            <td class="p-3">${formatDate(c.createdAt)}</td>
-            <td class="p-3">${esc(c.companyId?.name || "(onbekend)")}</td>
-            <td class="p-3">${esc(c.contactName || "")}</td>
-            <td class="p-3">${esc(c.contactEmail || "")}</td>
-            <td class="p-3">${esc(c.contactPhone || "")}</td>
+            <td class="p-3 whitespace-nowrap">${created}</td>
+            <td class="p-3">${esc(company)}</td>
+            <td class="p-3">${esc(contactName)}</td>
+            <td class="p-3">${esc(contactEmail)}</td>
+            <td class="p-3">${esc(contactPhone)}</td>
             <td class="p-3">
-              <span class="px-2 py-1 rounded text-xs font-medium ${
-                c.status === "verified"
-                  ? "bg-green-100 text-green-700"
-                  : c.status === "rejected"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-yellow-100 text-yellow-700"
-              }">${esc(c.status)}</span>
+              <span class="px-2 py-1 rounded text-xs font-medium ${badgeClass}">
+                ${esc(status)}
+              </span>
             </td>
-          </tr>`
-        )
+          </tr>`;
+        })
         .join("");
     } catch (err) {
       console.error("❌ fout claims:", err);
-      claimTable.innerHTML =
-        '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Fout bij laden.</td></tr>';
+      claimTableBody.innerHTML =
+        '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Fout bij laden van claimverzoeken.</td></tr>';
     }
+  }
+
+  if (refreshClaimsBtn) {
+    refreshClaimsBtn.addEventListener("click", loadClaims);
   }
 
   /* ============================================================
@@ -354,20 +438,28 @@ async function initAdmin() {
 
     try {
       const res = await fetch(ENDPOINT_GET_LOGS);
-      const logs = await res.json();
+      let logs;
+      try {
+        logs = await res.json();
+      } catch (e) {
+        throw new Error("Ongeldige JSON van /admin/logs");
+      }
 
-      if (!res.ok || !Array.isArray(logs))
-        throw new Error("Ongeldig antwoord");
+      if (!res.ok || !Array.isArray(logs)) {
+        throw new Error("Ongeldig antwoord voor logs");
+      }
 
       logsContainer.innerHTML = logs
-        .slice(-30)
+        .slice(-50)
         .reverse()
-        .map(
-          (l) =>
-            `<div class="mb-1"><span class="text-gray-500">${formatDate(
-              l.timestamp || l.date
-            )}:</span> ${esc(l.message || l)}</div>`
-        )
+        .map((l) => {
+          if (typeof l === "string") {
+            return `<div class="mb-1 text-sm">${esc(l)}</div>`;
+          }
+          const ts = formatDate(l.timestamp || l.date);
+          const msg = esc(l.message || JSON.stringify(l));
+          return `<div class="mb-1 text-sm"><span class="text-gray-500">${ts}:</span> ${msg}</div>`;
+        })
         .join("");
     } catch (err) {
       console.error("❌ fout logs:", err);
@@ -383,13 +475,18 @@ async function initAdmin() {
   /* ============================================================
      INITIELE LOADS
   ============================================================ */
-  await Promise.all([
-    loadAdminCompanies(),
-    loadReportedReviews(),
-    loadClaims(),
-    loadServerLogs(),
-  ]);
+  try {
+    await Promise.allSettled([
+      loadAdminCompanies(),
+      loadReportedReviews(),
+      loadClaims(),
+      loadServerLogs(),
+    ]);
+  } catch (e) {
+    console.warn("Init-lading had fouten, maar dashboard blijft werken.");
+  }
 
+  // logs elke 30s verversen
   setInterval(loadServerLogs, 30000);
 }
 
@@ -412,13 +509,12 @@ function esc(v) {
 
 function formatDate(v) {
   const d = new Date(v);
-  return isNaN(d)
-    ? "-"
-    : d.toLocaleString("nl-NL", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+  if (!v || isNaN(d)) return "-";
+  return d.toLocaleString("nl-NL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
