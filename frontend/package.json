@@ -5,10 +5,9 @@
   "type": "module",
   "main": "index.html",
   "scripts": {
-    "build": "npx tailwindcss -i ./input.css -o ./dist.css --minify && cat ./dist.css ./custom.css > ./style.css",
+    "build": "npx tailwindcss -i ./input.css -o ./style.css --minify",
     "dev": "npx tailwindcss -i ./input.css -o ./style.css --watch",
-    "start": "lite-server",
-    "postinstall": "npx update-browserslist-db@latest || true"
+    "start": "lite-server"
   },
   "dependencies": {
     "tailwindcss": "^3.4.14",
