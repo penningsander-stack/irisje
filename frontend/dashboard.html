@@ -8,7 +8,7 @@
   <meta name="description" content="Beheer je bedrijfsprofiel, aanvragen en reviews op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251112" />
+  <link rel="stylesheet" href="style.css?v=20251114" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 
@@ -262,6 +262,24 @@
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <script src="js/dashboard.js?v=20251113"></script>
+  <!-- ✅ Zorgt dat de Uitloggen-knop ALTIJD werkt -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const logoutBtn = document.getElementById("logoutBtn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          try {
+            localStorage.clear();
+          } catch (e) {
+            console.warn("Kon localStorage niet legen:", e);
+          }
+          window.location.href = "login.html";
+        });
+      }
+    });
+  </script>
+
+  <!-- ✅ Laadt de nieuwste dashboard-logica (admin redirect + companyId-fix) -->
+  <script src="js/dashboard.js?v=20251114"></script>
 </body>
 </html>
