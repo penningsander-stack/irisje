@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Company = require("../models/company");  // <<< JUIST!
+const Company = require("../models/company"); // ← correct
 const auth = require("../middleware/auth");
 
 /* ============================================================
@@ -11,7 +11,7 @@ const auth = require("../middleware/auth");
 function ensure_array(v) {
   if (Array.isArray(v)) return v;
   if (typeof v === "string")
-    return v.split(",").map((s) => s.trim()).filter(Boolean);
+    return v.split(",").map(s => s.trim()).filter(Boolean);
   return [];
 }
 
@@ -24,27 +24,30 @@ function normalizeMultiFields(doc) {
     "recognitions",
     "memberships",
     "languages",
+    "services",
+    "tags",
+    "categories"
   ];
-  fields.forEach((f) => {
+  fields.forEach(f => {
     if (!Array.isArray(out[f])) out[f] = [];
   });
   return out;
 }
 
 /* ============================================================
-   1. LISTS
+   1. /api/companies/lists
 ============================================================ */
 router.get("/lists", (req, res) => {
   res.json({
     ok: true,
     specialties: [],
     certifications: [],
-    languages: [],
+    languages: []
   });
 });
 
 /* ============================================================
-   2. ADMIN — /api/companies/all
+   2. ADMIN – /api/companies/all
 ============================================================ */
 router.get("/all", async (req, res) => {
   try {
@@ -52,13 +55,13 @@ router.get("/all", async (req, res) => {
       .populate("owner", "email")
       .lean();
 
-    companies = companies.map((c) => ({
+    companies = companies.map(c => ({
       _id: c._id,
       name: c.name || "(naam onbekend)",
       slug: c.slug || "",
       email: c.email || c.owner?.email || "-",
       isVerified: !!c.isVerified,
-      reviewCount: c.reviewCount || 0,
+      reviewCount: c.reviewCount || 0
     }));
 
     res.json(companies);
@@ -69,7 +72,8 @@ router.get("/all", async (req, res) => {
 });
 
 /* ============================================================
-   3. ZOEKEN (FIXED!)
+   3. ZOEKEN – /api/companies/search
+   FIXED → zoekt nu in specialties, services, tags, categories, city
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
@@ -77,17 +81,25 @@ router.get("/search", async (req, res) => {
 
     const filters = {};
 
-    if (category)
-      filters.categories = { $regex: new RegExp(category, "i") };
+    if (category) {
+      const regex = new RegExp(category, "i");
+      filters.$or = [
+        { specialties: regex },
+        { services: regex },
+        { tags: regex },
+        { categories: regex }
+      ];
+    }
 
-    if (city)
+    if (city) {
       filters.city = { $regex: new RegExp(city, "i") };
+    }
 
     let items = await Company.find(filters)
       .sort({ avgRating: -1, reviewCount: -1 })
       .lean();
 
-    items = items.map((c) => normalizeMultiFields(c));
+    items = items.map(c => normalizeMultiFields(c));
 
     res.json({ ok: true, items });
   } catch (err) {
@@ -97,7 +109,7 @@ router.get("/search", async (req, res) => {
 });
 
 /* ============================================================
-   4. SLUG
+   4. GET BY SLUG – /api/companies/slug/:slug
 ============================================================ */
 router.get("/slug/:slug", async (req, res) => {
   try {
@@ -112,12 +124,12 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 /* ============================================================
-   5. PUBLIC INDEX
+   5. PUBLIC INDEX – /api/companies/
 ============================================================ */
 router.get("/", async (req, res) => {
   try {
     let items = await Company.find({}).lean();
-    items = items.map((c) => normalizeMultiFields(c));
+    items = items.map(c => normalizeMultiFields(c));
     res.json({ ok: true, total: items.length, items });
   } catch (err) {
     console.error("❌ fout bij ophalen bedrijven:", err);
@@ -126,7 +138,7 @@ router.get("/", async (req, res) => {
 });
 
 /* ============================================================
-   6. GET BY ID
+   6. GET /api/companies/:id
 ============================================================ */
 router.get("/:id", async (req, res) => {
   try {
