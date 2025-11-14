@@ -1,10 +1,10 @@
 // backend/utils/loghelper.js
 /**
  * irisje.nl – loghelper
- * volledig lowercase en consistent met server.js
+ * volledig opgeschoond, camelCase en consistent met server.js
  */
 
-const { addlog } = require("./logger");
+const { addLog } = require("./logger");
 
 const colors = {
   reset: "\x1b[0m",
@@ -13,12 +13,13 @@ const colors = {
   cyan: "\x1b[36m",
   green: "\x1b[32m",
   yellow: "\x1b[33m",
+  red: "\x1b[31m",
 };
 
 /**
  * toon nette startup-banner
  */
-function startupbanner() {
+function startupBanner() {
   const line = `${colors.gray}===========================================${colors.reset}`;
   console.log(line);
   console.log(`${colors.magenta}🌸 irisje.nl backend gestart${colors.reset}`);
@@ -27,25 +28,25 @@ function startupbanner() {
   console.log(`${colors.yellow}🕓 tijd:${colors.reset} ${new Date().toLocaleString("nl-NL")}`);
   console.log(line);
 
-  addlog("irisje backend succesvol gestart", "info");
+  addLog("irisje backend succesvol gestart", "info");
 }
 
 /**
  * hulploggers
  */
-function irislog(...args) {
+function irisLog(...args) {
   console.log(`${colors.magenta}🌸 [irisje]${colors.reset}`, ...args);
 }
-function iriswarn(...args) {
+function irisWarn(...args) {
   console.warn(`${colors.yellow}🌸 [waarschuwing]${colors.reset}`, ...args);
 }
-function iriserror(...args) {
+function irisError(...args) {
   console.error(`${colors.red}🌸 [fout]${colors.reset}`, ...args);
 }
 
 module.exports = {
-  startupbanner,
-  irislog,
-  iriswarn,
-  iriserror,
+  startupBanner,
+  irisLog,
+  irisWarn,
+  irisError,
 };
