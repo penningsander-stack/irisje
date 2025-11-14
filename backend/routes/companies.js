@@ -2,7 +2,6 @@
 const express = require("express");
 const router = express.Router();
 
-// ⚠️ Belangrijk: Render is hoofdlettergevoelig
 const Company = require("../models/Company");
 const auth = require("../middleware/auth");
 
@@ -41,7 +40,9 @@ const allowed_languages = [
   "Arabisch",
 ];
 
-/* helper: altijd array */
+/* ============================================================
+   Helpers
+============================================================ */
 function ensure_array(v) {
   if (Array.isArray(v)) return v;
   if (typeof v === "string")
@@ -49,8 +50,8 @@ function ensure_array(v) {
   return [];
 }
 
-/* helper: multi-value velden normaliseren */
 function normalizeMultiFields(doc) {
+  const out = { ...doc };
   const fields = [
     "specialties",
     "regions",
@@ -59,17 +60,14 @@ function normalizeMultiFields(doc) {
     "memberships",
     "languages",
   ];
-
-  const obj = { ...doc };
   fields.forEach((f) => {
-    if (!Array.isArray(obj[f])) obj[f] = [];
+    if (!Array.isArray(out[f])) out[f] = [];
   });
-
-  return obj;
+  return out;
 }
 
 /* ============================================================
-   1️⃣ RETURN LIJSTEN
+   1️⃣ LISTS
 ============================================================ */
 router.get("/lists", (req, res) => {
   res.json({
@@ -82,7 +80,7 @@ router.get("/lists", (req, res) => {
 
 /* ============================================================
    2️⃣ ADMIN: ALLE BEDRIJVEN (/api/companies/all)
-   👉 Dit is de route die je admin.js nodig heeft!
+   ⚠️ Belangrijk: moet HOGER staan dan /slug/:slug en /:id
 ============================================================ */
 router.get("/all", async (req, res) => {
   try {
@@ -94,48 +92,27 @@ router.get("/all", async (req, res) => {
       })
       .lean();
 
-    companies = companies.map((c) => {
-      return {
-        _id: c._id,
-        name: c.name || "(naam onbekend)",
-        slug: c.slug || "",
-        email: c.email || c.owner?.email || "-",
-        owner: c.owner || {},
-        isVerified: !!c.isVerified,
-        reviewCount: c.reviewCount || 0,
-      };
-    });
+    companies = companies.map((c) => ({
+      _id: c._id,
+      name: c.name || "(naam onbekend)",
+      slug: c.slug || "",
+      email: c.email || c.owner?.email || "-",
+      owner: c.owner || {},
+      isVerified: !!c.isVerified,
+      reviewCount: c.reviewCount || 0,
+    }));
 
-    res.json(companies);
+    return res.json(companies);
   } catch (err) {
     console.error("❌ FOUT in /companies/all:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij ophalen bedrijven",
-    });
+    return res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij ophalen bedrijven (all)" });
   }
 });
 
 /* ============================================================
-   3️⃣ PUBLIEKE BEDRIJVENLIST (homepage, zoeken, etc.)
-============================================================ */
-router.get("/", async (req, res) => {
-  try {
-    let items = await Company.find({}).lean();
-    items = items.map((c) => normalizeMultiFields(c));
-
-    res.json({ ok: true, total: items.length, items });
-  } catch (err) {
-    console.error("❌ fout bij ophalen bedrijven:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij ophalen bedrijven",
-    });
-  }
-});
-
-/* ============================================================
-   4️⃣ ZOEKFUNCTIE
+   3️⃣ ZOEKEN
 ============================================================ */
 router.get("/search", async (req, res) => {
   try {
@@ -166,15 +143,14 @@ router.get("/search", async (req, res) => {
     res.json({ ok: true, items });
   } catch (err) {
     console.error("❌ fout bij zoeken bedrijven:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij zoeken bedrijven",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij zoeken bedrijven" });
   }
 });
 
 /* ============================================================
-   5️⃣ OPHALEN VIA SLUG
+   4️⃣ SLUG ROUTE
 ============================================================ */
 router.get("/slug/:slug", async (req, res) => {
   try {
@@ -184,19 +160,34 @@ router.get("/slug/:slug", async (req, res) => {
         .status(404)
         .json({ ok: false, error: "bedrijf niet gevonden" });
 
-    const normalized = normalizeMultiFields(item);
-    res.json(normalized);
+    res.json(normalizeMultiFields(item));
   } catch (err) {
     console.error("❌ fout bij slug:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij ophalen bedrijf",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij ophalen bedrijf" });
   }
 });
 
 /* ============================================================
-   6️⃣ OPHALEN VIA ID
+   5️⃣ PUBLIEKE LIJST (LET OP: / MOET BOVEN /:id)
+============================================================ */
+router.get("/", async (req, res) => {
+  try {
+    let items = await Company.find({}).lean();
+    items = items.map((c) => normalizeMultiFields(c));
+
+    res.json({ ok: true, total: items.length, items });
+  } catch (err) {
+    console.error("❌ fout bij ophalen bedrijven:", err);
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij ophalen bedrijven" });
+  }
+});
+
+/* ============================================================
+   6️⃣ OPHALEN VIA ID (MOET ALTIJD ALS ALLERLAATSTE!)
 ============================================================ */
 router.get("/:id", async (req, res) => {
   try {
@@ -206,14 +197,12 @@ router.get("/:id", async (req, res) => {
         .status(404)
         .json({ ok: false, error: "bedrijf niet gevonden" });
 
-    const normalized = normalizeMultiFields(item);
-    res.json(normalized);
+    res.json(normalizeMultiFields(item));
   } catch (err) {
     console.error("❌ fout bij ophalen via ID:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij ophalen bedrijf",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij ophalen bedrijf" });
   }
 });
 
@@ -279,10 +268,9 @@ router.post("/", auth, async (req, res) => {
     res.json({ ok: true, company: doc });
   } catch (err) {
     console.error("❌ fout bij aanmaken bedrijf:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij aanmaken bedrijf",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij aanmaken bedrijf" });
   }
 });
 
@@ -333,10 +321,9 @@ router.put("/:id", auth, async (req, res) => {
     res.json({ ok: true, company: doc });
   } catch (err) {
     console.error("❌ fout bij bijwerken bedrijf:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij bijwerken bedrijf",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij bijwerken bedrijf" });
   }
 });
 
@@ -352,20 +339,18 @@ router.delete("/:id", auth, async (req, res) => {
         .json({ ok: false, error: "bedrijf niet gevonden" });
 
     if (!doc.owner || doc.owner.toString() !== req.user.id) {
-      return res.status(403).json({
-        ok: false,
-        error: "geen toegang",
-      });
+      return res
+        .status(403)
+        .json({ ok: false, error: "geen toegang" });
     }
 
     await doc.deleteOne();
     res.json({ ok: true, message: "bedrijf verwijderd" });
   } catch (err) {
     console.error("❌ fout bij verwijderen bedrijf:", err);
-    res.status(500).json({
-      ok: false,
-      error: "serverfout bij verwijderen bedrijf",
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "serverfout bij verwijderen bedrijf" });
   }
 });
 
