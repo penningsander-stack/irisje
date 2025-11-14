@@ -1,6 +1,6 @@
 /**
  * irisje.nl – server entrypoint
- * volledig gecontroleerd en opgeschoond – 2025-11-13
+ * volledig gecontroleerd en opgeschoond – 2025-11-14
  */
 
 require("dotenv").config();
@@ -13,7 +13,7 @@ const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const path = require("path");
 
-const { corsemiddleware, securityheaders } = require("./config/security");
+const { corsMiddleware, securityHeaders } = require("./config/security");
 const { addLog, route: logRoute } = require("./utils/logger");
 const { startupBanner } = require("./utils/loghelper");
 
@@ -25,8 +25,8 @@ const app = express();
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(compression());
-app.use(corsemiddleware);
-app.use(securityheaders);
+app.use(corsMiddleware);
+app.use(securityHeaders);
 
 /* ============================================================
    request logging
@@ -185,7 +185,7 @@ app.use(
 );
 
 /* ============================================================
-   html optimalisatie
+   html injecties
 ============================================================ */
 app.use(/.*\.html$/, (req, res, next) => {
   const file = path.join(frontendPath, req.path);
