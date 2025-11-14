@@ -8,8 +8,14 @@
 
   <meta name="description" content="Beheer gemelde reviews, bedrijven, claims en logs in het admin-dashboard van Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
+
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- Algemene site-styling -->
   <link rel="stylesheet" href="style.css?v=20251114" />
+
+  <!-- Admin-specifieke extra CSS -->
+  <link rel="stylesheet" href="css/admin.css?v=20251114" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
@@ -25,7 +31,6 @@
       <div class="flex items-center gap-3">
         <span class="hidden sm:inline text-sm text-gray-500">Beheeromgeving</span>
 
-        <!-- LOGOUT → volledig compatibel met admin.js -->
         <button id="logoutBtn"
           class="px-3 py-1.5 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white transition">
           Uitloggen
@@ -42,7 +47,6 @@
       <nav id="adminNav"
         class="bg-white border border-gray-200 rounded-xl shadow-sm p-2 flex flex-col gap-1 text-sm">
 
-        <!-- Default active -->
         <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700"
           data-section="section-overview">
           <span>Bedrijven</span>
@@ -66,10 +70,10 @@
       </nav>
     </aside>
 
-    <!-- CONTENT SECTIONS -->
+    <!-- CONTENT -->
     <section class="flex-1 flex flex-col gap-6">
 
-      <!-- ======================== BEDRIJVEN ======================== -->
+      <!-- BEDRIJVEN -->
       <section id="section-overview" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -84,7 +88,7 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+          <table class="min-w-full text-sm admin-table">
             <thead>
               <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <th class="text-left p-3">Bedrijf</th>
@@ -97,14 +101,14 @@
 
             <tbody id="adminCompanyTable">
               <tr>
-                <td colspan="5" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
+                <td colspan="5" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- ====================== GEMELDE REVIEWS ====================== -->
+      <!-- GEMELDE REVIEWS -->
       <section id="section-reported" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -133,7 +137,7 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+          <table class="min-w-full text-sm admin-table">
             <thead>
               <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <th class="text-left p-3">Bedrijf</th>
@@ -148,14 +152,14 @@
 
             <tbody id="reported-table-body">
               <tr>
-                <td colspan="7" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
+                <td colspan="7" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- =========================== CLAIMS =========================== -->
+      <!-- CLAIMS -->
       <section id="section-claims" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -170,7 +174,7 @@
         </div>
 
         <div class="overflow-x-auto">
-          <table class="min-w-full text-sm">
+          <table class="min-w-full text-sm admin-table">
             <thead>
               <tr class="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
                 <th class="text-left p-3">Datum</th>
@@ -184,14 +188,14 @@
 
             <tbody id="claimTableBody">
               <tr>
-                <td colspan="6" class="p-4 text-center text-gray-400 text-sm">Laden...</td>
+                <td colspan="6" class="p-4 text-center text-gray-400 text-sm admin-loading">Laden...</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- =========================== LOGS ============================ -->
+      <!-- LOGS -->
       <section id="section-logs" class="bg-white border border-gray-200 rounded-xl shadow-sm p-4 hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
