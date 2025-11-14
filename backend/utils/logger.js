@@ -1,42 +1,42 @@
 // backend/utils/logger.js
 /**
  * irisje.nl – logger
- * volledig in lowercase en consistent met server.js
+ * volledig camelCase & consistent met server.js en loghelper.js
  */
 
 const fs = require("fs");
 const path = require("path");
 
-const log_dir = path.join(__dirname, "../logs");
-const max_logs = 20;
-const retention_days = 14;
+const logDir = path.join(__dirname, "../logs");
+const maxLogs = 20;
+const retentionDays = 14;
 
-if (!fs.existsSync(log_dir)) fs.mkdirSync(log_dir, { recursive: true });
+if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
 
 let logs = [];
 
 /* ------------------------------------------------------------
    huidig daglogbestand
 ------------------------------------------------------------ */
-function current_log_file() {
+function currentLogFile() {
   const date = new Date().toISOString().slice(0, 10);
-  return path.join(log_dir, `irisje-${date}.log`);
+  return path.join(logDir, `irisje-${date}.log`);
 }
 
 /* ------------------------------------------------------------
    oude logs opruimen
 ------------------------------------------------------------ */
-function cleanup_old_logs() {
-  const files = fs.readdirSync(log_dir);
+function cleanupOldLogs() {
+  const files = fs.readdirSync(logDir);
   const now = Date.now();
 
   for (const file of files) {
-    const file_path = path.join(log_dir, file);
+    const filePath = path.join(logDir, file);
     try {
-      const stats = fs.statSync(file_path);
-      const age_days = (now - stats.mtimeMs) / (1000 * 60 * 60 * 24);
-      if (age_days > retention_days) {
-        fs.unlinkSync(file_path);
+      const stats = fs.statSync(filePath);
+      const ageDays = (now - stats.mtimeMs) / (1000 * 60 * 60 * 24);
+      if (ageDays > retentionDays) {
+        fs.unlinkSync(filePath);
         console.log(`🧹 oude log verwijderd: ${file}`);
       }
     } catch (err) {
@@ -64,10 +64,10 @@ function time() {
 /* ------------------------------------------------------------
    log toevoegen (console + bestand + geheugen)
 ------------------------------------------------------------ */
-function addlog(message, level = "info") {
+function addLog(message, level = "info") {
   const entry = { timestamp: new Date().toISOString(), level, message };
   logs.push(entry);
-  if (logs.length > max_logs) logs.shift();
+  if (logs.length > maxLogs) logs.shift();
 
   const icons = { info: "✅", debug: "🟡", error: "❌" };
   const color = {
@@ -82,7 +82,7 @@ function addlog(message, level = "info") {
 
   try {
     const line = `[${entry.timestamp}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
-    fs.appendFileSync(current_log_file(), line, "utf8");
+    fs.appendFileSync(currentLogFile(), line, "utf8");
   } catch (err) {
     console.warn("kon logbestand niet schrijven:", err.message);
   }
@@ -105,7 +105,7 @@ function route(method, p, status, ms = 0) {
 /* ------------------------------------------------------------
    laatste logs ophalen
 ------------------------------------------------------------ */
-function getlogs() {
+function getLogs() {
   return [...logs]
     .reverse()
     .map((l) => ({
@@ -115,11 +115,11 @@ function getlogs() {
     }));
 }
 
-// opruimen bij start
-cleanup_old_logs();
+/* opruimen bij start */
+cleanupOldLogs();
 
 module.exports = {
-  addlog,
-  getlogs,
+  addLog,
+  getLogs,
   route,
 };
