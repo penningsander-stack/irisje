@@ -1,23 +1,17 @@
 name: Unzip rebuilt package
 
 on:
-  workflow_dispatch:   # Handmatig starten via "Actions" → "Run workflow"
-  push:
-    paths:
-      - "irisje_rebuilt.zip"
+  workflow_dispatch:
 
 jobs:
   unzip:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-      - name: Install unzip
-        run: sudo apt-get install -y unzip
-
-      - name: Remove old files (except ZIP & workflow)
+      - name: Remove old files (except .github and ZIP)
         run: |
           shopt -s extglob
           rm -rf !(irisje_rebuilt.zip|.github)
@@ -25,10 +19,10 @@ jobs:
       - name: Unzip rebuilt archive
         run: unzip irisje_rebuilt.zip -d .
 
-      - name: Commit unzipped files
+      - name: Commit changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
           git add .
-          git commit -m "Unpacked rebuilt zip"
+          git commit -m "Unzipped rebuilt package" || echo "No changes"
           git push
