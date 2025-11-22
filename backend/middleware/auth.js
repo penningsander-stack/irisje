@@ -1,91 +1,85 @@
 // backend/middleware/auth.js
-// v20251118 – JWT Authorization Header Middleware
+// v20251122-REBUILD-AUTH-COMPAT
+// Compatibel met:
+// 1) const auth = require("../middleware/auth")
+// 2) const { authMiddleware, requireAdmin, requireCompany } = require("../middleware/auth")
 
 const jwt = require("jsonwebtoken");
 
 /**
- * 🔐 Algemene authenticatiemiddleware
- * Controleert:
- *  - Authorization: Bearer <token>
- *  - geldigheid van token
- *  - payload: { id, role, companyId }
- *
- * Succes:
- *  - req.user = { id, role, companyId }
- *
- * Fout:
- *  - 401 met duidelijke foutmelding
+ * ✅ Basismiddleware: controleert JWT
+ * - Eerst cookie "token"
+ * - Daarna fallback naar Authorization: Bearer <token>
  */
 function authMiddleware(req, res, next) {
   try {
-    const authHeader = req.headers.authorization || "";
-    const parts = authHeader.split(" ");
+    let token = req.cookies?.token;
 
-    // Verwachte vorm: "Bearer <token>"
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
-      return res.status(401).json({
-        ok: false,
-        error: "Geen geldige autorisatie-header.",
-      });
+    // Fallback: Authorization header
+    if (!token) {
+      const authHeader =
+        req.headers?.authorization || req.headers?.Authorization;
+      if (
+        typeof authHeader === "string" &&
+        authHeader.startsWith("Bearer ")
+      ) {
+        token = authHeader.slice(7).trim();
+      }
     }
 
-    const token = parts[1];
     if (!token) {
       return res.status(401).json({
         ok: false,
-        error: "Geen token gevonden.",
+        error: "Niet ingelogd (geen token aanwezig)",
       });
     }
 
-    // Token controleren
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // decoded bevat bijv.: { id, role, companyId, iat, exp }
-    req.user = {
-      id: decoded.id,
-      role: decoded.role,
-      companyId: decoded.companyId || null,
-    };
-
+    req.user = decoded;
     return next();
   } catch (err) {
-    console.error("❌ JWT Auth error:", err?.message || err);
-
+    console.error("❌ Auth error:", err?.message || err);
     return res.status(401).json({
       ok: false,
-      error: "Ongeldig of verlopen token.",
+      error: "Ongeldige of verlopen sessie",
     });
   }
 }
 
 /**
- * 🔒 Optionele middleware voor admin-only routes
+ * ✅ Alleen admin
  */
 function requireAdmin(req, res, next) {
-  if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({
-      ok: false,
-      error: "Toegang geweigerd. Admin-rechten vereist.",
-    });
-  }
-  next();
+  return authMiddleware(req, res, () => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        ok: false,
+        error: "Alleen admin toegestaan",
+      });
+    }
+    next();
+  });
 }
 
 /**
- * 🔒 Optionele middleware voor ingelogde bedrijven
+ * ✅ Alleen company
  */
 function requireCompany(req, res, next) {
-  if (!req.user || req.user.role !== "company") {
-    return res.status(403).json({
-      ok: false,
-      error: "Toegang geweigerd. Bedrijfsaccount vereist.",
-    });
-  }
-  next();
+  return authMiddleware(req, res, () => {
+    if (req.user?.role !== "company") {
+      return res.status(403).json({
+        ok: false,
+        error: "Alleen bedrijven toegestaan",
+      });
+    }
+    next();
+  });
 }
 
-module.exports = {
-  authMiddleware,
-  requireAdmin,
-  requireCompany,
-};
+/**
+ * ♻️ Export compatibel met beide stijlen
+ */
+module.exports = authMiddleware;
+module.exports.authMiddleware = authMiddleware;
+module.exports.requireAdmin = requireAdmin;
+module.exports.requireCompany = requireCompany;
