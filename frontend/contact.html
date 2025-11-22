@@ -1,0 +1,157 @@
+<!-- frontend/contact.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Contact – Irisje.nl</title>
+  <meta name="description" content="Neem contact op met Irisje.nl voor vragen, suggesties of samenwerkingen. Wij helpen je graag verder." />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- ✅ Lokale Tailwind build -->
+  <link rel="stylesheet" href="style.css?v=20251101" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        <span>Irisje.nl</span>
+      </a>
+      <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
+        <a href="index.html" class="hover:text-indigo-700">Home</a>
+        <a href="results.html" class="hover:text-indigo-700">Bedrijven</a>
+        <a href="register.html" class="hover:text-indigo-700">Aanmelden</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 px-4 py-12">
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 max-w-3xl mx-auto fade-in">
+      <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">Contact opnemen</h1>
+
+      <p class="text-gray-700 text-sm mb-8 text-center leading-relaxed max-w-xl mx-auto">
+        Heb je een vraag over Irisje.nl, wil je een samenwerking bespreken of feedback geven?  
+        Vul het onderstaande formulier in — we reageren meestal binnen één werkdag.
+      </p>
+
+      <form id="contactForm" class="space-y-5 max-w-lg mx-auto" novalidate>
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+          <input
+            id="name"
+            type="text"
+            required
+            placeholder="Je naam"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
+          <input
+            id="email"
+            type="email"
+            required
+            placeholder="naam@voorbeeld.nl"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Bericht</label>
+          <textarea
+            id="message"
+            required
+            rows="5"
+            placeholder="Je bericht of vraag..."
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        >
+          Bericht verzenden
+        </button>
+
+        <p id="contactStatus" class="text-center text-sm mt-3 min-h-[1.25rem]"></p>
+      </form>
+
+      <div class="mt-10 text-center text-sm text-gray-600">
+        <p>📧 <a href="mailto:info@irisje.nl" class="text-indigo-600 hover:text-indigo-700 underline">info@irisje.nl</a></p>
+        <p>🌐 <a href="https://www.irisje.nl" class="text-indigo-600 hover:text-indigo-700 underline">www.irisje.nl</a></p>
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 mt-auto">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- ✅ Script -->
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
+    document.getElementById("contactForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("contactStatus");
+      msg.textContent = "Bezig met verzenden...";
+      msg.className = "text-gray-500 text-center text-sm";
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const message = document.getElementById("message").value.trim();
+
+      if (!name || !email || !message) {
+        msg.textContent = "❌ Vul alle velden in.";
+        msg.className = "text-red-600 text-center text-sm";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/email/contact`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, message }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Fout bij verzenden van bericht.");
+
+        msg.textContent = "✅ Bedankt voor je bericht! We nemen spoedig contact met je op.";
+        msg.className = "text-green-600 text-center text-sm";
+        document.getElementById("contactForm").reset();
+      } catch (err) {
+        console.error("Contactfout:", err);
+        msg.textContent = "❌ Er ging iets mis. Probeer het later opnieuw.";
+        msg.className = "text-red-600 text-center text-sm";
+      }
+    });
+
+    // ✅ Fade-in animatie
+    document.addEventListener("DOMContentLoaded", () => {
+      const els = document.querySelectorAll("header, main section, footer");
+      els.forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            el.style.transition = "opacity .8s ease, transform .8s ease";
+            el.style.opacity = "1";
+            el.style.transform = "translateY(0)";
+          }, 150 * i);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

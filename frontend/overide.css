@@ -1,0 +1,79 @@
+/* === frontend/override.css === */
+/* Permanente fix voor Irisje-stijl – blijft behouden na elke Tailwind build */
+
+/* === Moderne Irisje kleuren === */
+:root {
+  --irisje-indigo: #6366f1;
+  --irisje-indigo-light: rgba(99,102,241,0.12);
+  --irisje-green: #22c55e;
+  --irisje-red: #ef4444;
+  --irisje-yellow: #eab308;
+  --irisje-indigo-strong: #4f46e5;
+}
+
+/* ====== Header & knoppen ====== */
+header.bg-indigo-600,
+header.bg-indigo-700 {
+  background-color: var(--irisje-indigo) !important;
+  color: #fff !important;
+}
+
+.text-indigo-700,
+.text-indigo-600 {
+  color: var(--irisje-indigo-strong) !important;
+}
+
+button,
+a.button {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover,
+a.button:hover {
+  transform: translateY(-1px);
+}
+
+/* ====== Statistieken kleuren ====== */
+#total { color: var(--irisje-indigo-strong) !important; }
+#accepted { color: var(--irisje-green) !important; }
+#rejected { color: var(--irisje-red) !important; }
+#followed-up { color: var(--irisje-yellow) !important; }
+
+/* ====== Secties & kaarten ====== */
+section.bg-white {
+  background-color: #fff;
+  border: 1px solid rgba(99,102,241,0.08);
+  border-radius: 1rem;
+  transition: box-shadow 0.3s ease;
+}
+
+section.bg-white:hover {
+  box-shadow: 0 8px 24px rgba(99,102,241,0.12);
+}
+
+/* ====== Tabellen ====== */
+.table-section thead {
+  background-color: var(--irisje-indigo-light) !important;
+  color: var(--irisje-indigo-strong) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.table-section tbody tr:hover {
+  background-color: rgba(99,102,241,0.05);
+  transition: background-color 0.2s ease;
+}
+
+/* ====== Statistiek-kaarten ====== */
+.stat-card {
+  border: 1px solid rgba(99,102,241,0.08);
+  background-color: #fff;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 6px 18px rgba(99,102,241,0.15);
+  transform: translateY(-2px);
+}

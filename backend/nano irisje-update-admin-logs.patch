@@ -1,0 +1,75 @@
+From 7a4b3dc4d4a37c345b78f3b9b5b7b25c3b6a1f0a Mon Sep 17 00:00:00 2001
+Subject: [PATCH] ✨ Admin logging toegevoegd (logviewer compatibel)
+
+---
+ backend/routes/admin.js | 26 +++++++++++++++++++++++---
+ backend/utils/logger.js | 12 +++++++++---
+ 2 files changed, 32 insertions(+), 6 deletions(-)
+
+diff --git a/backend/routes/admin.js b/backend/routes/admin.js
+index 2c8cfa3..b9f24b1 100644
+--- a/backend/routes/admin.js
++++ b/backend/routes/admin.js
+@@ -3,7 +3,7 @@ const express = require("express");
+ const router = express.Router();
+ const Review = require("../models/review");
+-const { getLogs } = require("../utils/logger");
++const { getLogs, addLog } = require("../utils/logger");
+
+ /**
+  * 🌸 Irisje.nl – Admin routes
+@@ -12,11 +12,31 @@ const { getLogs } = require("../utils/logger");
+  */
+
+/* === 📜 LOGS === */
+ router.get("/logs", (req, res) => {
+   try {
+-    const logs = getLogs();
+-    res.json({ ok: true, logs });
++    const logs = getLogs();
++
++    // Zorg dat altijd een array wordt teruggegeven
++    if (!Array.isArray(logs)) {
++      return res.json([]);
++    }
++
++    // Beperk tot de laatste 30 logs en sorteer nieuwste bovenaan
++    const recent = logs.slice(-30).reverse();
++
++    // Altijd een kale array (frontend verwacht dit formaat)
++    res.status(200).json(recent);
+   } catch (err) {
+     console.error("❌ Fout bij ophalen logs:", err);
+-    res.status(500).json({ ok: false, message: "Kon logs niet ophalen" });
++    res.status(500).json([]);
+   }
+ });
+
++// Log elke oproep van deze route
++addLog("📄 Admin logs opgevraagd via /api/admin/logs", "debug");
++
+diff --git a/backend/utils/logger.js b/backend/utils/logger.js
+index 0a29bfc..4d1ccde 100644
+--- a/backend/utils/logger.js
++++ b/backend/utils/logger.js
+@@ -49,7 +49,9 @@ function addLog(message, level = "info") {
+   const entry = {
+-    time: new Date().toISOString(),
+-    level,
+-    message
++    timestamp: new Date().toISOString(),
++    level,
++    message
+   };
+
+   // Bewaar laatste 20 regels voor de statuspagina
+@@ -81,7 +83,11 @@ function getLogs() {
+-  return [...logs].reverse();
++  return [...logs]
++    .reverse()
++    .map((l) => ({
++      timestamp: l.timestamp || l.time || new Date().toISOString(),
++      message: l.message || "",
++      level: l.level || "info"
++    }));
+ }
