@@ -1,28 +1,40 @@
 name: Unzip rebuilt package
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:        # handmatig starten
+
+permissions:
+  contents: write           # << BELANGRIJK → zonder dit kan GitHub niets terugpushen
 
 jobs:
   unzip:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Remove old files (except .github and ZIP)
-        run: |
-          shopt -s extglob
-          rm -rf !(irisje_rebuilt.zip|.github)
+      - name: Install unzip
+        run: sudo apt-get install unzip -y
 
-      - name: Unzip rebuilt archive
-        run: unzip irisje_rebuilt.zip -d .
-
-      - name: Commit changes
+      - name: Unzip rebuilt package
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add .
-          git commit -m "Unzipped rebuilt package" || echo "No changes"
+          echo "Cleaning repository..."
+          find . -maxdepth 1 ! -name ".git" ! -name ".github" ! -name "." -exec rm -rf {} +
+          
+          echo "Extracting ZIP..."
+          unzip irisje_rebuilt.zip -d .
+
+          echo "Moving extracted folder contents..."
+          mv irisje-main/* .
+
+          echo "Cleaning leftover folder..."
+          rm -rf irisje-main
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add -A
+          git commit -m "Unpacked rebuilt ZIP" || echo "No changes to commit"
           git push
