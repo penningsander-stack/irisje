@@ -1,10 +1,10 @@
 name: Unzip rebuilt package
 
 on:
-  workflow_dispatch:        # handmatig starten
+  workflow_dispatch:
 
 permissions:
-  contents: write           # << BELANGRIJK → zonder dit kan GitHub niets terugpushen
+  contents: write
 
 jobs:
   unzip:
@@ -19,22 +19,35 @@ jobs:
 
       - name: Unzip rebuilt package
         run: |
-          echo "Cleaning repository..."
-          find . -maxdepth 1 ! -name ".git" ! -name ".github" ! -name "." -exec rm -rf {} +
-          
-          echo "Extracting ZIP..."
-          unzip irisje_rebuilt.zip -d .
+          echo "🔍 ZIP-bestand controleren..."
+          if [ ! -f "irisje_rebuilt.zip" ]; then
+            echo "❌ ZIP niet gevonden!"
+            exit 1
+          fi
 
-          echo "Moving extracted folder contents..."
-          mv irisje-main/* .
+          echo "🧹 Oude bestanden verwijderen..."
+          find . -maxdepth 1 ! -name ".git" ! -name ".github" ! -name "." ! -name "irisje_rebuilt.zip" -exec rm -rf {} +
 
-          echo "Cleaning leftover folder..."
-          rm -rf irisje-main
+          echo "📦 Uitpakken ZIP..."
+          unzip irisje_rebuilt.zip -d extracted
+
+          echo "🔎 Hoofdmap detecteren..."
+          ROOT=$(ls extracted)
+          echo "📁 Gevonden map: $ROOT"
+
+          echo "📁 Alle bestanden verplaatsen naar root..."
+          mv extracted/$ROOT/* .
+
+          echo "🧽 Opruimen..."
+          rm -rf extracted
+
+          echo "🗑 ZIP verwijderen..."
+          rm -f irisje_rebuilt.zip
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add -A
-          git commit -m "Unpacked rebuilt ZIP" || echo "No changes to commit"
+          git commit -m "Unpacked rebuilt ZIP and cleaned up" || echo "No changes to commit"
           git push
