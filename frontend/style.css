@@ -1,232 +1,44 @@
-/* frontend/style.css — Trustoo-stijl global design */
-/* ------------------------------------------------- */
-/* Reset + basis */
-/* ------------------------------------------------- */
+/* Global Irisje.nl styling v20251126 (Trustoo-achtig) */
 
-* {
-  box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
-}
+* { box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+html,body { margin:0; padding:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f9fafb; color:#111827; }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
-  background: #f9fafb;
-  color: #1f2937;
-}
+.site-header { background:#fff; border-bottom:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,.04); position:sticky; top:0; z-index:50; }
+.site-header-inner { max-width:1200px; margin:0 auto; padding:1rem 1.25rem; display:flex; align-items:center; justify-content:space-between; }
+.site-logo { display:flex; align-items:center; gap:.5rem; color:#4f46e5; font-weight:600; text-decoration:none; }
+.site-logo-icon { width:32px; height:32px; border-radius:9999px; background:#4f46e5; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.site-nav a { margin-left:1.5rem; font-size:.9rem; color:#6b7280; text-decoration:none; }
+.site-nav a:hover { color:#4f46e5; }
 
-/* ------------------------------------------------- */
-/* Layout */
-/* ------------------------------------------------- */
+.site-footer { background:#f3f4f6; border-top:1px solid #e5e7eb; padding:1.5rem 1.25rem; text-align:center; font-size:.8rem; color:#6b7280; margin-top:2rem; }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.25rem;
-}
+.container { max-width:1200px; margin:0 auto; padding:0 1.25rem; }
+.page { padding:1.75rem 0; }
 
-.page {
-  padding: 2rem 0;
-}
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:1rem; padding:1.5rem 1.75rem; box-shadow:0 1px 2px rgba(0,0,0,.04); margin-bottom:1.25rem; }
 
-/* ------------------------------------------------- */
-/* Header */
-/* ------------------------------------------------- */
+h1 { font-size:2rem; margin:0; color:#4f46e5; }
+h2 { font-size:1.25rem; margin:0; color:#111827; }
+h3 { font-size:1rem; margin:0; color:#111827; }
 
-.site-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
+.mt-1 { margin-top:.25rem; }
+.mt-2 { margin-top:.5rem; }
+.mt-3 { margin-top:.75rem; }
+.mt-4 { margin-top:1rem; }
 
-.site-header-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
+.text-center { text-align:center; }
 
-.site-logo {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  font-weight: 600;
-  color: #4f46e5;
-  text-decoration: none;
-  font-size: 1.1rem;
-}
+.btn { display:inline-flex; align-items:center; justify-content:center; padding:.7rem 1.2rem; border-radius:.75rem; border:none; font-weight:600; font-size:.875rem; cursor:pointer; text-decoration:none; transition:.2s; }
+.btn-primary { background:#4f46e5; color:#fff; }
+.btn-primary:hover { background:#4338ca; }
+.btn-outline { background:#fff; color:#4f46e5; border:1px solid #c7d2fe; }
+.btn-outline:hover { background:#eef2ff; }
 
-.site-logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  background: #4f46e5;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
+input,textarea { width:100%; border:1px solid #e5e7eb; padding:.65rem .85rem; border-radius:.75rem; font-size:.9rem; outline:none; transition:.2s; }
+input:focus,textarea:focus { border-color:#4f46e5; box-shadow:0 0 0 3px rgba(79,70,229,.15); }
 
-.site-nav a {
-  color: #6b7280;
-  text-decoration: none;
-  margin-left: 1.5rem;
-  font-size: .9rem;
-  transition: .2s;
-}
+.label { font-size:.75rem; font-weight:500; color:#4b5563; margin-bottom:.25rem; display:block; }
+.error { font-size:.75rem; color:#dc2626; margin-top:.25rem; }
+.hidden { display:none !important; }
 
-.site-nav a:hover {
-  color: #4f46e5;
-}
-
-/* ------------------------------------------------- */
-/* Footer */
-/* ------------------------------------------------- */
-
-.site-footer {
-  background: #f3f4f6;
-  padding: 2rem 0;
-  margin-top: 3rem;
-  border-top: 1px solid #e5e7eb;
-  text-align: center;
-  font-size: .8rem;
-  color: #6b7280;
-}
-
-/* ------------------------------------------------- */
-/* Cards */
-/* ------------------------------------------------- */
-
-.card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 1rem;
-  padding: 1.75rem;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-  margin-bottom: 1.25rem;
-}
-
-.card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-/* ------------------------------------------------- */
-/* Buttons */
-/* ------------------------------------------------- */
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: .75rem 1.25rem;
-  border-radius: .75rem;
-  font-weight: 600;
-  font-size: .875rem;
-  cursor: pointer;
-  border: none;
-  transition: .2s;
-  text-decoration: none;
-}
-
-.btn-primary {
-  background: #4f46e5;
-  color: white;
-}
-
-.btn-primary:hover {
-  background: #4338ca;
-}
-
-.btn-outline {
-  background: white;
-  border: 1px solid #c7d2fe;
-  color: #4f46e5;
-}
-
-.btn-outline:hover {
-  background: #eef2ff;
-}
-
-/* ------------------------------------------------- */
-/* Inputs */
-/* ------------------------------------------------- */
-
-input, textarea, select {
-  width: 100%;
-  border: 1px solid #e5e7eb;
-  padding: .7rem .9rem;
-  border-radius: .75rem;
-  font-size: .9rem;
-  outline: none;
-  transition: .2s;
-  background: #ffffff;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
-}
-
-.label {
-  font-size: .75rem;
-  color: #4b5563;
-  margin-bottom: .25rem;
-  display: block;
-  font-weight: 500;
-}
-
-.error {
-  color: #dc2626;
-  font-size: .75rem;
-  margin-top: .25rem;
-}
-
-/* ------------------------------------------------- */
-/* Titles */
-/* ------------------------------------------------- */
-
-h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #4f46e5;
-  margin-bottom: .75rem;
-}
-
-h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-}
-
-h3 {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-/* ------------------------------------------------- */
-/* Utility */
-/* ------------------------------------------------- */
-
-.text-center { text-align: center; }
-.mt-1 { margin-top: .25rem; }
-.mt-2 { margin-top: .5rem; }
-.mt-3 { margin-top: .75rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-6 { margin-top: 1.5rem; }
-
-.mb-1 { margin-bottom: .25rem; }
-.mb-2 { margin-bottom: .5rem; }
-.mb-3 { margin-bottom: .75rem; }
-.mb-4 { margin-bottom: 1rem; }
-
-.hidden { display: none !important; }
+.error-border { border-color:#dc2626 !important; box-shadow:0 0 0 2px rgba(220,38,38,.1); }
