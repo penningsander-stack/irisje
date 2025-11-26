@@ -1,115 +1,223 @@
 // frontend/js/request.js
-// v20251118-CLEAN-ENHANCED
-
 document.addEventListener("DOMContentLoaded", () => {
+  const API_BASE = "https://irisje-backend.onrender.com/api";
+
   const form = document.getElementById("requestForm");
-  if (!form) {
-    console.error("❌ Formulier met id='requestForm' niet gevonden.");
-    return;
-  }
+  const nameEl = document.getElementById("reqName");
+  const emailEl = document.getElementById("reqEmail");
+  const phoneEl = document.getElementById("reqPhone");
+  const categoryEl = document.getElementById("reqCategory");
+  const cityEl = document.getElementById("reqCity");
+  const descriptionEl = document.getElementById("reqDescription");
+  const preferredTimeEl = document.getElementById("reqPreferredTime");
+  const agreeEl = document.getElementById("reqAgree");
+  const companyIdEl = document.getElementById("reqCompanyId");
+  const companySlugEl = document.getElementById("reqCompanySlug");
+  const companyRawIdEl = document.getElementById("reqCompanyRawId");
+  const statusEl = document.getElementById("requestStatus");
+  const bannerEl = document.getElementById("requestCompanyBanner");
 
-  const API_URL = "https://irisje-backend.onrender.com/api/publicRequests";
+  const errName = document.getElementById("errReqName");
+  const errEmail = document.getElementById("errReqEmail");
+  const errPhone = document.getElementById("errReqPhone");
+  const errCategory = document.getElementById("errReqCategory");
+  const errCity = document.getElementById("errReqCity");
+  const errDescription = document.getElementById("errReqDescription");
+  const errAgree = document.getElementById("errReqAgree");
 
-  /* ============================================================
-     Helper: veilige POST
-  ============================================================ */
-  async function safePost(url, payload) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      const msg = data?.error || data?.message || "Onbekende fout";
-      throw new Error(msg);
+  function setError(input, errEl, msg) {
+    if (!input || !errEl) return;
+    if (!msg) {
+      input.classList.remove("error-border");
+      errEl.textContent = "";
+    } else {
+      input.classList.add("error-border");
+      errEl.textContent = msg;
     }
-    return data;
   }
 
-  /* ============================================================
-     Helper: e-mail validatie
-  ============================================================ */
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  function setStatus(msg, color) {
+    if (!statusEl) return;
+    statusEl.textContent = msg || "";
+    statusEl.style.color = color || "#6b7280";
   }
 
-  /* ============================================================
-     SUBMIT HANDLER
-  ============================================================ */
-  form.addEventListener("submit", async (e) => {
+  const params = new URLSearchParams(window.location.search);
+  const fromSlug = params.get("slug") || "";
+  const fromId = params.get("id") || "";
+  const fromCategory = params.get("category") || "";
+  const fromCity = params.get("city") || "";
+  const fromCompanyName = params.get("name") || "";
+
+  if (categoryEl && fromCategory) categoryEl.value = fromCategory;
+  if (cityEl && fromCity) cityEl.value = fromCity;
+
+  let activeCompanyName = fromCompanyName || "";
+
+  if (bannerEl) {
+    if (fromCompanyName) {
+      bannerEl.textContent = "Je dient een aanvraag in bij " + fromCompanyName + " via Irisje.nl.";
+    } else {
+      bannerEl.textContent = "Je aanvraag wordt via Irisje.nl aan het geselecteerde bedrijf doorgestuurd.";
+    }
+  }
+
+  function loadCompanyDetails() {
+    if (!fromSlug && !fromId) return;
+
+    let url;
+    if (fromSlug) {
+      url = `${API_BASE}/companies/slug/${encodeURIComponent(fromSlug)}`;
+    } else if (fromId) {
+      url = `${API_BASE}/companies/${encodeURIComponent(fromId)}`;
+    } else {
+      return;
+    }
+
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error("Niet gevonden");
+        return res.json();
+      })
+      .then((c) => {
+        if (!c) return;
+        if (companyIdEl && c._id) companyIdEl.value = c._id;
+        if (companySlugEl && c.slug) companySlugEl.value = c.slug;
+        if (companyRawIdEl && c._id) companyRawIdEl.value = c._id;
+        activeCompanyName = c.name || activeCompanyName;
+        if (bannerEl && c.name) {
+          bannerEl.textContent = "Je dient een aanvraag in bij " + c.name + " via Irisje.nl.";
+        }
+      })
+      .catch((err) => {
+        console.error("Fout bij laden bedrijf voor aanvraag:", err);
+      });
+  }
+
+  loadCompanyDetails();
+
+  function validate() {
+    let ok = true;
+    const name = (nameEl.value || "").trim();
+    const email = (emailEl.value || "").trim();
+    const phone = (phoneEl.value || "").trim();
+    const category = (categoryEl.value || "").trim();
+    const city = (cityEl.value || "").trim();
+    const description = (descriptionEl.value || "").trim();
+
+    if (!name) {
+      setError(nameEl, errName, "Vul je naam in.");
+      ok = false;
+    } else {
+      setError(nameEl, errName, "");
+    }
+
+    if (!email) {
+      setError(emailEl, errEmail, "Vul je e-mailadres in.");
+      ok = false;
+    } else {
+      const re = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      if (!re.test(email)) {
+        setError(emailEl, errEmail, "Vul een geldig e-mailadres in.");
+        ok = false;
+      } else {
+        setError(emailEl, errEmail, "");
+      }
+    }
+
+    if (!phone) {
+      setError(phoneEl, errPhone, "Vul je telefoonnummer in.");
+      ok = false;
+    } else {
+      setError(phoneEl, errPhone, "");
+    }
+
+    if (!category) {
+      setError(categoryEl, errCategory, "Beschrijf kort wat je nodig hebt.");
+      ok = false;
+    } else {
+      setError(categoryEl, errCategory, "");
+    }
+
+    if (!city) {
+      setError(cityEl, errCity, "Vul de plaats of regio in.");
+      ok = false;
+    } else {
+      setError(cityEl, errCity, "");
+    }
+
+    if (!description) {
+      setError(descriptionEl, errDescription, "Beschrijf kort de opdracht.");
+      ok = false;
+    } else {
+      setError(descriptionEl, errDescription, "");
+    }
+
+    if (!agreeEl.checked) {
+      setError(agreeEl, errAgree, "Je moet akkoord gaan met de voorwaarden.");
+      ok = false;
+    } else {
+      setError(agreeEl, errAgree, "");
+    }
+
+    return ok;
+  }
+
+  if (!form) return;
+
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
+    setStatus("", "#6b7280");
 
-    // Basisvelden
-    const name = document.getElementById("name")?.value?.trim();
-    const email = document.getElementById("email")?.value?.trim();
-    const city = document.getElementById("city")?.value?.trim();
-    const message = document.getElementById("message")?.value?.trim();
-    const companyId = form.dataset.companyId || null;
-
-    // Nieuwe aanvraagvelden
-    const category = document.getElementById("category")?.value?.trim() || "";
-    const specialty = document.getElementById("specialty")?.value?.trim() || "";
-    const communication = document.querySelector("input[name='communication']:checked")?.value || "";
-    const experience = document.querySelector("input[name='experience']:checked")?.value || "";
-    const approach = document.querySelector("input[name='approach']:checked")?.value || "";
-    const involvement = document.querySelector("input[name='involvement']:checked")?.value || "";
-
-    /* ============================================================
-       Validatie
-    ============================================================ */
-    if (!name || !email || !message) {
-      alert("❌ Vul ten minste naam, e-mail en bericht in.");
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      alert("❌ Voer een geldig e-mailadres in.");
-      return;
-    }
-
-    if (!companyId) {
-      alert("❌ Fout: geen bedrijf gekoppeld aan dit aanvraagformulier.");
-      console.error("request.js → companyId ontbreekt");
+    if (!validate()) {
+      setStatus("Controleer de velden hierboven.", "#dc2626");
       return;
     }
 
     const payload = {
-      name,
-      email,
-      city,
-      message,
-      company: companyId,
-      category,
-      specialty,
-      communication,
-      experience,
-      approach,
-      involvement,
+      name: (nameEl.value || "").trim(),
+      email: (emailEl.value || "").trim(),
+      phone: (phoneEl.value || "").trim(),
+      category: (categoryEl.value || "").trim(),
+      city: (cityEl.value || "").trim(),
+      description: (descriptionEl.value || "").trim(),
+      preferredTime: (preferredTimeEl.value || "").trim(),
+      companyId: companyIdEl.value || companyRawIdEl.value || null,
+      companySlug: companySlugEl.value || fromSlug || null,
+      source: "irisje-frontend"
     };
 
-    /* ============================================================
-       Verzenden
-    ============================================================ */
-    form.querySelector("button[type='submit']").disabled = true;
+    setStatus("Je aanvraag wordt verzonden…", "#6b7280");
 
-    try {
-      const result = await safePost(API_URL, payload);
+    fetch(`${API_BASE}/publicRequests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then((res) => res.json().catch(() => ({})))
+      .then((json) => {
+        if (!json || json.error || json.ok === false) {
+          const msg = json && (json.message || json.error) ? (json.message || json.error) : "Aanvraag kon niet worden verstuurd.";
+          setStatus(msg, "#dc2626");
+          return;
+        }
 
-      if (result?.success) {
-        alert("✅ Aanvraag succesvol verzonden! Je ontvangt een bevestiging per e-mail.");
-        form.reset();
-      } else {
-        alert("❌ Er ging iets mis bij het verzenden van de aanvraag.");
-        console.warn("Backend response:", result);
-      }
-    } catch (err) {
-      console.error("❌ Fout bij verzenden:", err);
-      alert("❌ Er trad een fout op bij het verzenden. Probeer het opnieuw.");
-    } finally {
-      form.querySelector("button[type='submit']").disabled = false;
-    }
+        const usp = new URLSearchParams();
+        if (activeCompanyName) usp.set("company", activeCompanyName);
+        const cat = (categoryEl.value || "").trim();
+        const city = (cityEl.value || "").trim();
+        if (cat) usp.set("category", cat);
+        if (city) usp.set("city", city);
+
+        let url = "request-success.html";
+        const qs = usp.toString();
+        if (qs) url += "?" + qs;
+
+        window.location.href = url;
+      })
+      .catch((err) => {
+        console.error("Fout bij versturen aanvraag:", err);
+        setStatus("Er ging iets mis bij het versturen. Probeer het later opnieuw.", "#dc2626");
+      });
   });
 });
