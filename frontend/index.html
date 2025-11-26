@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Vind betrouwbare vakmensen – Irisje.nl</title>
-  <meta name="description" content="Vergelijk bedrijven, lees reviews en vraag gratis offertes aan via Irisje.nl." />
-  <link rel="icon" href="favicon.ico" />
+
+  <!-- Alleen deze CSS mag actief zijn -->
   <link rel="stylesheet" href="style.css?v=20251126" />
 </head>
+
 <body>
+  <!-- UNIFORME HEADER -->
   <header class="site-header">
     <div class="site-header-inner">
       <a href="index.html" class="site-logo">
@@ -23,43 +25,55 @@
   </header>
 
   <main class="container page">
-    <section class="card" style="text-align:center;">
+    
+    <!-- HERO / SEARCH -->
+    <section class="card text-center">
       <h1>Vind betrouwbare vakmensen in jouw regio</h1>
-      <p class="mt-2">Vergelijk bedrijven, lees reviews en vraag gratis offertes aan. Snel, simpel en vrijblijvend.</p>
-      <form id="searchForm" class="mt-4" style="display:grid;grid-template-columns:1fr 1fr auto;gap:.75rem;max-width:720px;margin:0 auto;">
+      <p class="mt-1">Vergelijk bedrijven, lees reviews en vraag gratis offertes aan.</p>
+
+      <form id="searchForm"
+        style="display:grid; grid-template-columns:1fr 1fr auto; gap:.75rem; max-width:700px; margin:1.5rem auto 0;">
         <input id="categoryInput" type="text" placeholder="Wat zoek je? (bijv. schilder)" />
         <input id="cityInput" type="text" placeholder="Waar? (plaats)" />
         <button type="submit" class="btn btn-primary">Zoek</button>
       </form>
-      <p id="searchResult" class="mt-2" style="font-size:.8rem;color:#6b7280;"></p>
+
+      <p id="searchResult" class="mt-2" style="font-size:.85rem;color:#6b7280;"></p>
     </section>
 
+    <!-- HOE WERKT HET -->
     <section class="page">
       <h2 class="text-center">Hoe werkt het?</h2>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1.5rem;">
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-top:1.5rem;">
         <div class="card text-center">
-          <div style="font-size:1.6rem;margin-bottom:.5rem;">🔎</div>
-          <h3>1. Zoeken</h3>
+          <div style="font-size:1.8rem;">🔎</div>
+          <h3 class="mt-2">1. Zoeken</h3>
           <p class="mt-1">Vul in wat je nodig hebt en waar je woont.</p>
         </div>
+
         <div class="card text-center">
-          <div style="font-size:1.6rem;margin-bottom:.5rem;">📋</div>
-          <h3>2. Vergelijken</h3>
-          <p class="mt-1">Bekijk bedrijven met reviews van echte klanten.</p>
+          <div style="font-size:1.8rem;">📋</div>
+          <h3 class="mt-2">2. Vergelijken</h3>
+          <p class="mt-1">Bekijk bedrijven en lees echte reviews.</p>
         </div>
+
         <div class="card text-center">
-          <div style="font-size:1.6rem;margin-bottom:.5rem;">📞</div>
-          <h3>3. Offertes aanvragen</h3>
-          <p class="mt-1">Vraag in één keer offertes aan bij meerdere bedrijven.</p>
+          <div style="font-size:1.8rem;">📞</div>
+          <h3 class="mt-2">3. Offertes aanvragen</h3>
+          <p class="mt-1">Vraag gratis offertes aan bij meerdere bedrijven.</p>
         </div>
       </div>
     </section>
+
   </main>
 
+  <!-- FOOTER -->
   <footer class="site-footer">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
+  <!-- JS -->
   <script src="js/index.js"></script>
 </body>
 </html>
