@@ -1,233 +1,232 @@
-/* === TAILWIND KERN === */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* frontend/style.css — Trustoo-stijl global design */
+/* ------------------------------------------------- */
+/* Reset + basis */
+/* ------------------------------------------------- */
 
-/* === BASIS (via Tailwind-layer) === */
-@layer base {
-  body {
-    font-family: 'Inter', sans-serif;
-    background-color: #f9fafb;
-    color: #1f2937;
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* === KLEUREN (CSS vars) === */
-:root {
-  --irisje-indigo: #6366f1;
-  --irisje-indigo-strong: #4f46e5;
-  --irisje-indigo-light: rgba(99,102,241,0.12);
-  --irisje-green: #22c55e;
-  --irisje-red: #ef4444;
-  --irisje-yellow: #eab308;
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+  background: #f9fafb;
+  color: #1f2937;
 }
 
-/* === ANIMATIES === */
-@keyframes fadeInDashboard {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ------------------------------------------------- */
+/* Layout */
+/* ------------------------------------------------- */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
 }
 
-@keyframes fadeInSimple {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+.page {
+  padding: 2rem 0;
 }
 
-/* === ANIMATIE KLASSEN === */
-@layer components {
-  .animate-fadeIn {
-    animation: fadeInSimple 0.6s ease-out forwards;
-  }
+/* ------------------------------------------------- */
+/* Header */
+/* ------------------------------------------------- */
 
-  .fade-seq section {
-    opacity: 0;
-    transform: translateY(12px);
-    animation: fadeInDashboard 0.9s ease-out forwards;
-  }
-
-  .fade-seq section:nth-of-type(1) { animation-delay: 0.1s; }
-  .fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
-  .fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
-  .fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
-
-  .card-fade-in {
-    opacity: 0;
-    animation: fadeInCard 0.55s ease-out forwards;
-  }
+.site-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
-@keyframes fadeInCard {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+.site-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-/* === HEADER FIX (Tailwind override veilig) === */
-@layer components {
-  .irisje-header {
-    background-color: var(--irisje-indigo) !important;
-    color: #fff !important;
-  }
+.site-logo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 600;
+  color: #4f46e5;
+  text-decoration: none;
+  font-size: 1.1rem;
 }
 
-/* === HOVER FIX === */
-.hover\:bg-indigo-50:hover {
-  background-color: var(--irisje-indigo-light) !important;
+.site-logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: #4f46e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
 }
 
-/* === SECTIES & CARDS === */
-@layer components {
-  section.bg-white {
-    background-color: #fff;
-    border: 1px solid rgba(99,102,241,0.08);
-    border-radius: 1rem;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-  }
-
-  section.bg-white:hover {
-    box-shadow: 0 8px 24px rgba(99,102,241,0.12);
-  }
-}
-
-/* === TABELLEN === */
-@layer components {
-  .table-section table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .table-section th {
-    text-align: left;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .table-section tbody tr:hover {
-    background-color: rgba(99,102,241,0.05);
-    transition: background-color 0.2s ease;
-  }
-}
-
-/* === KNOPPEN === */
-@layer components {
-  button,
-  a.button {
-    transition: background-color 0.3s ease, transform 0.2s ease;
-  }
-
-  button:hover,
-  a.button:hover {
-    transform: translateY(-1px);
-  }
-}
-
-/* === SHADOW HOVERS === */
-@layer components {
-  .chart-container:hover,
-  .stat-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(99,102,241,0.15);
-    transition: all 0.3s ease;
-  }
-}
-
-/* === RESPONSIVE CANVAS === */
-.chart-card canvas {
-  width: 100% !important;
-  height: auto !important;
-}
-
-/* === FOOTER === */
-footer {
-  background-color: #f3f4f6;
+.site-nav a {
   color: #6b7280;
-  text-align: center;
-  font-size: 0.8rem;
-  padding: 1.5rem 0;
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-size: .9rem;
+  transition: .2s;
+}
+
+.site-nav a:hover {
+  color: #4f46e5;
+}
+
+/* ------------------------------------------------- */
+/* Footer */
+/* ------------------------------------------------- */
+
+.site-footer {
+  background: #f3f4f6;
+  padding: 2rem 0;
+  margin-top: 3rem;
   border-top: 1px solid #e5e7eb;
+  text-align: center;
+  font-size: .8rem;
+  color: #6b7280;
 }
 
-/* === RESPONSIVE FIXES === */
-@media (max-width: 640px) {
-  main { padding: 1.25rem; }
-  section { padding: 1rem !important; }
-  h1, h2 { font-size: 1.1rem !important; }
-  #exportCsvBtn { font-size: 0.85rem; }
+/* ------------------------------------------------- */
+/* Cards */
+/* ------------------------------------------------- */
+
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.75rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  margin-bottom: 1.25rem;
 }
 
-/* === LOADER FADE === */
-#loadingIndicator {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+.card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-#loadingIndicator.hidden {
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
+/* ------------------------------------------------- */
+/* Buttons */
+/* ------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: .75rem 1.25rem;
+  border-radius: .75rem;
+  font-weight: 600;
+  font-size: .875rem;
+  cursor: pointer;
+  border: none;
+  transition: .2s;
+  text-decoration: none;
 }
 
-/* === CSV NOTIFICATIE === */
-#notif {
-  backdrop-filter: blur(6px);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25);
+.btn-primary {
+  background: #4f46e5;
+  color: white;
 }
 
-/* === COMPANY FORM === */
-#request-form-section {
-  animation: fadeInDashboard 0.9s ease-out forwards;
+.btn-primary:hover {
+  background: #4338ca;
 }
 
-#company-request-form .input {
+.btn-outline {
+  background: white;
+  border: 1px solid #c7d2fe;
+  color: #4f46e5;
+}
+
+.btn-outline:hover {
+  background: #eef2ff;
+}
+
+/* ------------------------------------------------- */
+/* Inputs */
+/* ------------------------------------------------- */
+
+input, textarea, select {
   width: 100%;
-  padding: 0.625rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-#company-request-form .input:focus {
-  border-color: var(--irisje-indigo);
-  box-shadow: 0 0 0 3px var(--irisje-indigo-light);
+  border: 1px solid #e5e7eb;
+  padding: .7rem .9rem;
+  border-radius: .75rem;
+  font-size: .9rem;
   outline: none;
+  transition: .2s;
+  background: #ffffff;
 }
 
-#company-request-form button {
-  width: 100%;
-  font-weight: 500;
-  background-color: var(--irisje-indigo-strong);
-  color: #fff;
-  padding: 0.625rem 1rem;
-  border-radius: 0.5rem;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
 }
 
-#company-request-form button:hover {
-  background-color: var(--irisje-indigo);
-  transform: translateY(-1px);
-}
-
-#req-status {
-  min-height: 1.25rem;
-  margin-top: 0.5rem;
-}
-
-/* === LOGO FADE FIX === */
-#companyLogo {
+.label {
+  font-size: .75rem;
+  color: #4b5563;
+  margin-bottom: .25rem;
   display: block;
-  width: 6rem;
-  height: 6rem;
-  border-radius: 0.75rem;
-  object-fit: cover;
-  background-color: #f3f4f6;
-  opacity: 0;
-  transition: opacity 0.4s ease-in-out;
+  font-weight: 500;
 }
 
-#companyLogo[src] {
-  opacity: 1;
+.error {
+  color: #dc2626;
+  font-size: .75rem;
+  margin-top: .25rem;
 }
+
+/* ------------------------------------------------- */
+/* Titles */
+/* ------------------------------------------------- */
+
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #4f46e5;
+  margin-bottom: .75rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- */
+/* Utility */
+/* ------------------------------------------------- */
+
+.text-center { text-align: center; }
+.mt-1 { margin-top: .25rem; }
+.mt-2 { margin-top: .5rem; }
+.mt-3 { margin-top: .75rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+
+.mb-1 { margin-bottom: .25rem; }
+.mb-2 { margin-bottom: .5rem; }
+.mb-3 { margin-bottom: .75rem; }
+.mb-4 { margin-bottom: 1rem; }
+
+.hidden { display: none !important; }
