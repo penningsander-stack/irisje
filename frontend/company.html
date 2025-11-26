@@ -1,10 +1,11 @@
+<!-- frontend/company.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bedrijf – Irisje.nl</title>
-  <link rel="icon" href="favicon.ico" />
+  <meta name="description" content="Bekijk de bedrijfsgegevens, reviews en diensten van deze aanbieder op Irisje.nl." />
   <link rel="stylesheet" href="style.css?v=20251126" />
 </head>
 <body>
@@ -22,51 +23,20 @@
   </header>
 
   <main class="container page">
-    <section id="companyBox" class="card">
-      <p id="companyLoading" style="font-size:.9rem;color:#6b7280;">Bedrijfsgegevens worden geladen…</p>
-      <h1 id="cName" class="hidden"></h1>
-      <p id="cCity" class="mt-1 hidden"></p>
-      <p id="cCategories" class="mt-1 hidden" style="font-size:.8rem;color:#6b7280;"></p>
-      <p id="cTagline" class="mt-2 hidden"></p>
-      <div id="ratingBox" class="mt-2 hidden">
-        <span id="cStars" style="color:#fbbf24;font-weight:600;"></span>
-        <span id="cReviewCount" style="font-size:.85rem;color:#6b7280;margin-left:.25rem;"></span>
+    <section id="companyCard" class="card">
+      <h1 id="companyName" style="font-size:1.5rem;">Bedrijf</h1>
+      <p id="companyMeta" class="mt-1" style="font-size:.9rem;color:#6b7280;"></p>
+      <p id="companyDescription" class="mt-2" style="font-size:.95rem;color:#374151;"></p>
+
+      <div id="companyExtra" class="mt-3"></div>
+
+      <div class="mt-3">
+        <button id="requestButton" class="btn btn-primary">
+          Aanvraag indienen bij dit bedrijf
+        </button>
       </div>
-      <button id="scrollToForm" class="btn btn-primary mt-3">Vraag gratis offertes aan</button>
-    </section>
 
-    <section id="reviewsSection" class="card">
-      <h2>Ervaringen van klanten</h2>
-      <p id="reviewsLoading" style="font-size:.9rem;color:#6b7280;">Reviews worden geladen…</p>
-      <div id="reviewsList" class="mt-3 hidden"></div>
-    </section>
-
-    <section id="requestFormBox" class="card">
-      <h2>Vraag een offerte aan bij dit bedrijf</h2>
-      <form id="companyRequestForm" class="mt-3">
-        <div class="mt-2">
-          <label class="label" for="rqName">Naam*</label>
-          <input id="rqName" type="text" />
-          <p id="errName" class="error"></p>
-        </div>
-        <div class="mt-2">
-          <label class="label" for="rqEmail">E-mail*</label>
-          <input id="rqEmail" type="email" />
-          <p id="errEmail" class="error"></p>
-        </div>
-        <div class="mt-2">
-          <label class="label" for="rqPhone">Telefoon*</label>
-          <input id="rqPhone" type="tel" />
-          <p id="errPhone" class="error"></p>
-        </div>
-        <div class="mt-2">
-          <label class="label" for="rqMessage">Waar heb je hulp bij nodig?*</label>
-          <textarea id="rqMessage" rows="3"></textarea>
-          <p id="errMessage" class="error"></p>
-        </div>
-        <p id="rqStatus" class="mt-2" style="font-size:.85rem;"></p>
-        <button id="rqSubmit" type="submit" class="btn btn-primary mt-2">Verstuur aanvraag</button>
-      </form>
+      <p id="companyStatus" class="mt-2" style="font-size:.85rem;"></p>
     </section>
   </main>
 

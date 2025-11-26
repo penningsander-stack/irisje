@@ -1,16 +1,14 @@
+<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Vind betrouwbare vakmensen – Irisje.nl</title>
-
-  <!-- Alleen deze CSS mag actief zijn -->
+  <title>Irisje.nl – Vind de beste dienstverlener bij jou in de buurt</title>
+  <meta name="description" content="Vergelijk lokale bedrijven op Irisje.nl en ontvang snel offertes van betrouwbare dienstverleners." />
   <link rel="stylesheet" href="style.css?v=20251126" />
 </head>
-
 <body>
-  <!-- UNIFORME HEADER -->
   <header class="site-header">
     <div class="site-header-inner">
       <a href="index.html" class="site-logo">
@@ -25,55 +23,43 @@
   </header>
 
   <main class="container page">
-    
-    <!-- HERO / SEARCH -->
-    <section class="card text-center">
-      <h1>Vind betrouwbare vakmensen in jouw regio</h1>
-      <p class="mt-1">Vergelijk bedrijven, lees reviews en vraag gratis offertes aan.</p>
+    <section class="hero card">
+      <h1 class="hero-title">Vind snel een betrouwbare vakspecialist</h1>
+      <p class="hero-subtitle">
+        Beschrijf kort wat je zoekt en vergelijk bedrijven op reviews, ervaring en regio.
+      </p>
 
-      <form id="searchForm"
-        style="display:grid; grid-template-columns:1fr 1fr auto; gap:.75rem; max-width:700px; margin:1.5rem auto 0;">
-        <input id="categoryInput" type="text" placeholder="Wat zoek je? (bijv. schilder)" />
-        <input id="cityInput" type="text" placeholder="Waar? (plaats)" />
-        <button type="submit" class="btn btn-primary">Zoek</button>
+      <form id="homeSearchForm" class="search-form mt-3">
+        <div class="search-field">
+          <label class="label" for="searchCategory">Wat heb je nodig?</label>
+          <input id="searchCategory" type="text" placeholder="Bijv. dakdekker, mediator, hovenier…" />
+        </div>
+        <div class="search-field">
+          <label class="label" for="searchCity">Waar?</label>
+          <input id="searchCity" type="text" placeholder="Plaats of regio" />
+        </div>
+        <button class="btn btn-primary search-submit" type="submit">
+          Bedrijven zoeken
+        </button>
       </form>
-
-      <p id="searchResult" class="mt-2" style="font-size:.85rem;color:#6b7280;"></p>
     </section>
 
-    <!-- HOE WERKT HET -->
-    <section class="page">
-      <h2 class="text-center">Hoe werkt het?</h2>
-
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-top:1.5rem;">
-        <div class="card text-center">
-          <div style="font-size:1.8rem;">🔎</div>
-          <h3 class="mt-2">1. Zoeken</h3>
-          <p class="mt-1">Vul in wat je nodig hebt en waar je woont.</p>
-        </div>
-
-        <div class="card text-center">
-          <div style="font-size:1.8rem;">📋</div>
-          <h3 class="mt-2">2. Vergelijken</h3>
-          <p class="mt-1">Bekijk bedrijven en lees echte reviews.</p>
-        </div>
-
-        <div class="card text-center">
-          <div style="font-size:1.8rem;">📞</div>
-          <h3 class="mt-2">3. Offertes aanvragen</h3>
-          <p class="mt-1">Vraag gratis offertes aan bij meerdere bedrijven.</p>
-        </div>
-      </div>
+    <section class="mt-4">
+      <h2 class="section-title">Een paar voorbeelden van bedrijven</h2>
+      <p class="section-subtitle">
+        Dit is een kleine selectie. Na het zoeken zie je bedrijven die passen bij jouw opdracht.
+      </p>
+      <div id="homeCompanies" class="cards-grid mt-3"></div>
+      <p id="homeCompaniesEmpty" class="mt-2" style="display:none;font-size:.9rem;color:#6b7280;">
+        Er zijn nog geen bedrijven zichtbaar. Probeer een zoekopdracht in te vullen.
+      </p>
     </section>
-
   </main>
 
-  <!-- FOOTER -->
   <footer class="site-footer">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-  <!-- JS -->
   <script src="js/index.js"></script>
 </body>
 </html>
