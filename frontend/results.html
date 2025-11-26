@@ -4,407 +4,553 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Zoekresultaten – Irisje.nl</title>
-  <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
+  <title>Vergelijk offertes – Irisje.nl</title>
+  <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct gratis offertes aan via Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251109" />
+  <link rel="stylesheet" href="style.css?v=20251112" />
   <style>
     /* Kleine lokale styles voor validatie & highlights */
     .error-border { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.06); }
     .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; display:block; }
     .hidden { display: none !important; }
-    .top-highlight { box-shadow: 0 6px 20px rgba(79,70,229,0.06); border: 1px solid rgba(99,102,241,0.12); }
-    .rq-status { transition: opacity .3s ease; }
+    .rq-status { transition: opacity .3s ease; min-height: 1.25rem; }
     .fade-out { opacity: 0; transition: opacity .6s ease; }
   </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
-  <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+  <!-- HEADER (zelfde stijl als index.html) -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-4">
       <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
-        <span>Irisje.nl</span>
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold leading-none">I</span>
+        <span class="tracking-tight">Irisje.nl</span>
       </a>
-      <nav class="hidden sm:flex space-x-6 text-sm font-medium text-gray-600">
-        <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
+      <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
+        <a href="results.html" class="hover:text-indigo-600 text-indigo-700 font-semibold transition">Bedrijven</a>
         <a href="login.html" class="hover:text-indigo-600 transition">Inloggen</a>
       </nav>
+      <a href="login.html" class="sm:hidden text-xs font-medium text-indigo-700 border border-indigo-200 rounded-lg px-3 py-1.5">
+        Inloggen
+      </a>
     </div>
   </header>
 
   <!-- MAIN -->
   <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-10">
+    <!-- Zoek & resultaten-blok -->
     <section>
-      <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
-        <span class="text-3xl mr-2">🔎</span> Bedrijven in jouw regio
+      <h1 class="text-2xl sm:text-3xl font-bold text-indigo-700 mb-2 flex items-center gap-2">
+        <span class="text-3xl">🔎</span>
+        <span>Vergelijk offertes van bedrijven in jouw regio</span>
       </h1>
+      <p class="text-sm text-gray-600 mb-6">
+        Vul in wat je zoekt en waar. Wij tonen je bedrijven met reviews. Selecteer tot <span class="font-semibold">5 bedrijven</span> en vraag in één keer gratis offertes aan.
+      </p>
 
       <!-- FILTER -->
       <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
-        <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">Zoeken</button>
+        <input
+          id="filterCategory"
+          type="text"
+          placeholder="Wat voor vakman zoek je? (bijv. loodgieter, schilder)"
+          class="col-span-1 rounded-xl border-gray-200 text-sm px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <input
+          id="filterCity"
+          type="text"
+          placeholder="Plaats of postcode"
+          class="col-span-1 rounded-xl border-gray-200 text-sm px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        />
+        <button
+          type="submit"
+          class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition flex items-center justify-center"
+        >
+          Zoeken
+        </button>
       </form>
+
       <p id="filterMessage" class="text-xs text-gray-500 mb-4"></p>
 
       <!-- SELECTIEBALK -->
-      <div id="selectionBar" class="hidden bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div
+        id="selectionBar"
+        class="hidden bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3 mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+      >
         <div>
-          <p class="text-sm text-indigo-900 font-medium">Geselecteerde bedrijven: <span id="selectedCount">0</span>/5</p>
+          <p class="text-sm text-indigo-900 font-medium">
+            Geselecteerde bedrijven: <span id="selectedCount">0</span>/5
+          </p>
           <p class="text-xs text-indigo-700" id="selectedNames"></p>
         </div>
         <div class="flex gap-2">
-          <button id="openRequestForm" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50" disabled>Offerte aanvragen</button>
-          <button id="clearSelection" class="text-xs text-indigo-700 hover:underline">Alles deselecteren</button>
+          <button
+            id="openRequestForm"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl px-4 py-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            Offerte aanvragen
+          </button>
+          <button
+            id="clearSelection"
+            type="button"
+            class="text-xs text-indigo-700 hover:text-indigo-900 underline"
+          >
+            Selectie wissen
+          </button>
         </div>
       </div>
 
-      <!-- AANVRAAGFORM -->
-      <div id="requestFormBox" class="hidden bg-white border border-gray-100 rounded-2xl shadow p-5 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Offerte aanvragen bij geselecteerde bedrijven</h2>
-        <p class="text-sm text-gray-500 mb-4">Je aanvraag wordt verstuurd naar maximaal vijf bedrijven.</p>
-
-        <form id="requestForm" class="grid gap-3 md:grid-cols-2" novalidate>
-          <div>
-            <input id="rqName" name="rqName" type="text" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errName" class="error-text hidden"></p>
-          </div>
-          <div>
-            <input id="rqEmail" name="rqEmail" type="email" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errEmail" class="error-text hidden"></p>
-          </div>
-          <div>
-            <input id="rqPhone" name="rqPhone" type="tel" placeholder="Telefoonnummer (10 cijfers)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errPhone" class="error-text hidden"></p>
-          </div>
-          <div class="md:col-span-2">
-            <textarea id="rqMessage" name="rqMessage" rows="3" placeholder="Beschrijf je klus of vraag..." class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 w-full" required></textarea>
-            <p id="errMessage" class="error-text hidden"></p>
-          </div>
-
-          <p id="rqStatus" class="md:col-span-2 text-sm min-h-[1.25rem] rq-status"></p>
-
-          <div class="md:col-span-2 flex flex-col gap-2">
-            <button id="submitRequestBtn" type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Verstuur aanvraag</button>
-            <button type="button" id="closeRequestForm" class="text-sm text-gray-500 hover:text-gray-700">Annuleren</button>
-            <p class="text-xs text-gray-500 mt-1 text-center">🔒 Je gegevens worden alleen gedeeld met de geselecteerde bedrijven.</p>
-          </div>
-        </form>
-      </div>
-
       <!-- RESULTATEN -->
-      <section id="resultsContainer" class="grid gap-6">
-        <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
-      </section>
+      <div id="resultsContainer" class="space-y-4 md:space-y-5">
+        <!-- Kaarten worden hier via JS ingevoegd -->
+      </div>
+    </section>
+
+    <!-- AANVRAAGFORMULIER (multi-bedrijven) -->
+    <section
+      id="requestFormBox"
+      class="hidden bg-white rounded-2xl border border-gray-100 shadow-md p-6 md:p-8 space-y-5"
+    >
+      <div class="flex items-center justify-between gap-3 mb-2">
+        <h2 class="text-lg font-semibold text-gray-800">
+          Verstuur één aanvraag naar je geselecteerde bedrijven
+        </h2>
+        <button
+          type="button"
+          id="closeRequestForm"
+          class="text-xs text-gray-500 hover:text-gray-700"
+        >
+          Sluiten
+        </button>
+      </div>
+      <p class="text-xs text-gray-500 mb-4">
+        Je aanvraag wordt doorgestuurd naar de geselecteerde bedrijven. Zij nemen rechtstreeks contact met je op.
+      </p>
+
+      <form id="requestForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="rqName" class="block text-xs font-medium text-gray-700 mb-1">Naam*</label>
+          <input
+            id="rqName"
+            name="rqName"
+            type="text"
+            class="w-full rounded-xl border-gray-200 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <p id="errName" class="error-text hidden"></p>
+        </div>
+
+        <div>
+          <label for="rqEmail" class="block text-xs font-medium text-gray-700 mb-1">E-mail*</label>
+          <input
+            id="rqEmail"
+            name="rqEmail"
+            type="email"
+            class="w-full rounded-xl border-gray-200 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <p id="errEmail" class="error-text hidden"></p>
+        </div>
+
+        <div>
+          <label for="rqPhone" class="block text-xs font-medium text-gray-700 mb-1">Telefoon*</label>
+          <input
+            id="rqPhone"
+            name="rqPhone"
+            type="tel"
+            class="w-full rounded-xl border-gray-200 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <p id="errPhone" class="error-text hidden"></p>
+        </div>
+
+        <div class="md:col-span-2">
+          <label for="rqMessage" class="block text-xs font-medium text-gray-700 mb-1">
+            Vertel kort waar je hulp bij nodig hebt*
+          </label>
+          <textarea
+            id="rqMessage"
+            name="rqMessage"
+            rows="3"
+            class="w-full rounded-xl border-gray-200 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          ></textarea>
+          <p id="errMessage" class="error-text hidden"></p>
+        </div>
+
+        <p id="rqStatus" class="md:col-span-2 text-sm rq-status"></p>
+
+        <div class="md:col-span-2 flex flex-col gap-2">
+          <button
+            id="submitRequestBtn"
+            type="submit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
+          >
+            Verstuur aanvraag
+          </button>
+          <p class="text-xs text-gray-500 mt-1 text-center">
+            Je gegevens worden alleen gedeeld met de door jou geselecteerde bedrijven.
+          </p>
+        </div>
+      </form>
     </section>
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100">
     © 2025 Irisje.nl – Alle rechten voorbehouden
   </footer>
 
-<script>
-/* Full script wrapped to avoid race conditions and undefined references */
-document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-  const MAX_SELECTION = 5;
-  const selectedMap = new Map();
+  <!-- SCRIPT -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const API_BASE = "https://irisje-backend.onrender.com/api";
+      const MAX_SELECTION = 5;
 
-  // Validators (returns true or error message)
-  const validators = {
-    rqName: val => val.trim().length >= 2 || "Voer je naam in.",
-    rqEmail: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
-    rqPhone: val => /^\d{10}$/.test(val) || "Voer 10 cijfers in.",
-    rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
-  };
+      // Elements
+      const filterForm = document.getElementById("filterForm");
+      const filterCategory = document.getElementById("filterCategory");
+      const filterCity = document.getElementById("filterCity");
+      const resultsContainer = document.getElementById("resultsContainer");
+      const filterMessage = document.getElementById("filterMessage");
 
-  // helper: set error / clear error
-  function setError(el, errEl, msg) {
-    if (msg === true || !msg) {
-      el.classList.remove("error-border");
-      errEl.classList.add("hidden");
-      errEl.textContent = "";
-    } else {
-      el.classList.add("error-border");
-      errEl.classList.remove("hidden");
-      errEl.textContent = msg;
-    }
-  }
+      const selectionBar = document.getElementById("selectionBar");
+      const selectedCount = document.getElementById("selectedCount");
+      const selectedNames = document.getElementById("selectedNames");
+      const openRequestForm = document.getElementById("openRequestForm");
+      const clearSelection = document.getElementById("clearSelection");
 
-  // realtime validation binding
-  Object.keys(validators).forEach(id => {
-    const el = document.getElementById(id);
-    const err = document.getElementById("err" + id.slice(2));
-    if (!el || !err) return;
-    el.addEventListener("input", () => {
-      const valid = validators[id](el.value);
-      setError(el, err, valid === true ? null : valid);
-    });
-  });
+      const requestFormBox = document.getElementById("requestFormBox");
+      const requestForm = document.getElementById("requestForm");
+      const rqName = document.getElementById("rqName");
+      const rqEmail = document.getElementById("rqEmail");
+      const rqPhone = document.getElementById("rqPhone");
+      const rqMessage = document.getElementById("rqMessage");
+      const rqStatus = document.getElementById("rqStatus");
+      const closeRequestForm = document.getElementById("closeRequestForm");
 
-  // selection UI
-  function updateSelectionUI() {
-    const bar = document.getElementById("selectionBar");
-    const count = document.getElementById("selectedCount");
-    const names = document.getElementById("selectedNames");
-    const btn = document.getElementById("openRequestForm");
-    const arr = Array.from(selectedMap.values());
-    count.textContent = arr.length;
-    if (arr.length === 0) {
-      bar.classList.add("hidden");
-      if (btn) btn.disabled = true;
-      names.textContent = "";
-    } else {
-      bar.classList.remove("hidden");
-      if (btn) btn.disabled = false;
-      names.textContent = arr.map(c => c.name).join(", ");
-    }
-  }
+      const selectedMap = new Map();
 
-  // load results with sorting + top highlight
-  async function loadResults(cat = "", city = "") {
-    const container = document.getElementById("resultsContainer");
-    const msgEl = document.getElementById("filterMessage");
-    container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
-    if (msgEl) msgEl.textContent = "";
+      // URL params (categorie & plaats van index.html)
+      const params = new URLSearchParams(window.location.search);
+      const initialCategory = params.get("category") || "";
+      const initialCity = params.get("city") || "";
 
-    try {
-      const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}`);
-      if (!res.ok) {
-        const txt = await res.text().catch(()=>"");
-        throw new Error(`Serverfout: ${res.status} ${txt}`);
+      if (initialCategory) filterCategory.value = initialCategory;
+      if (initialCity) filterCity.value = initialCity;
+
+      // Helpers
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>\"']/g, m => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[m]));
       }
-      const data = await res.json();
-      let items = data.items || [];
-      // sort: rating desc -> reviewCount desc -> name asc
-      items.sort((a,b) => {
-        const ra = a.avgRating || 0, rb = b.avgRating || 0;
-        if (rb !== ra) return rb - ra;
-        const ca = a.reviewCount || 0, cb = b.reviewCount || 0;
-        if (cb !== ca) return cb - ca;
-        return (a.name||"").localeCompare(b.name||"");
+
+      function updateSelectionUI() {
+        const arr = Array.from(selectedMap.values());
+        const count = arr.length;
+
+        selectedCount.textContent = count;
+        selectedNames.textContent = count
+          ? arr.map(c => c.name).join(", ")
+          : "";
+
+        if (count === 0) {
+          selectionBar.classList.add("hidden");
+          openRequestForm.disabled = true;
+        } else {
+          selectionBar.classList.remove("hidden");
+          openRequestForm.disabled = false;
+        }
+      }
+
+      function attachSelectionHandlers() {
+        document.querySelectorAll(".company-select").forEach(input => {
+          input.addEventListener("change", () => {
+            const id = input.getAttribute("data-id");
+            const name = input.getAttribute("data-name") || "";
+            if (input.checked) {
+              if (selectedMap.size >= MAX_SELECTION) {
+                input.checked = false;
+                alert("Je kunt maximaal 5 bedrijven tegelijk selecteren.");
+                return;
+              }
+              selectedMap.set(id, { id, name });
+            } else {
+              selectedMap.delete(id);
+            }
+            updateSelectionUI();
+          });
+        });
+      }
+
+      async function loadResults(category = "", city = "") {
+        resultsContainer.innerHTML = "<p class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</p>";
+        if (filterMessage) filterMessage.textContent = "";
+
+        try {
+          const url = `${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`;
+          const res = await fetch(url);
+          if (!res.ok) {
+            throw new Error(`Serverfout: ${res.status}`);
+          }
+          const data = await res.json();
+          const items = Array.isArray(data.items) ? data.items : [];
+
+          if (!items.length) {
+            resultsContainer.innerHTML = "<div class='bg-white border border-gray-200 rounded-2xl p-6 text-center text-gray-500 text-sm'>Geen bedrijven gevonden.</div>";
+            if (filterMessage) filterMessage.textContent = "Geen resultaten gevonden.";
+            return;
+          }
+
+          // Sorteer: eerst hoogste rating, dan meeste reviews, dan naam
+          items.sort((a, b) => {
+            const ra = a.avgRating || 0;
+            const rb = b.avgRating || 0;
+            if (rb !== ra) return rb - ra;
+            const ca = a.reviewCount || 0;
+            const cb = b.reviewCount || 0;
+            if (cb !== ca) return cb - ca;
+            return (a.name || "").localeCompare(b.name || "");
+          });
+
+          if (filterMessage) {
+            filterMessage.textContent =
+              items.length === 1
+                ? "1 resultaat gevonden."
+                : `${items.length} resultaten gevonden.`;
+          }
+
+          const cards = items.map((c, index) => {
+            const stars = c.avgRating
+              ? "⭐".repeat(Math.round(c.avgRating))
+              : "—";
+            const reviews = c.reviewCount || 0;
+            const categories = Array.isArray(c.categories)
+              ? c.categories.join(", ")
+              : (c.categories || "");
+            const highlight = index === 0 ? "ring-1 ring-indigo-100" : "";
+
+            return `
+              <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 ${highlight}">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 class="text-lg font-semibold text-indigo-700">
+                      ${escapeHtml(c.name)}
+                    </h2>
+                    <div class="text-gray-500 text-sm">
+                      ${escapeHtml(c.city || "")}
+                    </div>
+                    <div class="text-gray-400 text-xs mt-1">
+                      ${escapeHtml(categories)}
+                    </div>
+                    <p class="text-gray-700 text-sm mt-3">
+                      ${escapeHtml(c.tagline || "Betrouwbare vakman via Irisje.nl.")}
+                    </p>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-yellow-500 text-sm font-semibold">
+                      ${stars}
+                    </div>
+                    <div class="text-gray-500 text-xs mt-1">
+                      ${reviews} review${reviews === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-3">
+                  <a
+                    href="company.html?slug=${encodeURIComponent(c.slug || "")}"
+                    class="inline-flex items-center justify-center bg-white border border-indigo-200 text-indigo-700 text-xs font-semibold rounded-xl px-4 py-2 hover:bg-indigo-50 transition"
+                  >
+                    Bekijk profiel
+                  </a>
+                  <label class="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      class="company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      data-id="${c._id}"
+                      data-name="${escapeHtml(c.name || "")}"
+                    />
+                    <span>Meenemen in offerte-aanvraag</span>
+                  </label>
+                </div>
+              </article>
+            `;
+          });
+
+          resultsContainer.innerHTML = cards.join("");
+          attachSelectionHandlers();
+        } catch (err) {
+          console.error("Fout bij loadResults:", err);
+          resultsContainer.innerHTML =
+            "<div class='bg-white border border-red-100 rounded-2xl p-6 text-sm text-red-600'>Er ging iets mis bij het laden van de resultaten.</div>";
+          if (filterMessage) filterMessage.textContent = "Er is een fout opgetreden.";
+        }
+      }
+
+      // Validatie helpers voor formulier
+      const validators = {
+        rqName: val => val.trim().length >= 2 || "Vul je naam in.",
+        rqEmail: val => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val) || "Vul een geldig e-mailadres in.",
+        rqPhone: val => val.replace(/\D/g, "").length >= 8 || "Vul een geldig telefoonnummer in.",
+        rqMessage: val => val.trim().length >= 5 || "Beschrijf kort je aanvraag."
+      };
+
+      function setError(el, errEl, msg) {
+        if (!msg || msg === true) {
+          el.classList.remove("error-border");
+          errEl.classList.add("hidden");
+          errEl.textContent = "";
+        } else {
+          el.classList.add("error-border");
+          errEl.classList.remove("hidden");
+          errEl.textContent = msg;
+        }
+      }
+
+      // Realtime validatie
+      Object.keys(validators).forEach(id => {
+        const input = document.getElementById(id);
+        const err = document.getElementById("err" + id.slice(2)); // rqName -> errName
+        if (!input || !err) return;
+        input.addEventListener("input", () => {
+          const check = validators[id](input.value);
+          setError(input, err, check === true ? true : check);
+        });
       });
 
-      if (items.length === 0) {
-        container.innerHTML = "<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";
-        if (msgEl) msgEl.textContent = "Geen resultaten gevonden";
-        return;
+      // Filter submit
+      if (filterForm) {
+        filterForm.addEventListener("submit", e => {
+          e.preventDefault();
+          loadResults(filterCategory.value || "", filterCity.value || "");
+        });
       }
 
-      // render items
-      container.innerHTML = items.map((c,i) => {
-        const highlight = i < 5 ? "top-highlight" : "";
-        const stars = c.avgRating ? "⭐".repeat(Math.round(c.avgRating)) : "—";
-        const categories = Array.isArray(c.categories) ? c.categories.join(", ") : (c.categories || "");
-        return `
-        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 ${highlight}">
-          <div class='flex items-start justify-between gap-3'>
-            <div>
-              <h2 class='text-lg font-semibold text-indigo-700'>${escapeHtml(c.name)}</h2>
-              <div class='text-gray-500 text-sm'>${escapeHtml(c.city || "")}</div>
-              <div class='text-gray-400 text-xs mt-1'>${escapeHtml(categories)}</div>
-              <p class='text-gray-700 text-sm mt-3'>${escapeHtml(c.tagline || "")}</p>
-            </div>
-            <div class='text-right'>
-              <div class='text-yellow-500 text-sm font-semibold'>${stars}</div>
-              <div class='text-gray-500 text-xs mt-1'>${c.reviewCount || 0} reviews</div>
-            </div>
-          </div>
-          <div class='flex items-center justify-between gap-3'>
-            <a href='company.html?slug=${encodeURIComponent(c.slug)}' class='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs'>Bekijk profiel</a>
-            <label class='flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none'>
-              <input type='checkbox' class='company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500' data-id='${c._id}' data-name='${escapeHtmlAttr(c.name)}' />
-              Aanvragen
-            </label>
-            <div class='text-gray-400 text-[11px]'>${c.isVerified ? "✅ Geverifieerd" : "⏳ Niet geverifieerd"}</div>
-          </div>
-        </article>`;
-      }).join("");
-
-      if (msgEl) msgEl.textContent = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
-
-      // attach checkbox listeners safely
-      container.querySelectorAll(".company-select").forEach(chk => {
-        chk.addEventListener("change", e => {
-          const id = e.target.dataset.id;
-          const name = e.target.dataset.name || "Onbekend";
-          if (e.target.checked) {
-            if (selectedMap.size >= MAX_SELECTION) {
-              e.target.checked = false;
-              alert("Je kunt maximaal 5 bedrijven selecteren.");
-              return;
-            }
-            selectedMap.set(id, { id, name });
-          } else {
-            selectedMap.delete(id);
-          }
+      // Selectie wissen
+      if (clearSelection) {
+        clearSelection.addEventListener("click", () => {
+          selectedMap.clear();
+          document.querySelectorAll(".company-select").forEach(i => {
+            i.checked = false;
+          });
           updateSelectionUI();
         });
-      });
-
-    } catch (err) {
-      console.error("Fout bij loadResults:", err);
-      container.innerHTML = "<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
-      if (msgEl) msgEl.textContent = "Er is iets misgegaan";
-    }
-  }
-
-  // helper: escape html for text nodes (basic)
-  function escapeHtml(str) {
-    if (!str) return "";
-    return String(str).replace(/[&<>"']/g, function(m) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
-    });
-  }
-  // escape for attribute (minimally)
-  function escapeHtmlAttr(str){ return escapeHtml(str).replace(/"/g,'&quot;'); }
-
-  // open/close request form
-  const openBtn = document.getElementById("openRequestForm");
-  const requestBox = document.getElementById("requestFormBox");
-  const clearBtn = document.getElementById("clearSelection");
-  if (openBtn) openBtn.addEventListener("click", () => {
-    if (!requestBox) return;
-    requestBox.classList.remove("hidden");
-    // scroll into view
-    setTimeout(() => {
-      requestBox.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 150);
-  });
-  const closeBtn = document.getElementById("closeRequestForm");
-  if (closeBtn) closeBtn.addEventListener("click", () => {
-    if (!requestBox) return;
-    requestBox.classList.add("hidden");
-  });
-  if (clearBtn) clearBtn.addEventListener("click", () => {
-    // uncheck checkboxes
-    document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
-    selectedMap.clear();
-    updateSelectionUI();
-    if (requestBox) requestBox.classList.add("hidden");
-  });
-
-  // submit request
-  const requestForm = document.getElementById("requestForm");
-  const rqStatus = document.getElementById("rqStatus");
-  if (requestForm) {
-    requestForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!rqStatus) return;
-      rqStatus.style.opacity = "1";
-
-      // build payload
-      const nameEl = document.getElementById("rqName");
-      const emailEl = document.getElementById("rqEmail");
-      const phoneEl = document.getElementById("rqPhone");
-      const msgEl = document.getElementById("rqMessage");
-
-      // run validators, show first error
-      const entries = [
-        ["rqName", nameEl],
-        ["rqEmail", emailEl],
-        ["rqPhone", phoneEl],
-        ["rqMessage", msgEl]
-      ];
-      let firstInvalid = null;
-      for (const [key, el] of entries) {
-        if (!el) continue;
-        const valid = validators[key](el.value);
-        const errEl = document.getElementById("err" + key.slice(2));
-        setError(el, errEl, valid === true ? null : valid);
-        if (valid !== true && !firstInvalid) firstInvalid = el;
-      }
-      if (firstInvalid) {
-        rqStatus.textContent = "❌ Controleer de invoer.";
-        rqStatus.className = "text-red-600 rq-status";
-        firstInvalid.focus();
-        return;
       }
 
-      const companies = Array.from(selectedMap.values()).map(c => c.id);
-      if (companies.length === 0) {
-        rqStatus.textContent = "❌ Selecteer eerst bedrijven.";
-        rqStatus.className = "text-red-600 rq-status";
-        return;
-      }
-
-      // send
-      try {
-        rqStatus.textContent = "⏳ Aanvraag wordt verzonden...";
-        rqStatus.className = "text-gray-500 rq-status";
-
-        const payload = {
-          customerName: nameEl.value.trim(),
-          customerEmail: emailEl.value.trim(),
-          customerPhone: phoneEl.value.trim(),
-          message: msgEl.value.trim(),
-          companies
-        };
-
-        const res = await fetch(`${API_BASE}/publicRequests/multi`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(payload)
+      // Request formulier openen/sluiten
+      if (openRequestForm && requestFormBox) {
+        openRequestForm.addEventListener("click", () => {
+          if (!selectedMap.size) return;
+          requestFormBox.classList.remove("hidden");
+          setTimeout(() => {
+            requestFormBox.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
         });
-
-        const json = await res.json().catch(()=>({ ok:false, error:"Geen JSON" }));
-        if (!res.ok || !json.ok) {
-          console.error("server error", res.status, json);
-          throw new Error(json.error || "Serverfout");
-        }
-
-        // success: clear form, uncheck and clear selection, show success briefly
-        rqStatus.textContent = "✅ Aanvraag succesvol verzonden.";
-        rqStatus.className = "text-green-600 rq-status";
-        requestForm.reset();
-        document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
-        selectedMap.clear();
-        updateSelectionUI();
-
-        // hide form after short delay and fade the status
-        setTimeout(() => {
-          if (requestBox) requestBox.classList.add("hidden");
-        }, 900);
-
-        setTimeout(() => {
-          rqStatus.classList.add("fade-out");
-          setTimeout(()=>{ rqStatus.textContent = ""; rqStatus.classList.remove("fade-out"); }, 700);
-        }, 2000);
-
-      } catch (err) {
-        console.error("Aanvraag fout:", err);
-        rqStatus.textContent = "❌ Er ging iets mis bij het verzenden.";
-        rqStatus.className = "text-red-600 rq-status";
       }
+
+      if (closeRequestForm && requestFormBox) {
+        closeRequestForm.addEventListener("click", () => {
+          requestFormBox.classList.add("hidden");
+        });
+      }
+
+      // Aanvraag versturen
+      if (requestForm) {
+        requestForm.addEventListener("submit", async e => {
+          e.preventDefault();
+
+          const companies = Array.from(selectedMap.values()).map(c => c.id);
+          if (!companies.length) {
+            rqStatus.textContent = "❌ Selecteer eerst één of meer bedrijven.";
+            rqStatus.className = "rq-status text-red-600";
+            return;
+          }
+
+          // Validatie
+          const checks = {
+            rqName: validators.rqName(rqName.value),
+            rqEmail: validators.rqEmail(rqEmail.value),
+            rqPhone: validators.rqPhone(rqPhone.value),
+            rqMessage: validators.rqMessage(rqMessage.value)
+          };
+
+          const errName = document.getElementById("errName");
+          const errEmail = document.getElementById("errEmail");
+          const errPhone = document.getElementById("errPhone");
+          const errMessage = document.getElementById("errMessage");
+
+          setError(rqName, errName, checks.rqName === true ? true : checks.rqName);
+          setError(rqEmail, errEmail, checks.rqEmail === true ? true : checks.rqEmail);
+          setError(rqPhone, errPhone, checks.rqPhone === true ? true : checks.rqPhone);
+          setError(rqMessage, errMessage, checks.rqMessage === true ? true : checks.rqMessage);
+
+          if (
+            checks.rqName !== true ||
+            checks.rqEmail !== true ||
+            checks.rqPhone !== true ||
+            checks.rqMessage !== true
+          ) {
+            rqStatus.textContent = "❌ Controleer de velden hierboven.";
+            rqStatus.className = "rq-status text-red-600";
+            return;
+          }
+
+          try {
+            rqStatus.textContent = "⏳ Aanvraag wordt verzonden...";
+            rqStatus.className = "rq-status text-gray-500";
+
+            const payload = {
+              customerName: rqName.value.trim(),
+              customerEmail: rqEmail.value.trim(),
+              customerPhone: rqPhone.value.trim(),
+              message: rqMessage.value.trim(),
+              companies
+            };
+
+            const res = await fetch(`${API_BASE}/publicRequests/multi`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+
+            const json = await res.json().catch(() => ({ ok: false }));
+            if (!res.ok || !json || json.ok === false) {
+              throw new Error(json && json.error ? json.error : "Serverfout");
+            }
+
+            rqStatus.textContent = "✅ Aanvraag succesvol verzonden.";
+            rqStatus.className = "rq-status text-green-600";
+
+            requestForm.reset();
+            selectedMap.clear();
+            updateSelectionUI();
+
+            setTimeout(() => {
+              requestFormBox.classList.add("hidden");
+            }, 1200);
+
+            setTimeout(() => {
+              rqStatus.classList.add("fade-out");
+              setTimeout(() => {
+                rqStatus.textContent = "";
+                rqStatus.classList.remove("fade-out");
+              }, 600);
+            }, 2000);
+          } catch (err) {
+            console.error("Aanvraag fout:", err);
+            rqStatus.textContent = "❌ Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
+            rqStatus.className = "rq-status text-red-600";
+          }
+        });
+      }
+
+      // Initial load
+      loadResults(initialCategory, initialCity);
     });
-  }
-
-  // initial load (from query)
-  const q = new URLSearchParams(window.location.search);
-  const initialCategory = q.get("category") || "";
-  const initialCity = q.get("city") || "";
-  // fill filter inputs
-  const fc = document.getElementById("filterCategory");
-  const fy = document.getElementById("filterCity");
-  if (fc) fc.value = initialCategory;
-  if (fy) fy.value = initialCity;
-
-  // filter form submit
-  const filterForm = document.getElementById("filterForm");
-  if (filterForm) {
-    filterForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      loadResults((fc && fc.value) || "", (fy && fy.value) || "");
-    });
-  }
-
-  // initial call
-  loadResults(initialCategory, initialCity);
-});
-</script>
+  </script>
 </body>
 </html>
