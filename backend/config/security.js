@@ -9,6 +9,7 @@ const allowedOrigins = [
   "https://irisje.nl",
   "https://www.irisje.nl",
   "https://irisje-frontend.onrender.com",
+  "https://irisje-frontendnieuw.onrender.com",
   "https://irisje-backend.onrender.com",
 ];
 
