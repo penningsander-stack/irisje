@@ -98,7 +98,9 @@ router.post("/", async (req, res) => {
       email,
       city,
       message,
-      company, // companyId vanuit frontend
+      description, // eventueel veld vanuit simpele formulieren
+      company,     // oude naam
+      companyId,   // nieuwe naam vanuit frontend
       category,
       specialty,
       communication,
@@ -107,8 +109,11 @@ router.post("/", async (req, res) => {
       involvement,
     } = req.body || {};
 
+    const finalMessage = cleanText(message || description);
+    const finalCompanyId = company || companyId;
+
     // Basisvalidatie
-    if (!cleanText(name) || !cleanText(email) || !cleanText(message)) {
+    if (!cleanText(name) || !cleanText(email) || !finalMessage) {
       return res.status(400).json({
         ok: false,
         success: false,
@@ -153,8 +158,8 @@ router.post("/", async (req, res) => {
       name: cleanText(name),
       email: cleanText(email),
       city: cleanOptional(city),
-      message: cleanText(message),
-      company: foundCompany._id,
+      message: finalMessage,
+      company: finalCompanyId || foundCompany._id,
       status: "Nieuw",
       date: now,
 
