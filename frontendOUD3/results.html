@@ -1,0 +1,72 @@
+<!-- frontend/results.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bedrijven zoeken – Irisje.nl</title>
+  <meta name="description" content="Bekijk en vergelijk lokale bedrijven die passen bij jouw zoekopdracht op Irisje.nl." />
+  <link rel="stylesheet" href="style.css?v=20251127" />
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="site-logo-icon">I</span>
+        Irisje.nl
+      </a>
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="container page">
+    <div class="card">
+      <h1 class="section-title">Gevonden bedrijven</h1>
+      <p class="section-subtitle">
+        Dit zijn de resultaten op basis van jouw zoekopdracht.
+      </p>
+
+      <!-- Stats bovenaan -->
+      <div id="resultsStats" class="mt-3" style="font-size:0.9rem;color:#4b5563;">
+        <!-- Wordt gevuld door results.js -->
+      </div>
+
+      <!-- Filter- en sorteerbalk -->
+      <div class="filters-bar mt-3">
+
+        <!-- Sorteer-dropdown -->
+        <select id="sortSelect" class="btn btn-secondary" style="border-radius:0.75rem;padding:0.45rem 0.75rem;">
+          <option value="default">Standaard sortering</option>
+          <option value="review">Hoogste beoordeling</option>
+          <option value="recent">Meest recent toegevoegd</option>
+        </select>
+      </div>
+
+      <!-- RESULTATENLIJST -->
+      <div id="resultsList" class="cards-grid mt-4">
+        <!-- Cards worden via JS toegevoegd -->
+      </div>
+
+      <!-- Geen resultaten gevonden -->
+      <p id="resultsEmpty" class="mt-3" style="display:none;font-size:.95rem;color:#6b7280;">
+        Geen bedrijven gevonden. Probeer je zoekopdracht aan te passen.
+      </p>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- JS -->
+  <script src="js/results.js"></script>
+</body>
+</html>

@@ -6,9 +6,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bedrijven zoeken – Irisje.nl</title>
   <meta name="description" content="Bekijk en vergelijk lokale bedrijven die passen bij jouw zoekopdracht op Irisje.nl." />
-  <link rel="stylesheet" href="style.css?v=20251127" />
+  <link rel="stylesheet" href="style.css?v=20251128" />
 </head>
-
 <body>
   <!-- HEADER -->
   <header class="site-header">
@@ -19,6 +18,7 @@
       </a>
       <nav class="site-nav">
         <a href="index.html">Home</a>
+        <a href="results.html">Bedrijven</a>
         <a href="login.html">Inloggen</a>
       </nav>
     </div>
@@ -26,21 +26,33 @@
 
   <!-- MAIN CONTENT -->
   <main class="container page">
-    <div class="card">
+    <section class="card">
       <h1 class="section-title">Gevonden bedrijven</h1>
       <p class="section-subtitle">
-        Dit zijn de resultaten op basis van jouw zoekopdracht.
+        Bekijk en vergelijk bedrijven die passen bij jouw zoekopdracht. Je kunt maximaal vijf bedrijven selecteren en in één keer een aanvraag sturen.
       </p>
 
-      <!-- Stats bovenaan -->
-      <div id="resultsStats" class="mt-3" style="font-size:0.9rem;color:#4b5563;">
-        <!-- Wordt gevuld door results.js -->
-      </div>
+      <!-- Filter / zoekbalk -->
+      <form id="filterForm" class="search-form mt-3">
+        <div class="search-field">
+          <label class="label" for="filterCategory">Wat heb je nodig?</label>
+          <input id="filterCategory" type="text" placeholder="Bijv. dakdekker, mediator, hovenier…" />
+        </div>
+        <div class="search-field">
+          <label class="label" for="filterCity">Waar?</label>
+          <input id="filterCity" type="text" placeholder="Plaats of regio" />
+        </div>
+        <button type="submit" class="btn btn-primary search-submit">
+          Zoeken
+        </button>
+      </form>
 
-      <!-- Filter- en sorteerbalk -->
-      <div class="filters-bar mt-3">
+      <!-- Info / status bij de filters -->
+      <p id="filterMessage" class="mt-2" style="font-size:0.9rem;color:#9ca3af;"></p>
 
-        <!-- Sorteer-dropdown -->
+      <!-- Sorteeropties -->
+      <div class="filters-bar mt-3 flex gap-2 items-center">
+        <span style="font-size:0.85rem;color:#9ca3af;">Sorteren op:</span>
         <select id="sortSelect" class="btn btn-secondary" style="border-radius:0.75rem;padding:0.45rem 0.75rem;">
           <option value="default">Standaard sortering</option>
           <option value="review">Hoogste beoordeling</option>
@@ -48,17 +60,74 @@
         </select>
       </div>
 
-      <!-- RESULTATENLIJST -->
-      <div id="resultsList" class="cards-grid mt-4">
+      <!-- Resultatencontainer waar cards in komen -->
+      <div id="resultsContainer" class="cards-grid mt-4">
         <!-- Cards worden via JS toegevoegd -->
       </div>
+    </section>
 
-      <!-- Geen resultaten gevonden -->
-      <p id="resultsEmpty" class="mt-3" style="display:none;font-size:.95rem;color:#6b7280;">
-        Geen bedrijven gevonden. Probeer je zoekopdracht aan te passen.
+    <!-- Balk onderaan voor geselecteerde bedrijven -->
+    <section id="selectionBar" class="card mt-4" style="display:none;">
+      <div class="flex justify-between items-center gap-3">
+        <div>
+          <p class="section-subtitle" style="margin-bottom:0.25rem;">
+            <strong id="selectedCount">0</strong> bedrijven geselecteerd
+          </p>
+          <p id="selectedNames" class="text-sm" style="color:#9ca3af;">
+            <!-- Namen van geselecteerde bedrijven -->
+          </p>
+        </div>
+        <div class="flex gap-2 items-center">
+          <button id="openRequestForm" type="button" class="btn btn-primary">
+            Aanvraag versturen
+          </button>
+          <button id="clearSelection" type="button" class="btn btn-ghost">
+            Selectie wissen
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aanvraagformulier (onder de resultaten) -->
+    <section id="requestFormBox" class="card mt-4" style="display:none;">
+      <h2 class="section-title">Aanvraag versturen naar geselecteerde bedrijven</h2>
+      <p class="section-subtitle">
+        Vul je gegevens en een korte omschrijving van je klus in. Je aanvraag gaat naar alle geselecteerde bedrijven.
       </p>
 
-    </div>
+      <form id="requestForm" class="auth-form mt-3">
+        <div class="form-grid">
+          <div>
+            <label class="label" for="rqName">Naam</label>
+            <input id="rqName" type="text" autocomplete="name" />
+            <p id="errName" class="error"></p>
+          </div>
+          <div>
+            <label class="label" for="rqEmail">E-mailadres</label>
+            <input id="rqEmail" type="email" autocomplete="email" />
+            <p id="errEmail" class="error"></p>
+          </div>
+          <div>
+            <label class="label" for="rqPhone">Telefoonnummer</label>
+            <input id="rqPhone" type="tel" autocomplete="tel" />
+            <p id="errPhone" class="error"></p>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label class="label" for="rqMessage">Beschrijving van je opdracht</label>
+          <textarea id="rqMessage" placeholder="Beschrijf kort je situatie, wensen en eventuele bijzonderheden."></textarea>
+          <p id="errMessage" class="error"></p>
+        </div>
+
+        <div class="mt-3 flex gap-2 items-center">
+          <button id="submitRequestBtn" type="submit" class="btn btn-primary">
+            Aanvraag versturen
+          </button>
+          <p id="rqStatus" class="text-sm"></p>
+        </div>
+      </form>
+    </section>
   </main>
 
   <!-- FOOTER -->
