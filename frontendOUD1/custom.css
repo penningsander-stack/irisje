@@ -1,0 +1,138 @@
+/* frontend/custom.css */
+@layer base, components, utilities;
+
+/* === Basisstijl Irisje.nl Dashboard === */
+
+/* Font en basis */
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f9fafb;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+/* === Keyframes voor fade-in === */
+@keyframes fadeInDashboard {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-seq section {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInDashboard 0.9s ease-out forwards;
+}
+
+.fade-seq section:nth-of-type(1) { animation-delay: 0.1s; }
+.fade-seq section:nth-of-type(2) { animation-delay: 0.3s; }
+.fade-seq section:nth-of-type(3) { animation-delay: 0.5s; }
+.fade-seq section:nth-of-type(4) { animation-delay: 0.7s; }
+
+/* Hover lift op grafieken en statistiekkaarten */
+.chart-container:hover,
+.stat-card:hover {
+  transform: translateY(-3px);
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+}
+
+/* Tabellen fade-in */
+@keyframes fadeInTables {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.table-section table {
+  opacity: 0;
+  animation: fadeInTables 1s ease forwards;
+  animation-delay: 0.25s;
+}
+
+/* === Moderne Irisje kleuren === */
+:root {
+  --irisje-indigo: #6366f1;
+  --irisje-indigo-light: rgba(99,102,241,0.12);
+  --irisje-green: #22c55e;
+  --irisje-red: #ef4444;
+  --irisje-yellow: #eab308;
+  --irisje-indigo-strong: #4f46e5;
+}
+
+/* Header en knoppen */
+.bg-indigo-600,
+.bg-indigo-700 {
+  background-color: var(--irisje-indigo) !important;
+  color: #fff !important;
+}
+
+.text-indigo-700,
+.text-indigo-600 {
+  color: var(--irisje-indigo-strong) !important;
+}
+
+.hover\:bg-indigo-50:hover {
+  background-color: var(--irisje-indigo-light) !important;
+}
+
+/* Statistieken kleuren */
+#total { color: var(--irisje-indigo-strong) !important; }
+#accepted { color: var(--irisje-green) !important; }
+#rejected { color: var(--irisje-red) !important; }
+#followed-up { color: var(--irisje-yellow) !important; }
+
+/* Secties & kaarten */
+section.bg-white {
+  background-color: #fff;
+  border: 1px solid rgba(99,102,241,0.08);
+  border-radius: 1rem;
+  transition: box-shadow 0.3s ease;
+}
+
+section.bg-white:hover {
+  box-shadow: 0 8px 24px rgba(99,102,241,0.12);
+}
+
+/* Tabellen header */
+.table-section thead {
+  background-color: var(--irisje-indigo-light);
+  color: var(--irisje-indigo-strong);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Hover op rijen */
+.table-section tbody tr:hover {
+  background-color: rgba(99,102,241,0.05);
+  transition: background-color 0.2s ease;
+}
+
+/* Statistiekkaarten */
+.stat-card {
+  border: 1px solid rgba(99,102,241,0.08);
+  background-color: #fff;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 6px 18px rgba(99,102,241,0.15);
+  transform: translateY(-2px);
+}
+
+/* Knoppen animatie */
+button,
+a.button {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover,
+a.button:hover {
+  transform: translateY(-1px);
+}

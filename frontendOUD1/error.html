@@ -1,0 +1,73 @@
+<!-- frontend/error.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Foutmelding – Irisje.nl</title>
+  <meta name="description" content="Er is een fout opgetreden of de opgevraagde pagina bestaat niet meer." />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- ✅ Lokale Tailwind build -->
+  <link rel="stylesheet" href="style.css?v=20251127" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
+  <!-- HEADER -->
+  <header class="bg-indigo-600 text-white py-5 shadow-md">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
+      <a href="index.html"
+         class="text-2xl font-semibold tracking-tight hover:text-indigo-100 transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-600 rounded-lg">
+        Irisje.nl
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 flex items-center justify-center px-4 py-10 text-center" role="alert">
+    <section class="bg-white rounded-2xl shadow-lg border border-gray-100 p-10 max-w-md w-full fade-in">
+      <div class="text-6xl mb-4">⚠️</div>
+      <h1 class="text-3xl font-bold text-red-600 mb-2">Oeps!</h1>
+      <p class="text-gray-600 mb-6 leading-relaxed text-sm">
+        Er is iets misgegaan of de pagina die je zoekt bestaat niet meer.<br />
+        Controleer het webadres of keer terug naar de startpagina.
+      </p>
+
+      <a
+        href="index.html"
+        class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 px-6 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      >
+        Terug naar startpagina
+      </a>
+
+      <p class="text-gray-400 text-xs mt-6">
+        Als dit probleem blijft optreden, neem dan contact op via
+        <a href="mailto:info@irisje.nl" class="underline hover:text-indigo-600">info@irisje.nl</a>.
+      </p>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100 mt-auto">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- ✅ Fade-in animatie -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("header, main section, footer").forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        setTimeout(() => {
+          el.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+        }, 150 * i);
+      });
+    });
+  </script>
+</body>
+</html>

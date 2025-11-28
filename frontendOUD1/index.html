@@ -1,0 +1,69 @@
+<!-- frontend/index.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Irisje.nl – Vind de beste dienstverlener bij jou in de buurt</title>
+  <meta name="description" content="Vergelijk lokale bedrijven op Irisje.nl en ontvang snel offertes van betrouwbare dienstverleners." />
+  <link rel="stylesheet" href="style.css?v=20251127" />
+<meta property="og:title" content="Irisje.nl – Vind de beste dienstverlener bij jou in de buurt" />
+<meta property="og:description" content="Vergelijk lokale bedrijven via Irisje.nl en ontvang snel offertes van betrouwbare dienstverleners." />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Irisje.nl" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="site-logo-icon">I</span>
+        Irisje.nl
+      </a>
+      <nav class="site-nav">
+        <a href="results.html">Bedrijven</a>
+        <a href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="hero card">
+      <h1 class="hero-title">Vind snel een betrouwbare vakspecialist</h1>
+      <p class="hero-subtitle">
+        Beschrijf kort wat je zoekt en vergelijk bedrijven op reviews, ervaring en regio.
+      </p>
+
+      <form id="homeSearchForm" class="search-form mt-3">
+        <div class="search-field">
+          <label class="label" for="searchCategory">Wat heb je nodig?</label>
+          <input id="searchCategory" type="text" placeholder="Bijv. dakdekker, mediator, hovenier…" />
+        </div>
+        <div class="search-field">
+          <label class="label" for="searchCity">Waar?</label>
+          <input id="searchCity" type="text" placeholder="Plaats of regio" />
+        </div>
+        <button class="btn btn-primary search-submit" type="submit">
+          Bedrijven zoeken
+        </button>
+      </form>
+    </section>
+
+    <section class="mt-4">
+      <h2 class="section-title">Een paar voorbeelden van bedrijven</h2>
+      <p class="section-subtitle">
+        Dit is een kleine selectie. Na het zoeken zie je bedrijven die passen bij jouw opdracht.
+      </p>
+      <div id="homeCompanies" class="cards-grid mt-3"></div>
+      <p id="homeCompaniesEmpty" class="mt-2" style="display:none;font-size:.9rem;color:#6b7280;">
+        Er zijn nog geen bedrijven zichtbaar. Probeer een zoekopdracht in te vullen.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <script src="js/index.js"></script>
+</body>
+</html>

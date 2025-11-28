@@ -1,5 +1,5 @@
 // frontend/js/register.js
-// v20251128-JWT-REGISTER
+// v20251127-JWT-REGISTER
 // Maakt een nieuw account aan via /api/auth/register.
 
 (() => {
