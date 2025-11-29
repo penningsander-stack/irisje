@@ -1,0 +1,131 @@
+<!-- frontend/ad-company.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bedrijf aanmelden – Irisje.nl</title>
+  <meta name="description" content="Voeg eenvoudig je bedrijf toe aan Irisje.nl en ontvang directe aanvragen van klanten in jouw regio." />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=20251128" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        <span>Irisje.nl</span>
+      </a>
+      <nav class="hidden sm:flex space-x-6 text-sm font-medium text-gray-600">
+        <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
+        <a href="dashboard.html" class="hover:text-indigo-600 transition">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 flex items-center justify-center px-4 py-12">
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 w-full max-w-lg">
+      <h1 class="text-2xl font-bold text-indigo-700 mb-4 text-center">🏢 Nieuw bedrijf aanmelden</h1>
+      <p class="text-sm text-gray-600 text-center mb-6">
+        Vul hieronder je bedrijfsgegevens in. Na goedkeuring wordt je profiel zichtbaar voor klanten op Irisje.nl.
+      </p>
+
+      <form id="companyForm" class="space-y-5">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Bedrijfsnaam</label>
+          <input id="name" type="text" required placeholder="Bijv. Loodgieter Jan"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
+          <input id="category" type="text" required placeholder="Bijv. loodgieter, elektricien..."
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="location" class="block text-sm font-medium text-gray-700 mb-1">Plaats</label>
+          <input id="location" type="text" required placeholder="Bijv. Amsterdam"
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Korte beschrijving</label>
+          <textarea id="description" rows="4" required placeholder="Vertel kort wat je doet en waarin je gespecialiseerd bent..."
+            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+
+        <button type="submit"
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition">
+          Bedrijf toevoegen
+        </button>
+
+        <p id="message" class="text-center text-sm mt-3 min-h-[1.25rem]"></p>
+      </form>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 mt-auto">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- SCRIPT -->
+  <script>
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
+    document.getElementById("companyForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("message");
+      msg.textContent = "⏳ Bezig met toevoegen...";
+      msg.className = "text-gray-500 text-center text-sm";
+
+      const payload = {
+        name: name.value.trim(),
+        category: category.value.trim(),
+        city: location.value.trim(),
+        description: description.value.trim()
+      };
+
+      try {
+        const res = await fetch(\`\${API_BASE}/companies\`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.message || "Fout bij toevoegen van bedrijf.");
+
+        msg.textContent = "✅ Bedrijf succesvol toegevoegd! Het verschijnt binnenkort in de lijst.";
+        msg.className = "text-green-600 text-center text-sm";
+        companyForm.reset();
+      } catch (err) {
+        msg.textContent = "❌ " + (err.message || "Er ging iets mis.");
+        msg.className = "text-red-600 text-center text-sm";
+      }
+    });
+
+    // Zachte fade-in animatie
+    document.addEventListener("DOMContentLoaded", () => {
+      const elements = document.querySelectorAll("header, main section, footer");
+      elements.forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            el.style.transition = "opacity .8s ease, transform .8s ease";
+            el.style.opacity = "1";
+            el.style.transform = "translateY(0)";
+          }, 150 * i);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

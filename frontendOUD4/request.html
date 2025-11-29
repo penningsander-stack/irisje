@@ -1,0 +1,105 @@
+<!-- frontend/request.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aanvraag indienen – Irisje.nl</title>
+  <meta name="description" content="Dien een aanvraag in bij een bedrijf via Irisje.nl en ontvang een reactie op maat." />
+  <link rel="stylesheet" href="style.css?v=20251128" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="site-logo-icon">I</span>
+        Irisje.nl
+      </a>
+      <nav class="site-nav">
+        <a href="results.html">Bedrijven</a>
+        <a href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="card" style="max-width:720px;margin:0 auto;">
+      <p id="requestCompanyBanner" class="mt-0" style="font-size:.9rem;color:#6b7280;"></p>
+      <h1 style="font-size:1.5rem;">Aanvraag indienen</h1>
+      <p class="mt-1" style="font-size:.9rem;color:#6b7280;">
+        Vul hieronder je gegevens in. Je aanvraag wordt rechtstreeks doorgestuurd naar het geselecteerde bedrijf via Irisje.nl.
+      </p>
+
+      <form id="requestForm" class="mt-3">
+        <div class="form-grid">
+          <div class="mt-2">
+            <label class="label" for="reqName">Naam</label>
+            <input id="reqName" type="text" autocomplete="name" />
+            <p id="errReqName" class="error"></p>
+          </div>
+
+          <div class="mt-2">
+            <label class="label" for="reqEmail">E-mailadres</label>
+            <input id="reqEmail" type="email" autocomplete="email" />
+            <p id="errReqEmail" class="error"></p>
+          </div>
+
+          <div class="mt-2">
+            <label class="label" for="reqPhone">Telefoonnummer</label>
+            <input id="reqPhone" type="tel" autocomplete="tel" />
+            <p id="errReqPhone" class="error"></p>
+          </div>
+        </div>
+
+        <div class="form-grid mt-2">
+          <div class="mt-2">
+            <label class="label" for="reqCategory">Wat heb je nodig?</label>
+            <input id="reqCategory" type="text" placeholder="Bijv. dakdekker, mediator, hovenier…" />
+            <p id="errReqCategory" class="error"></p>
+          </div>
+          <div class="mt-2">
+            <label class="label" for="reqCity">Waar moet het gebeuren?</label>
+            <input id="reqCity" type="text" placeholder="Plaats of regio" />
+            <p id="errReqCity" class="error"></p>
+          </div>
+        </div>
+
+        <div class="mt-2">
+          <label class="label" for="reqDescription">Omschrijf je opdracht</label>
+          <textarea id="reqDescription" rows="4" placeholder="Beschrijf zo concreet mogelijk wat er moet gebeuren."></textarea>
+          <p id="errReqDescription" class="error"></p>
+        </div>
+
+        <div class="mt-2">
+          <label class="label" for="reqPreferredTime">Voorkeursdatum / tijd (optioneel)</label>
+          <input id="reqPreferredTime" type="text" placeholder="Bijv. 'Volgende week woensdag in de ochtend' (optioneel)" />
+        </div>
+
+        <div class="mt-3" style="font-size:.85rem;">
+          <label style="display:flex;align-items:flex-start;gap:.5rem;cursor:pointer;">
+            <input id="reqAgree" type="checkbox" style="margin-top:.15rem;" />
+            <span>Ik ga akkoord met de voorwaarden en privacyverklaring van Irisje.nl.</span>
+          </label>
+          <p id="errReqAgree" class="error"></p>
+        </div>
+
+        <input type="hidden" id="reqCompanyId" />
+        <input type="hidden" id="reqCompanySlug" />
+        <input type="hidden" id="reqCompanyRawId" />
+
+        <p id="requestStatus" class="mt-2" style="font-size:.85rem;"></p>
+
+        <button type="submit" class="btn btn-primary mt-3" style="width:100%;max-width:260px;">
+          Verstuur aanvraag
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <script src="js/request.js"></script>
+</body>
+</html>
