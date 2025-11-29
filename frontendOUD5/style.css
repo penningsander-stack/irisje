@@ -669,3 +669,160 @@ a:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* ====== IRISJE DARK THEME OVERRIDES v20251129 ====== */
+
+body {
+  background: #020617;
+  color: #e5e7eb;
+}
+
+/* Header & footer donker */
+.site-header {
+  background: rgba(15, 23, 42, 0.96);
+  border-bottom: 1px solid #020617;
+}
+
+.site-footer {
+  background: #020617;
+  border-top: 1px solid #020617;
+  color: #9ca3af;
+}
+
+/* Kaarten & panelen donker maken */
+.card,
+.dashboard-sidebar,
+.dashboard-stat-card,
+.chart-card,
+.table-wrapper,
+.auth-card {
+  background: #020617;
+  border-color: #111827;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.85);
+}
+
+/* Tekstkleuren aanpassen voor dark mode */
+.hero-title,
+.section-title,
+.company-name,
+.company-header-title,
+.dashboard-stat-value {
+  color: #e5e7eb;
+}
+
+.hero-subtitle,
+.section-subtitle,
+.company-location,
+.company-section-body,
+.dashboard-stat-label,
+.company-header-meta {
+  color: #9ca3af;
+}
+
+/* Navigatie iets lichter, maar nog steeds dark */
+.site-nav a {
+  color: #e5e7eb;
+}
+.site-nav a:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+/* Formulieren donker */
+.search-form input[type="text"],
+.search-form input[type="email"],
+.search-form input[type="password"],
+.search-form input[type="number"],
+.search-form textarea,
+.search-form select,
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"],
+.auth-form input[type="number"],
+.auth-form input[type="tel"],
+.auth-form textarea {
+  background-color: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.search-form input::placeholder,
+.search-form textarea::placeholder,
+.auth-form input::placeholder,
+.auth-form textarea::placeholder {
+  color: #6b7280;
+}
+
+.search-form input:focus,
+.search-form textarea:focus,
+.search-form select:focus,
+.auth-form input:focus,
+.auth-form textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.45);
+  background-color: #020617;
+}
+
+/* Tabellen donker */
+.table {
+  background: transparent;
+}
+.table thead {
+  background: #020617;
+}
+.table tbody tr:nth-child(even) {
+  background: #020617;
+}
+.table tbody tr:hover {
+  background: #0f172a;
+}
+.table th {
+  color: #9ca3af;
+}
+.table td {
+  color: #e5e7eb;
+}
+
+/* Admin custom tabel (bleef al dark, maar iets verfijnd) */
+.admin-table {
+  background: transparent;
+}
+.admin-table thead {
+  background: #020617;
+}
+.admin-table th,
+.admin-table td {
+  color: #e5e7eb;
+}
+
+/* Buttons - ghost beter zichtbaar op dark */
+.btn-ghost {
+  background: transparent;
+  color: #e5e7eb;
+  border-color: #1f2937;
+}
+.btn-ghost:hover {
+  background: #020617;
+}
+
+/* Filters-bar op dark */
+.filters-bar {
+  color: #9ca3af;
+}
+.filter-chip {
+  background: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+.filter-chip-active {
+  background: #111827;
+  border-color: #4f46e5;
+  color: #e5e7eb;
+}
+
+/* Company-secties iets los van de achtergrond */
+.company-section {
+  border-radius: 0.75rem;
+}
+
+/* Einde dark theme overrides */

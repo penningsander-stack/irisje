@@ -1,0 +1,70 @@
+/* frontend/css/common.css */
+
+/* ===== Algemene basis ===== */
+body {
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+  background-color: #f9fafb;
+}
+
+/* Containers en secties */
+section {
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* Inputs en formulieren */
+.input, input[type="text"], input[type="email"], input[type="password"], textarea, select {
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  width: 100%;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input:focus, input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Buttons */
+button, .btn {
+  cursor: pointer;
+  transition: background-color 0.25s ease, transform 0.1s ease;
+}
+button:hover, .btn:hover {
+  transform: translateY(-1px);
+}
+button:disabled, .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Fade-in animatie */
+.fade-seq section, .fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.fade-visible {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+/* Kaarten en blokken */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Statusmeldingen */
+.status {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  min-height: 1.25rem;
+}
+.status-success { color: #16a34a; }
+.status-error { color: #dc2626; }
+.status-wait { color: #6b7280; }
