@@ -669,3 +669,230 @@ a:hover {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* ====== DARK THEME OVERRIDES – v20251129-IRISJE-DARK-UNIFIED ====== */
+
+/* Basis */
+body {
+  background: radial-gradient(circle at top, #020617 0, #000 55%);
+  color: #e5e7eb;
+}
+
+/* Header & footer */
+.site-header {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: #020617;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+}
+
+.site-header-inner {
+  max-width: 1120px;
+}
+
+.site-logo {
+  color: #e5e7eb;
+}
+
+.site-nav a {
+  color: #cbd5f5;
+}
+
+.site-nav a:hover {
+  background: rgba(30, 64, 175, 0.5);
+}
+
+.site-footer {
+  background: #020617;
+  border-top-color: #111827;
+  color: #9ca3af;
+}
+
+/* Cards & layout containers */
+.card,
+.company-card,
+.dashboard-sidebar,
+.dashboard-stat-card,
+.chart-card {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: #111827;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.9);
+}
+
+.hero-title,
+.section-title,
+.company-header-title {
+  color: #e5e7eb;
+}
+
+.hero-subtitle,
+.section-subtitle,
+.company-header-meta,
+.company-section-body {
+  color: #9ca3af;
+}
+
+/* Inputs & forms */
+.search-form input[type="text"],
+.search-form input[type="email"],
+.search-form input[type="password"],
+.search-form input[type="number"],
+.search-form textarea,
+.search-form select,
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"],
+.auth-form input[type="url"],
+.auth-form textarea,
+.dashboard-main input[type="text"],
+.dashboard-main input[type="email"],
+.dashboard-main input[type="number"],
+.dashboard-main input[type="url"],
+.dashboard-main textarea,
+.dashboard-main select {
+  background-color: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.search-form input::placeholder,
+.search-form textarea::placeholder,
+.auth-form input::placeholder,
+.auth-form textarea::placeholder,
+.dashboard-main input::placeholder,
+.dashboard-main textarea::placeholder {
+  color: #6b7280;
+}
+
+.search-form input:focus,
+.search-form textarea:focus,
+.search-form select:focus,
+.auth-form input:focus,
+.auth-form textarea:focus,
+.dashboard-main input:focus,
+.dashboard-main textarea:focus,
+.dashboard-main select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.5);
+  background-color: #020617;
+}
+
+/* Auth card */
+.auth-page {
+  background: radial-gradient(circle at top, #020617 0, #000 55%);
+}
+
+.auth-card {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: #111827;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.9);
+}
+
+.auth-title {
+  color: #e5e7eb;
+}
+
+.auth-subtitle {
+  color: #9ca3af;
+}
+
+/* Tables (dashboard & generiek) */
+.table-wrapper {
+  background: rgba(15, 23, 42, 0.98);
+  border-color: #111827;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
+}
+
+.table {
+  color: #e5e7eb;
+}
+
+.table thead {
+  background: #020617;
+}
+
+.table th {
+  color: #9ca3af;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #020617;
+}
+
+.table tbody tr:hover {
+  background: #0f172a;
+}
+
+/* Filters / chips */
+.filters-bar {
+  color: #e5e7eb;
+}
+
+.filter-chip {
+  background: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.filter-chip-active {
+  background: rgba(79, 70, 229, 0.3);
+  border-color: #4f46e5;
+  color: #e0e7ff;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 999px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #f9fafb;
+  box-shadow: 0 18px 40px rgba(55, 48, 163, 0.7);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #4f46e5);
+  box-shadow: 0 22px 50px rgba(55, 48, 163, 0.85);
+}
+
+.btn-secondary {
+  background: #020617;
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #0b1120;
+}
+
+.btn-ghost {
+  border-color: #1f2937;
+  color: #cbd5f5;
+}
+
+.btn-ghost:hover {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* Status messages */
+.error {
+  color: #fecaca;
+}
+
+.info {
+  color: #bfdbfe;
+}
+
+.success {
+  color: #bbf7d0;
+}
+
+/* Company page sections */
+.company-section {
+  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid #111827;
+}
+
