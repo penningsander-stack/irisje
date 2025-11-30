@@ -1,0 +1,70 @@
+<!-- frontend/request-success.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aanvraag ontvangen – Irisje.nl</title>
+  <meta name="description" content="Je aanvraag is succesvol verzonden via Irisje.nl. Het geselecteerde bedrijf neemt contact met je op." />
+  <link rel="stylesheet" href="style.css?v=20251127" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header-inner">
+      <a href="index.html" class="site-logo">
+        <span class="site-logo-icon">I</span>
+        Irisje.nl
+      </a>
+      <nav class="site-nav">
+        <a href="results.html">Bedrijven</a>
+        <a href="login.html">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    <section class="card" style="max-width:560px;margin:0 auto;text-align:center;">
+      <div style="font-size:2rem;margin-bottom:.5rem;">✅</div>
+      <h1 style="font-size:1.5rem;">Je aanvraag is verzonden</h1>
+      <p id="successText" class="mt-2" style="font-size:.95rem;color:#374151;">
+        Je aanvraag is succesvol verstuurd. Het geselecteerde bedrijf neemt zo snel mogelijk contact met je op.
+      </p>
+      <p id="successMeta" class="mt-2" style="font-size:.9rem;color:#6b7280;"></p>
+
+      <div class="mt-4" style="display:flex;flex-direction:column;gap:.75rem;align-items:center;">
+        <a href="results.html" class="btn btn-primary" style="width:100%;max-width:260px;">
+          Terug naar overzicht
+        </a>
+        <a href="index.html" class="btn btn-secondary" style="width:100%;max-width:260px;">
+          Nieuwe aanvraag starten
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <script>
+    (function() {
+      const params = new URLSearchParams(window.location.search);
+      const company = params.get("company") || "";
+      const category = params.get("category") || "";
+      const city = params.get("city") || "";
+      const metaEl = document.getElementById("successMeta");
+      const textEl = document.getElementById("successText");
+
+      if (company && metaEl) {
+        metaEl.textContent = "Je aanvraag is doorgestuurd naar " + company + ".";
+      }
+      if (!company && category && city && metaEl) {
+        metaEl.textContent = "Je aanvraag is verstuurd voor " + category + " in " + city + ".";
+      }
+      if ((company || category || city) && textEl) {
+        textEl.textContent = "We hebben je aanvraag ontvangen. Het bedrijf neemt rechtstreeks contact met je op.";
+      }
+    })();
+  </script>
+</body>
+</html>
