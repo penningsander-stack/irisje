@@ -1,0 +1,28 @@
+{
+  "name": "irisje-frontend",
+  "version": "1.0.1",
+  "description": "Frontend van Irisje.nl – moderne indigo-stijl met TailwindCSS",
+  "type": "module",
+  "main": "index.html",
+
+  "scripts": {
+    "build": "tailwindcss -c ./tailwind.config.js -i ./input.css -o ./style.css --minify",
+    "dev": "tailwindcss -c ./tailwind.config.js -i ./input.css -o ./style.css --watch",
+    "start": "lite-server"
+  },
+
+  "dependencies": {
+    "tailwindcss": "^3.4.14",
+    "postcss": "^8.4.47",
+    "autoprefixer": "^10.4.20",
+    "@tailwindcss/forms": "^0.5.9",
+    "@tailwindcss/typography": "^0.5.15"
+  },
+
+  "engines": {
+    "node": ">=18.18.0"
+  },
+
+  "author": "Sander Penning",
+  "license": "ISC"
+}

@@ -1,0 +1,193 @@
+<!-- frontend/company.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bedrijf – Irisje.nl</title>
+  <meta name="description" content="Bekijk bedrijfsinformatie, reviews en Google-beoordelingen via Irisje.nl." />
+  <meta name="theme-color" content="#4F46E5" />
+
+  <!-- Preconnects voor performance -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20251110" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center p-4">
+      <a href="index.html" class="text-xl font-semibold text-indigo-600 flex items-center gap-2">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        Irisje.nl
+      </a>
+      <nav class="flex items-center gap-6 text-sm">
+        <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
+        <a href="results.html" class="hover:text-indigo-600 transition">Bedrijven</a>
+        <a href="login.html" class="hover:text-indigo-600 transition">Inloggen</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-grow">
+    <section class="max-w-5xl mx-auto p-6 md:p-10 space-y-10">
+
+      <!-- 🔹 Bedrijfsinformatie -->
+      <div id="company-details" class="bg-white rounded-2xl shadow-md p-6 md:p-10 animate-fadeIn">
+        <p class="text-gray-500 italic">Bedrijfsgegevens worden geladen...</p>
+      </div>
+
+      <!-- 💬 Irisje Reviews -->
+      <section aria-labelledby="irisje-reviews" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="irisje-reviews" class="text-xl font-semibold mb-4 text-gray-800">💬 Reviews via Irisje.nl</h2>
+        <div id="reviews-list" class="space-y-4">
+          <p class="text-gray-500 italic">Beoordelingen worden geladen...</p>
+        </div>
+      </section>
+
+      <!-- ✍ Reviewformulier -->
+      <section aria-labelledby="review-form-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="review-form-title" class="text-xl font-semibold mb-4 text-gray-800">✍ Deel jouw ervaring</h2>
+        <form id="review-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" id="review-name" placeholder="Naam" class="input" required aria-label="Naam" />
+            <input type="email" id="review-email" placeholder="E-mailadres (wordt niet getoond)" class="input" required aria-label="E-mailadres" />
+          </div>
+
+          <div class="mt-3">
+            <label for="review-rating" class="block text-sm text-gray-600 mb-1">Kies aantal sterren</label>
+            <select id="review-rating" class="input" required>
+              <option value="">– Kies –</option>
+              <option value="5">⭐⭐⭐⭐⭐ (5)</option>
+              <option value="4">⭐⭐⭐⭐ (4)</option>
+              <option value="3">⭐⭐⭐ (3)</option>
+              <option value="2">⭐⭐ (2)</option>
+              <option value="1">⭐ (1)</option>
+            </select>
+          </div>
+
+          <textarea id="review-message" placeholder="Schrijf je beoordeling..." class="input mt-3" rows="4" required></textarea>
+          <p id="review-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
+
+          <button type="submit" id="review-submit"
+            class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+            Verstuur beoordeling
+          </button>
+
+          <p class="text-xs text-gray-500 mt-3">
+            Je ontvangt een e-mail om je review te bevestigen voordat deze zichtbaar wordt.
+          </p>
+        </form>
+      </section>
+
+      <!-- ✉️ Offerteaanvraagformulier -->
+      <section id="request-form-section" aria-labelledby="offer-form" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="offer-form" class="text-xl font-semibold mb-4 text-gray-800">📩 Vraag een offerte aan</h2>
+        <form id="company-request-form" class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <input type="hidden" id="company-id" />
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" id="req-name" placeholder="Naam" class="input" required />
+            <input type="email" id="req-email" placeholder="E-mailadres" class="input" required />
+          </div>
+          <textarea id="req-message" placeholder="Beschrijf je klus of vraag..." class="input mt-3" rows="4" required></textarea>
+          <p id="req-status" class="text-sm mt-2 min-h-[1.25rem]"></p>
+          <button type="submit"
+            class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 transition">
+            Verstuur aanvraag
+          </button>
+        </form>
+      </section>
+
+      <!-- ⭐ Google Reviews -->
+      <section id="google-reviews" aria-labelledby="google-reviews-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 id="google-reviews-title" class="text-xl font-semibold text-gray-800">⭐ Google Reviews</h2>
+          <img src="https://www.gstatic.com/images/branding/product/2x/maps_2020q4_48dp.png"
+               alt="Google Maps logo" class="w-6 h-6" loading="lazy" />
+        </div>
+        <p class="text-gray-500 italic">Google-beoordelingen worden geladen...</p>
+      </section>
+
+      <!-- 🏷️ Claim sectie -->
+      <section aria-labelledby="claim-form-title" class="bg-white rounded-2xl shadow-md p-6 md:p-10">
+        <h2 id="claim-form-title" class="text-xl font-semibold mb-4 text-gray-800">🏷️ Ben jij de eigenaar van dit bedrijf?</h2>
+        <p class="text-gray-600 mb-3">Claim dit profiel om zelf je bedrijfsgegevens en reviews te beheren.</p>
+        <form id="claim-form" class="grid md:grid-cols-2 gap-3">
+          <input type="text" id="claim-name" placeholder="Naam contactpersoon" class="input" required />
+          <input type="email" id="claim-email" placeholder="Zakelijk e-mailadres" class="input" required />
+          <input type="tel" id="claim-phone" placeholder="Telefoonnummer" class="input md:col-span-2" />
+          <button type="submit"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 transition md:col-span-2">
+            Claim dit bedrijf
+          </button>
+        </form>
+      </section>
+
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-gray-200 text-center py-4 text-sm text-gray-600">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- JS -->
+  <!-- versie opgehoogd zodat nieuwe company.js zeker wordt geladen -->
+  <script src="js/company.js?v=20251111"></script>
+
+  <!-- ✅ Offerteformulier met slug→ID fix -->
+  <script>
+    document.getElementById("company-request-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector("button");
+      const statusEl = document.getElementById("req-status");
+      btn.disabled = true;
+
+      const slug = new URLSearchParams(window.location.search).get("slug");
+
+      try {
+        const resCompany = await fetch(`https://irisje-backend.onrender.com/api/companies/slug/${slug}`);
+        const company = await resCompany.json();
+        const companyId = company?._id;
+        if (!companyId) throw new Error("Bedrijf niet gevonden");
+
+        const data = {
+          customerName: document.getElementById("req-name").value.trim(),
+          customerEmail: document.getElementById("req-email").value.trim(),
+          message: document.getElementById("req-message").value.trim(),
+          companies: [companyId],
+        };
+
+        // 👇 hier stond publicRequests met hoofdletter, nu lowercase zoals backend
+        const res = await fetch("https://irisje-backend.onrender.com/api/publicrequests/multi", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+        if (result.ok) {
+          statusEl.textContent = "✅ Aanvraag succesvol verzonden!";
+          statusEl.className = "text-green-600 text-sm mt-2";
+          e.target.reset();
+        } else {
+          statusEl.textContent = "❌ " + (result.error || "Er ging iets mis.");
+          statusEl.className = "text-red-600 text-sm mt-2";
+        }
+      } catch (err) {
+        console.error("Aanvraagfout:", err);
+        statusEl.textContent = "❌ Er ging iets mis bij het verzenden.";
+        statusEl.className = "text-red-600 text-sm mt-2";
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+
+</body>
+</html>
