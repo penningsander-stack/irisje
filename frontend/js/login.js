@@ -1,119 +1,89 @@
 // frontend/js/login.js
-// v20251127-JWT-LOGIN
-// Inloggen via JWT (geen cookies). Slaat token + rol + companyId op in localStorage.
+// v20251118-JWT-LOCALSTORAGE
 
-(() => {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  function byId(id) {
-    return document.getElementById(id);
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("loginForm");
+  const msg = document.getElementById("loginMessage");
+
+  // 🔄 Bij openen van de loginpagina alle client-side sessiegegevens opruimen
+  try {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("companyId");
+    localStorage.removeItem("userEmail");
+    sessionStorage.clear();
+  } catch (e) {
+    console.warn("Kon local/session storage niet legen:", e);
   }
 
-  function setText(el, text, extraClass = "") {
-    if (!el) return;
-    el.textContent = text || "";
-    el.className = extraClass || "";
-  }
+  if (!form) return;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = byId("loginForm");
-    const emailEl = byId("email");
-    const passwordEl = byId("password");
-    const errEmailEl = byId("errEmail");
-    const errPasswordEl = byId("errPassword");
-    const statusEl = byId("loginStatus");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    if (!form) return;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+    if (!email || !password) {
+      msg.textContent = "❌ Vul zowel e-mail als wachtwoord in.";
+      msg.className = "text-red-600 text-center text-sm";
+      return;
+    }
 
-      // Reset foutmeldingen
-      setText(errEmailEl, "");
-      setText(errPasswordEl, "");
-      setText(statusEl, "");
+    msg.textContent = "⏳ Bezig met inloggen...";
+    msg.className = "text-gray-500 text-center text-sm";
 
-      const email = (emailEl?.value || "").trim();
-      const password = (passwordEl?.value || "").trim();
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // credentials kunnen nu uit, we gebruiken geen cookies meer:
+        body: JSON.stringify({ email, password }),
+      });
 
-      let hasError = false;
-      if (!email) {
-        setText(errEmailEl, "E-mailadres is verplicht.", "error");
-        hasError = true;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok || !data.token) {
+        throw new Error(data.error || "Ongeldige inloggegevens.");
       }
-      if (!password) {
-        setText(errPasswordEl, "Wachtwoord is verplicht.", "error");
-        hasError = true;
-      }
-      if (hasError) return;
 
-      setText(statusEl, "Bezig met inloggen...", "info");
+      const role = data.role || "company";
+      const companyId = data.companyId || null;
 
+      // 🧹 Eerst alles opruimen
       try {
-        const res = await fetch(`${API_BASE}/auth/login`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!res.ok || !data || data.ok === false) {
-          const msg =
-            (data && (data.error || data.message)) ||
-            (res.status === 401
-              ? "E-mailadres of wachtwoord onjuist."
-              : `Inloggen mislukt (status ${res.status}).`);
-          setText(statusEl, msg, "error");
-          return;
-        }
-
-        // Verwachte structuur: { ok: true, token, role, companyId }
-        const token = data.token;
-        const role = data.role || "";
-        const companyId = data.companyId || null;
-
-        if (!token) {
-          setText(
-            statusEl,
-            "Inloggen lijkt gelukt, maar er is geen token ontvangen.",
-            "error"
-          );
-          return;
-        }
-
-        // JWT opslaan in localStorage voor dashboard/admin
-        localStorage.setItem("token", token);
-        localStorage.setItem("userEmail", email);
-        localStorage.setItem("userRole", role);
-        if (companyId) {
-          localStorage.setItem("companyId", companyId);
-        } else {
-          localStorage.removeItem("companyId");
-        }
-
-        setText(statusEl, "Inloggen geslaagd, even geduld...", "success");
-
-        // Bepalen of het een admin is
-        const lowerEmail = email.toLowerCase();
-        const isAdmin =
-          role === "admin" ||
-          lowerEmail === "admin@irisje.nl" ||
-          lowerEmail === "info@irisje.nl";
-
-        setTimeout(() => {
-          window.location.href = isAdmin ? "admin.html" : "dashboard.html";
-        }, 600);
-      } catch (err) {
-        console.error("Login error:", err);
-        setText(
-          statusEl,
-          "Er is een fout opgetreden bij het inloggen. Probeer het later opnieuw.",
-          "error"
-        );
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (e) {
+        console.warn("Kon storage niet wissen:", e);
       }
-    });
+
+      // 🔑 JWT en rol opslaan
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userRole", role);
+      if (companyId) {
+        localStorage.setItem("companyId", companyId);
+      }
+
+      msg.textContent = "✅ Ingelogd! Even geduld...";
+      msg.className = "text-green-600 text-center text-sm";
+
+      // Admin → admin.html, rest → dashboard.html
+      if (role === "admin" || email === "admin@irisje.nl") {
+        return setTimeout(() => {
+          window.location.href = "admin.html";
+        }, 600);
+      }
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 600);
+    } catch (err) {
+      console.error("❌ Login error:", err);
+      msg.textContent = "❌ " + (err.message || "Er ging iets mis.");
+      msg.className = "text-red-600 text-center text-sm";
+    }
   });
-})();
+});
