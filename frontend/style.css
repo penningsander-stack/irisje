@@ -1,8 +1,4 @@
 /* === TAILWIND KERN === */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* === BASIS (via Tailwind-layer) === */
 @layer base {
   body {
