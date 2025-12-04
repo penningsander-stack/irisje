@@ -13,7 +13,7 @@
 
   <!-- Algemene styling -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20251114" />
+    <link rel="stylesheet" href="style.css?v=20251204" />
 
   <!-- Admin-specifieke styling -->
   <link rel="stylesheet" href="css/admin.css?v=20251118" />
@@ -23,20 +23,30 @@
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen">
 
   <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 admin-header-shadow">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-3">
-      <a href="index.html" class="flex items-center gap-2">
-        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white font-semibold">I</span>
-        <span class="font-semibold text-lg text-gray-900">Irisje.nl – Admin</span>
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
+          I
+        </span>
+        <div class="flex flex-col leading-tight">
+          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
+        </div>
       </a>
 
-      <div class="flex items-center gap-3">
-        <span class="hidden sm:inline text-sm text-gray-500">Beheeromgeving</span>
+      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
+        <a href="results.html" class="nav-link">Bedrijven</a>
+        <a href="login.html" class="nav-link">Voor bedrijven</a>
+      </nav>
 
-        <button id="logoutBtn"
-          class="px-3 py-1.5 rounded-lg text-sm bg-red-500 hover:bg-red-600 text-white transition">
-          Uitloggen
-        </button>
+      <div class="flex items-center space-x-2">
+        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
+          Zoeken
+        </a>
+        <a href="login.html" class="inline-flex btn-primary btn-xs">
+          Inloggen
+        </a>
       </div>
     </div>
   </header>

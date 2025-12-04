@@ -1,0 +1,104 @@
+<!-- frontend/over.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Over Irisje.nl – Betrouwbare bedrijven bij jou in de buurt</title>
+  <meta name="description" content="Lees meer over Irisje.nl: het onafhankelijke platform waar je snel betrouwbare bedrijven vindt en echte klantreviews kunt lezen." />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- ✅ Lokale Tailwind build -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=20251101" />
+</head>
+
+<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+
+  <!-- HEADER -->
+  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto flex justify-between items-center px-4 py-4">
+      <a href="index.html" class="flex items-center space-x-2 font-semibold text-indigo-700 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-600 text-white text-sm font-bold">I</span>
+        <span>Irisje.nl</span>
+      </a>
+      <nav class="hidden sm:flex items-center space-x-6 text-sm font-medium text-gray-600">
+        <a href="index.html" class="hover:text-indigo-700">Home</a>
+        <a href="results.html" class="hover:text-indigo-700">Bedrijven</a>
+        <a href="register.html" class="hover:text-indigo-700">Aanmelden</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="flex-1 px-4 py-12">
+    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 max-w-4xl mx-auto fade-in">
+      <h1 class="text-3xl font-bold text-indigo-700 mb-6">Over Irisje.nl</h1>
+
+      <p class="text-gray-700 text-sm mb-4 leading-relaxed">
+        <strong>Irisje.nl</strong> is een onafhankelijk platform dat consumenten helpt om snel en eenvoudig
+        betrouwbare bedrijven in hun regio te vinden. Of je nu op zoek bent naar een loodgieter, elektricien,
+        glazenwasser of slotenmaker — via Irisje.nl kom je direct in contact met vakmensen die door klanten worden beoordeeld.
+      </p>
+
+      <h2 class="text-xl font-semibold text-indigo-700 mt-8 mb-2">Een eerlijk platform</h2>
+      <p class="text-gray-700 text-sm leading-relaxed mb-4">
+        Wij geloven dat transparantie de basis is van vertrouwen. Daarom worden reviews op Irisje.nl alleen
+        geplaatst door echte klanten, en worden bedrijven handmatig gecontroleerd voordat ze zichtbaar zijn.
+        Zo weet je als bezoeker zeker dat je niet te maken hebt met nepbedrijven of misleidende informatie.
+      </p>
+
+      <h2 class="text-xl font-semibold text-indigo-700 mt-8 mb-2">Voor bedrijven</h2>
+      <p class="text-gray-700 text-sm leading-relaxed mb-4">
+        Bedrijven kunnen zich gratis aanmelden, een bedrijfsprofiel aanmaken en direct aanvragen ontvangen van klanten in hun buurt.
+        Er zijn geen verborgen kosten of abonnementen: bedrijven betalen alleen voor ontvangen leads.  
+        Zo houden we het platform eerlijk en toegankelijk voor iedereen.
+      </p>
+
+      <h2 class="text-xl font-semibold text-indigo-700 mt-8 mb-2">Onze missie</h2>
+      <p class="text-gray-700 text-sm leading-relaxed mb-4">
+        Irisje.nl wil de brug slaan tussen klant en vakman.  
+        Wij streven naar een betrouwbaar, gebruiksvriendelijk en duurzaam platform waar kwaliteit en service centraal staan.
+      </p>
+
+      <h2 class="text-xl font-semibold text-indigo-700 mt-8 mb-2">Contact</h2>
+      <p class="text-gray-700 text-sm leading-relaxed mb-4">
+        Heb je een vraag, suggestie of probleem? Neem gerust contact met ons op via:
+      </p>
+      <p class="text-gray-700 text-sm leading-relaxed mb-4">
+        📧 <a href="mailto:info@irisje.nl" class="text-indigo-600 hover:text-indigo-700 underline">info@irisje.nl</a><br />
+        🌐 <a href="https://www.irisje.nl" class="text-indigo-600 hover:text-indigo-700 underline">www.irisje.nl</a>
+      </p>
+
+      <p class="text-gray-500 text-xs mt-10">
+        Laatste update: 1 november 2025
+      </p>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-xs text-gray-500 py-6 border-t bg-gray-100 mt-auto">
+    © 2025 Irisje.nl – Alle rechten voorbehouden
+  </footer>
+
+  <!-- ✅ Fade-in animatie -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const els = document.querySelectorAll("header, main section, footer");
+      els.forEach((el, i) => {
+        el.style.opacity = "0";
+        el.style.transform = "translateY(12px)";
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            el.style.transition = "opacity .8s ease, transform .8s ease";
+            el.style.opacity = "1";
+            el.style.transform = "translateY(0)";
+          }, 150 * i);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

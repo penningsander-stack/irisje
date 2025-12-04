@@ -9,21 +9,37 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=20251110" />
+    <link rel="stylesheet" href="style.css?v=20251204" />
 </head>
 
 <body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
-  <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40 backdrop-blur-sm">
-    <div class="max-w-6xl mx-auto flex justify-between items-center p-4">
-      <a href="index.html" class="text-xl font-semibold text-indigo-600 hover:text-indigo-700 transition">
-        Irisje.nl
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
+          I
+        </span>
+        <div class="flex flex-col leading-tight">
+          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
+        </div>
       </a>
-      <nav class="flex items-center gap-6 text-sm">
-        <a href="index.html" class="hover:text-indigo-600 transition">Home</a>
-        <a href="results.html" class="hover:text-indigo-600 transition">Bedrijven</a>
+
+      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
+        <a href="results.html" class="nav-link">Bedrijven</a>
+        <a href="login.html" class="nav-link">Voor bedrijven</a>
       </nav>
+
+      <div class="flex items-center space-x-2">
+        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
+          Zoeken
+        </a>
+        <a href="login.html" class="inline-flex btn-primary btn-xs">
+          Inloggen
+        </a>
+      </div>
     </div>
   </header>
 
@@ -46,8 +62,17 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-white border-t border-gray-200 text-center py-4 text-sm text-gray-600">
-    © 2025 Irisje.nl – Alle rechten voorbehouden
+  <footer class="footer-shell card-fade-in">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-[11px] text-slate-400">
+        © 2025 Irisje.nl – Alle rechten voorbehouden
+      </p>
+      <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
+        <a href="results.html" class="link-inline">Bedrijven</a>
+        <a href="login.html" class="link-inline">Voor bedrijven</a>
+        <a href="error.html" class="link-inline">Contact</a>
+      </div>
+    </div>
   </footer>
 
 </body>
