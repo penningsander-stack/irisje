@@ -227,3 +227,51 @@ footer {
 #companyLogo[src] {
   opacity: 1;
 }
+
+
+
+/* === IRISJE PREMIUM LIGHT OVERRIDES v20251204 === */
+body {
+  background: radial-gradient(circle at top left, #eef2ff 0, #f9fafb 40%, #ffffff 100%);
+}
+
+/* Gebruik extra premium styling voor cards, stats en CTA's */
+@layer components {
+  .irisje-header {
+    background: linear-gradient(135deg, var(--irisje-indigo-strong), #7c3aed);
+    box-shadow: 0 18px 48px rgba(79,70,229,0.38);
+  }
+
+  section.bg-white {
+    border-radius: 1.25rem;
+    border-color: rgba(15,23,42,0.08);
+    box-shadow: 0 20px 55px rgba(15,23,42,0.08);
+  }
+
+  section.bg-white:hover {
+    box-shadow: 0 28px 80px rgba(15,23,42,0.14);
+    transform: translateY(-2px);
+  }
+
+  .stat-card,
+  .chart-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(148,163,184,0.35);
+    box-shadow: 0 20px 50px rgba(15,23,42,0.08);
+    background: linear-gradient(145deg, #ffffff, #f9fafb);
+  }
+
+  .primary-cta {
+    border-radius: 9999px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    padding-top: 0.7rem;
+    padding-bottom: 0.7rem;
+    box-shadow: 0 16px 40px rgba(79,70,229,0.5);
+  }
+
+  .primary-cta:hover {
+    box-shadow: 0 22px 55px rgba(79,70,229,0.7);
+    transform: translateY(-1px);
+  }
+}
