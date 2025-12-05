@@ -802,3 +802,10 @@ a {
   .lg\:text-right {text-align:right;}
 
 }
+
+
+
+/* Voeg spacing toe tussen items met class .space-x-6 (Tailwind-imitatie) */
+.space-x-6 > * + * {
+  margin-left: 1.5rem; /* ongeveer Tailwind space-x-6 */
+}
