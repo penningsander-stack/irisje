@@ -8,19 +8,392 @@
   <meta name="description" content="Bekijk bedrijven bij jou in de buurt, vergelijk reviews en vraag direct een offerte aan." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="style.css?v=20251205" />
+  <link rel="stylesheet" href="style.css?v=20251205" />
+
   <style>
-    /* Kleine lokale styles voor validatie & highlights */
-    .error-border { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.06); }
-    .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 0.25rem; display:block; }
-    .hidden { display: none !important; }
-    .top-highlight { box-shadow: 0 6px 20px rgba(79,70,229,0.06); border: 1px solid rgba(99,102,241,0.12); }
-    .rq-status { transition: opacity .3s ease; }
-    .fade-out { opacity: 0; transition: opacity .6s ease; }
+    /* Kleine lokale styles voor deze pagina */
+
+    /* Algemene layout */
+    main.results-main {
+      max-width: 72rem;
+      margin: 0 auto;
+      padding: 2.5rem 1rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      main.results-main {
+        padding-top: 3rem;
+        padding-bottom: 3.25rem;
+      }
+    }
+
+    .results-header-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .results-header-bar {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+    }
+
+    .results-title-block h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #4338ca; /* text-indigo-700 */
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .results-title-block p {
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: #64748b; /* soft text */
+    }
+
+    .results-meta {
+      font-size: 0.8rem;
+      color: #94a3b8; /* slate-400 */
+      text-align: left;
+    }
+
+    @media (min-width: 768px) {
+      .results-meta {
+        text-align: right;
+      }
+    }
+
+    /* Filterkaart */
+    .filter-card {
+      background: #ffffff;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
+      padding: 1.5rem 1.5rem 1.25rem;
+    }
+
+    .filters-grid {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    @media (min-width: 768px) {
+      .filters-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+    }
+
+    .filter-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .filter-input {
+      width: 100%;
+    }
+
+    .filter-footer {
+      margin-top: 0.65rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .filter-footer span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .filter-footer-badge {
+      font-size: 0.7rem;
+      background: #eef2ff;
+      color: #4f46e5;
+      border-radius: 999px;
+      padding: 0.25rem 0.5rem;
+    }
+
+    /* Selectiebalk */
+    .selection-bar {
+      background: #eef2ff;
+      border-radius: 1rem;
+      border: 1px solid #e0e7ff;
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      align-items: flex-start;
+      box-shadow: 0 12px 26px rgba(79, 70, 229, 0.08);
+    }
+
+    @media (min-width: 768px) {
+      .selection-bar {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .selection-bar strong {
+      color: #1e1b4b;
+    }
+
+    .selection-names {
+      font-size: 0.75rem;
+      color: #4f46e5;
+    }
+
+    .selection-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .selection-clear {
+      font-size: 0.75rem;
+      color: #4338ca;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .selection-clear:hover {
+      color: #312e81;
+    }
+
+    /* Aanvraagformulier */
+    .request-box {
+      background: #ffffff;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.09);
+      padding: 1.4rem 1.5rem;
+    }
+
+    .request-header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.25rem;
+    }
+
+    .request-header-sub {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-bottom: 0.9rem;
+    }
+
+    .request-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+      .request-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .request-full {
+      grid-column: 1 / -1;
+    }
+
+    .request-actions {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    @media (min-width: 640px) {
+      .request-actions {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    .request-note {
+      font-size: 0.7rem;
+      color: #9ca3af;
+      text-align: center;
+      width: 100%;
+    }
+
+    @media (min-width: 640px) {
+      .request-note {
+        text-align: right;
+      }
+    }
+
+    /* Resultatenlijst */
+    .results-list {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .result-card {
+      background: #ffffff;
+      border-radius: 1.25rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+      padding: 1.25rem 1.25rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition:
+        box-shadow 0.18s ease,
+        transform 0.12s ease,
+        border-color 0.18s ease,
+        background-color 0.18s ease;
+    }
+
+    .result-card.top-highlight {
+      border-color: rgba(79, 70, 229, 0.35);
+      box-shadow: 0 22px 55px rgba(79, 70, 229, 0.16);
+    }
+
+    .result-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 22px 55px rgba(15, 23, 42, 0.15);
+      background-color: #f9fafb;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+    }
+
+    .result-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #4338ca;
+    }
+
+    .result-location {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 0.1rem;
+    }
+
+    .result-categories {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 0.25rem;
+    }
+
+    .result-tagline {
+      font-size: 0.82rem;
+      color: #374151;
+      margin-top: 0.5rem;
+    }
+
+    .result-rating {
+      text-align: right;
+      min-width: 4.5rem;
+    }
+
+    .result-stars {
+      font-size: 0.9rem;
+      color: #eab308;
+      font-weight: 600;
+    }
+
+    .result-reviewcount {
+      font-size: 0.7rem;
+      color: #6b7280;
+      margin-top: 0.15rem;
+    }
+
+    .result-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .result-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .result-verified {
+      font-size: 0.7rem;
+      color: #94a3b8;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: #374151;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 0.3rem;
+      border: 1px solid #cbd5f5;
+      accent-color: #4f46e5;
+    }
+
+    /* Validatie & status */
+    .error-border {
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.06);
+    }
+
+    .error-text {
+      color: #dc2626;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      display: block;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .rq-status {
+      transition: opacity 0.3s ease;
+      min-height: 1.25rem;
+      font-size: 0.8rem;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
   </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
@@ -51,69 +424,169 @@
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-10 space-y-10">
-    <section>
-      <h1 class="text-2xl font-bold text-indigo-700 mb-6 flex items-center">
-        <span class="text-3xl mr-2">🔎</span> Bedrijven in jouw regio
-      </h1>
-
-      <!-- FILTER -->
-      <form id="filterForm" class="bg-white rounded-2xl shadow border border-gray-100 p-6 grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <input id="filterCategory" type="text" placeholder="Categorie (bijv. loodgieter)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
-        <input id="filterCity" type="text" placeholder="Plaats" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
-        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">Zoeken</button>
-      </form>
-      <p id="filterMessage" class="text-xs text-gray-500 mb-4"></p>
-
-      <!-- SELECTIEBALK -->
-      <div id="selectionBar" class="hidden bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p class="text-sm text-indigo-900 font-medium">Geselecteerde bedrijven: <span id="selectedCount">0</span>/5</p>
-          <p class="text-xs text-indigo-700" id="selectedNames"></p>
-        </div>
-        <div class="flex gap-2">
-          <button id="openRequestForm" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition disabled:opacity-50" disabled>Offerte aanvragen</button>
-          <button id="clearSelection" class="text-xs text-indigo-700 hover:underline">Alles deselecteren</button>
-        </div>
+  <main class="results-main">
+    <!-- Titel & context -->
+    <section class="results-header-bar">
+      <div class="results-title-block">
+        <h1>
+          <span>🔎</span>
+          <span>Bedrijven in jouw regio</span>
+        </h1>
+        <p>
+          Vergelijk bedrijven, lees reviews en vraag in één keer een offerte aan bij maximaal vijf bedrijven.
+        </p>
       </div>
+      <div class="results-meta" id="filterMessage">
+        Resultaten worden geladen…
+      </div>
+    </section>
 
-      <!-- AANVRAAGFORM -->
-      <div id="requestFormBox" class="hidden bg-white border border-gray-100 rounded-2xl shadow p-5 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-2">Offerte aanvragen bij geselecteerde bedrijven</h2>
-        <p class="text-sm text-gray-500 mb-4">Je aanvraag wordt verstuurd naar maximaal vijf bedrijven.</p>
-
-        <form id="requestForm" class="grid gap-3 md:grid-cols-2" novalidate>
+    <!-- Filterkaart -->
+    <section aria-label="Filter bedrijven">
+      <div class="filter-card">
+        <form id="filterForm" class="filters-grid" novalidate>
           <div>
-            <input id="rqName" name="rqName" type="text" placeholder="Je naam" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errName" class="error-text hidden"></p>
+            <label for="filterCategory" class="filter-label">Categorie</label>
+            <input
+              id="filterCategory"
+              type="text"
+              class="form-input filter-input"
+              placeholder="Bijv. loodgieter, schilder, elektricien..."
+            />
           </div>
           <div>
-            <input id="rqEmail" name="rqEmail" type="email" placeholder="Je e-mailadres" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errEmail" class="error-text hidden"></p>
+            <label for="filterCity" class="filter-label">Plaats</label>
+            <input
+              id="filterCity"
+              type="text"
+              class="form-input filter-input"
+              placeholder="Bijv. Amsterdam, Rotterdam..."
+            />
           </div>
-          <div>
-            <input id="rqPhone" name="rqPhone" type="tel" placeholder="Telefoonnummer (10 cijfers)" class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" required />
-            <p id="errPhone" class="error-text hidden"></p>
-          </div>
-          <div class="md:col-span-2">
-            <textarea id="rqMessage" name="rqMessage" rows="3" placeholder="Beschrijf je klus of vraag..." class="border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 w-full" required></textarea>
-            <p id="errMessage" class="error-text hidden"></p>
-          </div>
-
-          <p id="rqStatus" class="md:col-span-2 text-sm min-h-[1.25rem] rq-status"></p>
-
-          <div class="md:col-span-2 flex flex-col gap-2">
-            <button id="submitRequestBtn" type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">Verstuur aanvraag</button>
-            <button type="button" id="closeRequestForm" class="text-sm text-gray-500 hover:text-gray-700">Annuleren</button>
-            <p class="text-xs text-gray-500 mt-1 text-center">🔒 Je gegevens worden alleen gedeeld met de geselecteerde bedrijven.</p>
+          <div style="display:flex;align-items:flex-end;justify-content:flex-start;">
+            <button type="submit" class="btn-primary w-full">
+              Zoeken
+            </button>
           </div>
         </form>
+
+        <div class="filter-footer">
+          <span>
+            <span class="filter-footer-badge">Slim zoeken</span>
+            Gebruik categorie + plaats voor de beste matches.
+          </span>
+          <span id="filterCountsHint">
+            Resultaten worden opgehaald…
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Selectiebalk -->
+    <section id="selectionBar" class="selection-bar hidden">
+      <div>
+        <p class="text-sm text-indigo-900 font-medium">
+          Geselecteerde bedrijven: <strong><span id="selectedCount">0</span>/5</strong>
+        </p>
+        <p id="selectedNames" class="selection-names"></p>
+      </div>
+      <div class="selection-actions">
+        <button id="openRequestForm" class="btn-primary btn-xs" disabled>
+          Offerte aanvragen
+        </button>
+        <button id="clearSelection" type="button" class="selection-clear">
+          Alles deselecteren
+        </button>
+      </div>
+    </section>
+
+    <!-- Aanvraagformulier -->
+    <section id="requestFormBox" class="request-box hidden">
+      <div>
+        <h2 class="request-header-title">Offerte aanvragen bij geselecteerde bedrijven</h2>
+        <p class="request-header-sub">
+          Je aanvraag wordt verstuurd naar maximaal vijf bedrijven tegelijk. Zij nemen rechtstreeks contact met je op.
+        </p>
       </div>
 
-      <!-- RESULTATEN -->
-      <section id="resultsContainer" class="grid gap-6">
-        <div class="text-gray-500 text-sm">Resultaten worden geladen...</div>
-      </section>
+      <form id="requestForm" class="request-grid" novalidate>
+        <div>
+          <label for="rqName" class="filter-label">Je naam</label>
+          <input
+            id="rqName"
+            name="rqName"
+            type="text"
+            class="form-input"
+            placeholder="Bijv. Sander"
+            required
+          />
+          <p id="errName" class="error-text hidden"></p>
+        </div>
+
+        <div>
+          <label for="rqEmail" class="filter-label">E-mailadres</label>
+          <input
+            id="rqEmail"
+            name="rqEmail"
+            type="email"
+            class="form-input"
+            placeholder="jouw@email.nl"
+            required
+          />
+          <p id="errEmail" class="error-text hidden"></p>
+        </div>
+
+        <div>
+          <label for="rqPhone" class="filter-label">Telefoonnummer</label>
+          <input
+            id="rqPhone"
+            name="rqPhone"
+            type="tel"
+            class="form-input"
+            placeholder="10 cijfers"
+            required
+          />
+          <p id="errPhone" class="error-text hidden"></p>
+        </div>
+
+        <div class="request-full">
+          <label for="rqMessage" class="filter-label">Beschrijf je klus of vraag</label>
+          <textarea
+            id="rqMessage"
+            name="rqMessage"
+            rows="3"
+            class="form-input"
+            placeholder="Vertel kort wat er gedaan moet worden, wanneer en eventuele bijzonderheden."
+            required
+          ></textarea>
+          <p id="errMessage" class="error-text hidden"></p>
+        </div>
+
+        <div class="request-full">
+          <p id="rqStatus" class="rq-status"></p>
+        </div>
+
+        <div class="request-full request-actions">
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button id="submitRequestBtn" type="submit" class="btn-primary">
+              Verstuur aanvraag
+            </button>
+            <button type="button" id="closeRequestForm" class="btn-ghost">
+              Annuleren
+            </button>
+          </div>
+          <p class="request-note">
+            🔒 Je gegevens worden alleen gedeeld met de geselecteerde bedrijven.
+          </p>
+        </div>
+      </form>
+    </section>
+
+    <!-- Resultaten -->
+    <section aria-label="Zoekresultaten">
+      <div id="resultsContainer" class="results-list">
+        <div class="text-sm text-gray-500">Resultaten worden geladen...</div>
+      </div>
     </section>
   </main>
 
@@ -131,304 +604,347 @@
     </div>
   </footer>
 
-<script>
-/* Full script wrapped to avoid race conditions and undefined references */
-document.addEventListener("DOMContentLoaded", () => {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-  const MAX_SELECTION = 5;
-  const selectedMap = new Map();
+  <script>
+    // Full script wrapped to avoid race conditions and undefined references
+    document.addEventListener("DOMContentLoaded", () => {
+      const API_BASE = "https://irisje-backend.onrender.com/api";
+      const MAX_SELECTION = 5;
+      const selectedMap = new Map();
 
-  // Validators (returns true or error message)
-  const validators = {
-    rqName: val => val.trim().length >= 2 || "Voer je naam in.",
-    rqEmail: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
-    rqPhone: val => /^\d{10}$/.test(val) || "Voer 10 cijfers in.",
-    rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
-  };
+      const filterMessageEl = document.getElementById("filterMessage");
+      const filterCountsHint = document.getElementById("filterCountsHint");
 
-  // helper: set error / clear error
-  function setError(el, errEl, msg) {
-    if (msg === true || !msg) {
-      el.classList.remove("error-border");
-      errEl.classList.add("hidden");
-      errEl.textContent = "";
-    } else {
-      el.classList.add("error-border");
-      errEl.classList.remove("hidden");
-      errEl.textContent = msg;
-    }
-  }
+      // Validators (returns true or error message)
+      const validators = {
+        rqName: val => val.trim().length >= 2 || "Voer je naam in.",
+        rqEmail: val => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
+        rqPhone: val => /^\\d{10}$/.test(val) || "Voer 10 cijfers in.",
+        rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
+      };
 
-  // realtime validation binding
-  Object.keys(validators).forEach(id => {
-    const el = document.getElementById(id);
-    const err = document.getElementById("err" + id.slice(2));
-    if (!el || !err) return;
-    el.addEventListener("input", () => {
-      const valid = validators[id](el.value);
-      setError(el, err, valid === true ? null : valid);
-    });
-  });
-
-  // selection UI
-  function updateSelectionUI() {
-    const bar = document.getElementById("selectionBar");
-    const count = document.getElementById("selectedCount");
-    const names = document.getElementById("selectedNames");
-    const btn = document.getElementById("openRequestForm");
-    const arr = Array.from(selectedMap.values());
-    count.textContent = arr.length;
-    if (arr.length === 0) {
-      bar.classList.add("hidden");
-      if (btn) btn.disabled = true;
-      names.textContent = "";
-    } else {
-      bar.classList.remove("hidden");
-      if (btn) btn.disabled = false;
-      names.textContent = arr.map(c => c.name).join(", ");
-    }
-  }
-
-  // load results with sorting + top highlight
-  async function loadResults(cat = "", city = "") {
-    const container = document.getElementById("resultsContainer");
-    const msgEl = document.getElementById("filterMessage");
-    container.innerHTML = "<div class='text-gray-500 text-sm'>⏳ Resultaten worden geladen...</div>";
-    if (msgEl) msgEl.textContent = "";
-
-    try {
-      const res = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}`);
-      if (!res.ok) {
-        const txt = await res.text().catch(()=>"");
-        throw new Error(`Serverfout: ${res.status} ${txt}`);
-      }
-      const data = await res.json();
-      let items = data.items || [];
-      // sort: rating desc -> reviewCount desc -> name asc
-      items.sort((a,b) => {
-        const ra = a.avgRating || 0, rb = b.avgRating || 0;
-        if (rb !== ra) return rb - ra;
-        const ca = a.reviewCount || 0, cb = b.reviewCount || 0;
-        if (cb !== ca) return cb - ca;
-        return (a.name||"").localeCompare(b.name||"");
-      });
-
-      if (items.length === 0) {
-        container.innerHTML = "<div class='bg-white border rounded-xl p-6 text-center text-gray-500'>Geen bedrijven gevonden.</div>";
-        if (msgEl) msgEl.textContent = "Geen resultaten gevonden";
-        return;
-      }
-
-      // render items
-      container.innerHTML = items.map((c,i) => {
-        const highlight = i < 5 ? "top-highlight" : "";
-        const stars = c.avgRating ? "⭐".repeat(Math.round(c.avgRating)) : "—";
-        const categories = Array.isArray(c.categories) ? c.categories.join(", ") : (c.categories || "");
-        return `
-        <article class="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex flex-col gap-4 ${highlight}">
-          <div class='flex items-start justify-between gap-3'>
-            <div>
-              <h2 class='text-lg font-semibold text-indigo-700'>${escapeHtml(c.name)}</h2>
-              <div class='text-gray-500 text-sm'>${escapeHtml(c.city || "")}</div>
-              <div class='text-gray-400 text-xs mt-1'>${escapeHtml(categories)}</div>
-              <p class='text-gray-700 text-sm mt-3'>${escapeHtml(c.tagline || "")}</p>
-            </div>
-            <div class='text-right'>
-              <div class='text-yellow-500 text-sm font-semibold'>${stars}</div>
-              <div class='text-gray-500 text-xs mt-1'>${c.reviewCount || 0} reviews</div>
-            </div>
-          </div>
-          <div class='flex items-center justify-between gap-3'>
-            <a href='company.html?slug=${encodeURIComponent(c.slug)}' class='bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl px-4 py-2 text-xs'>Bekijk profiel</a>
-            <label class='flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none'>
-              <input type='checkbox' class='company-select w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500' data-id='${c._id}' data-name='${escapeHtmlAttr(c.name)}' />
-              Aanvragen
-            </label>
-            <div class='text-gray-400 text-[11px]'>${c.isVerified ? "✅ Geverifieerd" : "⏳ Niet geverifieerd"}</div>
-          </div>
-        </article>`;
-      }).join("");
-
-      if (msgEl) msgEl.textContent = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
-
-      // attach checkbox listeners safely
-      container.querySelectorAll(".company-select").forEach(chk => {
-        chk.addEventListener("change", e => {
-          const id = e.target.dataset.id;
-          const name = e.target.dataset.name || "Onbekend";
-          if (e.target.checked) {
-            if (selectedMap.size >= MAX_SELECTION) {
-              e.target.checked = false;
-              alert("Je kunt maximaal 5 bedrijven selecteren.");
-              return;
-            }
-            selectedMap.set(id, { id, name });
-          } else {
-            selectedMap.delete(id);
-          }
-          updateSelectionUI();
-        });
-      });
-
-    } catch (err) {
-      console.error("Fout bij loadResults:", err);
-      container.innerHTML = "<div class='bg-white border border-red-200 text-red-600 rounded-xl p-5 shadow-sm text-sm'>Fout bij laden resultaten.</div>";
-      if (msgEl) msgEl.textContent = "Er is iets misgegaan";
-    }
-  }
-
-  // helper: escape html for text nodes (basic)
-  function escapeHtml(str) {
-    if (!str) return "";
-    return String(str).replace(/[&<>"']/g, function(m) {
-      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]);
-    });
-  }
-  // escape for attribute (minimally)
-  function escapeHtmlAttr(str){ return escapeHtml(str).replace(/"/g,'&quot;'); }
-
-  // open/close request form
-  const openBtn = document.getElementById("openRequestForm");
-  const requestBox = document.getElementById("requestFormBox");
-  const clearBtn = document.getElementById("clearSelection");
-  if (openBtn) openBtn.addEventListener("click", () => {
-    if (!requestBox) return;
-    requestBox.classList.remove("hidden");
-    // scroll into view
-    setTimeout(() => {
-      requestBox.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 150);
-  });
-  const closeBtn = document.getElementById("closeRequestForm");
-  if (closeBtn) closeBtn.addEventListener("click", () => {
-    if (!requestBox) return;
-    requestBox.classList.add("hidden");
-  });
-  if (clearBtn) clearBtn.addEventListener("click", () => {
-    // uncheck checkboxes
-    document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
-    selectedMap.clear();
-    updateSelectionUI();
-    if (requestBox) requestBox.classList.add("hidden");
-  });
-
-  // submit request
-  const requestForm = document.getElementById("requestForm");
-  const rqStatus = document.getElementById("rqStatus");
-  if (requestForm) {
-    requestForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!rqStatus) return;
-      rqStatus.style.opacity = "1";
-
-      // build payload
-      const nameEl = document.getElementById("rqName");
-      const emailEl = document.getElementById("rqEmail");
-      const phoneEl = document.getElementById("rqPhone");
-      const msgEl = document.getElementById("rqMessage");
-
-      // run validators, show first error
-      const entries = [
-        ["rqName", nameEl],
-        ["rqEmail", emailEl],
-        ["rqPhone", phoneEl],
-        ["rqMessage", msgEl]
-      ];
-      let firstInvalid = null;
-      for (const [key, el] of entries) {
-        if (!el) continue;
-        const valid = validators[key](el.value);
-        const errEl = document.getElementById("err" + key.slice(2));
-        setError(el, errEl, valid === true ? null : valid);
-        if (valid !== true && !firstInvalid) firstInvalid = el;
-      }
-      if (firstInvalid) {
-        rqStatus.textContent = "❌ Controleer de invoer.";
-        rqStatus.className = "text-red-600 rq-status";
-        firstInvalid.focus();
-        return;
-      }
-
-      const companies = Array.from(selectedMap.values()).map(c => c.id);
-      if (companies.length === 0) {
-        rqStatus.textContent = "❌ Selecteer eerst bedrijven.";
-        rqStatus.className = "text-red-600 rq-status";
-        return;
-      }
-
-      // send
-      try {
-        rqStatus.textContent = "⏳ Aanvraag wordt verzonden...";
-        rqStatus.className = "text-gray-500 rq-status";
-
-        const payload = {
-          customerName: nameEl.value.trim(),
-          customerEmail: emailEl.value.trim(),
-          customerPhone: phoneEl.value.trim(),
-          message: msgEl.value.trim(),
-          companies
-        };
-
-        const res = await fetch(`${API_BASE}/publicRequests/multi`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(payload)
-        });
-
-        const json = await res.json().catch(()=>({ ok:false, error:"Geen JSON" }));
-        if (!res.ok || !json.ok) {
-          console.error("server error", res.status, json);
-          throw new Error(json.error || "Serverfout");
+      // helper: set error / clear error
+      function setError(el, errEl, msg) {
+        if (!el || !errEl) return;
+        if (msg === true || !msg) {
+          el.classList.remove("error-border");
+          errEl.classList.add("hidden");
+          errEl.textContent = "";
+        } else {
+          el.classList.add("error-border");
+          errEl.classList.remove("hidden");
+          errEl.textContent = msg;
         }
-
-        // success: clear form, uncheck and clear selection, show success briefly
-        rqStatus.textContent = "✅ Aanvraag succesvol verzonden.";
-        rqStatus.className = "text-green-600 rq-status";
-        requestForm.reset();
-        document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
-        selectedMap.clear();
-        updateSelectionUI();
-
-        // hide form after short delay and fade the status
-        setTimeout(() => {
-          if (requestBox) requestBox.classList.add("hidden");
-        }, 900);
-
-        setTimeout(() => {
-          rqStatus.classList.add("fade-out");
-          setTimeout(()=>{ rqStatus.textContent = ""; rqStatus.classList.remove("fade-out"); }, 700);
-        }, 2000);
-
-      } catch (err) {
-        console.error("Aanvraag fout:", err);
-        rqStatus.textContent = "❌ Er ging iets mis bij het verzenden.";
-        rqStatus.className = "text-red-600 rq-status";
       }
+
+      // realtime validation binding
+      Object.keys(validators).forEach(id => {
+        const el = document.getElementById(id);
+        const err = document.getElementById("err" + id.slice(2));
+        if (!el || !err) return;
+        el.addEventListener("input", () => {
+          const valid = validators[id](el.value);
+          setError(el, err, valid === true ? null : valid);
+        });
+      });
+
+      // selection UI
+      function updateSelectionUI() {
+        const bar = document.getElementById("selectionBar");
+        const count = document.getElementById("selectedCount");
+        const names = document.getElementById("selectedNames");
+        const btn = document.getElementById("openRequestForm");
+        const arr = Array.from(selectedMap.values());
+
+        count.textContent = arr.length;
+
+        if (arr.length === 0) {
+          bar.classList.add("hidden");
+          if (btn) btn.disabled = true;
+          names.textContent = "";
+        } else {
+          bar.classList.remove("hidden");
+          if (btn) btn.disabled = false;
+          names.textContent = arr.map(c => c.name).join(", ");
+        }
+      }
+
+      // helper: escape html for text nodes (basic)
+      function escapeHtml(str) {
+        if (!str) return "";
+        return String(str).replace(/[&<>\"']/g, function(m) {
+          return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[m]);
+        });
+      }
+
+      // escape for attribute (minimally)
+      function escapeHtmlAttr(str) {
+        return escapeHtml(str).replace(/"/g, "&quot;");
+      }
+
+      // load results with sorting + top highlight
+      async function loadResults(cat = "", city = "") {
+        const container = document.getElementById("resultsContainer");
+        if (!container) return;
+
+        container.innerHTML = "<div class='text-sm text-gray-500'>⏳ Resultaten worden geladen...</div>";
+        if (filterMessageEl) filterMessageEl.textContent = "Resultaten worden geladen…";
+        if (filterCountsHint) filterCountsHint.textContent = "Resultaten worden opgehaald…";
+
+        try {
+          const res = await fetch(
+            \`\${API_BASE}/companies/search?category=\${encodeURIComponent(cat)}&city=\${encodeURIComponent(city)}\`
+          );
+          if (!res.ok) {
+            const txt = await res.text().catch(() => "");
+            throw new Error(\`Serverfout: \${res.status} \${txt}\`);
+          }
+
+          const data = await res.json();
+          let items = data.items || [];
+
+          // sort: rating desc -> reviewCount desc -> name asc
+          items.sort((a, b) => {
+            const ra = a.avgRating || 0, rb = b.avgRating || 0;
+            if (rb !== ra) return rb - ra;
+            const ca = a.reviewCount || 0, cb = b.reviewCount || 0;
+            if (cb !== ca) return cb - ca;
+            return (a.name || "").localeCompare(b.name || "");
+          });
+
+          if (items.length === 0) {
+            container.innerHTML =
+              "<div class='result-card' style='text-align:center;font-size:0.85rem;color:#6b7280;'>Geen bedrijven gevonden. Pas je filters aan of probeer een andere plaats.</div>";
+            if (filterMessageEl) filterMessageEl.textContent = "Geen resultaten gevonden";
+            if (filterCountsHint) filterCountsHint.textContent = "Geen bedrijven gevonden voor deze combinatie.";
+            return;
+          }
+
+          container.innerHTML = items.map((c, i) => {
+            const highlightClass = i < 5 ? "top-highlight" : "";
+            const roundedRating = c.avgRating ? Math.round(c.avgRating * 10) / 10 : null;
+            const stars = c.avgRating ? "⭐".repeat(Math.round(c.avgRating)) : "—";
+            const categories = Array.isArray(c.categories) ? c.categories.join(", ") : (c.categories || "");
+            const reviewsText = \`\${c.reviewCount || 0} review\${(c.reviewCount || 0) === 1 ? "" : "s"}\`;
+
+            return \`
+            <article class="result-card \${highlightClass}">
+              <div class="result-header">
+                <div>
+                  <h2 class="result-title">\${escapeHtml(c.name)}</h2>
+                  <div class="result-location">\${escapeHtml(c.city || "")}</div>
+                  <div class="result-categories">\${escapeHtml(categories)}</div>
+                  <p class="result-tagline">\${escapeHtml(c.tagline || "")}</p>
+                </div>
+                <div class="result-rating">
+                  <div class="result-stars">\${stars}</div>
+                  <div class="result-reviewcount">\${roundedRating ? \`\${roundedRating} / 5,0\` : "Nog geen beoordeling"}</div>
+                  <div class="result-reviewcount">\${reviewsText}</div>
+                </div>
+              </div>
+              <div class="result-footer">
+                <div class="result-actions">
+                  <a
+                    href="company.html?slug=\${encodeURIComponent(c.slug)}"
+                    class="btn-primary btn-xs"
+                  >
+                    Bekijk profiel
+                  </a>
+                  <label class="checkbox-label">
+                    <input
+                      type="checkbox"
+                      class="company-select"
+                      data-id="\${c._id}"
+                      data-name="\${escapeHtmlAttr(c.name)}"
+                    />
+                    Aanvragen
+                  </label>
+                </div>
+                <div class="result-verified">
+                  \${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Nog niet geverifieerd"}
+                </div>
+              </div>
+            </article>\`;
+          }).join("");
+
+          const countText = \`\${items.length} resultaat\${items.length > 1 ? "en" : ""} gevonden\`;
+          if (filterMessageEl) filterMessageEl.textContent = countText;
+          if (filterCountsHint) filterCountsHint.textContent = countText;
+
+          // attach checkbox listeners safely
+          container.querySelectorAll(".company-select").forEach(chk => {
+            chk.addEventListener("change", e => {
+              const id = e.target.dataset.id;
+              const name = e.target.dataset.name || "Onbekend";
+              if (e.target.checked) {
+                if (selectedMap.size >= MAX_SELECTION) {
+                  e.target.checked = false;
+                  alert("Je kunt maximaal 5 bedrijven selecteren.");
+                  return;
+                }
+                selectedMap.set(id, { id, name });
+              } else {
+                selectedMap.delete(id);
+              }
+              updateSelectionUI();
+            });
+          });
+
+        } catch (err) {
+          console.error("Fout bij loadResults:", err);
+          const container = document.getElementById("resultsContainer");
+          if (container) {
+            container.innerHTML =
+              "<div class='result-card' style='border-color:#fecaca;color:#b91c1c;background:#fef2f2;'>Er ging iets mis bij het laden van de resultaten. Probeer het later opnieuw.</div>";
+          }
+          if (filterMessageEl) filterMessageEl.textContent = "Er is een fout opgetreden";
+          if (filterCountsHint) filterCountsHint.textContent = "Kon de resultaten niet ophalen.";
+        }
+      }
+
+      // open/close request form
+      const openBtn = document.getElementById("openRequestForm");
+      const requestBox = document.getElementById("requestFormBox");
+      const clearBtn = document.getElementById("clearSelection");
+      if (openBtn) {
+        openBtn.addEventListener("click", () => {
+          if (!requestBox) return;
+          requestBox.classList.remove("hidden");
+          setTimeout(() => {
+            requestBox.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 150);
+        });
+      }
+      const closeBtn = document.getElementById("closeRequestForm");
+      if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+          if (!requestBox) return;
+          requestBox.classList.add("hidden");
+        });
+      }
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
+          selectedMap.clear();
+          updateSelectionUI();
+          if (requestBox) requestBox.classList.add("hidden");
+        });
+      }
+
+      // submit request
+      const requestForm = document.getElementById("requestForm");
+      const rqStatus = document.getElementById("rqStatus");
+      if (requestForm) {
+        requestForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!rqStatus) return;
+          rqStatus.style.opacity = "1";
+
+          const nameEl = document.getElementById("rqName");
+          const emailEl = document.getElementById("rqEmail");
+          const phoneEl = document.getElementById("rqPhone");
+          const msgEl = document.getElementById("rqMessage");
+
+          const entries = [
+            ["rqName", nameEl],
+            ["rqEmail", emailEl],
+            ["rqPhone", phoneEl],
+            ["rqMessage", msgEl]
+          ];
+
+          let firstInvalid = null;
+          for (const [key, el] of entries) {
+            if (!el) continue;
+            const valid = validators[key](el.value);
+            const errEl = document.getElementById("err" + key.slice(2));
+            setError(el, errEl, valid === true ? null : valid);
+            if (valid !== true && !firstInvalid) firstInvalid = el;
+          }
+          if (firstInvalid) {
+            rqStatus.textContent = "❌ Controleer de invoer.";
+            rqStatus.className = "rq-status text-red-600";
+            firstInvalid.focus();
+            return;
+          }
+
+          const companies = Array.from(selectedMap.values()).map(c => c.id);
+          if (companies.length === 0) {
+            rqStatus.textContent = "❌ Selecteer eerst één of meer bedrijven.";
+            rqStatus.className = "rq-status text-red-600";
+            return;
+          }
+
+          try {
+            rqStatus.textContent = "⏳ Aanvraag wordt verzonden...";
+            rqStatus.className = "rq-status text-gray-500";
+
+            const payload = {
+              customerName: nameEl.value.trim(),
+              customerEmail: emailEl.value.trim(),
+              customerPhone: phoneEl.value.trim(),
+              message: msgEl.value.trim(),
+              companies
+            };
+
+            const res = await fetch(\`\${API_BASE}/publicRequests/multi\`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload)
+            });
+
+            const json = await res.json().catch(() => ({ ok: false, error: "Geen JSON" }));
+            if (!res.ok || !json.ok) {
+              console.error("server error", res.status, json);
+              throw new Error(json.error || "Serverfout");
+            }
+
+            rqStatus.textContent = "✅ Aanvraag succesvol verzonden.";
+            rqStatus.className = "rq-status text-green-600";
+            requestForm.reset();
+            document.querySelectorAll(".company-select").forEach(chk => chk.checked = false);
+            selectedMap.clear();
+            updateSelectionUI();
+
+            setTimeout(() => {
+              if (requestBox) requestBox.classList.add("hidden");
+            }, 900);
+
+            setTimeout(() => {
+              rqStatus.classList.add("fade-out");
+              setTimeout(() => {
+                rqStatus.textContent = "";
+                rqStatus.classList.remove("fade-out");
+              }, 700);
+            }, 2000);
+
+          } catch (err) {
+            console.error("Aanvraag fout:", err);
+            rqStatus.textContent = "❌ Er ging iets mis bij het verzenden.";
+            rqStatus.className = "rq-status text-red-600";
+          }
+        });
+      }
+
+      // initial load (from query)
+      const q = new URLSearchParams(window.location.search);
+      const initialCategory = q.get("category") || "";
+      const initialCity = q.get("city") || "";
+
+      const fc = document.getElementById("filterCategory");
+      const fy = document.getElementById("filterCity");
+      if (fc) fc.value = initialCategory;
+      if (fy) fy.value = initialCity;
+
+      const filterForm = document.getElementById("filterForm");
+      if (filterForm) {
+        filterForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          loadResults((fc && fc.value) || "", (fy && fy.value) || "");
+        });
+      }
+
+      // initial call
+      loadResults(initialCategory, initialCity);
     });
-  }
-
-  // initial load (from query)
-  const q = new URLSearchParams(window.location.search);
-  const initialCategory = q.get("category") || "";
-  const initialCity = q.get("city") || "";
-  // fill filter inputs
-  const fc = document.getElementById("filterCategory");
-  const fy = document.getElementById("filterCity");
-  if (fc) fc.value = initialCategory;
-  if (fy) fy.value = initialCity;
-
-  // filter form submit
-  const filterForm = document.getElementById("filterForm");
-  if (filterForm) {
-    filterForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      loadResults((fc && fc.value) || "", (fy && fy.value) || "");
-    });
-  }
-
-  // initial call
-  loadResults(initialCategory, initialCity);
-});
-</script>
+  </script>
 </body>
 </html>
