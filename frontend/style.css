@@ -804,8 +804,6 @@ a {
 }
 
 
-
-
 /* Tailwind spacing utilities — eigen implementatie */
 .space-x-1 > * + * { margin-left: 0.25rem; }
 .space-x-2 > * + * { margin-left: 0.5rem; }
@@ -813,3 +811,8 @@ a {
 .space-x-4 > * + * { margin-left: 1rem; }
 .space-x-5 > * + * { margin-left: 1.25rem; }
 .space-x-6 > * + * { margin-left: 1.5rem; }
+
+/* Extra ruimte onder bulletlijst op de homepage */
+.hero-copy .cta-group {
+  margin-top: 1.25rem; /* premium spacing */
+}
