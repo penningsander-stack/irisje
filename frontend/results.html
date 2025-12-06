@@ -9,7 +9,6 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251205" />
-
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
@@ -236,8 +235,8 @@
       // Validators (returns true or error message)
       const validators = {
         rqName: val => val.trim().length >= 2 || "Voer je naam in.",
-        rqEmail: val => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
-        rqPhone: val => /^\\d{10}$/.test(val) || "Voer 10 cijfers in.",
+        rqEmail: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Voer een geldig e-mailadres in.",
+        rqPhone: val => /^\d{10}$/.test(val) || "Voer 10 cijfers in.",
         rqMessage: val => val.trim().length >= 5 || "Geef een korte omschrijving."
       };
 
@@ -311,11 +310,11 @@
 
         try {
           const res = await fetch(
-            \`\${API_BASE}/companies/search?category=\${encodeURIComponent(cat)}&city=\${encodeURIComponent(city)}\`
+            `${API_BASE}/companies/search?category=${encodeURIComponent(cat)}&city=${encodeURIComponent(city)}`
           );
           if (!res.ok) {
             const txt = await res.text().catch(() => "");
-            throw new Error(\`Serverfout: \${res.status} \${txt}\`);
+            throw new Error(`Serverfout: ${res.status} ${txt}`);
           }
 
           const data = await res.json();
@@ -343,27 +342,27 @@
             const roundedRating = c.avgRating ? Math.round(c.avgRating * 10) / 10 : null;
             const stars = c.avgRating ? "⭐".repeat(Math.round(c.avgRating)) : "—";
             const categories = Array.isArray(c.categories) ? c.categories.join(", ") : (c.categories || "");
-            const reviewsText = \`\${c.reviewCount || 0} review\${(c.reviewCount || 0) === 1 ? "" : "s"}\`;
+            const reviewsText = `${c.reviewCount || 0} review${(c.reviewCount || 0) === 1 ? "" : "s"}`;
 
-            return \`
-            <article class="result-card \${highlightClass}">
+            return `
+            <article class="result-card ${highlightClass}">
               <div class="result-header">
                 <div>
-                  <h2 class="result-title">\${escapeHtml(c.name)}</h2>
-                  <div class="result-location">\${escapeHtml(c.city || "")}</div>
-                  <div class="result-categories">\${escapeHtml(categories)}</div>
-                  <p class="result-tagline">\${escapeHtml(c.tagline || "")}</p>
+                  <h2 class="result-title">${escapeHtml(c.name)}</h2>
+                  <div class="result-location">${escapeHtml(c.city || "")}</div>
+                  <div class="result-categories">${escapeHtml(categories)}</div>
+                  <p class="result-tagline">${escapeHtml(c.tagline || "")}</p>
                 </div>
                 <div class="result-rating">
-                  <div class="result-stars">\${stars}</div>
-                  <div class="result-reviewcount">\${roundedRating ? \`\${roundedRating} / 5,0\` : "Nog geen beoordeling"}</div>
-                  <div class="result-reviewcount">\${reviewsText}</div>
+                  <div class="result-stars">${stars}</div>
+                  <div class="result-reviewcount">${roundedRating ? `${roundedRating} / 5,0` : "Nog geen beoordeling"}</div>
+                  <div class="result-reviewcount">${reviewsText}</div>
                 </div>
               </div>
               <div class="result-footer">
                 <div class="result-actions">
                   <a
-                    href="company.html?slug=\${encodeURIComponent(c.slug)}"
+                    href="company.html?slug=${encodeURIComponent(c.slug)}"
                     class="btn-primary btn-xs"
                   >
                     Bekijk profiel
@@ -372,20 +371,20 @@
                     <input
                       type="checkbox"
                       class="company-select"
-                      data-id="\${c._id}"
-                      data-name="\${escapeHtmlAttr(c.name)}"
+                      data-id="${c._id}"
+                      data-name="${escapeHtmlAttr(c.name)}"
                     />
                     Aanvragen
                   </label>
                 </div>
                 <div class="result-verified">
-                  \${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Nog niet geverifieerd"}
+                  ${c.isVerified ? "✅ Geverifieerd bedrijf" : "⏳ Nog niet geverifieerd"}
                 </div>
               </div>
-            </article>\`;
+            </article>`;
           }).join("");
 
-          const countText = \`\${items.length} resultaat\${items.length > 1 ? "en" : ""} gevonden\`;
+          const countText = `${items.length} resultaat${items.length > 1 ? "en" : ""} gevonden`;
           if (filterMessageEl) filterMessageEl.textContent = countText;
           if (filterCountsHint) filterCountsHint.textContent = countText;
 
@@ -504,7 +503,7 @@
               companies
             };
 
-            const res = await fetch(\`\${API_BASE}/publicRequests/multi\`, {
+            const res = await fetch(`${API_BASE}/publicRequests/multi`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload)
