@@ -4,14 +4,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Account aanmaken – Irisje.nl</title>
-  <meta name="description" content="Maak gratis een bedrijfsaccount aan om aanvragen en reviews te beheren via Irisje.nl." />
+  <title>Registreren – Irisje.nl</title>
+  <meta name="description" content="Registreer jouw bedrijf op Irisje.nl, beheer je profiel en ontvang vrijblijvende aanvragen van echte klanten." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="style.css?v=20251205" />
+  <link rel="stylesheet" href="style.css?v=20251206" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
@@ -22,7 +22,7 @@
         </span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Voor bedrijven</span>
         </div>
       </a>
 
@@ -32,97 +32,78 @@
       </nav>
 
       <div class="flex items-center space-x-2">
-        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Zoeken
-        </a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">
-          Inloggen
-        </a>
+        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">Zoeken</a>
+        <a href="login.html" class="inline-flex btn-primary btn-xs">Inloggen</a>
       </div>
     </div>
   </header>
 
   <!-- MAIN -->
-  <main class="flex-1 flex items-center justify-center px-4 py-12">
-    <section
-      class="bg-white rounded-2xl shadow-md border border-gray-100 p-10 w-full max-w-md text-center"
-      aria-labelledby="registerTitle"
-    >
-      <div class="text-4xl mb-4">📝</div>
-      <h1 id="registerTitle" class="text-2xl font-bold text-indigo-700 mb-3">
-        Account aanmaken
-      </h1>
-      <p class="text-gray-600 text-sm mb-6 leading-relaxed">
-        Registreer je bedrijf om aanvragen te ontvangen en reviews te beheren.
-      </p>
+  <main class="page-shell">
 
-      <form id="registerForm" class="space-y-5" novalidate>
-        <div class="text-left">
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-            Bedrijfsnaam
-          </label>
-          <input
-            id="name"
-            type="text"
-            placeholder="Bijv. Loodgieter Jan"
-            required
-            autofocus
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <div class="text-left">
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-            E-mailadres
-          </label>
-          <input
-            id="email"
-            type="email"
-            placeholder="naam@bedrijf.nl"
-            required
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <div class="text-left">
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-            Wachtwoord
-          </label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Minimaal 8 tekens"
-            required
-            minlength="8"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          Registreer
-        </button>
-
-        <p id="registerMessage" role="alert" class="text-center text-sm mt-2 min-h-[1.25rem]"></p>
-      </form>
-
-      <p class="text-xs text-gray-500 text-center mt-6 leading-relaxed">
-        Door je te registreren ga je akkoord met onze
-        <a href="voorwaarden.html" class="underline hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md">
-          gebruiksvoorwaarden
-        </a>.
-      </p>
+    <!-- Titelblok -->
+    <section class="page-header-bar">
+      <div class="page-title-block">
+        <h1>🏢 Bedrijf registreren</h1>
+        <p>Meld je bedrijf aan en begin aanvragen te ontvangen van echte klanten.</p>
+      </div>
     </section>
+
+    <!-- Registerkaart -->
+    <section>
+      <div class="surface-card max-w-md mx-auto">
+        <form id="registerForm" class="flex flex-col gap-4" novalidate>
+
+          <!-- Bedrijfsnaam -->
+          <div class="form-group">
+            <label for="companyName">Bedrijfsnaam</label>
+            <input id="companyName" type="text" class="form-input" placeholder="Bijv. Sander Service BV" required />
+            <p id="errCompanyName" class="error-text hidden"></p>
+          </div>
+
+          <!-- E-mail -->
+          <div class="form-group">
+            <label for="email">Zakelijk e-mailadres</label>
+            <input id="email" type="email" class="form-input" placeholder="info@bedrijf.nl" required />
+            <p id="errEmail" class="error-text hidden"></p>
+          </div>
+
+          <!-- Wachtwoord -->
+          <div class="form-group">
+            <label for="password">Wachtwoord</label>
+            <input id="password" type="password" class="form-input" placeholder="Minimaal 6 tekens" required />
+            <p id="errPassword" class="error-text hidden"></p>
+          </div>
+
+          <!-- Wachtwoord herhalen -->
+          <div class="form-group">
+            <label for="password2">Wachtwoord herhalen</label>
+            <input id="password2" type="password" class="form-input" placeholder="Herhaal wachtwoord" required />
+            <p id="errPassword2" class="error-text hidden"></p>
+          </div>
+
+          <!-- Status -->
+          <p id="registerStatus" class="rq-status"></p>
+
+          <!-- Versturen -->
+          <button type="submit" class="btn-primary w-full">Account aanmaken</button>
+
+          <!-- Link naar login -->
+          <div class="text-center text-sm text-slate-500 mt-2">
+            Heb je al een account?
+            <a href="login.html" class="link-inline">Log hier in</a>
+          </div>
+
+        </form>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
-  <footer class="footer-shell card-fade-in">
+  <footer class="footer-shell card-fade-in mt-auto">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
-      </p>
+      <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
         <a href="results.html" class="link-inline">Bedrijven</a>
         <a href="login.html" class="link-inline">Voor bedrijven</a>
@@ -132,24 +113,111 @@
   </footer>
 
   <!-- SCRIPT -->
-  <script src="js/register.js?v=20251101"></script>
-
   <script>
-    // Fade-in animatie
     document.addEventListener("DOMContentLoaded", () => {
-      const els = document.querySelectorAll("header, main section, footer");
-      els.forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        requestAnimationFrame(() => {
+      const API_BASE = "https://irisje-backend.onrender.com/api";
+
+      const validators = {
+        companyName: v => v.trim().length >= 2 || "Voer een geldige bedrijfsnaam in.",
+        email: v => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) || "Ongeldig e-mailadres.",
+        password: v => v.trim().length >= 6 || "Wachtwoord moet minimaal 6 tekens hebben.",
+        password2: (v, pwd) => v === pwd || "Wachtwoorden komen niet overeen."
+      };
+
+      function setError(el, errEl, msg) {
+        if (!msg || msg === true) {
+          el.classList.remove("error-border");
+          errEl.classList.add("hidden");
+          errEl.textContent = "";
+        } else {
+          el.classList.add("error-border");
+          errEl.classList.remove("hidden");
+          errEl.textContent = msg;
+        }
+      }
+
+      const form = document.getElementById("registerForm");
+      const statusEl = document.getElementById("registerStatus");
+
+      const companyEl = document.getElementById("companyName");
+      const emailEl = document.getElementById("email");
+      const passEl = document.getElementById("password");
+      const pass2El = document.getElementById("password2");
+
+      const errCompany = document.getElementById("errCompanyName");
+      const errEmail = document.getElementById("errEmail");
+      const errPass = document.getElementById("errPassword");
+      const errPass2 = document.getElementById("errPassword2");
+
+      // live validation
+      companyEl.addEventListener("input", () =>
+        setError(companyEl, errCompany, validators.companyName(companyEl.value))
+      );
+      emailEl.addEventListener("input", () =>
+        setError(emailEl, errEmail, validators.email(emailEl.value))
+      );
+      passEl.addEventListener("input", () =>
+        setError(passEl, errPass, validators.password(passEl.value))
+      );
+      pass2El.addEventListener("input", () =>
+        setError(pass2El, errPass2, validators.password2(pass2El.value, passEl.value))
+      );
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        statusEl.textContent = "";
+        statusEl.className = "rq-status";
+
+        const v1 = validators.companyName(companyEl.value);
+        const v2 = validators.email(emailEl.value);
+        const v3 = validators.password(passEl.value);
+        const v4 = validators.password2(pass2El.value, passEl.value);
+
+        setError(companyEl, errCompany, v1);
+        setError(emailEl, errEmail, v2);
+        setError(passEl, errPass, v3);
+        setError(pass2El, errPass2, v4);
+
+        if (v1 !== true || v2 !== true || v3 !== true || v4 !== true) {
+          statusEl.textContent = "❌ Controleer de invoer.";
+          statusEl.classList.add("text-red-600");
+          return;
+        }
+
+        try {
+          statusEl.textContent = "⏳ Account wordt aangemaakt...";
+          statusEl.classList.add("text-gray-600");
+
+          const res = await fetch(API_BASE + "/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: companyEl.value.trim(),
+              email: emailEl.value.trim(),
+              password: passEl.value.trim()
+            })
+          });
+
+          const json = await res.json();
+
+          if (!res.ok || !json.ok) {
+            throw new Error(json.error || "Registratie mislukt");
+          }
+
+          statusEl.textContent = "✅ Account succesvol aangemaakt. Je kunt nu inloggen.";
+          statusEl.classList.add("text-green-600");
+
           setTimeout(() => {
-            el.style.transition = "opacity .8s ease, transform .8s ease";
-            el.style.opacity = "1";
-            el.style.transform = "translateY(0)";
-          }, 150 * i);
-        });
+            window.location.href = "login.html";
+          }, 1200);
+
+        } catch (err) {
+          statusEl.textContent = "❌ " + err.message;
+          statusEl.classList.add("text-red-600");
+        }
       });
     });
   </script>
+
 </body>
 </html>
