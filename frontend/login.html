@@ -5,15 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inloggen – Irisje.nl</title>
-  <meta name="description" content="Log in op je bedrijfsaccount om aanvragen en reviews te beheren via Irisje.nl." />
+  <meta name="description" content="Log in om jouw bedrijfsprofiel te beheren, aanvragen te bekijken en reviews te volgen." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="style.css?v=20251205" />
+  <link rel="stylesheet" href="style.css?v=20251206" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- HEADER -->
+  <!-- HEADER (zelfde als index & results) -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
@@ -22,7 +22,7 @@
         </span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Voor bedrijven</span>
         </div>
       </a>
 
@@ -32,71 +32,63 @@
       </nav>
 
       <div class="flex items-center space-x-2">
-        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Zoeken
-        </a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">
-          Inloggen
-        </a>
+        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">Zoeken</a>
+        <a href="login.html" class="inline-flex btn-primary btn-xs">Inloggen</a>
       </div>
     </div>
   </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 flex items-center justify-center px-4 py-12">
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-10 w-full max-w-md text-center" aria-labelledby="loginTitle">
-      <div class="text-4xl mb-4">🔑</div>
-      <h1 id="loginTitle" class="text-2xl font-bold text-indigo-700 mb-3">Inloggen</h1>
-      <p class="text-gray-600 text-sm mb-6">Meld je aan om toegang te krijgen tot je bedrijfsdashboard.</p>
+  <!-- MAIN CONTENT -->
+  <main class="page-shell">
 
-      <form id="loginForm" class="space-y-5" novalidate>
-        <div class="text-left">
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="naam@bedrijf.nl"
-            required
-            autofocus
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <div class="text-left">
-          <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
-          <input
-            id="password"
-            type="password"
-            placeholder="Wachtwoord"
-            required
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-        >
-          Inloggen
-        </button>
-
-        <p id="loginMessage" role="alert" class="text-center text-sm mt-2"></p>
-      </form>
-
-      <p class="text-xs text-gray-500 text-center mt-6">
-        <a href="password-forgot.html" class="text-indigo-600 hover:text-indigo-700 underline focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-md">
-          Wachtwoord vergeten?
-        </a>
-      </p>
+    <!-- Titelblok -->
+    <section class="page-header-bar">
+      <div class="page-title-block">
+        <h1>🔐 Inloggen</h1>
+        <p>Beheer jouw bedrijfsprofiel, bekijk aanvragen en lees reviews.</p>
+      </div>
     </section>
+
+    <!-- Login-kaart -->
+    <section>
+      <div class="surface-card max-w-md mx-auto">
+        <form id="loginForm" class="flex flex-col gap-4" novalidate>
+
+          <div class="form-group">
+            <label for="email">E-mailadres</label>
+            <input id="email" type="email" class="form-input" placeholder="jouw@email.nl" required />
+            <p id="errEmail" class="error-text hidden"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Wachtwoord</label>
+            <input id="password" type="password" class="form-input" placeholder="Je wachtwoord" required />
+            <p id="errPassword" class="error-text hidden"></p>
+          </div>
+
+          <p id="loginStatus" class="rq-status"></p>
+
+          <button type="submit" class="btn-primary w-full">Inloggen</button>
+
+          <div class="text-center text-sm text-slate-500 mt-2">
+            <a href="password-forgot.html" class="link-inline">Wachtwoord vergeten?</a>
+          </div>
+
+          <div class="text-center text-xs text-slate-400 mt-3">
+            Nog geen account?  
+            <a href="register.html" class="link-inline">Registreer je bedrijf</a>
+          </div>
+
+        </form>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
-  <footer class="footer-shell card-fade-in">
+  <footer class="footer-shell card-fade-in mt-auto">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
-      </p>
+      <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
         <a href="results.html" class="link-inline">Bedrijven</a>
         <a href="login.html" class="link-inline">Voor bedrijven</a>
@@ -106,23 +98,86 @@
   </footer>
 
   <!-- SCRIPT -->
-  <script src="js/login.js?v=20251101"></script>
-
   <script>
-    // Fade-in animatie
     document.addEventListener("DOMContentLoaded", () => {
-      const elements = document.querySelectorAll("header, main section, footer");
-      elements.forEach((el, i) => {
-        el.style.opacity = "0";
-        el.style.transform = "translateY(12px)";
-        requestAnimationFrame(() => {
-          setTimeout(() => {
-            el.style.transition = "opacity .8s ease, transform .8s ease";
-            el.style.opacity = "1";
-            el.style.transform = "translateY(0)";
-          }, 150 * i);
-        });
+
+      const API_BASE = "https://irisje-backend.onrender.com/api";
+
+      const validators = {
+        email: (v) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) || "Ongeldig e-mailadres.",
+        password: (v) => v.trim().length >= 4 || "Wachtwoord moet minimaal 4 tekens hebben."
+      };
+
+      function setError(input, errEl, message) {
+        if (!message || message === true) {
+          input.classList.remove("error-border");
+          errEl.classList.add("hidden");
+          errEl.textContent = "";
+        } else {
+          input.classList.add("error-border");
+          errEl.classList.remove("hidden");
+          errEl.textContent = message;
+        }
+      }
+
+      const emailEl = document.getElementById("email");
+      const passEl = document.getElementById("password");
+      const errEmail = document.getElementById("errEmail");
+      const errPass = document.getElementById("errPassword");
+      const statusEl = document.getElementById("loginStatus");
+
+      emailEl.addEventListener("input", () =>
+        setError(emailEl, errEmail, validators.email(emailEl.value))
+      );
+      passEl.addEventListener("input", () =>
+        setError(passEl, errPass, validators.password(passEl.value))
+      );
+
+      document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        statusEl.textContent = "";
+        statusEl.className = "rq-status";
+
+        const v1 = validators.email(emailEl.value);
+        const v2 = validators.password(passEl.value);
+
+        setError(emailEl, errEmail, v1);
+        setError(passEl, errPass, v2);
+
+        if (v1 !== true || v2 !== true) {
+          statusEl.textContent = "❌ Controleer de invoer.";
+          statusEl.classList.add("text-red-600");
+          return;
+        }
+
+        try {
+          statusEl.textContent = "⏳ Inloggen...";
+          statusEl.classList.add("text-gray-600");
+
+          const res = await fetch(API_BASE + "/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: emailEl.value.trim(),
+              password: passEl.value.trim()
+            })
+          });
+
+          const json = await res.json();
+
+          if (!res.ok || !json.token) {
+            throw new Error(json.error || "Login mislukt");
+          }
+
+          localStorage.setItem("token", json.token);
+          window.location.href = "dashboard.html";
+
+        } catch (err) {
+          statusEl.textContent = "❌ Ongeldige inloggegevens.";
+          statusEl.classList.add("text-red-600");
+        }
       });
+
     });
   </script>
 
