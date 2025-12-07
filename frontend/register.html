@@ -9,38 +9,21 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251206" />
-
-  <!-- Fix: schakel browser invalid-styling volledig uit -->
-  <style>
-    input:invalid,
-    select:invalid,
-    textarea:invalid {
-      box-shadow: none !important;
-      outline: none !important;
-    }
-  </style>
 </head>
-
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
-
-  <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
-          I
-        </span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Voor bedrijven in de buurt</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Voor bedrijven</span>
         </div>
       </a>
-
       <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
         <a href="results.html" class="nav-link">Bedrijven</a>
         <a href="login.html" class="nav-link">Inloggen</a>
       </nav>
-
       <div class="flex items-center space-x-2">
         <a href="login.html" class="hidden sm:inline-flex btn-ghost btn-xs">Inloggen</a>
         <a href="register.html" class="inline-flex btn-primary btn-xs">Gratis aanmelden</a>
@@ -48,112 +31,73 @@
     </div>
   </header>
 
-  <!-- MAIN -->
   <main class="page-shell">
-
-    <!-- Titelbalk -->
     <section class="page-header-bar">
       <div class="page-title-block">
-        <h1>🏷️ Account aanmaken voor jouw bedrijf</h1>
-        <p>Meld je bedrijf gratis aan, beheer je profiel en ontvang aanvragen rechtstreeks via Irisje.nl.</p>
+        <h1>🏷️ Account aanmaken</h1>
+        <p>Meld je bedrijf gratis aan en ontvang aanvragen van klanten in jouw regio.</p>
       </div>
-
       <div class="page-meta">
         Heb je al een account?
         <a href="login.html" class="link-inline">Log hier in</a>.
       </div>
     </section>
 
-    <!-- Content -->
     <section>
       <div class="flex flex-col md:flex-row gap-6">
-
-        <!-- VOORDELEN BLOK -->
         <div class="surface-card flex-1">
-          <div class="mb-4">
-            <span class="badge-soft">Voor bedrijven</span>
-          </div>
-
-          <h2 class="text-lg font-semibold text-gray-800 mb-2">
-            Bereik klanten in jouw regio, zonder gedoe
-          </h2>
-
+          <h2 class="text-lg font-semibold text-gray-800 mb-2">Waarom aanmelden?</h2>
           <p class="text-sm text-gray-600 mb-4 leading-relaxed">
-            Met een gratis bedrijfsaccount kun je jouw profiel beheren, ontvangen aanvragen bekijken,
-            reageren op reviews en inzicht krijgen in je prestaties. Jij bepaalt zelf welke aanvragen je aanneemt.
+            Met een gratis bedrijfsaccount kun je jouw profiel beheren, aanvragen ontvangen
+            en reageren op reviews.
           </p>
-
           <ul class="hero-bullets space-y-2 mb-5">
-            <li><span>✓</span> <span>Ontvang gerichte aanvragen van klanten in jouw werkgebied.</span></li>
-            <li><span>✓</span> <span>Beheer je bedrijfsgegevens, openingstijden en diensten.</span></li>
-            <li><span>✓</span> <span>Bekijk en reageer op reviews van klanten.</span></li>
+            <li><span>✓</span><span>Krijg aanvragen uit jouw regio.</span></li>
+            <li><span>✓</span><span>Beheer je diensten & openingstijden.</span></li>
+            <li><span>✓</span><span>Bekijk & reageer op klantreviews.</span></li>
           </ul>
-
           <p class="text-xs text-slate-500 leading-relaxed">
-            Na het aanmaken van je account kun je direct inloggen in het dashboard. Daar kun je jouw
-            bedrijfsprofiel verder invullen en aangeven in welke regio’s je actief bent.
+            Na registratie kun je direct inloggen en jouw bedrijfsprofiel verder invullen.
           </p>
         </div>
 
-        <!-- FORMULIER BLOK -->
         <div class="surface-card flex-1">
           <form id="registerForm" class="space-y-4" novalidate>
-
-            <div>
-              <label for="companyName" class="filter-label">Bedrijfsnaam</label>
-              <input id="companyName" name="companyName" type="text" class="form-input"
-                placeholder="Bijv. Schildersbedrijf de Vries" autocomplete="organization" />
-              <p id="errCompany" class="error-text hidden"></p>
+            <div class="form-group">
+              <label for="companyName">Bedrijfsnaam</label>
+              <input id="companyName" type="text" class="form-input" required />
             </div>
 
-            <div>
-              <label for="email" class="filter-label">E-mailadres</label>
-              <input id="email" name="email" type="email" class="form-input"
-                placeholder="zakelijk e-mailadres" autocomplete="email" />
-              <p id="errEmail" class="error-text hidden"></p>
+            <div class="form-group">
+              <label for="email">E-mailadres</label>
+              <input id="email" type="email" class="form-input" required />
             </div>
 
-            <div>
-              <label for="password" class="filter-label">Wachtwoord</label>
-              <input id="password" name="password" type="password" class="form-input"
-                placeholder="Minimaal 8 tekens" autocomplete="new-password" />
-              <p id="errPassword" class="error-text hidden"></p>
+            <div class="form-group">
+              <label for="password">Wachtwoord</label>
+              <input id="password" type="password" class="form-input" required />
             </div>
 
-            <div>
-              <label for="confirmPassword" class="filter-label">Herhaal wachtwoord</label>
-              <input id="confirmPassword" name="confirmPassword" type="password" class="form-input"
-                placeholder="Herhaal je wachtwoord" autocomplete="new-password" />
-              <p id="errConfirm" class="error-text hidden"></p>
+            <div class="form-group">
+              <label for="confirmPassword">Herhaal wachtwoord</label>
+              <input id="confirmPassword" type="password" class="form-input" required />
             </div>
 
             <div class="flex items-start gap-2 text-xs text-gray-600">
-              <input id="terms" type="checkbox" class="w-4 h-4 mt-1" />
-              <label for="terms">
-                Ik ga akkoord met de voorwaarden van Irisje.nl en verklaar dat ik bevoegd ben dit bedrijf aan te melden.
-              </label>
+              <input id="terms" type="checkbox" class="w-4 h-4 mt-1" required />
+              <label for="terms">Ik ga akkoord met de voorwaarden.</label>
             </div>
-            <p id="errTerms" class="error-text hidden"></p>
 
             <p id="registerMessage" class="rq-status"></p>
 
             <button type="submit" class="btn-primary w-full">Account aanmaken</button>
-
-            <p class="text-xs text-slate-500 mt-2">
-              Al een account?
-              <a href="login.html" class="link-inline">Log hier in</a>.
-            </p>
-
           </form>
         </div>
-
       </div>
     </section>
-
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer-shell card-fade-in">
+  <footer class="footer-shell card-fade-in mt-auto">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
@@ -164,8 +108,6 @@
     </div>
   </footer>
 
-  <!-- SCRIPT -->
   <script src="js/register.js?v=20251206"></script>
-
 </body>
 </html>
