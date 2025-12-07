@@ -1,83 +1,134 @@
 // frontend/js/register.js
-const API_BASE = "https://irisje-backend.onrender.com/api";
+// v20251206-AUTH-CLEAN
+//
+// Verantwoordelijk voor:
+// - Bedrijfsregistratieformulier
+// - Validatie van invoer
+// - Aanroepen van de /auth/register endpoint
+// - Gebruiker na succes terugsturen naar login.html
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("registerForm");
-  const msg = document.getElementById("registerMessage");
+(function () {
+  const API_BASE = "https://irisje-backend.onrender.com/api";
+  const REGISTER_ENDPOINT = API_BASE + "/auth/register";
 
-  // 🔹 Als gebruiker al is ingelogd → direct doorsturen
-  if (localStorage.getItem("userEmail")) {
-    window.location.href = "dashboard.html";
-    return;
+  function $(id) {
+    return document.getElementById(id);
   }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  function showMessage(msg, isError) {
+    const box = $("registerMessage");
+    if (!box) return;
+    box.textContent = msg || "";
+    box.classList.remove("hidden");
+    box.className =
+      "mt-4 text-sm " + (isError ? "text-red-600" : "text-green-600");
+  }
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+  function setLoading(isLoading) {
+    const form = $("registerForm");
+    if (!form) return;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    submitBtn.disabled = isLoading;
+    submitBtn.textContent = isLoading
+      ? "Account wordt aangemaakt..."
+      : "Account aanmaken";
+  }
 
-    // 🔸 Basisvalidatie
-    if (!name || !email || !password) {
-      msg.textContent = "❌ Vul alle velden in.";
-      msg.className = "text-red-600 text-center text-sm";
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = $("registerForm");
+    if (!form) {
+      console.warn("[register] registerForm niet gevonden in register.html");
       return;
     }
 
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      msg.textContent = "❌ Vul een geldig e-mailadres in.";
-      msg.className = "text-red-600 text-center text-sm";
-      return;
-    }
+    const nameInput = $("name");
+    const cityInput = $("city");
+    const categoryInput = $("category");
+    const emailInput = $("email");
+    const passwordInput = $("password");
+    const confirmPasswordInput = $("confirmPassword");
+    const termsInput = $("terms");
 
-    if (password.length < 8) {
-      msg.textContent = "❌ Wachtwoord moet minimaal 8 tekens bevatten.";
-      msg.className = "text-red-600 text-center text-sm";
-      return;
-    }
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
 
-    msg.textContent = "⏳ Bezig met registreren...";
-    msg.className = "text-gray-500 text-center text-sm";
+      const name = nameInput && nameInput.value.trim();
+      const city = cityInput && cityInput.value.trim();
+      const category = categoryInput && categoryInput.value.trim();
+      const email = emailInput && emailInput.value.trim();
+      const password = passwordInput && passwordInput.value.trim();
+      const confirmPassword =
+        confirmPasswordInput && confirmPasswordInput.value.trim();
+      const termsChecked = termsInput && termsInput.checked;
 
-    try {
-      // 🔹 API-aanroep naar backend
-      const res = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
+      if (!name || !city || !category || !email || !password || !confirmPassword) {
+        showMessage("Vul alle verplichte velden in.", true);
+        return;
+      }
 
-      const data = await res.json();
+      if (password.length < 6) {
+        showMessage("Het wachtwoord moet minimaal 6 tekens bevatten.", true);
+        return;
+      }
 
-      if (!res.ok) throw new Error(data.message || "Registratie mislukt.");
+      if (password !== confirmPassword) {
+        showMessage("De wachtwoorden komen niet overeen.", true);
+        return;
+      }
 
-      // ✅ Succesvol geregistreerd
-      msg.textContent = "✅ Account aangemaakt! Bevestig je e-mailadres om verder te gaan.";
-      msg.className = "text-green-600 text-center text-sm";
+      if (!termsChecked) {
+        showMessage("Je moet akkoord gaan met de voorwaarden.", true);
+        return;
+      }
 
-      // 🕒 Kort wachten, dan naar bevestigingspagina
-      setTimeout(() => {
-        window.location.href = "email-confirmation.html";
-      }, 1500);
-    } catch (err) {
-      console.error("❌ Fout bij registratie:", err);
-      msg.textContent = "❌ " + (err.message || "Er ging iets mis. Probeer het later opnieuw.");
-      msg.className = "text-red-600 text-center text-sm";
-    }
-  });
+      setLoading(true);
+      showMessage("", false);
 
-  // ✅ Fade-in animatie
-  const blocks = document.querySelectorAll("header, main section, footer");
-  blocks.forEach((el, i) => {
-    el.style.opacity = "0";
-    el.style.transform = "translateY(12px)";
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        el.style.transition = "opacity .8s ease, transform .8s ease";
-        el.style.opacity = "1";
-        el.style.transform = "translateY(0)";
-      }, 150 * i);
+      try {
+        const res = await fetch(REGISTER_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name,
+            city: city,
+            category: category,
+            email: email,
+            password: password,
+          }),
+        });
+
+        const data = await res.json().catch(function () {
+          return {};
+        });
+
+        if (!res.ok) {
+          const msg =
+            (data && (data.message || data.error)) ||
+            "Registratie mislukt. Probeer het later opnieuw.";
+          throw new Error(msg);
+        }
+
+        showMessage(
+          "Account succesvol aangemaakt. Je kunt nu inloggen.",
+          false
+        );
+
+        // Klein moment laten staan en dan naar login
+        setTimeout(function () {
+          window.location.href = "login.html";
+        }, 1500);
+      } catch (err) {
+        console.error("[register] Fout bij registreren:", err);
+        showMessage(
+          err.message || "Registratie mislukt. Probeer het later opnieuw.",
+          true
+        );
+      } finally {
+        setLoading(false);
+      }
     });
   });
-});
+})();
