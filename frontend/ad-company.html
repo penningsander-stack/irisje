@@ -8,43 +8,28 @@
   <meta name="description" content="Voeg eenvoudig je bedrijf toe aan Irisje.nl en ontvang directe aanvragen van klanten in jouw regio." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="style.css?v=20251205" />
+  <link rel="stylesheet" href="style.css?v=20251206" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
-          I
-        </span>
-        <div class="flex flex-col leading-tight">
-          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
-        </div>
-      </a>
-
-      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <a href="results.html" class="nav-link">Bedrijven</a>
-        <a href="login.html" class="nav-link">Voor bedrijven</a>
-      </nav>
-
-      <div class="flex items-center space-x-2">
-        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Zoeken
-        </a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">
-          Inloggen
-        </a>
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+    <a href="index.html" class="flex items-center space-x-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <div class="flex flex-col leading-tight">
+        <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+        <span class="text-[11px] text-slate-500 hidden sm:block">Bedrijf aanmelden</span>
       </div>
-    </div>
-  </header>
+    </a>
+    <a href="login.html" class="btn-ghost btn-xs">Inloggen voor bedrijven</a>
+  </div>
+</header>
 
   <!-- MAIN -->
-  <main class="flex-1 flex items-center justify-center px-4 py-12">
-    <section class="bg-white rounded-2xl shadow-md border border-gray-100 p-8 w-full max-w-lg">
+  <main class="page-shell">
+    <section class="surface-card p-6 md:p-8 w-full max-w-xl mx-auto">
       <h1 class="text-2xl font-bold text-indigo-700 mb-4 text-center">🏢 Nieuw bedrijf aanmelden</h1>
       <p class="text-sm text-gray-600 text-center mb-6">
         Vul hieronder je bedrijfsgegevens in. Na goedkeuring wordt je profiel zichtbaar voor klanten op Irisje.nl.
@@ -76,7 +61,7 @@
         </div>
 
         <button type="submit"
-          class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl py-3 text-sm transition">
+          class="w-full btn-primary py-3 text-sm font-semibold rounded-xl">
           Bedrijf toevoegen
         </button>
 
@@ -85,22 +70,18 @@
     </section>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="footer-shell card-fade-in">
-    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
-      </p>
-      <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
-        <a href="results.html" class="link-inline">Bedrijven</a>
-        <a href="login.html" class="link-inline">Voor bedrijven</a>
-        <a href="error.html" class="link-inline">Contact</a>
-      </div>
+  <footer class="footer-shell card-fade-in mt-auto">
+  <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
+    <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
+      <a href="results.html" class="link-inline">Bedrijven</a>
+      <a href="login.html" class="link-inline">Voor bedrijven</a>
+      <a href="error.html" class="link-inline">Contact</a>
     </div>
-  </footer>
+  </div>
+</footer>
 
-  <!-- SCRIPT -->
-  <script>
+<script>
     const API_BASE = "https://irisje-backend.onrender.com/api";
 
     document.getElementById("companyForm").addEventListener("submit", async (e) => {
