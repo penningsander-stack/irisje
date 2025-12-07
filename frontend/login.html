@@ -1,29 +1,17 @@
-<!-- frontend/login.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inloggen – Irisje.nl</title>
-  <meta name="description" content="Log in om jouw bedrijfsprofiel te beheren, aanvragen te bekijken en reviews te volgen." />
+  <meta name="description" content="Log in om jouw bedrijfsprofiel te beheren en aanvragen te bekijken." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251206" />
-
-  <!-- Fix: schakel browser invalid-styling uit -->
-  <style>
-    input:invalid,
-    textarea:invalid,
-    select:invalid {
-      box-shadow: none !important;
-      outline: none !important;
-    }
-  </style>
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
@@ -38,7 +26,7 @@
 
       <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
         <a href="results.html" class="nav-link">Bedrijven</a>
-        <a href="login.html" class="nav-link">Voor bedrijven</a>
+        <a href="login.html" class="nav-link">Inloggen</a>
       </nav>
 
       <div class="flex items-center space-x-2">
@@ -48,7 +36,6 @@
     </div>
   </header>
 
-  <!-- MAIN -->
   <main class="page-shell">
 
     <section class="page-header-bar">
@@ -58,22 +45,19 @@
       </div>
     </section>
 
-    <!-- Login card -->
     <section>
       <div class="surface-card max-w-md mx-auto">
-
-        <!-- IMPORTANT: novalidate + geen required = voorkomt Chrome auto errors -->
         <form id="loginForm" class="flex flex-col gap-4" novalidate>
 
           <div class="form-group">
             <label for="email">E-mailadres</label>
-            <input id="email" type="email" class="form-input" placeholder="jouw@email.nl" />
+            <input id="email" type="email" class="form-input" placeholder="jouw@email.nl" required />
             <p id="errEmail" class="error-text hidden"></p>
           </div>
 
           <div class="form-group">
             <label for="password">Wachtwoord</label>
-            <input id="password" type="password" class="form-input" placeholder="Je wachtwoord" />
+            <input id="password" type="password" class="form-input" placeholder="Je wachtwoord" required />
             <p id="errPassword" class="error-text hidden"></p>
           </div>
 
@@ -96,7 +80,6 @@
 
   </main>
 
-  <!-- FOOTER -->
   <footer class="footer-shell card-fade-in mt-auto">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
@@ -108,89 +91,11 @@
     </div>
   </footer>
 
-  <!-- SCRIPT -->
+  <script src="js/login.js?v=20251206"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-
-      const API_BASE = "https://irisje-backend.onrender.com/api";
-
-      const validators = {
-        email: (v) => /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(v) || "Ongeldig e-mailadres.",
-        password: (v) => v.trim().length >= 4 || "Wachtwoord moet minimaal 4 tekens hebben."
-      };
-
-      function setError(input, errEl, message) {
-        if (!message || message === true) {
-          input.classList.remove("error-border");
-          errEl.classList.add("hidden");
-          errEl.textContent = "";
-        } else {
-          input.classList.add("error-border");
-          errEl.classList.remove("hidden");
-          errEl.textContent = message;
-        }
-      }
-
-      const emailEl = document.getElementById("email");
-      const passEl = document.getElementById("password");
-      const errEmail = document.getElementById("errEmail");
-      const errPass = document.getElementById("errPassword");
-      const statusEl = document.getElementById("loginStatus");
-
-      emailEl.addEventListener("input", () =>
-        setError(emailEl, errEmail, validators.email(emailEl.value))
-      );
-      passEl.addEventListener("input", () =>
-        setError(passEl, errPass, validators.password(passEl.value))
-      );
-
-      document.getElementById("loginForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        statusEl.textContent = "";
-        statusEl.className = "rq-status";
-
-        const v1 = validators.email(emailEl.value);
-        const v2 = validators.password(passEl.value);
-
-        setError(emailEl, errEmail, v1);
-        setError(passEl, errPass, v2);
-
-        if (v1 !== true || v2 !== true) {
-          statusEl.textContent = "❌ Controleer de invoer.";
-          statusEl.classList.add("text-red-600");
-          return;
-        }
-
-        try {
-          statusEl.textContent = "⏳ Inloggen...";
-          statusEl.classList.add("text-gray-600");
-
-          const res = await fetch(API_BASE + "/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: emailEl.value.trim(),
-              password: passEl.value.trim()
-            })
-          });
-
-          const json = await res.json();
-
-          if (!res.ok || !json.token) {
-            throw new Error(json.error || "Login mislukt");
-          }
-
-          localStorage.setItem("token", json.token);
-          window.location.href = "dashboard.html";
-
-        } catch (err) {
-          statusEl.textContent = "❌ Ongeldige inloggegevens.";
-          statusEl.classList.add("text-red-600");
-        }
-      });
-
+      document.body.classList.add("fade-seq");
     });
   </script>
-
 </body>
 </html>
