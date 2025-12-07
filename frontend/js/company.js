@@ -1,19 +1,35 @@
-// frontend/js/company.js
+
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const companySlug = urlParams.get("slug");
 
-  const companyContainer = document.getElementById("company-details");
-  const reviewsContainer = document.getElementById("reviews-list");
+  // Premium-layout elementen
+  const crumbName = document.getElementById("crumbName");
+  const companyNameEl = document.getElementById("companyName");
+  const companyCityEl = document.getElementById("companyCity");
+  const companyCategoriesEl = document.getElementById("companyCategories");
+  const companyVerifiedEl = document.getElementById("companyVerified");
+  const companyDescriptionEl = document.getElementById("companyDescription");
+  const companyLogoEl = document.getElementById("companyLogo");
+  const companyHoursEl = document.getElementById("companyHours");
+  const reviewSummaryEl = document.getElementById("reviewSummary");
+  const reviewListEl = document.getElementById("reviewList");
+
+  // Optioneel: oude containers als ze nog bestaan
+  const reviewsContainerLegacy = document.getElementById("reviews-list");
   const googleContainer = document.getElementById("google-reviews");
+
   const reviewForm = document.getElementById("review-form");
   const reviewStatus = document.getElementById("review-status");
 
   if (!companySlug) {
-    if (companyContainer)
-      companyContainer.innerHTML = "<p class='text-red-600'>Geen bedrijfsprofiel gevonden.</p>";
+    if (companyNameEl) companyNameEl.textContent = "Geen bedrijfsprofiel gevonden";
+    if (companyDescriptionEl) {
+      companyDescriptionEl.textContent =
+        "Er is geen geldig bedrijfsprofiel gevonden voor deze URL.";
+    }
     return;
   }
 
@@ -21,91 +37,152 @@ document.addEventListener("DOMContentLoaded", async () => {
   const userRole = localStorage.getItem("userRole");
 
   /* ============================================================
-     1️⃣ Bedrijf laden (logo direct zichtbaar, geen flikkering)
+     1️⃣ Bedrijf laden (premium weergave)
   ============================================================ */
   async function loadCompany() {
     try {
-      const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`, { cache: "no-cache" });
+      const res = await fetch(
+        `${API_BASE}/companies/slug/${companySlug}`,
+        { cache: "no-cache" }
+      );
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const company = await res.json();
 
-      if (!companyContainer) return;
+      if (crumbName && company.name) crumbName.textContent = company.name;
+      if (companyNameEl) companyNameEl.textContent = company.name || "Bedrijf";
+      if (companyCityEl) companyCityEl.textContent = company.city || "";
+      if (companyCategoriesEl) {
+        const cats = Array.isArray(company.categories)
+          ? company.categories.join(", ")
+          : "";
+        companyCategoriesEl.textContent = cats;
+      }
 
-      companyContainer.innerHTML = `
-        <div class="bg-white rounded-2xl shadow-md p-6 animate-fadeIn">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-6">
-            <img
-              id="companyLogo"
-              alt="${company.name ? company.name.replace(/"/g, "&quot;") : "Bedrijfslogo"}"
-              class="w-24 h-24 rounded-xl object-cover border bg-gray-100"
-            />
-            <div>
-              <h1 class="text-2xl font-bold text-indigo-700">${company.name || ""}</h1>
-              <p class="text-gray-600">${company.city || ""}</p>
-              <p class="text-sm text-gray-500 mt-2">${company.tagline || ""}</p>
-              <p class="text-sm text-gray-400 mt-1">
-                ${Array.isArray(company.categories) ? company.categories.join(", ") : ""}
-              </p>
-              <p class="text-yellow-500 mt-2">
-                ⭐ ${company.avgRating?.toFixed?.(1) || "0.0"} (${company.reviewCount || 0} reviews)
-              </p>
-            </div>
-          </div>
-        </div>
-      `;
+      if (companyDescriptionEl) {
+        const desc =
+          company.description ||
+          company.tagline ||
+          "Dit bedrijf heeft nog geen uitgebreide beschrijving toegevoegd.";
+        companyDescriptionEl.textContent = desc;
+      }
 
-      // ✅ Logo laden zonder fade/lazy-bugs
-      const logoEl = document.getElementById("companyLogo");
-      const defaultLogo = "img/default-logo.png";
-      const logoSrc = company.logoUrl && company.logoUrl.trim() !== "" ? company.logoUrl : defaultLogo;
+      if (companyVerifiedEl) {
+        if (company.isVerified) {
+          companyVerifiedEl.textContent = "Geverifieerd bedrijf";
+          companyVerifiedEl.classList.remove("hidden");
+        } else {
+          companyVerifiedEl.textContent = "Niet geverifieerd";
+          companyVerifiedEl.classList.remove("hidden");
+        }
+      }
 
-      console.log("🖼️ Logo geladen:", logoSrc);
+      // Openingstijden (best effort)
+      if (companyHoursEl) {
+        const hours = company.openingHours || company.openinghours;
+        if (!hours) {
+          companyHoursEl.innerHTML =
+            "<li>Openingstijden niet beschikbaar.</li>";
+        } else if (Array.isArray(hours)) {
+          companyHoursEl.innerHTML = hours
+            .map((h) => `<li>${h}</li>`)
+            .join("");
+        } else if (typeof hours === "object") {
+          companyHoursEl.innerHTML = Object.entries(hours)
+            .map(
+              ([day, val]) =>
+                `<li><span class="font-medium">${day}:</span> ${val}</li>`
+            )
+            .join("");
+        } else if (typeof hours === "string") {
+          companyHoursEl.innerHTML = `<li>${hours}</li>`;
+        }
+      }
 
-      const img = new Image();
-      img.onload = () => {
-        logoEl.src = logoSrc;
-        logoEl.style.opacity = "1";
-      };
-      img.onerror = () => {
-        console.warn("⚠️ Logo niet gevonden, val terug op default-logo.png");
-        logoEl.src = defaultLogo;
-        logoEl.style.opacity = "1";
-      };
-      img.src = logoSrc;
+      // Logo laden
+      if (companyLogoEl) {
+        const defaultLogo = "img/default-logo.png";
+        const logoSrc =
+          company.logoUrl && company.logoUrl.trim() !== ""
+            ? company.logoUrl
+            : defaultLogo;
 
-      // Google-reviews pas laden nadat het bedrijf zichtbaar is
-      if (company.name && company.city) {
+        const img = new Image();
+        img.onload = () => {
+          companyLogoEl.src = logoSrc;
+          companyLogoEl.style.opacity = "1";
+        };
+        img.onerror = () => {
+          console.warn("⚠️ Logo niet gevonden, val terug op default-logo.png");
+          companyLogoEl.src = defaultLogo;
+          companyLogoEl.style.opacity = "1";
+        };
+        img.src = logoSrc;
+      }
+
+      // Google-reviews (indien container aanwezig)
+      if (company.name && company.city && googleContainer) {
         await loadGoogleReviews(company.name, company.city);
       }
 
       // Bewaar bedrijf-ID voor reviewformulier
-      if (reviewForm) reviewForm.dataset.companyId = company._id;
+      if (reviewForm && company._id) {
+        reviewForm.dataset.companyId = company._id;
+      }
     } catch (err) {
       console.error("❌ Fout bij laden bedrijf:", err);
-      if (companyContainer)
-        companyContainer.innerHTML = `<p class="text-red-600">Fout bij laden van het bedrijfsprofiel.</p>`;
+      if (companyDescriptionEl) {
+        companyDescriptionEl.textContent =
+          "Fout bij het laden van het bedrijfsprofiel.";
+      }
     }
   }
 
   /* ============================================================
-     2️⃣ Irisje-reviews laden (alleen bevestigde)
+     2️⃣ Irisje-reviews laden (premium weergave)
   ============================================================ */
   async function loadReviews() {
     try {
-      const res = await fetch(`${API_BASE}/reviews/company/${companySlug}`, { cache: "no-cache" });
+      const res = await fetch(
+        `${API_BASE}/reviews/company/${companySlug}`,
+        { cache: "no-cache" }
+      );
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
       const reviews = Array.isArray(data.reviews) ? data.reviews : [];
 
-      if (!reviewsContainer) return;
+      const target =
+        reviewListEl || reviewsContainerLegacy;
 
-      if (reviews.length === 0) {
-        reviewsContainer.innerHTML =
-          "<p class='text-gray-500 text-center p-4'>Nog geen reviews geplaatst.</p>";
+      if (!target) return;
+
+      if (!reviews.length) {
+        if (target === reviewListEl) {
+          target.innerHTML =
+            "<p class='text-xs text-slate-500'>Nog geen reviews geplaatst.</p>";
+        } else {
+          target.innerHTML =
+            "<p class='text-gray-500 text-center p-4'>Nog geen reviews geplaatst.</p>";
+        }
+        if (reviewSummaryEl) {
+          reviewSummaryEl.textContent = "Nog geen reviews.";
+        }
         return;
       }
 
-      reviewsContainer.innerHTML = reviews
+      // Samenvatting
+      if (reviewSummaryEl) {
+        const avg =
+          reviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+          reviews.length;
+        reviewSummaryEl.textContent = `⭐ ${avg.toFixed(
+          1
+        )} op basis van ${reviews.length} review(s).`;
+      }
+
+      const showReportButton =
+        userRole === "company" || userEmail === "info@irisje.nl";
+
+      const html = reviews
         .map((r) => {
           const datum = r.createdAt
             ? new Date(r.createdAt).toLocaleDateString("nl-NL", {
@@ -115,11 +192,26 @@ document.addEventListener("DOMContentLoaded", async () => {
               })
             : "-";
 
-          const showReportButton = userRole === "company" || userEmail === "info@irisje.nl";
           const reportButtonHTML = showReportButton
             ? `<button class="inline-block text-xs text-red-600 hover:text-red-800 font-medium ml-2 report-btn" data-id="${r._id}">🚩 Meld review</button>`
             : "";
 
+          if (target === reviewListEl) {
+            return `
+              <div class="border-b border-slate-100 pb-3 mb-3">
+                <div class="flex justify-between items-center mb-1">
+                  <h3 class="font-medium text-slate-900">${r.name || "Anoniem"}</h3>
+                  <span class="text-amber-500 text-sm">${"⭐".repeat(
+                    r.rating || 0
+                  )}</span>
+                </div>
+                <p class="text-sm text-slate-700 mb-1">${r.message || ""}</p>
+                <p class="text-[11px] text-slate-400">${datum} ${reportButtonHTML}</p>
+              </div>
+            `;
+          }
+
+          // legacy layout
           return `
             <div class="border-b py-4">
               <div class="flex justify-between items-center mb-1">
@@ -132,16 +224,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           `;
         })
         .join("");
+
+      target.innerHTML = html;
     } catch (err) {
       console.error("❌ Fout bij laden reviews:", err);
-      if (reviewsContainer)
-        reviewsContainer.innerHTML =
-          "<p class='text-red-600 text-center p-4'>Fout bij laden van reviews.</p>";
+      const target =
+        reviewListEl || reviewsContainerLegacy;
+      if (target) {
+        if (target === reviewListEl) {
+          target.innerHTML =
+            "<p class='text-xs text-red-600'>Fout bij laden van reviews.</p>";
+        } else {
+          target.innerHTML =
+            "<p class='text-red-600 text-center p-4'>Fout bij laden van reviews.</p>";
+        }
+      }
+      if (reviewSummaryEl) {
+        reviewSummaryEl.textContent = "Fout bij laden van reviews.";
+      }
     }
   }
 
   /* ============================================================
-     3️⃣ Nieuwe review versturen
+     3️⃣ Nieuwe review versturen (werkt alleen als formulier aanwezig is)
   ============================================================ */
   reviewForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -151,6 +256,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const email = document.getElementById("review-email").value.trim();
     const rating = document.getElementById("review-rating").value.trim();
     const message = document.getElementById("review-message").value.trim();
+
+    if (!reviewStatus) return;
 
     reviewStatus.textContent = "";
     reviewStatus.className = "text-sm mt-2";
@@ -178,13 +285,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           "✅ Review ontvangen! Bevestig je review via de link in je e-mail.";
         reviewStatus.classList.add("text-green-600");
         reviewForm.reset();
+        await loadReviews();
       } else {
-        reviewStatus.textContent = "❌ " + (result.error || "Er ging iets mis.");
+        reviewStatus.textContent =
+          "❌ " + (result.error || "Er ging iets mis.");
         reviewStatus.classList.add("text-red-600");
       }
     } catch (err) {
       console.error("❌ Fout bij versturen review:", err);
-      reviewStatus.textContent = "❌ Serverfout bij verzenden van review.";
+      reviewStatus.textContent =
+        "❌ Serverfout bij verzenden van review.";
       reviewStatus.classList.add("text-red-600");
     } finally {
       btn.disabled = false;
@@ -204,6 +314,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const reviewId = btn.getAttribute("data-id");
+    if (!reviewId) return;
     if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
 
     btn.disabled = true;
@@ -228,59 +339,75 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* ============================================================
-     5️⃣ Google-reviews laden
+     5️⃣ Google-reviews laden (alleen als container bestaat)
   ============================================================ */
   async function loadGoogleReviews(companyName, city) {
     try {
+      if (!googleContainer) return;
+
       const res = await fetch(
-        `${API_BASE}/googlereviews?name=${encodeURIComponent(companyName)}&city=${encodeURIComponent(city)}`,
+        `${API_BASE}/googlereviews?name=${encodeURIComponent(
+          companyName
+        )}&city=${encodeURIComponent(city)}`,
         { cache: "force-cache" }
       );
       if (!res.ok) throw new Error(`Server antwoordde met ${res.status}`);
       const data = await res.json();
-      if (!googleContainer) return;
 
       if (!data.reviews || data.reviews.length === 0) {
-        googleContainer.innerHTML = "<p class='text-gray-500'>Geen Google Reviews gevonden.</p>";
+        googleContainer.innerHTML =
+          "<p class='text-gray-500'>Geen Google Reviews gevonden.</p>";
         return;
       }
 
       googleContainer.innerHTML = `
         <div class="mb-4">
-          <h3 class="text-lg font-semibold text-indigo-700">
+          <h3 class="text-sm font-semibold text-indigo-700">
             ⭐ Google Reviews (${data.total || 0})
           </h3>
-          <p class="text-gray-600 text-sm mb-3">Gemiddelde score: ${data.rating || "-"}</p>
+          <p class="text-slate-600 text-xs mb-3">Gemiddelde score: ${
+            data.rating || "-"
+          }</p>
         </div>
         <div class="space-y-3">
           ${data.reviews
             .slice(0, 5)
             .map(
               (r) => `
-          <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm">
             <div class="flex items-center gap-3 mb-2">
-              <img src="${r.profile_photo_url || 'img/default-user.png'}"
-                   alt="${r.author_name || 'Gebruiker'}"
-                   class="w-10 h-10 rounded-full object-cover border"
+              <img src="${
+                r.profile_photo_url || "img/default-user.png"
+              }"
+                   alt="${r.author_name || "Gebruiker"}"
+                   class="w-8 h-8 rounded-full object-cover border"
                    loading="lazy" />
               <div>
-                <p class="font-medium text-gray-800">${r.author_name || "Gebruiker"}</p>
-                <p class="text-yellow-500 text-sm">${"⭐".repeat(r.rating || 0)}</p>
+                <p class="font-medium text-slate-800 text-xs">${
+                  r.author_name || "Gebruiker"
+                }</p>
+                <p class="text-amber-500 text-xs">${"⭐".repeat(
+                  r.rating || 0
+                )}</p>
               </div>
             </div>
-            <p class="text-gray-700 text-sm mb-1">"${r.text || ""}"</p>
-            <p class="text-xs text-gray-400">${r.relative_time_description || ""}</p>
+            <p class="text-slate-700 text-xs mb-1">"${
+              r.text || ""
+            }"</p>
+            <p class="text-[10px] text-slate-400">${
+              r.relative_time_description || ""
+            }</p>
           </div>`
             )
             .join("")}
         </div>
-        <p class="text-xs text-gray-400 mt-3">🗺️ Reviews afkomstig van Google Maps.</p>
+        <p class="text-[10px] text-slate-400 mt-2">🗺️ Reviews afkomstig van Google Maps.</p>
       `;
     } catch (err) {
       console.error("⚠️ Fout bij ophalen Google Reviews:", err);
       if (googleContainer)
         googleContainer.innerHTML =
-          "<p class='text-gray-400 text-sm'>Geen Google Reviews beschikbaar.</p>";
+          "<p class='text-gray-400 text-xs'>Geen Google Reviews beschikbaar.</p>";
     }
   }
 
