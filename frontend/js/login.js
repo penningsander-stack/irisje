@@ -1,10 +1,5 @@
 // frontend/js/login.js
-// v20251206-AUTH-CLEAN
-//
-// Verantwoordelijk voor:
-// - Inlogformulier afhandelen
-// - Opslaan van token, rol en e-mail in localStorage
-// - Doorsturen naar dashboard of admin als iemand al is ingelogd
+// v20251206-PREMIUM
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -15,115 +10,82 @@
   }
 
   function showMessage(msg, isError) {
-    const box = $("loginMessage");
-    if (!box) return;
-    box.textContent = msg || "";
-    box.className =
-      "text-center text-sm mt-2 " +
-      (isError ? "text-red-600" : "text-green-600");
+    const el = $("loginStatus");
+    if (!el) return;
+    el.textContent = msg || "";
+    el.className = "rq-status " + (isError ? "text-red-600" : "text-green-600");
   }
 
-  function setLoading(isLoading) {
+  function addValidation(input, validator, errorEl) {
+    input.addEventListener("input", () => {
+      const valid = validator(input.value);
+      if (valid === true) {
+        input.classList.remove("error-border");
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+      } else {
+        input.classList.add("error-border");
+        errorEl.classList.remove("hidden");
+        errorEl.textContent = valid;
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
     const form = $("loginForm");
     if (!form) return;
-    const submitBtn = form.querySelector('button[type="submit"]');
-    if (!submitBtn) return;
-    submitBtn.disabled = isLoading;
-    submitBtn.textContent = isLoading
-      ? "Bezig met inloggen..."
-      : "Inloggen";
-  }
 
-  document.addEventListener("DOMContentLoaded", function () {
-    const form = $("loginForm");
-    const emailInput = $("email");
-    const passwordInput = $("password");
+    const emailEl = $("email");
+    const passEl = $("password");
+    const errEmail = $("errEmail");
+    const errPass = $("errPassword");
 
-    if (!form || !emailInput || !passwordInput) {
-      console.warn("[login] Ontbrekende elementen in login.html");
-      return;
-    }
+    const validators = {
+      email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || "Ongeldig e-mailadres.",
+      password: (v) => v.trim().length >= 4 || "Wachtwoord moet minimaal 4 tekens hebben."
+    };
 
-    // Als er al een sessie lijkt te zijn → direct doorsturen
-    const existingToken = localStorage.getItem("token");
-    const existingRole = localStorage.getItem("userRole");
+    addValidation(emailEl, validators.email, errEmail);
+    addValidation(passEl, validators.password, errPass);
 
-    if (existingToken && existingRole) {
-      if (existingRole === "admin") {
-        window.location.href = "admin.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-      return;
-    }
-
-    form.addEventListener("submit", async function (e) {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      showMessage("");
 
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
+      const vEmail = validators.email(emailEl.value);
+      const vPass = validators.password(passEl.value);
 
-      if (!email || !password) {
-        showMessage("Vul je e-mailadres en wachtwoord in.", true);
+      if (vEmail !== true || vPass !== true) {
+        if (vEmail !== true) errEmail.textContent = vEmail;
+        if (vPass !== true) errPass.textContent = vPass;
+        showMessage("❌ Controleer de invoer.", true);
         return;
       }
 
-      setLoading(true);
-      showMessage("", false);
-
       try {
+        showMessage("⏳ Inloggen...", false);
+
         const res = await fetch(LOGIN_ENDPOINT, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: emailEl.value.trim(),
+            password: passEl.value.trim()
+          })
         });
 
-        const data = await res.json().catch(function () {
-          return {};
-        });
+        const json = await res.json();
 
-        if (!res.ok || !data || !data.token) {
-          const msg =
-            (data && (data.message || data.error)) ||
-            "Inloggen mislukt. Controleer je gegevens.";
-          throw new Error(msg);
+        if (!res.ok || !json.token) {
+          throw new Error(json.error || "Login mislukt");
         }
 
-        const role = data.role || "company";
-        const companyId = data.companyId || null;
-        const emailFromServer = data.email || email;
+        localStorage.setItem("token", json.token);
+        window.location.href = "dashboard.html";
 
-        try {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem("userRole", role);
-          localStorage.setItem("userEmail", emailFromServer);
-          if (companyId) {
-            localStorage.setItem("companyId", String(companyId));
-          }
-        } catch (storageErr) {
-          console.warn(
-            "[login] Kon gegevens niet opslaan in localStorage:",
-            storageErr
-          );
-        }
-
-        showMessage("Succesvol ingelogd, een moment...", false);
-
-        if (role === "admin") {
-          window.location.href = "admin.html";
-        } else {
-          window.location.href = "dashboard.html";
-        }
       } catch (err) {
-        console.error("[login] Fout bij inloggen:", err);
-        showMessage(
-          err.message || "Inloggen mislukt. Probeer het later opnieuw.",
-          true
-        );
-      } finally {
-        setLoading(false);
+        console.error("[login] fout:", err);
+        showMessage("❌ Ongeldige inloggegevens.", true);
       }
     });
   });
