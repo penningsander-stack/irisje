@@ -8,11 +8,21 @@
   <meta name="description" content="Meld jouw bedrijf gratis aan bij Irisje.nl en ontvang aanvragen van klanten in jouw regio." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <!-- Premium lichte stijl (v20251206) -->
   <link rel="stylesheet" href="style.css?v=20251206" />
+
+  <!-- Fix: schakel browser invalid-styling volledig uit -->
+  <style>
+    input:invalid,
+    select:invalid,
+    textarea:invalid {
+      box-shadow: none !important;
+      outline: none !important;
+    }
+  </style>
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
+
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
@@ -32,64 +42,51 @@
       </nav>
 
       <div class="flex items-center space-x-2">
-        <a href="login.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Inloggen
-        </a>
-        <a href="register.html" class="inline-flex btn-primary btn-xs">
-          Gratis aanmelden
-        </a>
+        <a href="login.html" class="hidden sm:inline-flex btn-ghost btn-xs">Inloggen</a>
+        <a href="register.html" class="inline-flex btn-primary btn-xs">Gratis aanmelden</a>
       </div>
     </div>
   </header>
 
   <!-- MAIN -->
   <main class="page-shell">
+
     <!-- Titelbalk -->
     <section class="page-header-bar">
       <div class="page-title-block">
-        <h1>
-          <span>🏷️</span>
-          <span>Account aanmaken voor jouw bedrijf</span>
-        </h1>
-        <p>
-          Meld je bedrijf gratis aan, beheer je profiel en ontvang aanvragen rechtstreeks via Irisje.nl.
-        </p>
+        <h1>🏷️ Account aanmaken voor jouw bedrijf</h1>
+        <p>Meld je bedrijf gratis aan, beheer je profiel en ontvang aanvragen rechtstreeks via Irisje.nl.</p>
       </div>
+
       <div class="page-meta">
         Heb je al een account?
         <a href="login.html" class="link-inline">Log hier in</a>.
       </div>
     </section>
 
-    <!-- Hoofdcontent: uitleg + formulier -->
+    <!-- Content -->
     <section>
       <div class="flex flex-col md:flex-row gap-6">
-        <!-- Linkerkant: voordelen / uitleg -->
+
+        <!-- VOORDELEN BLOK -->
         <div class="surface-card flex-1">
           <div class="mb-4">
             <span class="badge-soft">Voor bedrijven</span>
           </div>
+
           <h2 class="text-lg font-semibold text-gray-800 mb-2">
             Bereik klanten in jouw regio, zonder gedoe
           </h2>
+
           <p class="text-sm text-gray-600 mb-4 leading-relaxed">
             Met een gratis bedrijfsaccount kun je jouw profiel beheren, ontvangen aanvragen bekijken,
             reageren op reviews en inzicht krijgen in je prestaties. Jij bepaalt zelf welke aanvragen je aanneemt.
           </p>
 
           <ul class="hero-bullets space-y-2 mb-5">
-            <li>
-              <span>✓</span>
-              <span>Ontvang gerichte aanvragen van klanten in jouw werkgebied.</span>
-            </li>
-            <li>
-              <span>✓</span>
-              <span>Beheer je bedrijfsgegevens, openingstijden en diensten.</span>
-            </li>
-            <li>
-              <span>✓</span>
-              <span>Bekijk en reageer op reviews van klanten.</span>
-            </li>
+            <li><span>✓</span> <span>Ontvang gerichte aanvragen van klanten in jouw werkgebied.</span></li>
+            <li><span>✓</span> <span>Beheer je bedrijfsgegevens, openingstijden en diensten.</span></li>
+            <li><span>✓</span> <span>Bekijk en reageer op reviews van klanten.</span></li>
           </ul>
 
           <p class="text-xs text-slate-500 leading-relaxed">
@@ -98,101 +95,67 @@
           </p>
         </div>
 
-        <!-- Rechterkant: formulier -->
+        <!-- FORMULIER BLOK -->
         <div class="surface-card flex-1">
           <form id="registerForm" class="space-y-4" novalidate>
+
             <div>
               <label for="companyName" class="filter-label">Bedrijfsnaam</label>
-              <input
-                id="companyName"
-                name="companyName"
-                type="text"
-                class="form-input"
-                placeholder="Bijv. Schildersbedrijf de Vries"
-                autocomplete="organization"
-                required
-              />
+              <input id="companyName" name="companyName" type="text" class="form-input"
+                placeholder="Bijv. Schildersbedrijf de Vries" autocomplete="organization" />
+              <p id="errCompany" class="error-text hidden"></p>
             </div>
 
             <div>
               <label for="email" class="filter-label">E-mailadres</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                class="form-input"
-                placeholder="zakelijk e-mailadres"
-                autocomplete="email"
-                required
-              />
+              <input id="email" name="email" type="email" class="form-input"
+                placeholder="zakelijk e-mailadres" autocomplete="email" />
+              <p id="errEmail" class="error-text hidden"></p>
             </div>
 
             <div>
               <label for="password" class="filter-label">Wachtwoord</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                class="form-input"
-                placeholder="Minimaal 8 tekens"
-                autocomplete="new-password"
-                required
-              />
-              <p id="passwordHint" class="text-xs text-gray-500 mt-1">
-                Gebruik minimaal 8 tekens, bij voorkeur met een combinatie van letters en cijfers.
-              </p>
+              <input id="password" name="password" type="password" class="form-input"
+                placeholder="Minimaal 8 tekens" autocomplete="new-password" />
+              <p id="errPassword" class="error-text hidden"></p>
             </div>
 
             <div>
               <label for="confirmPassword" class="filter-label">Herhaal wachtwoord</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                class="form-input"
-                placeholder="Herhaal je wachtwoord"
-                autocomplete="new-password"
-                required
-              />
+              <input id="confirmPassword" name="confirmPassword" type="password" class="form-input"
+                placeholder="Herhaal je wachtwoord" autocomplete="new-password" />
+              <p id="errConfirm" class="error-text hidden"></p>
             </div>
 
             <div class="flex items-start gap-2 text-xs text-gray-600">
-              <input
-                id="terms"
-                type="checkbox"
-                class="w-4 h-4 mt-1"
-                required
-              />
+              <input id="terms" type="checkbox" class="w-4 h-4 mt-1" />
               <label for="terms">
-                Ik ga akkoord met de voorwaarden van Irisje.nl en verklaar dat ik bevoegd ben om dit
-                bedrijf aan te melden.
+                Ik ga akkoord met de voorwaarden van Irisje.nl en verklaar dat ik bevoegd ben dit bedrijf aan te melden.
               </label>
             </div>
+            <p id="errTerms" class="error-text hidden"></p>
 
             <p id="registerMessage" class="rq-status"></p>
 
-            <div class="flex items-center justify-between gap-3">
-              <button type="submit" class="btn-primary w-full">
-                Account aanmaken
-              </button>
-            </div>
+            <button type="submit" class="btn-primary w-full">Account aanmaken</button>
 
             <p class="text-xs text-slate-500 mt-2">
               Al een account?
               <a href="login.html" class="link-inline">Log hier in</a>.
             </p>
+
           </form>
         </div>
+
       </div>
     </section>
+
   </main>
 
   <!-- FOOTER -->
   <footer class="footer-shell card-fade-in">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
-      </p>
+      <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
         <a href="results.html" class="link-inline">Bedrijven</a>
         <a href="login.html" class="link-inline">Voor bedrijven</a>
@@ -202,12 +165,7 @@
   </footer>
 
   <!-- SCRIPT -->
-  <script src="js/register.js?v=20251101"></script>
-  <script>
-    // Kleine fade-in safeguard (optioneel, zelfde als op andere pagina's)
-    document.addEventListener("DOMContentLoaded", () => {
-      document.body.classList.add("fade-seq");
-    });
-  </script>
+  <script src="js/register.js?v=20251206"></script>
+
 </body>
 </html>
