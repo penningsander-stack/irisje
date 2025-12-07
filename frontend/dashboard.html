@@ -5,163 +5,187 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
-  <meta name="description" content="Beheer je bedrijfsprofiel, aanvragen en reviews op Irisje.nl." />
+  <meta name="description" content="Beheer je bedrijfsprofiel, aanvragen, statistieken en reviews op Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251114" />
+  <link rel="stylesheet" href="style.css?v=20251206" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
   <!-- HEADER -->
-  <header class="bg-indigo-600 text-white py-4 shadow-md">
-    <div class="max-w-6xl mx-auto flex justify-between items-center px-4">
-      <h1 class="text-lg font-semibold flex items-center gap-2">
-        📊 <span>Bedrijfsdashboard</span>
-      </h1>
-      <button
-        id="logoutBtn"
-        class="bg-white text-indigo-700 font-medium rounded-lg px-4 py-2 shadow-sm hover:bg-indigo-50 transition"
-      >
-        Uitloggen
-      </button>
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
+          I
+        </span>
+        <div class="flex flex-col leading-tight">
+          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Bedrijfsdashboard</span>
+        </div>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">Naar bedrijven</a>
+        <button
+          id="logoutBtn"
+          class="inline-flex items-center btn-primary btn-xs"
+          type="button"
+        >
+          Uitloggen
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- LOADING -->
+  <!-- LOADING BAR -->
   <div
     id="loadingIndicator"
-    class="hidden text-center py-3 bg-indigo-100 text-indigo-700 text-sm font-medium animate-pulse fixed top-16 left-0 right-0 shadow-sm z-40"
+    class="hidden text-center py-3 bg-indigo-50 text-indigo-700 text-xs font-medium animate-pulse shadow-sm z-30"
   >
     ⏳ Dashboard wordt geladen...
   </div>
 
   <!-- MAIN -->
-  <main class="flex-1 max-w-6xl mx-auto px-4 py-10 space-y-10">
+  <main class="page-shell">
 
-    <!-- 🧾 BEDRIJFSPROFIEL -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
+    <!-- Titelbalk -->
+    <section class="page-header-bar">
+      <div class="page-title-block">
+        <h1>📊 Bedrijfsdashboard</h1>
+        <p>Beheer je bedrijfsprofiel, leads, statistieken en reviews op één plek.</p>
+      </div>
+    </section>
+
+    <!-- BEDRIJFSPROFIEL -->
+    <section class="surface-card">
+      <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-2">
         🧾 Bedrijfsprofiel
       </h2>
-      <p class="text-gray-500 text-sm mb-6">
-        Beheer hier je bedrijfsgegevens, regio’s, specialisaties en erkenningen. Deze informatie is zichtbaar op je bedrijfsprofielpagina.
+      <p class="text-xs text-slate-500 mb-5">
+        Pas hier je bedrijfsgegevens, regio’s, specialisaties en erkenningen aan. Deze informatie is zichtbaar op je bedrijfsprofielpagina.
       </p>
 
       <form id="companyForm" class="space-y-6">
         <!-- Basisgegevens -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijfsnaam</label>
-            <input type="text" id="companyName" class="w-full border rounded-lg p-2" placeholder="Bijv. Penning Rechtsbijstand" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Bedrijfsnaam</label>
+            <input type="text" id="companyName" class="form-input" placeholder="Bijv. Penning Rechtsbijstand" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Stad</label>
-            <input type="text" id="companyCity" class="w-full border rounded-lg p-2" placeholder="Bijv. Burgh-Haamstede" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Stad</label>
+            <input type="text" id="companyCity" class="form-input" placeholder="Bijv. Burgh-Haamstede" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Telefoon</label>
-            <input type="text" id="companyPhone" class="w-full border rounded-lg p-2" placeholder="Bijv. 0111-123456" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Telefoon</label>
+            <input type="text" id="companyPhone" class="form-input" placeholder="Bijv. 0111-123456" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Website</label>
-            <input type="url" id="companyWebsite" class="w-full border rounded-lg p-2" placeholder="https://..." />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Website</label>
+            <input type="url" id="companyWebsite" class="form-input" placeholder="https://..." />
           </div>
         </div>
 
         <!-- Specialisaties & regio’s -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Specialisaties</label>
-            <select id="companySpecialties" multiple class="w-full border rounded-lg p-2 h-32"></select>
-            <p class="text-xs text-gray-500 mt-1">Houd Ctrl (of Cmd) ingedrukt om meerdere te selecteren.</p>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Specialisaties</label>
+            <select id="companySpecialties" multiple class="form-input h-32"></select>
+            <p class="text-[11px] text-slate-400 mt-1">Houd Ctrl (of Cmd) ingedrukt om meerdere opties te selecteren.</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Regio’s waarin actief</label>
-            <input type="text" id="companyRegions" class="w-full border rounded-lg p-2" placeholder="Bijv. Zeeland, Zuid-Holland" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Regio’s waarin actief</label>
+            <input type="text" id="companyRegions" class="form-input" placeholder="Bijv. Zeeland, Zuid-Holland" />
           </div>
         </div>
 
         <!-- Certificeringen & talen -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Certificeringen</label>
-            <select id="companyCertifications" multiple class="w-full border rounded-lg p-2 h-28"></select>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Certificeringen</label>
+            <select id="companyCertifications" multiple class="form-input h-28"></select>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Talen</label>
-            <select id="companyLanguages" multiple class="w-full border rounded-lg p-2 h-28"></select>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Talen</label>
+            <select id="companyLanguages" multiple class="form-input h-28"></select>
           </div>
         </div>
 
         <!-- Overige info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Lidmaatschappen</label>
-            <input type="text" id="companyMemberships" class="w-full border rounded-lg p-2" placeholder="Bijv. Techniek Nederland, BOVAG..." />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Lidmaatschappen</label>
+            <input type="text" id="companyMemberships" class="form-input" placeholder="Bijv. Techniek Nederland, BOVAG..." />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Erkenningen</label>
-            <input type="text" id="companyRecognitions" class="w-full border rounded-lg p-2" placeholder="Bijv. Erkend installateur" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Erkenningen</label>
+            <input type="text" id="companyRecognitions" class="form-input" placeholder="Bijv. Erkend installateur" />
           </div>
         </div>
 
         <!-- Landelijk actief + beschikbaarheid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="companyWorksNationwide" class="h-4 w-4 text-indigo-600 border-gray-300 rounded" />
-            <label for="companyWorksNationwide" class="text-sm font-medium text-gray-700">Landelijk actief</label>
+            <input type="checkbox" id="companyWorksNationwide" class="w-4 h-4 rounded border-slate-300" />
+            <label for="companyWorksNationwide" class="text-sm font-medium text-slate-700">Landelijk actief</label>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Beschikbaarheid</label>
-            <input type="text" id="companyAvailability" class="w-full border rounded-lg p-2" placeholder="Bijv. 24/7 of alleen werkdagen" />
+            <label class="block text-sm font-medium text-slate-700 mb-1">Beschikbaarheid</label>
+            <input type="text" id="companyAvailability" class="form-input" placeholder="Bijv. 24/7 of alleen werkdagen" />
           </div>
         </div>
 
         <!-- Opslaan -->
-        <div class="pt-4">
+        <div class="pt-2 flex items-center gap-3">
           <button
             id="saveCompanyBtn"
             type="button"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg px-6 py-2 shadow-sm transition"
+            class="btn-primary btn-sm"
           >
             💾 Gegevens opslaan
           </button>
-          <span id="saveMessage" class="ml-3 text-sm text-gray-500 hidden">Opgeslagen ✅</span>
+          <span id="saveMessage" class="text-xs text-slate-500 hidden">Opgeslagen ✅</span>
         </div>
       </form>
     </section>
 
-    <!-- 📈 OVERZICHT -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">📈 Overzicht</h2>
-      <p class="text-gray-500 mb-6 text-sm">Je ziet hier het totaal aantal aanvragen en hoe veel daarvan zijn opgevolgd.</p>
+    <!-- OVERZICHT KAARTEN -->
+    <section class="surface-card">
+      <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-2">
+        📈 Overzicht
+      </h2>
+      <p class="text-xs text-slate-500 mb-5">
+        Een samenvatting van het totaal aantal aanvragen en hoe veel daarvan zijn opgevolgd.
+      </p>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-gray-50 p-4 rounded-xl border text-center">
+        <div class="surface-white text-center py-4 rounded-xl">
           <div id="total" class="text-2xl font-bold text-indigo-700">0</div>
-          <div class="text-gray-600 mt-1">Totaal ontvangen</div>
+          <div class="text-xs text-slate-500 mt-1">Totaal ontvangen</div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-xl border text-center">
-          <div id="accepted" class="text-2xl font-bold text-green-700">0</div>
-          <div class="text-gray-600 mt-1">Geaccepteerd</div>
+        <div class="surface-white text-center py-4 rounded-xl">
+          <div id="accepted" class="text-2xl font-bold text-emerald-700">0</div>
+          <div class="text-xs text-slate-500 mt-1">Geaccepteerd</div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-xl border text-center">
-          <div id="rejected" class="text-2xl font-bold text-red-600">0</div>
-          <div class="text-gray-600 mt-1">Afgewezen</div>
+        <div class="surface-white text-center py-4 rounded-xl">
+          <div id="rejected" class="text-2xl font-bold text-rose-700">0</div>
+          <div class="text-xs text-slate-500 mt-1">Afgewezen</div>
         </div>
-        <div class="bg-gray-50 p-4 rounded-xl border text-center">
-          <div id="followed-up" class="text-2xl font-bold text-blue-700">0</div>
-          <div class="text-gray-600 mt-1">Opgevolgd</div>
+        <div class="surface-white text-center py-4 rounded-xl">
+          <div id="followed-up" class="text-2xl font-bold text-sky-700">0</div>
+          <div class="text-xs text-slate-500 mt-1">Opgevolgd</div>
         </div>
       </div>
     </section>
 
-    <!-- 📊 GRAFIEKEN -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
+    <!-- GRAFIEKEN -->
+    <section class="surface-card">
       <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
-        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📊 Statistieken</h2>
-        <select id="periodFilter" class="border border-gray-200 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">📊 Statistieken</h2>
+        <select id="periodFilter" class="form-input max-w-[180px] py-1.5 text-xs">
           <option value="all">Alle maanden</option>
           <option value="6m">Laatste 6 maanden</option>
           <option value="3m">Laatste 3 maanden</option>
@@ -170,32 +194,32 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-gray-50 border rounded-xl p-4">
-          <h3 class="text-sm font-medium text-gray-700 mb-3">Aanvragen per maand</h3>
+        <div class="surface-white rounded-xl p-4">
+          <h3 class="text-xs font-medium text-slate-700 mb-3">Aanvragen per maand</h3>
           <canvas id="monthChart" height="180"></canvas>
         </div>
-        <div class="bg-gray-50 border rounded-xl p-4">
-          <h3 class="text-sm font-medium text-gray-700 mb-3">Verdeling per status</h3>
+        <div class="surface-white rounded-xl p-4">
+          <h3 class="text-xs font-medium text-slate-700 mb-3">Verdeling per status</h3>
           <canvas id="statusChart" height="180"></canvas>
         </div>
-        <div class="bg-gray-50 border rounded-xl p-4 lg:col-span-2">
-          <h3 class="text-sm font-medium text-gray-700 mb-3">Acceptatiepercentage per maand</h3>
+        <div class="surface-white rounded-xl p-4 lg:col-span-2">
+          <h3 class="text-xs font-medium text-slate-700 mb-3">Acceptatiepercentage per maand</h3>
           <canvas id="conversionChart" height="180"></canvas>
         </div>
       </div>
     </section>
 
-    <!-- 📬 AANVRAGEN -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+    <!-- AANVRAGEN -->
+    <section class="surface-card">
+      <div class="flex flex-wrap justify-between items-center mb-4 gap-3">
         <div>
-          <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📬 Aanvragen</h2>
-          <p class="text-gray-500 text-sm">Hier zie je alle leads die via Irisje.nl binnenkomen.</p>
+          <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">📬 Aanvragen</h2>
+          <p class="text-xs text-slate-500">Alle leads die via Irisje.nl binnenkomen.</p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 text-sm">
-          <label for="statusFilter" class="text-gray-600">Status:</label>
-          <select id="statusFilter" class="border rounded-lg py-1 px-2">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <label for="statusFilter" class="text-slate-600">Status:</label>
+          <select id="statusFilter" class="form-input py-1 px-2 max-w-[150px]">
             <option value="ALLE">Alle</option>
             <option value="Nieuw">Nieuw</option>
             <option value="Geaccepteerd">Geaccepteerd</option>
@@ -203,22 +227,22 @@
             <option value="Opgevolgd">Opgevolgd</option>
           </select>
 
-          <input id="searchInput" type="text" placeholder="Zoek..." class="border rounded-lg py-1 px-2 w-40" />
-          <select id="sortSelect" class="border rounded-lg py-1 px-2">
+          <input id="searchInput" type="text" placeholder="Zoek..." class="form-input py-1 px-2 w-40" />
+          <select id="sortSelect" class="form-input py-1 px-2 max-w-[150px]">
             <option value="date_desc">Nieuwste eerst</option>
             <option value="date_asc">Oudste eerst</option>
             <option value="name_asc">Naam (A-Z)</option>
             <option value="name_desc">Naam (Z-A)</option>
           </select>
-          <button id="exportCsvBtn" class="text-indigo-600 hover:text-indigo-800 font-medium" type="button">
+          <button id="exportCsvBtn" class="link-inline" type="button">
             ⬇️ Exporteren
           </button>
         </div>
       </div>
 
-      <div class="overflow-x-auto border rounded-lg">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+      <div class="overflow-x-auto border border-slate-100 rounded-xl">
+        <table class="min-w-full text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 text-left">Naam</th>
               <th class="p-3 text-left">E-mail</th>
@@ -228,19 +252,21 @@
             </tr>
           </thead>
           <tbody id="request-table-body">
-            <tr><td colspan="5" class="text-center text-gray-400 p-4">Aanvragen worden geladen...</td></tr>
+            <tr><td colspan="5" class="text-center text-slate-400 p-4">Aanvragen worden geladen...</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- ⭐ REVIEWS -->
-    <section class="bg-white shadow-md border border-gray-100 p-6 rounded-2xl">
-      <h2 class="text-lg font-semibold text-gray-800 mb-4">⭐ Reviews</h2>
-      <p class="text-gray-500 text-sm mb-4">Bedrijven kunnen reviews alleen melden; een beheerder beoordeelt de melding.</p>
-      <div class="overflow-x-auto border rounded-lg">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wide">
+    <!-- REVIEWS -->
+    <section class="surface-card">
+      <h2 class="text-lg font-semibold text-slate-800 mb-3">⭐ Reviews</h2>
+      <p class="text-xs text-slate-500 mb-3">
+        Reviews kunnen alleen worden gemeld; een beheerder beoordeelt de melding en neemt indien nodig actie.
+      </p>
+      <div class="overflow-x-auto border border-slate-100 rounded-xl">
+        <table class="min-w-full text-xs">
+          <thead class="bg-slate-50 text-slate-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 text-left">Naam</th>
               <th class="p-3 text-left">Beoordeling</th>
@@ -250,19 +276,29 @@
             </tr>
           </thead>
           <tbody id="review-table-body">
-            <tr><td colspan="5" class="text-center text-gray-400 p-4">Reviews worden geladen...</td></tr>
+            <tr><td colspan="5" class="text-center text-slate-400 p-4">Reviews worden geladen...</td></tr>
           </tbody>
         </table>
       </div>
     </section>
+
   </main>
 
   <!-- FOOTER -->
-  <footer class="text-center text-sm text-gray-500 py-6 border-t bg-gray-100">
-    © 2025 Irisje.nl – Alle rechten voorbehouden
+  <footer class="footer-shell card-fade-in mt-auto">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-[11px] text-slate-400">
+        © 2025 Irisje.nl – Alle rechten voorbehouden
+      </p>
+      <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
+        <a href="results.html" class="link-inline">Bedrijven</a>
+        <a href="login.html" class="link-inline">Voor bedrijven</a>
+        <a href="error.html" class="link-inline">Contact</a>
+      </div>
+    </div>
   </footer>
 
-  <!-- ✅ Zorgt dat de Uitloggen-knop ALTIJD werkt -->
+  <!-- Uitloggen fallback (blijft werken) -->
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const logoutBtn = document.getElementById("logoutBtn");
@@ -279,7 +315,7 @@
     });
   </script>
 
-  <!-- ✅ Laadt de nieuwste dashboard-logica (admin redirect + companyId-fix) -->
+  <!-- Dashboard logica -->
   <script src="js/dashboard.js?v=20251114"></script>
 </body>
 </html>
