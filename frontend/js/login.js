@@ -1,89 +1,130 @@
 // frontend/js/login.js
-// v20251118-JWT-LOCALSTORAGE
+// v20251206-AUTH-CLEAN
+//
+// Verantwoordelijk voor:
+// - Inlogformulier afhandelen
+// - Opslaan van token, rol en e-mail in localStorage
+// - Doorsturen naar dashboard of admin als iemand al is ingelogd
 
-const API_BASE = "https://irisje-backend.onrender.com/api";
+(function () {
+  const API_BASE = "https://irisje-backend.onrender.com/api";
+  const LOGIN_ENDPOINT = API_BASE + "/auth/login";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("loginForm");
-  const msg = document.getElementById("loginMessage");
-
-  // 🔄 Bij openen van de loginpagina alle client-side sessiegegevens opruimen
-  try {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("companyId");
-    localStorage.removeItem("userEmail");
-    sessionStorage.clear();
-  } catch (e) {
-    console.warn("Kon local/session storage niet legen:", e);
+  function $(id) {
+    return document.getElementById(id);
   }
 
-  if (!form) return;
+  function showMessage(msg, isError) {
+    const box = $("loginMessage");
+    if (!box) return;
+    box.textContent = msg || "";
+    box.className =
+      "text-center text-sm mt-2 " +
+      (isError ? "text-red-600" : "text-green-600");
+  }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+  function setLoading(isLoading) {
+    const form = $("loginForm");
+    if (!form) return;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+    submitBtn.disabled = isLoading;
+    submitBtn.textContent = isLoading
+      ? "Bezig met inloggen..."
+      : "Inloggen";
+  }
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = $("loginForm");
+    const emailInput = $("email");
+    const passwordInput = $("password");
 
-    if (!email || !password) {
-      msg.textContent = "❌ Vul zowel e-mail als wachtwoord in.";
-      msg.className = "text-red-600 text-center text-sm";
+    if (!form || !emailInput || !passwordInput) {
+      console.warn("[login] Ontbrekende elementen in login.html");
       return;
     }
 
-    msg.textContent = "⏳ Bezig met inloggen...";
-    msg.className = "text-gray-500 text-center text-sm";
+    // Als er al een sessie lijkt te zijn → direct doorsturen
+    const existingToken = localStorage.getItem("token");
+    const existingRole = localStorage.getItem("userRole");
 
-    try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // credentials kunnen nu uit, we gebruiken geen cookies meer:
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok || !data.token) {
-        throw new Error(data.error || "Ongeldige inloggegevens.");
-      }
-
-      const role = data.role || "company";
-      const companyId = data.companyId || null;
-
-      // 🧹 Eerst alles opruimen
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {
-        console.warn("Kon storage niet wissen:", e);
-      }
-
-      // 🔑 JWT en rol opslaan
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userEmail", email);
-      localStorage.setItem("userRole", role);
-      if (companyId) {
-        localStorage.setItem("companyId", companyId);
-      }
-
-      msg.textContent = "✅ Ingelogd! Even geduld...";
-      msg.className = "text-green-600 text-center text-sm";
-
-      // Admin → admin.html, rest → dashboard.html
-      if (role === "admin" || email === "admin@irisje.nl") {
-        return setTimeout(() => {
-          window.location.href = "admin.html";
-        }, 600);
-      }
-
-      setTimeout(() => {
+    if (existingToken && existingRole) {
+      if (existingRole === "admin") {
+        window.location.href = "admin.html";
+      } else {
         window.location.href = "dashboard.html";
-      }, 600);
-    } catch (err) {
-      console.error("❌ Login error:", err);
-      msg.textContent = "❌ " + (err.message || "Er ging iets mis.");
-      msg.className = "text-red-600 text-center text-sm";
+      }
+      return;
     }
+
+    form.addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        showMessage("Vul je e-mailadres en wachtwoord in.", true);
+        return;
+      }
+
+      setLoading(true);
+      showMessage("", false);
+
+      try {
+        const res = await fetch(LOGIN_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await res.json().catch(function () {
+          return {};
+        });
+
+        if (!res.ok || !data || !data.token) {
+          const msg =
+            (data && (data.message || data.error)) ||
+            "Inloggen mislukt. Controleer je gegevens.";
+          throw new Error(msg);
+        }
+
+        const role = data.role || "company";
+        const companyId = data.companyId || null;
+        const emailFromServer = data.email || email;
+
+        try {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("userRole", role);
+          localStorage.setItem("userEmail", emailFromServer);
+          if (companyId) {
+            localStorage.setItem("companyId", String(companyId));
+          }
+        } catch (storageErr) {
+          console.warn(
+            "[login] Kon gegevens niet opslaan in localStorage:",
+            storageErr
+          );
+        }
+
+        showMessage("Succesvol ingelogd, een moment...", false);
+
+        if (role === "admin") {
+          window.location.href = "admin.html";
+        } else {
+          window.location.href = "dashboard.html";
+        }
+      } catch (err) {
+        console.error("[login] Fout bij inloggen:", err);
+        showMessage(
+          err.message || "Inloggen mislukt. Probeer het later opnieuw.",
+          true
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
   });
-});
+})();
