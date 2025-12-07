@@ -9,11 +9,21 @@
   <meta name="theme-color" content="#4F46E5" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="stylesheet" href="style.css?v=20251206" />
+
+  <!-- Fix: schakel browser invalid-styling uit -->
+  <style>
+    input:invalid,
+    textarea:invalid,
+    select:invalid {
+      box-shadow: none !important;
+      outline: none !important;
+    }
+  </style>
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- HEADER (zelfde als index & results) -->
+  <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
@@ -38,10 +48,9 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
+  <!-- MAIN -->
   <main class="page-shell">
 
-    <!-- Titelblok -->
     <section class="page-header-bar">
       <div class="page-title-block">
         <h1>🔐 Inloggen</h1>
@@ -49,20 +58,22 @@
       </div>
     </section>
 
-    <!-- Login-kaart -->
+    <!-- Login card -->
     <section>
       <div class="surface-card max-w-md mx-auto">
+
+        <!-- IMPORTANT: novalidate + geen required = voorkomt Chrome auto errors -->
         <form id="loginForm" class="flex flex-col gap-4" novalidate>
 
           <div class="form-group">
             <label for="email">E-mailadres</label>
-            <input id="email" type="email" class="form-input" placeholder="jouw@email.nl" required />
+            <input id="email" type="email" class="form-input" placeholder="jouw@email.nl" />
             <p id="errEmail" class="error-text hidden"></p>
           </div>
 
           <div class="form-group">
             <label for="password">Wachtwoord</label>
-            <input id="password" type="password" class="form-input" placeholder="Je wachtwoord" required />
+            <input id="password" type="password" class="form-input" placeholder="Je wachtwoord" />
             <p id="errPassword" class="error-text hidden"></p>
           </div>
 
@@ -75,7 +86,7 @@
           </div>
 
           <div class="text-center text-xs text-slate-400 mt-3">
-            Nog geen account?  
+            Nog geen account?
             <a href="register.html" class="link-inline">Registreer je bedrijf</a>
           </div>
 
