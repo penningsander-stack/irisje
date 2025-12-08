@@ -1,153 +1,61 @@
-// backend/routes/companies.js
+// backend/routes/companies.js – FIXED & OPTIMIZED (v20251208)
+
 const express = require("express");
 const router = express.Router();
+const Company = require("../models/company");
 
-const Company = require("../models/company"); // ← correct
-const auth = require("../middleware/auth");
-
-/* ============================================================
-   Helpers
-============================================================ */
-function ensure_array(v) {
-  if (Array.isArray(v)) return v;
-  if (typeof v === "string")
-    return v.split(",").map(s => s.trim()).filter(Boolean);
-  return [];
-}
-
-function normalizeMultiFields(doc) {
-  const out = { ...doc };
-  const fields = [
-    "specialties",
-    "regions",
-    "certifications",
-    "recognitions",
-    "memberships",
-    "languages",
-    "services",
-    "tags",
-    "categories"
-  ];
-  fields.forEach(f => {
-    if (!Array.isArray(out[f])) out[f] = [];
-  });
-  return out;
-}
-
-/* ============================================================
-   1. /api/companies/lists
-============================================================ */
-router.get("/lists", (req, res) => {
-  res.json({
-    ok: true,
-    specialties: [],
-    certifications: [],
-    languages: []
-  });
-});
-
-/* ============================================================
-   2. ADMIN – /api/companies/all
-============================================================ */
-router.get("/all", async (req, res) => {
-  try {
-    let companies = await Company.find({})
-      .populate("owner", "email")
-      .lean();
-
-    companies = companies.map(c => ({
-      _id: c._id,
-      name: c.name || "(naam onbekend)",
-      slug: c.slug || "",
-      email: c.email || c.owner?.email || "-",
-      isVerified: !!c.isVerified,
-      reviewCount: c.reviewCount || 0
-    }));
-
-    res.json(companies);
-  } catch (err) {
-    console.error("❌ /companies/all fout:", err);
-    res.status(500).json({ ok: false, error: "serverfout" });
-  }
-});
-
-/* ============================================================
-   3. ZOEKEN – /api/companies/search
-   FIXED → zoekt nu in specialties, services, tags, categories, city
-============================================================ */
+// GET /api/companies/search
 router.get("/search", async (req, res) => {
   try {
-    const { category = "", city = "" } = req.query;
+    const { q = "", category = "", city = "" } = req.query;
 
     const filters = {};
 
-    if (category) {
-      const regex = new RegExp(category, "i");
+    // Zoekwoord (q) in meerdere bestaande velden
+    if (q) {
+      const regex = new RegExp(q, "i");
       filters.$or = [
+        { name: regex },
+        { description: regex },
         { specialties: regex },
-        { services: regex },
-        { tags: regex },
+        { specializations: regex },
         { categories: regex }
       ];
     }
 
+    // Filter: categorie
+    if (category) {
+      filters.categories = { $regex: new RegExp(category, "i") };
+    }
+
+    // Filter: stad
     if (city) {
       filters.city = { $regex: new RegExp(city, "i") };
     }
 
-    let items = await Company.find(filters)
-      .sort({ avgRating: -1, reviewCount: -1 })
-      .lean();
+    const companies = await Company.find(filters).lean();
 
-    items = items.map(c => normalizeMultiFields(c));
+    res.json({
+      ok: true,
+      count: companies.length,
+      companies
+    });
 
-    res.json({ ok: true, items });
   } catch (err) {
-    console.error("❌ fout bij zoeken:", err);
+    console.error("SEARCH ERROR:", err);
     res.status(500).json({ ok: false, error: "serverfout" });
   }
 });
 
-/* ============================================================
-   4. GET BY SLUG – /api/companies/slug/:slug
-============================================================ */
+// GET /api/companies/slug/:slug
 router.get("/slug/:slug", async (req, res) => {
   try {
-    const item = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!item) return res.status(404).json({ ok: false, error: "not found" });
+    const company = await Company.findOne({ slug: req.params.slug }).lean();
+    if (!company) return res.status(404).json({ ok: false, error: "Niet gevonden" });
 
-    res.json(normalizeMultiFields(item));
+    res.json({ ok: true, company });
   } catch (err) {
-    console.error("❌ slug fout:", err);
-    res.status(500).json({ ok: false, error: "serverfout" });
-  }
-});
-
-/* ============================================================
-   5. PUBLIC INDEX – /api/companies/
-============================================================ */
-router.get("/", async (req, res) => {
-  try {
-    let items = await Company.find({}).lean();
-    items = items.map(c => normalizeMultiFields(c));
-    res.json({ ok: true, total: items.length, items });
-  } catch (err) {
-    console.error("❌ fout bij ophalen bedrijven:", err);
-    res.status(500).json({ ok: false, error: "serverfout" });
-  }
-});
-
-/* ============================================================
-   6. GET /api/companies/:id
-============================================================ */
-router.get("/:id", async (req, res) => {
-  try {
-    const item = await Company.findById(req.params.id).lean();
-    if (!item) return res.status(404).json({ ok: false, error: "not found" });
-
-    res.json(normalizeMultiFields(item));
-  } catch (err) {
-    console.error("❌ ID fout:", err);
+    console.error("COMPANY LOOKUP ERROR:", err);
     res.status(500).json({ ok: false, error: "serverfout" });
   }
 });
