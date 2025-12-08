@@ -238,3 +238,4 @@ addLog(`server gestart op poort ${port}`, "info");
 app.listen(port, () => {
   addLog(`server actief (${process.env.NODE_ENV || "development"})`, "info");
 });
+
