@@ -34,3 +34,4 @@ router.get("/popular-categories", async (req, res) => {
 });
 
 module.exports = router;
+
