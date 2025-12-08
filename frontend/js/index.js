@@ -1,5 +1,5 @@
 // frontend/js/index.js
-// v20251208-PREMIUM-HOME
+// v20251208-PREMIUM-HOME-FIX
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -8,17 +8,17 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 const CATEGORY_ICONS = {
-  "Schoonmaak": "🧹",
-  "Dierenverzorging": "🐾",
-  "Hovenier": "🌳",
-  "Elektricien": "🔌",
-  "Schilder": "🎨",
+  Schoonmaak: "🧹",
+  Dierenverzorging: "🐾",
+  Hovenier: "🌳",
+  Elektricien: "🔌",
+  Schilder: "🎨",
   "Loodgieter": "💧",
   "Klus & Bouw": "🔧",
-  "Verhuisservice": "🚚",
+  Verhuisservice: "🚚",
   "IT & Websites": "💻",
-  "Coaching": "🧭",
-  "Overig": "📦",
+  Coaching: "🧭",
+  Overig: "📦"
 };
 
 const FALLBACK_CATEGORIES = [
@@ -29,7 +29,7 @@ const FALLBACK_CATEGORIES = [
   { name: "Schoonmaak", slug: "schoonmaak" },
   { name: "Klus & Bouw", slug: "klus-bouw" },
   { name: "Dierenverzorging", slug: "dierenverzorging" },
-  { name: "IT & Websites", slug: "it-websites" },
+  { name: "IT & Websites", slug: "it-websites" }
 ];
 
 function getCategoryIcon(name) {
@@ -63,10 +63,12 @@ async function initPopularCategories() {
   try {
     const res = await fetch(`${API_BASE}/publicRequests/popular-categories`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" }
     });
 
-    if (!res.ok) throw new Error("Endpoint bestaat niet");
+    if (!res.ok) {
+      throw new Error(`Categorie-endpoint nog niet beschikbaar (status ${res.status})`);
+    }
 
     const data = await res.json();
     const categories = Array.isArray(data?.categories)
@@ -75,7 +77,9 @@ async function initPopularCategories() {
       ? data
       : [];
 
-    if (!categories.length) throw new Error("Geen categorieën gevonden");
+    if (!categories.length) {
+      throw new Error("Geen categorieën uit backend ontvangen");
+    }
 
     renderCategories(categories);
   } catch (err) {
@@ -86,6 +90,8 @@ async function initPopularCategories() {
 
 function renderCategories(categories) {
   const container = document.getElementById("popularCategories");
+  if (!container) return;
+
   container.innerHTML = "";
 
   categories.forEach((cat) => {
