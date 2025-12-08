@@ -1,39 +1,80 @@
-// backend/routes/companies.js – FIXED & OPTIMIZED (v20251208)
+// backend/routes/companies.js – ULTIMATE SEARCH VERSION (Option B – v20251212)
 
 const express = require("express");
 const router = express.Router();
 const Company = require("../models/company");
 
-// GET /api/companies/search
+/**
+ * SAFE MATCH helper
+ * - Works for: string, array, null, undefined
+ * - Prevents server crashes when categories contain mixed types
+ */
+function buildFlexibleRegexMatch(field, regex) {
+  return {
+    $or: [
+      { [field]: regex },                   // match string fields
+      { [field]: { $elemMatch: regex } },   // match arrays
+    ]
+  };
+}
+
+/**
+ * SEARCH ROUTE
+ * Supports:
+ * - q (zoekwoord)
+ * - category
+ * - city
+ * - safe fallback for all fields
+ */
 router.get("/search", async (req, res) => {
   try {
     const { q = "", category = "", city = "" } = req.query;
 
-    const filters = {};
+    const filters = [];
 
-    // Zoekwoord (q) in meerdere bestaande velden
+    // ---------------------------------------------
+    // 🔍 Zoekwoord (q)
+    // ---------------------------------------------
     if (q) {
       const regex = new RegExp(q, "i");
-      filters.$or = [
-        { name: regex },
-        { description: regex },
-        { specialties: regex },
-        { specializations: regex },
-        { categories: regex }
-      ];
+
+      filters.push({
+        $or: [
+          { name: regex },
+          { description: regex },
+          { specialties: regex },
+          { specializations: regex },
+          { categories: regex },
+          { regions: regex }
+        ]
+      });
     }
 
-    // Filter: categorie
+    // ---------------------------------------------
+    // 🏷 Categorie (veilig voor arrays + strings)
+    // ---------------------------------------------
     if (category) {
-      filters.categories = { $regex: new RegExp(category, "i") };
+      const regex = new RegExp(category, "i");
+      filters.push(buildFlexibleRegexMatch("categories", regex));
     }
 
-    // Filter: stad
+    // ---------------------------------------------
+    // 🏙 Stad (city)
+    // ---------------------------------------------
     if (city) {
-      filters.city = { $regex: new RegExp(city, "i") };
+      const regex = new RegExp(city, "i");
+      filters.push({
+        $or: [
+          { city: regex },
+          { regions: regex }
+        ]
+      });
     }
 
-    const companies = await Company.find(filters).lean();
+    // Combine all filters safely
+    const finalQuery = filters.length > 0 ? { $and: filters } : {};
+
+    const companies = await Company.find(finalQuery).lean();
 
     res.json({
       ok: true,
@@ -47,7 +88,9 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ------------------------------------------------------------
 // GET /api/companies/slug/:slug
+// ------------------------------------------------------------
 router.get("/slug/:slug", async (req, res) => {
   try {
     const company = await Company.findOne({ slug: req.params.slug }).lean();
