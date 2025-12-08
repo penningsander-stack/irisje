@@ -1292,3 +1292,15 @@ a {
   box-shadow:0 12px 32px rgba(0,0,0,0.22);
 }
 
+/* === UNIVERSAL COMPANY LOGO FIX v20251208 === */
+img.company-logo,
+#companyLogo,
+.result-logo,
+.company-header img,
+.company-detail img {
+    max-width: 180px;
+    max-height: 110px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+}
