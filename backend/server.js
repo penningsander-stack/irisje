@@ -18,12 +18,19 @@ const routes = [
   "auth",
   "companies",
   "requests",
-  "publicRequests",
+  "publicRequests", // ✅ matcht publicRequests.js
   "reviews",
   "admin",
   "email",
-  "payments"
+  "payments",
+  "status",
+  "claims",
+  "dashboard",
+  "googlereviews",
+  "seed",
+  "importer_places",
 ];
+
 
 routes.forEach((route) => {
   try {
