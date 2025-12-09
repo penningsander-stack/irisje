@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v20251209-RESULTS-FIX-FINAL
+// v20251212-RESULTS-FIX-FINAL2
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -51,6 +51,11 @@ async function initSearchResults() {
   }
 }
 
+function hideSkeleton() {
+  const skeleton = document.getElementById("resultsSkeleton");
+  if (skeleton) skeleton.style.display = "none";
+}
+
 function renderLoading() {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
@@ -66,6 +71,8 @@ function renderNoResults() {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
 
+  hideSkeleton();
+
   container.innerHTML = `
     <div class="col-span-full text-center py-8">
       <div class="text-5xl mb-3">🔍</div>
@@ -77,6 +84,8 @@ function renderNoResults() {
 function renderError() {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
+
+  hideSkeleton();
 
   container.innerHTML = `
     <div class="col-span-full text-center py-8">
@@ -90,16 +99,34 @@ function renderCompanies(items) {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
 
+  hideSkeleton();
   container.innerHTML = "";
 
-  items.forEach((item) => {
+  // Filter lege/incomplete records weg (voorkomt "lege tegels")
+  const cleaned = items.filter(
+    (item) =>
+      item &&
+      item.name &&
+      item.name.trim() !== "" &&
+      item.slug &&
+      item.slug.trim() !== ""
+  );
+
+  if (cleaned.length === 0) {
+    renderNoResults();
+    return;
+  }
+
+  cleaned.forEach((item) => {
     const name = item.name || "(Bedrijfsnaam onbekend)";
     const city = item.city || "";
-    const category = Array.isArray(item.categories) ? item.categories.join(", ") : "";
-    const slug = item.slug || "";
+    const category = Array.isArray(item.categories)
+      ? item.categories.join(", ")
+      : "";
+    const slug = item.slug;
 
     const card = document.createElement("a");
-    card.href = `company.html?slug=${slug}`;
+    card.href = `company.html?slug=${encodeURIComponent(slug)}`;
     card.className =
       "surface-card p-4 rounded-2xl shadow-sm hover:shadow-md transition block";
 
