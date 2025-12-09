@@ -570,3 +570,4 @@ async function runLogoFix(notif) {
     showNotif(notif, err.message || "Fout bij logo-fix", false);
   }
 }
+
