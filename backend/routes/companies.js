@@ -1,105 +1,81 @@
-// backend/routes/companies.js – ULTIMATE SEARCH VERSION (Option B – v20251212)
+// backend/routes/companies.js – FULLY FIXED VERSION (safe regex + no elemMatch crash)
 
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/company");
+const Company = require("../models/Company");
 
-/**
- * SAFE MATCH helper
- * - Works for: string, array, null, undefined
- * - Prevents server crashes when categories contain mixed types
- */
-function buildFlexibleRegexMatch(field, regex) {
+// Helper: safely build regex
+function buildRegexSafe(value) {
+  if (!value) return null;
+  try {
+    return new RegExp(value, "i");
+  } catch {
+    return null;
+  }
+}
+
+// Helper: search matcher for fields (string or array)
+function matchField(field, regex) {
   return {
     $or: [
-      { [field]: regex },                   // match string fields
-      { [field]: { $elemMatch: regex } },   // match arrays
+      { [field]: regex },
+      { [field]: { $in: [regex] } }
     ]
   };
 }
 
-/**
- * SEARCH ROUTE
- * Supports:
- * - q (zoekwoord)
- * - category
- * - city
- * - safe fallback for all fields
- */
+// GET /api/companies/search
 router.get("/search", async (req, res) => {
   try {
-    const { q = "", category = "", city = "" } = req.query;
+    const { q, category, city } = req.query;
 
     const filters = [];
 
-    // ---------------------------------------------
-    // 🔍 Zoekwoord (q)
-    // ---------------------------------------------
+    // q search
     if (q) {
-      const regex = new RegExp(q, "i");
-
-      filters.push({
-        $or: [
-          { name: regex },
-          { description: regex },
-          { specialties: regex },
-          { specializations: regex },
-          { categories: regex },
-          { regions: regex }
-        ]
-      });
+      const r = buildRegexSafe(q);
+      if (r) {
+        filters.push({
+          $or: [
+            { name: r },
+            { tagline: r },
+            { description: r }
+          ]
+        });
+      }
     }
 
-    // ---------------------------------------------
-    // 🏷 Categorie (veilig voor arrays + strings)
-    // ---------------------------------------------
+    // category filter
     if (category) {
-      const regex = new RegExp(category, "i");
-      filters.push(buildFlexibleRegexMatch("categories", regex));
+      const r = buildRegexSafe(category);
+      if (r) {
+        filters.push(matchField("categories", r));
+      }
     }
 
-    // ---------------------------------------------
-    // 🏙 Stad (city)
-    // ---------------------------------------------
+    // city filter
     if (city) {
-      const regex = new RegExp(city, "i");
-      filters.push({
-        $or: [
-          { city: regex },
-          { regions: regex }
-        ]
-      });
+      const r = buildRegexSafe(city);
+      if (r) {
+        filters.push({ city: r });
+      }
     }
 
-    // Combine all filters safely
-    const finalQuery = filters.length > 0 ? { $and: filters } : {};
+    const query = filters.length ? { $and: filters } : {};
 
-    const companies = await Company.find(finalQuery).lean();
+    const companies = await Company.find(query)
+      .sort({ reviewCount: -1, avgRating: -1 })
+      .limit(40);
 
-    res.json({
+    return res.json({
       ok: true,
       count: companies.length,
-      companies
+      companies,
     });
 
   } catch (err) {
     console.error("SEARCH ERROR:", err);
-    res.status(500).json({ ok: false, error: "serverfout" });
-  }
-});
-
-// ------------------------------------------------------------
-// GET /api/companies/slug/:slug
-// ------------------------------------------------------------
-router.get("/slug/:slug", async (req, res) => {
-  try {
-    const company = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!company) return res.status(404).json({ ok: false, error: "Niet gevonden" });
-
-    res.json({ ok: true, company });
-  } catch (err) {
-    console.error("COMPANY LOOKUP ERROR:", err);
-    res.status(500).json({ ok: false, error: "serverfout" });
+    return res.status(500).json({ ok: false, error: "serverfout" });
   }
 });
 
