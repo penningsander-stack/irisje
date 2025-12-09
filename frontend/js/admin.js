@@ -1,5 +1,10 @@
 // frontend/js/admin.js
-// v20251118-FINAL-JWT-SAFE
+// v20251209-ADMIN-FIX-LOGOS-BUTTON
+//
+// Bevat:
+// - Admin-dashboard logica (bedrijven, gemelde reviews, claims, logs)
+// - JWT-check en redirect naar login
+// - Nieuw: optionele knop om /admin/fix-logos aan te roepen (logo's automatisch koppelen)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -8,6 +13,7 @@ const ENDPOINT_RESOLVE_REPORTED = (id) => `${API_BASE}/admin/resolve/${id}`;
 const ENDPOINT_GET_LOGS = `${API_BASE}/admin/logs`;
 const ENDPOINT_GET_COMPANIES = `${API_BASE}/admin/overview`;
 const ENDPOINT_GET_CLAIMS = `${API_BASE}/admin/claims`;
+const ENDPOINT_FIX_LOGOS = `${API_BASE}/admin/fix-logos`;
 
 const adminState = {
   companies: [],
@@ -19,7 +25,7 @@ const adminState = {
 document.addEventListener("DOMContentLoaded", initAdmin);
 
 async function initAdmin() {
-  console.log("🛠️ Admin-dashboard geladen (v20251118-FINAL-JWT-SAFE)");
+  console.log("🛠️ Admin-dashboard geladen (v20251209-ADMIN-FIX-LOGOS-BUTTON)");
 
   // 🔐 BASISCHECK — GEEN JWT? → TERUG NAAR LOGIN
   const token = localStorage.getItem("token");
@@ -38,6 +44,7 @@ async function initAdmin() {
   const refreshReviewsBtn = byId("refreshBtn");
   const refreshClaimsBtn = byId("refreshClaims");
   const refreshLogsBtn = byId("refreshLogsBtn");
+  const fixLogosBtn = byId("fixLogosBtn"); // ✅ nieuwe knop (optioneel)
 
   const adminTable = byId("adminCompanyTable");
   const reportedTableBody = byId("reported-table-body");
@@ -79,6 +86,9 @@ async function initAdmin() {
     refreshLogsBtn.addEventListener("click", () =>
       loadServerLogs(logsContainer, notif)
     );
+
+  if (fixLogosBtn)
+    fixLogosBtn.addEventListener("click", () => runLogoFix(notif)); // ✅ nieuw
 
   // INIT LOAD
   loadAdminCompanies(adminTable, notif);
@@ -143,17 +153,16 @@ async function safeFetch(url, options = {}) {
   try {
     const res = await fetch(url, mergedOptions);
 
-    // 🔥 DIT HEB IK TOEGEVOEGD: 401/403 → TERUG NAAR LOGIN
+    // 401/403 → TERUG NAAR LOGIN
     if (res.status === 401 || res.status === 403) {
       console.warn("❌ Ongeldige sessie → redirect naar login");
       localStorage.clear();
       return (window.location.href = "login.html");
     }
 
-    const json =
-      res.headers.get("content-type")?.includes("application/json")
-        ? await res.json().catch(() => null)
-        : null;
+    const isJson =
+      res.headers.get("content-type")?.includes("application/json");
+    const json = isJson ? await res.json().catch(() => null) : null;
 
     if (!res.ok) {
       const msg =
@@ -181,6 +190,7 @@ function buildNotificationBar() {
 }
 
 function showNotif(notif, message, success = true) {
+  if (!notif) return;
   notif.textContent = message;
   notif.classList.remove("hidden");
   notif.classList.toggle("bg-green-600", success);
@@ -222,6 +232,7 @@ function initSidebarNavigation() {
    BEDRIJVEN
 ============================================================ */
 async function loadAdminCompanies(table, notif) {
+  if (!table) return;
   table.innerHTML =
     '<tr><td colspan="5" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
@@ -274,6 +285,7 @@ async function loadAdminCompanies(table, notif) {
       )
     );
   } catch (err) {
+    console.error(err);
     table.innerHTML =
       '<tr><td colspan="5" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     showNotif(notif, "Fout bij laden bedrijven", false);
@@ -308,6 +320,7 @@ async function doDeleteCompany(id, notif, table) {
    GEMELDE REVIEWS
 ============================================================ */
 async function loadReportedReviews(tbody, notif) {
+  if (!tbody) return;
   tbody.innerHTML =
     '<tr><td colspan="8" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
@@ -374,6 +387,7 @@ async function loadReportedReviews(tbody, notif) {
 
     updateReportedCounters();
   } catch (err) {
+    console.error(err);
     tbody.innerHTML =
       '<tr><td colspan="8" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     showNotif(notif, "Fout bij laden reviews", false);
@@ -413,6 +427,7 @@ function updateReportedCounters() {
    CLAIMS
 ============================================================ */
 async function loadClaims(tbody, notif) {
+  if (!tbody) return;
   tbody.innerHTML =
     '<tr><td colspan="6" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
@@ -454,6 +469,7 @@ async function loadClaims(tbody, notif) {
       })
       .join("");
   } catch (err) {
+    console.error(err);
     tbody.innerHTML =
       '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
     showNotif(notif, "Fout bij laden claims", false);
@@ -464,6 +480,7 @@ async function loadClaims(tbody, notif) {
    LOGS
 ============================================================ */
 async function loadServerLogs(container, notif) {
+  if (!container) return;
   container.innerHTML = '<div class="text-xs text-gray-500">Laden...</div>';
 
   try {
@@ -478,10 +495,9 @@ async function loadServerLogs(container, notif) {
       return;
     }
 
-    container.innerHTML = list
-      .map((entry) => renderLogEntry(entry))
-      .join("");
+    container.innerHTML = list.map((entry) => renderLogEntry(entry)).join("");
   } catch (err) {
+    console.error(err);
     container.innerHTML =
       '<div class="text-xs text-red-600">❌ Kan logs niet laden</div>';
     showNotif(notif, "Fout bij laden logs", false);
@@ -520,4 +536,37 @@ function renderLogEntry(entry) {
       </div>
       <div class="text-[11px] text-gray-800 break-words">${esc(msg)}</div>
     </div>`;
+}
+
+/* ============================================================
+   LOGO FIX (NIEUW)
+//  Roept het backend endpoint /admin/fix-logos aan
+============================================================ */
+async function runLogoFix(notif) {
+  if (!confirm("Automatisch logo's toewijzen aan bedrijven zonder logo?")) {
+    return;
+  }
+
+  try {
+    const result = await safeFetch(ENDPOINT_FIX_LOGOS, {
+      method: "POST",
+    });
+
+    if (result?.ok) {
+      showNotif(
+        notif,
+        result.message || `✔ Logo's toegewezen aan ${result.updated || 0} bedrijven`,
+        true
+      );
+    } else {
+      showNotif(
+        notif,
+        result?.error || "Onbekende fout bij logo-fix",
+        false
+      );
+    }
+  } catch (err) {
+    console.error("Fout bij runLogoFix:", err);
+    showNotif(notif, err.message || "Fout bij logo-fix", false);
+  }
 }
