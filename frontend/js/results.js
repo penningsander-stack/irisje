@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v20251213-RESULTS-FIX-LIMIT-SORT
+// v20251213-RESULTS-FIX-LIMIT-RATING
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -14,7 +14,6 @@ async function initSearchResults() {
   const q = params.get("q") || "";
   const city = params.get("city") || "";
 
-  // Titel aanpassen
   const header = document.getElementById("resultsTitle");
   if (header) {
     if (category) header.textContent = `Categorie: ${category}`;
@@ -102,7 +101,6 @@ function renderCompanies(items) {
   hideSkeleton();
   container.innerHTML = "";
 
-  // Filter incomplete records
   const cleaned = items.filter(
     (item) =>
       item &&
@@ -117,7 +115,6 @@ function renderCompanies(items) {
     return;
   }
 
-  // Check if full results must be shown
   const params = new URLSearchParams(window.location.search);
   const fullMode = params.get("full") === "1";
 
@@ -127,6 +124,17 @@ function renderCompanies(items) {
   listToShow.forEach((item) => {
     const name = item.name || "(Bedrijfsnaam onbekend)";
     const city = item.city || "";
+
+    const rating = Number(item.avgRating) || 0;
+    const reviews = Number(item.reviewCount) || 0;
+
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+    let stars = "★".repeat(fullStars);
+    if (halfStar) stars += "☆";
+    stars += "✩".repeat(emptyStars);
 
     let cats = Array.isArray(item.categories) ? item.categories : [];
     cats = cats
@@ -147,6 +155,12 @@ function renderCompanies(items) {
 
     card.innerHTML = `
       <div class="text-lg font-semibold mb-1 text-slate-800">${name}</div>
+
+      <div class="flex items-center gap-1 text-[13px] text-amber-500 mb-1">
+        <span>${stars}</span>
+        <span class="text-slate-600 ml-1">${rating.toFixed(1)} • ${reviews} reviews</span>
+      </div>
+
       <div class="text-sm text-slate-600 truncate">${categoryDisplay}</div>
       <div class="text-sm text-slate-500">${city}</div>
     `;
@@ -154,7 +168,6 @@ function renderCompanies(items) {
     container.appendChild(card);
   });
 
-  // Show button to view all results if not in full mode
   if (!fullMode && cleaned.length > LIMIT) {
     const btn = document.createElement("a");
 
