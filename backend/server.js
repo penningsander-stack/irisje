@@ -1,5 +1,5 @@
 // backend/server.js
-// v20251213-BACKEND-UPLOADS-FIX-FINAL
+// v20251213-BACKEND-UPLOADS-FIX-FINAL-V2
 
 const express = require("express");
 const path = require("path");
@@ -16,8 +16,7 @@ app.use(cors());
 connectDB();
 
 // === UPLOADS STATISCH SERVEN (LOGO FIX) ===
-// Alles in /uploads wordt publiek bereikbaar via:
-// https://irisje-backend.onrender.com/uploads/...
+// BELANGRIJK: dit MOET vóór de SPA fallback komen.
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // === ROUTES DYNAMISCH LADEN ===
@@ -50,8 +49,9 @@ routes.forEach((route) => {
 // === FRONTEND HOSTING ===
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
-// SPA fallback
-app.get("*", (req, res) => {
+// === JUISTE SPA FALLBACK (OVERSCHRIJFT GEEN UPLOADS) ===
+// Alles behalve /uploads en /api valt terug op index.html
+app.get(/^\/(?!uploads|api).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
 });
 
