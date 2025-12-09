@@ -8,20 +8,15 @@
 
   <meta name="description" content="Beheer gemelde reviews, bedrijven, claims en logs in het admin-dashboard van Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
-
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
-  <!-- Algemene styling -->
   <link rel="stylesheet" href="style.css?v=20251206" />
-
-  <!-- Admin-specifieke styling -->
   <link rel="stylesheet" href="css/admin.css?v=20251118" />
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- HEADER -->
-    <header class="irisje-header sticky top-0 z-40">
+  <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
         <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
@@ -33,61 +28,57 @@
 
       <div class="flex items-center gap-3">
         <span class="hidden sm:inline text-xs text-slate-500">Beheeromgeving</span>
-        <button id="logoutBtn"
-          class="inline-flex items-center btn-primary btn-xs"
-          type="button">
-          Uitloggen
-        </button>
+        <button id="logoutBtn" class="inline-flex items-center btn-primary btn-xs" type="button">Uitloggen</button>
       </div>
     </div>
   </header>
 
-  <!-- MAIN -->
   <main class="page-shell flex gap-6">
 
-    <!-- SIDEBAR -->
     <aside class="w-56 shrink-0">
-      <nav id="adminNav"
-        class="surface-card flex flex-col gap-1 text-sm p-2">
+      <nav id="adminNav" class="surface-card flex flex-col gap-1 text-sm p-2">
 
-        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700"
-          data-section="section-overview">
-          <span>Bedrijven</span>
-        </button>
-
-        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
-          data-section="section-reported">
-          <span>Gemelde reviews</span>
-        </button>
-
-        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
-          data-section="section-claims">
-          <span>Claimverzoeken</span>
-        </button>
-
-        <button class="nav-item flex items-center justify-between px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50"
-          data-section="section-logs">
-          <span>Serverlogs</span>
-        </button>
+        <button class="nav-item" data-section="section-stats">Statistieken</button>
+        <button class="nav-item" data-section="section-health">Systeemstatus</button>
+        <button class="nav-item bg-indigo-50 text-indigo-700" data-section="section-overview">Bedrijven</button>
+        <button class="nav-item" data-section="section-reported">Gemelde reviews</button>
+        <button class="nav-item" data-section="section-claims">Claimverzoeken</button>
+        <button class="nav-item" data-section="section-logs">Serverlogs</button>
 
       </nav>
     </aside>
 
-    <!-- CONTENT -->
     <section class="flex-1 flex flex-col gap-6">
 
-      <!-- BEDRIJVEN -->
+      <section id="section-stats" class="admin-card surface-card hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h1 class="text-lg font-semibold text-gray-900">Statistieken</h1>
+            <p class="text-xs text-gray-500">Overzicht van bedrijven, aanvragen, reviews en gebruikers.</p>
+          </div>
+          <button id="admin-refresh-stats" class="btn-primary">Vernieuwen</button>
+        </div>
+        <div id="admin-stats-cards"></div>
+      </section>
+
+      <section id="section-health" class="admin-card surface-card hidden">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h1 class="text-lg font-semibold text-gray-900">Systeemstatus</h1>
+            <p class="text-xs text-gray-500">Backend, database, e-mail en versies.</p>
+          </div>
+          <button id="admin-refresh-health" class="btn-primary">Vernieuwen</button>
+        </div>
+        <div id="admin-system-health"></div>
+      </section>
+
       <section id="section-overview" class="admin-card surface-card">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h1 class="text-lg font-semibold text-gray-900">Bedrijvenoverzicht</h1>
             <p class="text-xs text-gray-500">Overzicht van alle geregistreerde bedrijven.</p>
           </div>
-
-          <button id="refreshCompanies"
-            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
-            Vernieuwen
-          </button>
+          <button id="refreshCompanies" class="btn-primary">Vernieuwen</button>
         </div>
 
         <div class="flex items-center gap-4 mb-4 text-xs">
@@ -107,26 +98,19 @@
             </thead>
 
             <tbody id="adminCompanyTable">
-              <tr>
-                <td colspan="5" class="admin-loading">Laden...</td>
-              </tr>
+              <tr><td colspan="5" class="admin-loading">Laden...</td></tr>
             </tbody>
           </table>
         </div>
       </section>
-
-      <!-- GEMELDE REVIEWS -->
+      
       <section id="section-reported" class="admin-card surface-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Gemelde reviews</h2>
             <p class="text-xs text-gray-500">Overzicht van reviews die zijn gemeld.</p>
           </div>
-
-          <button id="refreshBtn"
-            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
-            Vernieuwen
-          </button>
+          <button id="refreshBtn" class="btn-primary">Vernieuwen</button>
         </div>
 
         <div class="flex items-center gap-4 mb-4 text-xs">
@@ -151,26 +135,19 @@
             </thead>
 
             <tbody id="reported-table-body">
-              <tr>
-                <td colspan="8" class="admin-loading">Laden...</td>
-              </tr>
+              <tr><td colspan="8" class="admin-loading">Laden...</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- CLAIMS -->
       <section id="section-claims" class="admin-card surface-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Claimverzoeken</h2>
             <p class="text-xs text-gray-500">Door bedrijven ingediende claims.</p>
           </div>
-
-          <button id="refreshClaims"
-            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
-            Vernieuwen
-          </button>
+          <button id="refreshClaims" class="btn-primary">Vernieuwen</button>
         </div>
 
         <div class="overflow-x-auto">
@@ -187,30 +164,22 @@
             </thead>
 
             <tbody id="claimTableBody">
-              <tr>
-                <td colspan="6" class="admin-loading">Laden...</td>
-              </tr>
+              <tr><td colspan="6" class="admin-loading">Laden...</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- LOGS -->
       <section id="section-logs" class="admin-card surface-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Serverlogs</h2>
             <p class="text-xs text-gray-500">Laatste logregels.</p>
           </div>
-
-          <button id="refreshLogsBtn"
-            class="px-3 py-1.5 text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
-            Vernieuw logs
-          </button>
+          <button id="refreshLogsBtn" class="btn-primary">Vernieuwen</button>
         </div>
 
-        <div id="logs-container"
-          class="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto space-y-1">
+        <div id="logs-container" class="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto space-y-1">
           Logs worden geladen...
         </div>
       </section>
@@ -219,6 +188,7 @@
   </main>
 
   <script src="js/admin.js?v=20251118"></script>
+  <script src="js/admin-tools.js?v=20251209"></script>
 
   <footer class="footer-shell card-fade-in mt-auto">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -230,5 +200,6 @@
       </div>
     </div>
   </footer>
+
 </body>
 </html>
