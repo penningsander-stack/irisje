@@ -1,7 +1,7 @@
 // frontend/js/company.js
-// v20251213-COMPANY-PROFILE-FINAL
+// v20251213-COMPANY-PROFILE-FINAL-B-C
 //
-// Toont bedrijfsprofiel + logo + basis-meta op company.html
+// Toont bedrijfsprofiel + logo of fallback + meta op company.html
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const BACKEND_BASE = "https://irisje-backend.onrender.com";
@@ -49,8 +49,30 @@ async function initCompanyDetail() {
   }
 }
 
+// B + C: emoji/fallback op basis van categorie
+function getCategoryEmoji(categories) {
+  const cats = Array.isArray(categories) ? categories : (categories ? [categories] : []);
+  const joined = cats.join(" ").toLowerCase();
+
+  if (joined.includes("advocaat") || joined.includes("jurid") || joined.includes("recht")) return "⚖";
+  if (joined.includes("loodgiet")) return "💧";
+  if (joined.includes("elektr")) return "🔌";
+  if (joined.includes("schilder")) return "🎨";
+  if (joined.includes("dak")) return "🏠";
+  if (joined.includes("aannemer") || joined.includes("bouw")) return "🏗";
+  if (joined.includes("hovenier") || joined.includes("tuin")) return "🌳";
+  if (joined.includes("schoonmaak")) return "🧹";
+  if (joined.includes("airco") || joined.includes("koel")) return "❄";
+  if (joined.includes("isolatie")) return "🧱";
+  if (joined.includes("slot") || joined.includes("slotenmaker")) return "🔑";
+  if (joined.includes("vloer") || joined.includes("tegel")) return "🧱";
+  if (joined.includes("zonne") || joined.includes("solar")) return "☀";
+  return "🏢";
+}
+
 function renderCompany(company) {
   const logoEl = document.getElementById("companyLogo");
+  const fallbackEl = document.getElementById("companyLogoFallback");
   const nameEl = document.getElementById("companyName");
   const metaEl = document.getElementById("companyMeta");
   const taglineEl = document.getElementById("companyTagline");
@@ -61,9 +83,8 @@ function renderCompany(company) {
 
   const name = company.name || "(Naam onbekend)";
   const city = company.city || "";
-  const categories = Array.isArray(company.categories)
-    ? company.categories.join(", ")
-    : "";
+  const categoriesArray = Array.isArray(company.categories) ? company.categories : [];
+  const categories = categoriesArray.join(", ");
   const description =
     company.tagline ||
     company.description ||
@@ -73,7 +94,6 @@ function renderCompany(company) {
   const rating = Number(company.avgRating) || 0;
   const reviewCount = Number(company.reviewCount) || 0;
 
-  // Sterren genereren
   const fullStars = Math.floor(rating);
   const halfStar = rating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
@@ -82,7 +102,14 @@ function renderCompany(company) {
   if (halfStar) stars += "☆";
   stars += "✩".repeat(emptyStars);
 
-  // LOGO
+  // LOGO + FALLBACK (B + C)
+  if (fallbackEl) {
+    const emoji = getCategoryEmoji(categoriesArray);
+    const firstLetter = name.trim().charAt(0).toUpperCase() || "I";
+    // Toon emoji + letter voor premium look
+    fallbackEl.textContent = `${emoji} ${firstLetter}`;
+  }
+
   if (logoEl) {
     let logo = company.logo || "";
 
@@ -92,9 +119,16 @@ function renderCompany(company) {
       }
       logoEl.src = logo;
       logoEl.alt = name;
-      logoEl.style.opacity = "1";
+      logoEl.classList.remove("hidden");
+      if (fallbackEl) {
+        fallbackEl.style.display = "none";
+      }
     } else {
-      logoEl.style.display = "none";
+      // Geen logo vanuit backend → fallback zichtbaar laten
+      logoEl.classList.add("hidden");
+      if (fallbackEl) {
+        fallbackEl.style.display = "flex";
+      }
     }
   }
 

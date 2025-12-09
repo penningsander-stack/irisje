@@ -35,9 +35,16 @@
 
       <div class="flex items-start gap-6">
 
-        <img id="companyLogo"
-             class="company-logo opacity-0 transition-opacity duration-300 rounded-xl bg-white shadow-sm"
-             alt="Bedrijfslogo">
+        <!-- Logo + fallback wrapper -->
+        <div class="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center overflow-hidden shadow-sm">
+          <img id="companyLogo"
+               class="w-full h-full object-contain hidden"
+               alt="Bedrijfslogo">
+          <div id="companyLogoFallback"
+               class="w-full h-full flex items-center justify-center text-xl font-semibold text-slate-600">
+            I
+          </div>
+        </div>
 
         <div class="flex flex-col">
           <h2 id="companyName" class="text-2xl font-semibold text-slate-900 mb-1">Bedrijfsnaam</h2>
@@ -73,7 +80,7 @@
 
   </section>
 
-  <!-- Cachebuster bijgewerkt zodat nieuwe JS zeker wordt ingeladen -->
+  <!-- Cachebuster zodat nieuwe JS zeker wordt ingeladen -->
   <script src="js/company.js?v=20251213"></script>
 
 </body>
