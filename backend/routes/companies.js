@@ -1,81 +1,170 @@
-// backend/routes/companies.js – FULLY FIXED VERSION (safe regex + no elemMatch crash)
-
+// backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/company");
 
-// Helper: safely build regex
-function buildRegexSafe(value) {
-  if (!value) return null;
+const Company = require("../models/company"); // let op: kleine letters, matcht company.js
+const auth = require("../middleware/auth");
+
+/* ============================================================
+   Helpers
+============================================================ */
+function ensure_array(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string")
+    return v.split(",").map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+
+function normalizeMultiFields(doc) {
+  const out = { ...doc };
+  const fields = [
+    "specialties",
+    "regions",
+    "certifications",
+    "recognitions",
+    "memberships",
+    "languages",
+    "services",
+    "tags",
+    "categories",
+  ];
+  fields.forEach((f) => {
+    if (!Array.isArray(out[f])) out[f] = [];
+  });
+  return out;
+}
+
+/* ============================================================
+   1. /api/companies/lists
+   (nu nog lege lijsten – kan later worden uitgebreid)
+============================================================ */
+router.get("/lists", (req, res) => {
+  res.json({
+    ok: true,
+    specialties: [],
+    certifications: [],
+    languages: [],
+  });
+});
+
+/* ============================================================
+   2. ADMIN – /api/companies/all
+   Overzicht voor admin-dashboard
+============================================================ */
+router.get("/all", async (req, res) => {
   try {
-    return new RegExp(value, "i");
-  } catch {
-    return null;
+    let companies = await Company.find({})
+      .populate("owner", "email")
+      .lean();
+
+    companies = companies.map((c) => ({
+      _id: c._id,
+      name: c.name || "(naam onbekend)",
+      slug: c.slug || "",
+      email: c.email || c.owner?.email || "-",
+      isVerified: !!c.isVerified,
+      reviewCount: c.reviewCount || 0,
+    }));
+
+    res.json(companies);
+  } catch (err) {
+    console.error("❌ /companies/all fout:", err);
+    res.status(500).json({ ok: false, error: "serverfout" });
   }
-}
+});
 
-// Helper: search matcher for fields (string or array)
-function matchField(field, regex) {
-  return {
-    $or: [
-      { [field]: regex },
-      { [field]: { $in: [regex] } }
-    ]
-  };
-}
-
-// GET /api/companies/search
+/* ============================================================
+   3. ZOEKEN – /api/companies/search
+   Gebruikt door:
+   - frontend/script.js (q, city)
+   - frontend/js/results.js (category, city)
+============================================================ */
 router.get("/search", async (req, res) => {
   try {
-    const { q, category, city } = req.query;
+    // beide varianten ondersteunen:
+    // - ?q= (algemene zoekterm)
+    // - ?category=&city= (oude variant)
+    const { q = "", category = "", city = "" } = req.query;
 
-    const filters = [];
+    const filters = {};
 
-    // q search
-    if (q) {
-      const r = buildRegexSafe(q);
-      if (r) {
-        filters.push({
-          $or: [
-            { name: r },
-            { tagline: r },
-            { description: r }
-          ]
-        });
-      }
+    // categorie / vakgebied / tags
+    const searchTerm = q || category;
+    if (searchTerm) {
+      const regex = new RegExp(searchTerm, "i");
+      filters.$or = [
+        { specialties: regex },
+        { services: regex },
+        { tags: regex },
+        { categories: regex },
+        { name: regex },
+        { tagline: regex },
+        { description: regex },
+      ];
     }
 
-    // category filter
-    if (category) {
-      const r = buildRegexSafe(category);
-      if (r) {
-        filters.push(matchField("categories", r));
-      }
-    }
-
-    // city filter
+    // plaats
     if (city) {
-      const r = buildRegexSafe(city);
-      if (r) {
-        filters.push({ city: r });
-      }
+      filters.city = new RegExp(city, "i");
     }
 
-    const query = filters.length ? { $and: filters } : {};
+    let items = await Company.find(filters)
+      .sort({ avgRating: -1, reviewCount: -1 })
+      .lean();
 
-    const companies = await Company.find(query)
-      .sort({ reviewCount: -1, avgRating: -1 })
-      .limit(40);
+    items = items.map((c) => normalizeMultiFields(c));
 
-    return res.json({
-      ok: true,
-      count: companies.length,
-      companies,
-    });
-
+    res.json({ ok: true, items });
   } catch (err) {
-    console.error("SEARCH ERROR:", err);
-    return res.status(500).json({ ok: false, error: "serverfout" });
+    console.error("❌ fout bij zoeken:", err);
+    res.status(500).json({ ok: false, error: "serverfout" });
+  }
+});
+
+/* ============================================================
+   4. GET BY SLUG – /api/companies/slug/:slug
+   Gebruikt door frontend/js/company.js
+============================================================ */
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const item = await Company.findOne({ slug: req.params.slug }).lean();
+    if (!item) return res.status(404).json({ ok: false, error: "not found" });
+
+    res.json(normalizeMultiFields(item));
+  } catch (err) {
+    console.error("❌ slug fout:", err);
+    res.status(500).json({ ok: false, error: "serverfout" });
+  }
+});
+
+/* ============================================================
+   5. PUBLIC INDEX – /api/companies/
+   Simpele lijst van alle bedrijven (kan later uitgebreid worden)
+============================================================ */
+router.get("/", async (req, res) => {
+  try {
+    let items = await Company.find({}).lean();
+    items = items.map((c) => normalizeMultiFields(c));
+    res.json({ ok: true, total: items.length, items });
+  } catch (err) {
+    console.error("❌ fout bij ophalen bedrijven:", err);
+    res.status(500).json({ ok: false, error: "serverfout" });
+  }
+});
+
+/* ============================================================
+   6. GET /api/companies/:id
+   Losse bedrijf op ID (voor admin/tools)
+============================================================ */
+router.get("/:id", async (req, res) => {
+  try {
+    const item = await Company.findById(req.params.id).lean();
+    if (!item) return res.status(404).json({ ok: false, error: "not found" });
+
+    res.json(normalizeMultiFields(item));
+  } catch (err) {
+    console.error("❌ ID fout:", err);
+    res.status(500).json({ ok: false, error: "serverfout" });
   }
 });
 
