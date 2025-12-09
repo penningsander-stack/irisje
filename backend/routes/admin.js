@@ -1,15 +1,15 @@
 // backend/routes/admin.js
-// v20251213-ADMIN-MODERN-COMPLETE
+// v20251213-ADMIN-FIXED-SMALLLETTERS
 
 const express = require("express");
 const router = express.Router();
 
 const { authMiddleware, requireAdmin } = require("../middleware/auth");
 
-const Company = require("../models/Company");
-const Review = require("../models/Review");
-const Request = require("../models/Request");
-const Claim = require("../models/Claim");
+const Company = require("../models/company");
+const Review = require("../models/review");
+const Request = require("../models/request");
+const Claim = require("../models/claim");
 
 // ADMIN AUTH
 router.use(authMiddleware, requireAdmin);
