@@ -1,67 +1,91 @@
 // backend/routes/adminTools.js
-// v20251213-ADMIN-TOOLS-FULL
+// v20251209-ADMINTOOLS-FIXED-LOWERCASE
 //
-// Extra admin-routes voor het Irisje-dashboard:
-// - GET /api/admin/stats   → globale statistieken
-// - GET /api/admin/health  → systeemstatus (backend + database + smtp + versies)
+// Admin extra tools:
+// - GET /api/admin/stats
+// - GET /api/admin/health
 //
-// Deze router wordt in server.js onder `/api/admin` gemount:
-//   const adminToolsRouter = require("./routes/adminTools");
-//   app.use("/api/admin", adminToolsRouter);
+// Deze router valideert zelf de admin-JWT via Authorization: Bearer <token>
+// zodat hij onafhankelijk is van andere middleware en je adminToken uit localStorage
+// gewoon werkt.
 
 const express = require("express");
+const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-const Company = require("../models/Company");
-const Request = require("../models/Request");
-const Review = require("../models/Review");
-const User = require("../models/User");
-
-const { authMiddleware, requireAdmin } = require("../middleware/auth");
+const Company = require("../models/company");
+const Request = require("../models/request");
+const Review = require("../models/review");
+const User = require("../models/user");
 
 const router = express.Router();
 
-function mapDbState(state) {
-  switch (state) {
-    case 0:
-      return "disconnected";
-    case 1:
-      return "connected";
-    case 2:
-      return "connecting";
-    case 3:
-      return "disconnecting";
-    default:
-      return "unknown";
+function verifyAdminRequest(req, res) {
+  try {
+    const authHeader = req.headers.authorization || req.headers.Authorization || "";
+    if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
+      res.status(401).json({ ok: false, message: "Geen geldige Authorization header" });
+      return null;
+    }
+
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+      res.status(401).json({ ok: false, message: "Geen token meegegeven" });
+      return null;
+    }
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error("[adminTools] JWT_SECRET ontbreekt in environment.");
+      res.status(500).json({ ok: false, message: "Serverconfiguratie onvolledig (JWT_SECRET)" });
+      return null;
+    }
+
+    const decoded = jwt.verify(token, secret);
+    if (!decoded || decoded.role !== "admin") {
+      res.status(403).json({ ok: false, message: "Alleen admin toegestaan" });
+      return null;
+    }
+
+    req.user = decoded;
+    return decoded;
+  } catch (err) {
+    console.error("[adminTools] Fout bij token-verificatie:", err.message);
+    res.status(401).json({ ok: false, message: "Ongeldige of verlopen token" });
+    return null;
   }
 }
 
-/**
- * GET /api/admin/stats
- * Globale statistieken voor het admin-dashboard.
- * JSON-structuur sluit aan op frontend/js/admin-tools.js.
- */
-router.get("/stats", authMiddleware, requireAdmin, async (req, res) => {
-  try {
-    // Basis totalen
-    const [totalCompanies, totalRequests, totalReviews, totalUsers] =
-      await Promise.all([
-        Company.countDocuments({}),
-        Request.countDocuments({}),
-        Review.countDocuments({}),
-        User.countDocuments({}),
-      ]);
+function mapDbState(state) {
+  switch (state) {
+    case 0: return "disconnected";
+    case 1: return "connected";
+    case 2: return "connecting";
+    case 3: return "disconnecting";
+    default: return "unknown";
+  }
+}
 
-    // Open/gesloten aanvragen (status-veld komt uit jouw Request-model)
+// GET /api/admin/stats
+router.get("/stats", async (req, res) => {
+  const admin = verifyAdminRequest(req, res);
+  if (!admin) return;
+
+  try {
+    const [totalCompanies, totalRequests, totalReviews, totalUsers] = await Promise.all([
+      Company.countDocuments({}),
+      Request.countDocuments({}),
+      Review.countDocuments({}),
+      User.countDocuments({}),
+    ]);
+
     const [openRequests, closedRequests] = await Promise.all([
       Request.countDocuments({ status: "open" }),
       Request.countDocuments({ status: "closed" }),
     ]);
 
-    // Gemelde reviews (bijv. veld: reported === true)
     const reportedReviews = await Review.countDocuments({ reported: true });
 
-    // Laatste activiteit
     const latestRequest = await Request.findOne({})
       .sort({ createdAt: -1 })
       .select({ createdAt: 1, _id: 0 })
@@ -76,7 +100,7 @@ router.get("/stats", authMiddleware, requireAdmin, async (req, res) => {
 
     const stats = {
       totalCompanies,
-      activeCompanies: totalCompanies, // eventueel later onderscheid maken
+      activeCompanies: totalCompanies,
       totalRequests,
       openRequests,
       closedRequests,
@@ -98,11 +122,11 @@ router.get("/stats", authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
-/**
- * GET /api/admin/health
- * Systeemstatus voor admin-dashboard (geen gevoelige details).
- */
-router.get("/health", authMiddleware, requireAdmin, async (req, res) => {
+// GET /api/admin/health
+router.get("/health", async (req, res) => {
+  const admin = verifyAdminRequest(req, res);
+  if (!admin) return;
+
   try {
     const dbState = mapDbState(mongoose.connection.readyState);
 
@@ -119,7 +143,7 @@ router.get("/health", authMiddleware, requireAdmin, async (req, res) => {
       },
       smtp: {
         configured: !!(process.env.SMTP_HOST || process.env.SMTP_USER),
-        status: "unknown", // geen echte SMTP-ping om timeouts te vermijden
+        status: "unknown",
       },
       version: {
         backend: process.env.BACKEND_VERSION || "1.0.0",
