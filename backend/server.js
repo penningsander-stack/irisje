@@ -1,4 +1,5 @@
-// backend/server.js – FIXED VERSION (verbindt nu met MongoDB via config/db.js)
+// backend/server.js
+// v20251213-BACKEND-UPLOADS-FIX-FINAL
 
 const express = require("express");
 const path = require("path");
@@ -7,18 +8,24 @@ const connectDB = require("./config/db");
 
 const app = express();
 
+// Middleware
 app.use(express.json());
 app.use(cors());
 
-// 🔗 Verbind met MongoDB (MONGO_URI uit environment op Render)
+// Verbinding met MongoDB
 connectDB();
 
-// Dynamisch routes laden
+// === UPLOADS STATISCH SERVEN (LOGO FIX) ===
+// Alles in /uploads wordt publiek bereikbaar via:
+// https://irisje-backend.onrender.com/uploads/...
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+// === ROUTES DYNAMISCH LADEN ===
 const routes = [
   "auth",
   "companies",
   "requests",
-  "publicRequests", // ✅ matcht publicRequests.js
+  "publicRequests",
   "reviews",
   "admin",
   "email",
@@ -31,7 +38,6 @@ const routes = [
   "importer_places",
 ];
 
-
 routes.forEach((route) => {
   try {
     app.use(`/api/${route}`, require(`./routes/${route}`));
@@ -41,7 +47,7 @@ routes.forEach((route) => {
   }
 });
 
-// STATIC FRONTEND
+// === FRONTEND HOSTING ===
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 // SPA fallback
@@ -50,6 +56,7 @@ app.get("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Backend actief op poort ${PORT}`);
 });
