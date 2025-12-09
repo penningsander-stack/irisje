@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v20251212-RESULTS-FIX-FINAL2
+// v20251213-RESULTS-FIX-LIMIT-SORT
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -14,7 +14,7 @@ async function initSearchResults() {
   const q = params.get("q") || "";
   const city = params.get("city") || "";
 
-  // Titel voor de pagina
+  // Titel aanpassen
   const header = document.getElementById("resultsTitle");
   if (header) {
     if (category) header.textContent = `Categorie: ${category}`;
@@ -102,7 +102,7 @@ function renderCompanies(items) {
   hideSkeleton();
   container.innerHTML = "";
 
-  // Filter lege/incomplete records weg (voorkomt "lege tegels")
+  // Filter incomplete records
   const cleaned = items.filter(
     (item) =>
       item &&
@@ -117,12 +117,27 @@ function renderCompanies(items) {
     return;
   }
 
-  cleaned.forEach((item) => {
+  // Check if full results must be shown
+  const params = new URLSearchParams(window.location.search);
+  const fullMode = params.get("full") === "1";
+
+  const LIMIT = 9;
+  const listToShow = fullMode ? cleaned : cleaned.slice(0, LIMIT);
+
+  listToShow.forEach((item) => {
     const name = item.name || "(Bedrijfsnaam onbekend)";
     const city = item.city || "";
-    const category = Array.isArray(item.categories)
-      ? item.categories.join(", ")
-      : "";
+
+    let cats = Array.isArray(item.categories) ? item.categories : [];
+    cats = cats
+      .map((c) => (c || "").trim())
+      .filter((c) => c !== "" && c.length > 1);
+
+    let categoryDisplay = cats.slice(0, 2).join(", ");
+    if (cats.length > 2) {
+      categoryDisplay += ` (+${cats.length - 2})`;
+    }
+
     const slug = item.slug;
 
     const card = document.createElement("a");
@@ -132,10 +147,24 @@ function renderCompanies(items) {
 
     card.innerHTML = `
       <div class="text-lg font-semibold mb-1 text-slate-800">${name}</div>
-      <div class="text-sm text-slate-600">${category}</div>
+      <div class="text-sm text-slate-600 truncate">${categoryDisplay}</div>
       <div class="text-sm text-slate-500">${city}</div>
     `;
 
     container.appendChild(card);
   });
+
+  // Show button to view all results if not in full mode
+  if (!fullMode && cleaned.length > LIMIT) {
+    const btn = document.createElement("a");
+
+    const baseParams = new URLSearchParams(window.location.search);
+    baseParams.set("full", "1");
+
+    btn.href = window.location.pathname + "?" + baseParams.toString();
+    btn.className =
+      "col-span-full text-center text-indigo-600 mt-4 text-sm underline block";
+    btn.textContent = `Toon alle resultaten (${cleaned.length})`;
+    container.appendChild(btn);
+  }
 }
