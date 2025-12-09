@@ -1,5 +1,5 @@
 // backend/routes/adminTools.js
-// v20251213-ADMIN-TOOLS-FIXED
+// v20251213-ADMIN-TOOLS-FULL
 //
 // Extra admin-routes voor het Irisje-dashboard:
 // - GET /api/admin/stats   → globale statistieken
@@ -12,10 +12,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 
-const Company = require("../models/company");
-const Request = require("../models/request");
-const Review = require("../models/review");
-const User = require("../models/user");
+const Company = require("../models/Company");
+const Request = require("../models/Request");
+const Review = require("../models/Review");
+const User = require("../models/User");
 
 const { authMiddleware, requireAdmin } = require("../middleware/auth");
 
@@ -39,9 +39,11 @@ function mapDbState(state) {
 /**
  * GET /api/admin/stats
  * Globale statistieken voor het admin-dashboard.
+ * JSON-structuur sluit aan op frontend/js/admin-tools.js.
  */
 router.get("/stats", authMiddleware, requireAdmin, async (req, res) => {
   try {
+    // Basis totalen
     const [totalCompanies, totalRequests, totalReviews, totalUsers] =
       await Promise.all([
         Company.countDocuments({}),
@@ -50,26 +52,42 @@ router.get("/stats", authMiddleware, requireAdmin, async (req, res) => {
         User.countDocuments({}),
       ]);
 
+    // Open/gesloten aanvragen (status-veld komt uit jouw Request-model)
+    const [openRequests, closedRequests] = await Promise.all([
+      Request.countDocuments({ status: "open" }),
+      Request.countDocuments({ status: "closed" }),
+    ]);
+
+    // Gemelde reviews (bijv. veld: reported === true)
+    const reportedReviews = await Review.countDocuments({ reported: true });
+
+    // Laatste activiteit
+    const latestRequest = await Request.findOne({})
+      .sort({ createdAt: -1 })
+      .select({ createdAt: 1, _id: 0 })
+      .lean()
+      .exec();
+
+    const latestReview = await Review.findOne({})
+      .sort({ createdAt: -1 })
+      .select({ createdAt: 1, _id: 0 })
+      .lean()
+      .exec();
+
     const stats = {
-      companies: {
-        total: totalCompanies,
-      },
-      requests: {
-        total: totalRequests,
-      },
-      reviews: {
-        total: totalReviews,
-      },
-      users: {
-        total: totalUsers,
-      },
-      generatedAt: new Date().toISOString(),
+      totalCompanies,
+      activeCompanies: totalCompanies, // eventueel later onderscheid maken
+      totalRequests,
+      openRequests,
+      closedRequests,
+      totalReviews,
+      reportedReviews,
+      totalUsers,
+      latestRequestAt: latestRequest?.createdAt || null,
+      latestReviewAt: latestReview?.createdAt || null,
     };
 
-    return res.json({
-      ok: true,
-      stats,
-    });
+    return res.json(stats);
   } catch (err) {
     console.error("[adminTools] Fout bij /stats:", err);
     return res.status(500).json({
@@ -110,10 +128,7 @@ router.get("/health", authMiddleware, requireAdmin, async (req, res) => {
       },
     };
 
-    return res.json({
-      ok: true,
-      health,
-    });
+    return res.json(health);
   } catch (err) {
     console.error("[adminTools] Fout bij /health:", err);
     return res.status(500).json({
