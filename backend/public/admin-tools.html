@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Irisje Admin Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8fafc;
+      padding: 30px;
+      color: #1e293b;
+    }
+    h1 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 600px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+    button {
+      width: 100%;
+      margin-top: 8px;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      background: #4f46e5;
+      color: white;
+    }
+    button:hover {
+      background: #4338ca;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+    .ok {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Irisje.nl – Admin Tools</h1>
+
+  <div class="card">
+    <p><strong>Token status:</strong> <span id="tokenStatus">Checking…</span></p>
+  </div>
+
+  <div class="card">
+    <h3>Logo fixes</h3>
+    <button onclick="runTool('fix-logos')">🔧 Fix Logos</button>
+    <button onclick="runTool('rebuild-logo-paths')">🛠 Rebuild logo paths</button>
+    <button onclick="runTool('reset-company-logos')">♻ Reset logo velden</button>
+  </div>
+
+  <div class="card">
+    <h3>Systeem</h3>
+    <button onclick="runTool('health')">🚀 Health check</button>
+    <button onclick="runTool('test')">🧪 Test call</button>
+  </div>
+
+  <div id="result"></div>
+
+<script>
+  const API = "https://irisje-backend.onrender.com/api/admin";
+  let token = localStorage.getItem("adminToken");
+
+  document.getElementById("tokenStatus").innerText =
+    token ? "Token gevonden ✔" : "Geen token gevonden ✖";
+
+  async function runTool(endpoint) {
+    const resultBox = document.getElementById("result");
+    resultBox.style.display = "block";
+    resultBox.className = "";
+    resultBox.innerHTML = "⏳ Bezig…";
+
+    if (!token) {
+      resultBox.classList.add("error");
+      resultBox.innerHTML = "❌ Geen admin token aanwezig.";
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        }
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        resultBox.classList.add("ok");
+        resultBox.innerHTML = "✅ " + (data.message || "Succes");
+      } else {
+        resultBox.classList.add("error");
+        resultBox.innerHTML = "❌ " + (data.error || "Onbekende fout");
+      }
+
+    } catch (err) {
+      resultBox.classList.add("error");
+      resultBox.innerHTML = "❌ Error: " + err.message;
+    }
+  }
+</script>
+
+</body>
+</html>
