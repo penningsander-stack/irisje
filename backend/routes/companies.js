@@ -2,7 +2,7 @@
 
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/Company");
+const Company = require("../models/company");
 
 // Helper: safely build regex
 function buildRegexSafe(value) {
