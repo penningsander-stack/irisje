@@ -1,5 +1,5 @@
 // frontend/js/index.js
-// v20251208-PREMIUM-HOME-FIX
+// v20251209-PREMIUM-HOME-FIX-FINAL
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -61,24 +61,21 @@ async function initPopularCategories() {
   `;
 
   try {
-    const res = await fetch(`${API_BASE}/publicRequests/popular-categories`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" }
-    });
+    // 🔥 Correcte API-call (werksysteem)
+    const res = await fetch(`${API_BASE}/companies/lists`);
 
     if (!res.ok) {
-      throw new Error(`Categorie-endpoint nog niet beschikbaar (status ${res.status})`);
+      throw new Error(`Backend gaf foutstatus: ${res.status}`);
     }
 
     const data = await res.json();
+
     const categories = Array.isArray(data?.categories)
-      ? data.categories
-      : Array.isArray(data)
-      ? data
+      ? data.categories.map((c) => ({ name: c, slug: c.toLowerCase() }))
       : [];
 
     if (!categories.length) {
-      throw new Error("Geen categorieën uit backend ontvangen");
+      throw new Error("Backend stuurde lege categorie-lijst");
     }
 
     renderCategories(categories);
