@@ -1,5 +1,11 @@
 // backend/server.js
-// v20251213-BACKEND-UPLOADS-FIX-FINAL-V2
+// v20251213-BACKEND-UPLOADS-FIX-FINAL-V3
+//
+// Wijzigingen t.o.v. V2:
+// - Admin-tools router (adminTools.js) expliciet geladen onder /api/admin
+//   voor /api/admin/stats en /api/admin/health.
+// - Foutafhandeling rond adminTools zodat de server niet crasht als het
+//   bestand (nog) ontbreekt.
 
 const express = require("express");
 const path = require("path");
@@ -46,12 +52,23 @@ routes.forEach((route) => {
   }
 });
 
+// === ADMIN TOOLS ROUTES (STATS & HEALTH) ===
+// Deze router vult /api/admin/stats en /api/admin/health aan
+// bovenop de bestaande /api/admin-routes in routes/admin.js.
+try {
+  const adminToolsRouter = require("./routes/adminTools");
+  app.use("/api/admin", adminToolsRouter);
+  console.log("✔️ Loaded admin tools routes (stats/health)");
+} catch (err) {
+  console.error("❌ Admin tools routes konden niet geladen worden:", err.message);
+}
+
 // === FRONTEND HOSTING ===
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 // === JUISTE SPA FALLBACK (OVERSCHRIJFT GEEN UPLOADS) ===
 // Alles behalve /uploads en /api valt terug op index.html
-app.get(/^\/(?!uploads|api).*/, (req, res) => {
+app.get(/^\/((?!uploads|api).)*$/, (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
 });
 
