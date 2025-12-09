@@ -1,0 +1,344 @@
+<!-- frontend/admin-tools.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Irisje.nl – Admin Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #f3f4f6;
+      color: #0f172a;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+      max-width: 900px;
+    }
+
+    @media (min-width: 900px) {
+      .grid {
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        align-items: flex-start;
+      }
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+    }
+
+    .card h2 {
+      font-size: 16px;
+      margin: 0 0 8px 0;
+    }
+
+    .card p {
+      margin: 4px 0;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .status {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .status.ok {
+      color: #15803d;
+    }
+
+    .status.error {
+      color: #b91c1c;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #475569;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid #cbd5f5;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    .token-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    @media (min-width: 640px) {
+      .token-row {
+        flex-direction: row;
+        align-items: center;
+      }
+      .token-row > div {
+        flex: 1;
+      }
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #4f46e5;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    #result {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 10px 12px;
+      border-radius: 10px;
+      max-height: 360px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    #result.ok {
+      border-left: 3px solid #22c55e;
+    }
+
+    #result.error {
+      border-left: 3px solid #ef4444;
+    }
+
+    small {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Irisje.nl – Admin Tools</h1>
+
+  <div class="grid">
+    <!-- Linkerkant: token + acties -->
+    <div class="card">
+      <h2>🔑 Admin token</h2>
+      <p>
+        Je gebruikt hier het <strong>admin-JWT</strong> dat je krijgt bij inloggen op
+        <code>/api/auth/login</code> (of via een tool zoals ReqBin).
+      </p>
+
+      <p class="status" id="tokenStatus">Controleert token…</p>
+
+      <div class="token-row">
+        <div>
+          <label for="tokenInput">Plak hier je admin token</label>
+          <input type="text" id="tokenInput" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+        <div>
+          <button type="button" class="secondary" id="saveTokenBtn">Token opslaan</button>
+        </div>
+      </div>
+
+      <p style="margin-top:10px;">
+        <small>
+          Token wordt opgeslagen als <code>adminToken</code> in <code>localStorage</code>.
+          Daarna kun je hieronder met één klik admin-acties uitvoeren.
+        </small>
+      </p>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:14px 0;" />
+
+      <h2>🛠 Logo-tools</h2>
+      <p>
+        Dit zijn de backend-tools onder <code>/api/admin/...</code>.  
+        Zorg dat je token geldig is, anders krijg je <em>“Admin authenticatie vereist”</em>.
+      </p>
+
+      <div class="btn-group">
+        <button type="button" id="btnFixLogos">
+          🔧 Fix logos
+        </button>
+        <button type="button" class="secondary" id="btnRebuildLogoPaths">
+          🛠 Rebuild logo paths
+        </button>
+        <button type="button" class="secondary" id="btnResetLogos">
+          ♻ Reset logo velden
+        </button>
+        <button type="button" class="secondary" id="btnTest">
+          ✅ Test admin
+        </button>
+      </div>
+
+      <p style="margin-top:10px;">
+        <small>
+          Let op: als een endpoint in de backend nog niet bestaat, zie je hier een
+          <code>Cannot POST /api/admin/...</code> fout. Dan moeten we dat endpoint nog in <code>routes/admin.js</code> toevoegen.
+        </small>
+      </p>
+    </div>
+
+    <!-- Rechterkant: resultaat -->
+    <div class="card">
+      <h2>📄 Resultaat</h2>
+      <p>Hier zie je de JSON-output van de gekozen admin-actie.</p>
+      <pre id="result">Nog geen actie uitgevoerd.</pre>
+    </div>
+  </div>
+
+  <script>
+    const API = "https://irisje-backend.onrender.com/api/admin";
+
+    function getToken() {
+      return localStorage.getItem("adminToken") || "";
+    }
+
+    function setToken(token) {
+      if (!token) {
+        localStorage.removeItem("adminToken");
+      } else {
+        localStorage.setItem("adminToken", token);
+      }
+      refreshTokenStatus();
+    }
+
+    function refreshTokenStatus() {
+      const token = getToken();
+      const statusEl = document.getElementById("tokenStatus");
+      const input = document.getElementById("tokenInput");
+
+      input.value = token;
+
+      if (token) {
+        statusEl.textContent = "Token gevonden ✔";
+        statusEl.classList.remove("error");
+        statusEl.classList.add("ok");
+      } else {
+        statusEl.textContent = "Geen token gevonden ✖";
+        statusEl.classList.remove("ok");
+        statusEl.classList.add("error");
+      }
+    }
+
+    async function runTool(endpoint) {
+      const resultBox = document.getElementById("result");
+      const token = getToken();
+
+      resultBox.className = "";
+      resultBox.textContent = "⏳ Bezig met " + endpoint + "...";
+
+      if (!token) {
+        resultBox.classList.add("error");
+        resultBox.textContent = "❌ Geen admin token aanwezig. Plak eerst je token en klik 'Token opslaan'.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/${endpoint}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        let bodyText = await res.text();
+        let data;
+
+        try {
+          data = JSON.parse(bodyText);
+        } catch (_) {
+          // geen geldige JSON – laat de raw text zien
+          data = { raw: bodyText };
+        }
+
+        if (res.ok && data && data.ok !== false) {
+          resultBox.classList.add("ok");
+        } else {
+          resultBox.classList.add("error");
+        }
+
+        resultBox.textContent = JSON.stringify({
+          status: res.status,
+          ok: res.ok,
+          data
+        }, null, 2);
+      } catch (err) {
+        resultBox.classList.add("error");
+        resultBox.textContent = "❌ Error: " + err.message;
+      }
+    }
+
+    // Event listeners
+    document.getElementById("saveTokenBtn").addEventListener("click", () => {
+      const value = document.getElementById("tokenInput").value.trim();
+      setToken(value);
+    });
+
+    document.getElementById("btnFixLogos").addEventListener("click", () => {
+      runTool("fix-logos");
+    });
+
+    document.getElementById("btnRebuildLogoPaths").addEventListener("click", () => {
+      runTool("rebuild-logo-paths");
+    });
+
+    document.getElementById("btnResetLogos").addEventListener("click", () => {
+      runTool("reset-company-logos");
+    });
+
+    document.getElementById("btnTest").addEventListener("click", () => {
+      runTool("test");
+    });
+
+    // Init
+    refreshTokenStatus();
+  </script>
+
+</body>
+</html>
