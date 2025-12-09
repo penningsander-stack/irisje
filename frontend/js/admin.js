@@ -1,13 +1,13 @@
 // frontend/js/admin.js
-// v20251209-ADMIN-FIX
+// v20251210-ADMIN-FIX-COMPANIES
 //
-// Verbeteringen:
-// 1. GEEN automatische logout meer bij 401 of ontbrekende adminToken.
-// 2. Als een normale login-token 'token' aanwezig is én role=admin,
-//    wordt automatisch 'adminToken' gezet.
-// 3. Admin-sectie switching blijft intact.
+// Verbeteringen t.o.v. vorige versie (v20251209-ADMIN-FIX):
+// 1. Bedrijvenoverzicht gebruikt nu res.data.companies i.p.v. res.data.
+// 2. 'Totaal bedrijven' teller wordt bijgewerkt (element met id 'adminCompanyTotal').
+// 3. Bij init wordt automatisch een eerste loadCompanies() gedaan.
+// 4. Extra logging zodat duidelijk is hoeveel bedrijven geladen zijn.
 //
-// Dit bestand vervangt volledig de vorige admin.js.
+// Dit bestand vervangt volledig de vorige admin.js (frontend).
 
 (function () {
   'use strict';
@@ -126,25 +126,39 @@
   }
 
   // ===============================
-  // Voorbeeld: bedrijven laden
+  // Bedrijven laden
   // ===============================
   async function loadCompanies() {
     const out = document.getElementById('adminCompanyTable');
-    if (!out) return;
+    const totalEl = document.getElementById('adminCompanyTotal');
+
+    if (!out) {
+      console.warn('[admin.js] adminCompanyTable element niet gevonden.');
+      return;
+    }
 
     out.innerHTML = '<tr><td colspan="5" class="admin-loading">Laden...</td></tr>';
+    if (totalEl) totalEl.textContent = '–';
 
     const res = await safeFetch('/api/admin/companies', { method: 'GET' });
     if (!res.ok) {
+      console.error('[admin.js] Fout bij /api/admin/companies:', res);
       out.innerHTML = '<tr><td colspan="5" class="admin-loading">Fout bij laden</td></tr>';
       return;
     }
 
-    const list = res.data || [];
-    if (!Array.isArray(list) || list.length === 0) {
+    const payload = res.data || {};
+    const list = Array.isArray(payload.companies) ? payload.companies : [];
+
+    if (totalEl) totalEl.textContent = String(list.length);
+
+    if (list.length === 0) {
       out.innerHTML = '<tr><td colspan="5" class="admin-loading">Geen bedrijven gevonden</td></tr>';
+      console.log('[admin.js] loadCompanies: geen bedrijven gevonden.');
       return;
     }
+
+    console.log('[admin.js] loadCompanies: ' + list.length + ' bedrijven ontvangen.');
 
     out.innerHTML = list.map(c => `
       <tr>
@@ -165,7 +179,9 @@
   // ===============================
   // INIT
   // ===============================
-  console.log('[admin.js] Admin-module geladen (v20251209-FIX)');
+  console.log('[admin.js] Admin-module geladen (v20251210-ADMIN-FIX-COMPANIES)');
   switchSection('section-overview');
+  // Automatisch eerste bedrijven-load bij start
+  loadCompanies();
 
 })();
