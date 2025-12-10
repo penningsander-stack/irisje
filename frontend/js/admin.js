@@ -1,504 +1,659 @@
 // frontend/js/admin.js
-// v20251210-ADMIN-FULL-FIX
-//
-// Volledige adminmodule voor Irisje.nl
-// - Bedrijvenoverzicht
-// - Gemelde reviews (incl. "Melding wissen")
-// - Claimverzoeken
-// - Serverlogs
-// - Navigatie tussen secties
-// - Admin-tokengebruik zonder automatische logout
+// v20251210-ADMIN-FIX
 
-(function () {
-  'use strict';
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const API_BASE = window.irisjeApiBaseUrl || 'https://irisje-backend.onrender.com';
+const ENDPOINT_GET_REPORTED = `${API_BASE}/admin/reported`;
+const ENDPOINT_RESOLVE_REPORTED = (id) => `${API_BASE}/admin/resolve/${id}`;
+const ENDPOINT_GET_LOGS = `${API_BASE}/admin/logs`;
+const ENDPOINT_GET_COMPANIES = `${API_BASE}/admin/overview`;
+const ENDPOINT_GET_CLAIMS = `${API_BASE}/admin/claims`;
 
-  // ------------------------------
-  // Helpers
-  // ------------------------------
-  function getToken(key) {
-    try {
-      return localStorage.getItem(key);
-    } catch {
+const adminState = {
+  companies: [],
+  reported: [],
+  claims: [],
+  logs: [],
+};
+
+/* ============================================================
+   BASIS HELPERFUNCTIES
+============================================================ */
+function byId(id) {
+  return document.getElementById(id);
+}
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
+  if (!token) return {};
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+async function safeFetch(url, options = {}) {
+  const { allow404, ...rest } = options || {};
+
+  const mergedOptions = {
+    ...rest,
+    headers: {
+      ...getAuthHeaders(),
+      ...(rest.headers || {}),
+    },
+  };
+
+  try {
+    const res = await fetch(url, mergedOptions);
+
+    // 401/403 → TERUG NAAR LOGIN
+    if (res.status === 401 || res.status === 403) {
+      console.warn("❌ Ongeldige sessie → redirect naar login");
+      localStorage.clear();
+      return (window.location.href = "login.html");
+    }
+
+    if (allow404 && res.status === 404) {
+      console.warn("ℹ️ Endpoint niet gevonden (404):", url);
       return null;
     }
-  }
 
-  function setToken(key, value) {
-    try {
-      localStorage.setItem(key, value);
-    } catch {
-      // ignore
-    }
-  }
-
-  function escapeHtml(value) {
-    if (value === null || value === undefined) return '';
-    return String(value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  function formatDateTime(iso) {
-    if (!iso) return '-';
-    try {
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return '-';
-      return d.toLocaleString('nl-NL');
-    } catch {
-      return '-';
-    }
-  }
-
-  async function safeFetch(path, options = {}) {
-    const adminToken = getToken('adminToken');
-    const headers = new Headers(options.headers || {});
-    headers.set('Accept', 'application/json');
-
-    if (options.body && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json');
-    }
-
-    if (adminToken) {
-      headers.set('Authorization', 'Bearer ' + adminToken);
-    }
-
-    const config = Object.assign({}, options, { headers });
-
-    let res;
-    try {
-      res = await fetch(API_BASE + path, config);
-    } catch (err) {
-      console.error('[admin.js] fetch-fout bij', path, err);
-      return { ok: false, status: 0, error: 'fetch', data: null };
-    }
+    const json =
+      res.headers.get("content-type")?.includes("application/json")
+        ? await res.json().catch(() => null)
+        : null;
 
     if (!res.ok) {
-      let text = '';
-      try {
-        text = await res.text();
-      } catch {
-        // ignore
-      }
-      console.warn('[admin.js] HTTP-fout', res.status, 'bij', path, text);
-      return { ok: false, status: res.status, error: 'http', data: text };
+      const msg =
+        json?.error ||
+        json?.message ||
+        `Fout ${res.status} bij ${url}`;
+      throw new Error(msg);
     }
 
-    try {
-      const data = await res.json();
-      return { ok: true, status: res.status, data };
-    } catch (err) {
-      console.error('[admin.js] JSON-fout bij', path, err);
-      return { ok: false, status: res.status, error: 'json', data: null };
-    }
+    return json;
+  } catch (err) {
+    console.error("❌ Fout bij safeFetch:", url, err);
+    throw err;
   }
+}
 
-  // Probeer bestaand 'token' te hergebruiken als adminToken
-  (async function bootstrapAdminToken() {
-    const existingAdmin = getToken('adminToken');
-    if (existingAdmin) {
-      return;
-    }
-    const normalToken = getToken('token');
-    if (!normalToken) return;
+function buildNotificationBar() {
+  const notif = document.createElement("div");
+  notif.id = "notif";
+  notif.className =
+    "hidden fixed top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity";
+  notif.style.opacity = "0";
+  document.body.appendChild(notif);
+  return notif;
+}
 
-    try {
-      const res = await fetch(API_BASE + '/api/auth/me', {
-        headers: { Authorization: 'Bearer ' + normalToken }
-      });
+function showNotif(notif, message, success = true) {
+  notif.textContent = message;
+  notif.classList.remove("hidden");
+  notif.classList.toggle("bg-green-600", success);
+  notif.classList.toggle("bg-red-600", !success);
+  notif.style.opacity = "1";
+  setTimeout(() => {
+    notif.style.opacity = "0";
+    setTimeout(() => notif.classList.add("hidden"), 300);
+  }, 2500);
+}
 
-      if (!res.ok) return;
-      const data = await res.json();
-      if (data && (data.role === 'admin' || data.role === 'superadmin')) {
-        setToken('adminToken', normalToken);
-        console.log('[admin.js] adminToken gezet op basis van normale login-token.');
-      }
-    } catch (err) {
-      console.warn('[admin.js] kon /api/auth/me niet ophalen', err);
-    }
-  })();
+function esc(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-  // ------------------------------
-  // NAVIGATIE
-  // ------------------------------
-  const nav = document.getElementById('adminNav');
+/* ============================================================
+   INIT
+============================================================ */
+function initAdmin() {
+  const notif = buildNotificationBar();
 
-  function switchSection(sectionId) {
-    const sectionIds = [
-      'section-overview',
-      'section-reported',
-      'section-claims',
-      'section-logs'
-    ];
-
-    sectionIds.forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (id === sectionId) {
-        el.classList.remove('hidden');
-      } else {
-        el.classList.add('hidden');
-      }
-    });
-
-    if (nav) {
-      const links = nav.querySelectorAll('[data-section]');
-      links.forEach((link) => {
-        const target = link.getAttribute('data-section');
-        if (target === sectionId) {
-          link.classList.add('bg-indigo-50', 'text-indigo-700');
-        } else {
-          link.classList.remove('bg-indigo-50', 'text-indigo-700');
-        }
-      });
-    }
-  }
-
-  if (nav) {
-    nav.addEventListener('click', (event) => {
-      const btn = event.target.closest('[data-section]');
-      if (!btn) return;
-      const target = btn.getAttribute('data-section');
-      if (!target) return;
-      switchSection(target);
-      if (target === 'section-overview') {
-        loadCompanies();
-      } else if (target === 'section-reported') {
-        loadReportedReviews();
-      } else if (target === 'section-claims') {
-        loadClaims();
-      } else if (target === 'section-logs') {
-        loadServerLogs();
-      }
-    });
-  }
-
-  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutBtn = byId("logoutBtn");
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      try {
-        localStorage.removeItem('adminToken');
-      } catch {
-        // ignore
-      }
-      console.log('[admin.js] Admin-token verwijderd. Pagina wordt herladen.');
-      location.reload();
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("adminToken");
+      localStorage.removeItem("token");
+      showNotif(notif, "Je bent uitgelogd");
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 800);
     });
   }
 
-  // ------------------------------
-  // BEDRIJVEN
-  // ------------------------------
-  async function loadCompanies() {
-    const tbody = document.getElementById('adminCompanyTable');
-    const totalEl = document.getElementById('total-companies');
+  const adminTabs = document.querySelectorAll(".admin-tab");
+  const sections = ["section-overview", "section-reported", "section-claims", "section-logs"].map(
+    (id) => byId(id)
+  );
 
-    if (!tbody) {
-      console.warn('[admin.js] adminCompanyTable niet gevonden.');
-      return;
-    }
+  adminTabs.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.target;
+      adminTabs.forEach((b) => b.classList.remove("active", "bg-indigo-600", "text-white"));
+      adminTabs.forEach((b) =>
+        b.classList.add("bg-gray-100", "text-gray-700")
+      );
 
-    tbody.innerHTML = '<tr><td colspan="5" class="admin-loading">Laden...</td></tr>';
-    if (totalEl) totalEl.textContent = '–';
+      btn.classList.add("active", "bg-indigo-600", "text-white");
+      btn.classList.remove("bg-gray-100", "text-gray-700");
 
-    const res = await safeFetch('/api/admin/companies', { method: 'GET' });
-    if (!res.ok) {
-      tbody.innerHTML = '<tr><td colspan="5" class="admin-loading">Fout bij laden van bedrijven</td></tr>';
-      return;
-    }
-
-    const payload = res.data || {};
-    let list = [];
-
-    if (Array.isArray(payload.companies)) {
-      list = payload.companies;
-    } else if (Array.isArray(payload)) {
-      list = payload;
-    }
-
-    if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="admin-loading">Geen bedrijven gevonden</td></tr>';
-      if (totalEl) totalEl.textContent = '0';
-      return;
-    }
-
-    if (totalEl) totalEl.textContent = String(list.length);
-
-    tbody.innerHTML = list.map((company) => {
-      const name = company.name || company.bedrijfsnaam || '-';
-      const email = company.email || '-';
-      const status =
-        company.status ||
-        (company.verified === true || company.isVerified === true
-          ? 'Geverifieerd'
-          : 'Onbevestigd');
-      const reviewCount =
-        typeof company.reviewCount === 'number'
-          ? company.reviewCount
-          : Array.isArray(company.reviews)
-          ? company.reviews.length
-          : company.reviewCount || 0;
-
-      return `
-        <tr>
-          <td class="p-3">${escapeHtml(name)}</td>
-          <td class="p-3">${escapeHtml(email)}</td>
-          <td class="p-3">${escapeHtml(status)}</td>
-          <td class="p-3 text-center">${escapeHtml(String(reviewCount))}</td>
-          <td class="p-3 text-xs text-slate-500">–</td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  const refreshCompaniesBtn = document.getElementById('refreshCompanies');
-  if (refreshCompaniesBtn) {
-    refreshCompaniesBtn.addEventListener('click', () => {
-      loadCompanies();
-    });
-  }
-
-  // ------------------------------
-  // GEMELDE REVIEWS
-  // ------------------------------
-  async function loadReportedReviews() {
-    const tbody = document.getElementById('reported-table-body');
-    const totalEl = document.getElementById('total-reported');
-    const openEl = document.getElementById('open-reported');
-    const resolvedEl = document.getElementById('resolved-reported');
-
-    if (!tbody) {
-      console.warn('[admin.js] reported-table-body niet gevonden.');
-      return;
-    }
-
-    tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Laden...</td></tr>';
-    if (totalEl) totalEl.textContent = '0';
-    if (openEl) openEl.textContent = '0';
-    if (resolvedEl) resolvedEl.textContent = '0';
-
-    const res = await safeFetch('/api/admin/reported-reviews', { method: 'GET' });
-    if (!res.ok) {
-      tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Fout bij laden van gemelde reviews</td></tr>';
-      return;
-    }
-
-    const payload = res.data || {};
-    let list = [];
-
-    if (Array.isArray(payload.reviews)) {
-      list = payload.reviews;
-    } else if (Array.isArray(payload)) {
-      list = payload;
-    }
-
-    if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Geen gemelde reviews gevonden</td></tr>';
-      return;
-    }
-
-    let openCount = 0;
-    let resolvedCount = 0;
-
-    tbody.innerHTML = list.map((rev) => {
-      const companyName =
-        rev.companyName ||
-        (rev.company && (rev.company.name || rev.company.bedrijfsnaam)) ||
-        '-';
-      const name = rev.name || rev.reviewerName || '-';
-      const rating = rev.rating != null ? rev.rating : '-';
-      const message = rev.message || rev.text || '-';
-      const reason = rev.reportReason || rev.reason || 'Gemeld';
-      const dateStr =
-        rev.date ? formatDateTime(rev.date) : rev.createdAt ? formatDateTime(rev.createdAt) : '-';
-
-      const status = rev.status || (rev.reported === true ? 'Open' : 'Afgehandeld');
-      if (status === 'Open') openCount += 1;
-      else resolvedCount += 1;
-
-      const id = rev._id || rev.id || '';
-
-      const actionCell = id
-        ? `<button type="button"
-              class="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-700 text-white"
-              data-review-id="${escapeHtml(id)}">
-              Melding wissen
-            </button>`
-        : '<span class="text-xs text-slate-400">–</span>';
-
-      return `
-        <tr>
-          <td class="p-3">${escapeHtml(companyName)}</td>
-          <td class="p-3">${escapeHtml(name)}</td>
-          <td class="p-3 text-center">${escapeHtml(String(rating))}</td>
-          <td class="p-3">${escapeHtml(message)}</td>
-          <td class="p-3">${escapeHtml(reason)}</td>
-          <td class="p-3 whitespace-nowrap">${escapeHtml(dateStr)}</td>
-          <td class="p-3">${escapeHtml(status)}</td>
-          <td class="p-3">${actionCell}</td>
-        </tr>
-      `;
-    }).join('');
-
-    if (totalEl) totalEl.textContent = String(list.length);
-    if (openEl) openEl.textContent = String(openCount);
-    if (resolvedEl) resolvedEl.textContent = String(resolvedCount);
-
-    // Klik-handlers voor "Melding wissen"
-    tbody.onclick = async (event) => {
-      const btn = event.target.closest('button[data-review-id]');
-      if (!btn) return;
-      const id = btn.getAttribute('data-review-id');
-      if (!id) return;
-
-      const confirmed = window.confirm('Weet je zeker dat je de melding van deze review wilt wissen?');
-      if (!confirmed) return;
-
-      const res = await safeFetch('/api/admin/reported-reviews/' + encodeURIComponent(id) + '/clear', {
-        method: 'POST'
+      sections.forEach((sec) => {
+        if (!sec) return;
+        sec.classList.toggle("hidden", sec.id !== targetId);
       });
-
-      if (!res.ok) {
-        window.alert('Kon de melding niet wissen. Bekijk de console voor details.');
-        return;
-      }
-
-      console.log('[admin.js] Melding gewist voor review', id);
-      loadReportedReviews();
-    };
-  }
-
-  const refreshReportedBtn = document.getElementById('refreshBtn');
-  if (refreshReportedBtn) {
-    refreshReportedBtn.addEventListener('click', () => {
-      loadReportedReviews();
     });
+  });
+
+  const adminTable = byId("adminCompanyTable");
+  const refreshCompaniesBtn = byId("refreshCompaniesBtn");
+  const reportedTableBody = byId("reportedCardsContainer");
+  const refreshReportedBtn = byId("refreshReportedBtn");
+  const claimTableBody = byId("claimsTableBody");
+  const refreshClaimsBtn = byId("refreshClaimsBtn");
+  const refreshLogsBtn = byId("refreshLogsBtn");
+  const logsContainer = byId("logs-container");
+
+  if (refreshCompaniesBtn)
+    refreshCompaniesBtn.addEventListener("click", () =>
+      loadAdminCompanies(adminTable, notif)
+    );
+
+  if (refreshReportedBtn)
+    refreshReportedBtn.addEventListener("click", () =>
+      loadReportedReviews(reportedTableBody, notif)
+    );
+
+  if (refreshClaimsBtn)
+    refreshClaimsBtn.addEventListener("click", () =>
+      loadClaims(claimTableBody, notif)
+    );
+
+  if (refreshLogsBtn)
+    refreshLogsBtn.addEventListener("click", () =>
+      loadServerLogs(logsContainer, notif)
+    );
+
+  // INIT LOAD (zonder logs-autorefresh om 404 spam te voorkomen)
+  loadAdminCompanies(adminTable, notif);
+  loadReportedReviews(reportedTableBody, notif);
+  loadClaims(claimTableBody, notif);
+}
+
+/* ============================================================
+   BEDRIJVEN
+============================================================ */
+async function loadAdminCompanies(table, notif) {
+  if (!table) return;
+
+  table.innerHTML =
+    '<tr><td colspan="5" class="p-4 text-center text-gray-400">Laden...</td></tr>';
+
+  try {
+    const data = await safeFetch(ENDPOINT_GET_COMPANIES);
+    adminState.companies = Array.isArray(data) ? data : [];
+
+    if (!adminState.companies.length) {
+      table.innerHTML =
+        '<tr><td colspan="5" class="p-4 text-center text-gray-400">Geen bedrijven gevonden.</td></tr>';
+      return;
+    }
+
+    table.innerHTML = adminState.companies
+      .map((c) => renderCompanyRow(c))
+      .join("");
+
+    table.querySelectorAll(".verifyBtn").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        doVerifyCompany(btn.dataset.id, notif, table)
+      )
+    );
+    table.querySelectorAll(".deleteBtn").forEach((btn) =>
+      btn.addEventListener("click", () =>
+        doDeleteCompany(btn.dataset.id, notif, table)
+      )
+    );
+  } catch (err) {
+    console.error(err);
+    table.innerHTML =
+      '<tr><td colspan="5" class="p-4 text-center text-red-600">❌ Laden mislukt</td></tr>';
+    showNotif(notif, "Fout bij laden bedrijven", false);
   }
+}
 
-  // ------------------------------
-  // CLAIMVERZOEKEN
-  // ------------------------------
-  async function loadClaims() {
-    const tbody = document.getElementById('claimTableBody');
-    if (!tbody) {
-      console.warn('[admin.js] claimTableBody niet gevonden.');
+function renderCompanyRow(company) {
+  const {
+    _id,
+    name,
+    email,
+    isVerified,
+    reviewCount,
+  } = company || {};
+
+  const badgeClass = isVerified
+    ? "bg-emerald-100 text-emerald-700"
+    : "bg-yellow-100 text-yellow-700";
+
+  const badgeText = isVerified ? "Geverifieerd" : "Nog niet geverifieerd";
+
+  return `
+    <tr class="border-b last:border-0">
+      <td class="p-3 align-top">
+        <div class="font-medium text-gray-900">${esc(name)}</div>
+        <div class="text-xs text-gray-500">${esc(_id)}</div>
+      </td>
+      <td class="p-3 align-top text-sm">
+        <a href="mailto:${esc(email)}" class="text-indigo-600 hover:underline">${esc(email)}</a>
+      </td>
+      <td class="p-3 align-top">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs ${badgeClass}">
+          ${badgeText}
+        </span>
+      </td>
+      <td class="p-3 align-top text-center text-sm">
+        ${reviewCount ?? 0}
+      </td>
+      <td class="p-3 align-top text-sm space-x-2">
+        <button
+          class="verifyBtn inline-flex items-center px-2 py-1 rounded-md border border-gray-200 hover:border-indigo-500 text-xs"
+          data-id="${esc(_id)}"
+        >
+          Verificatie togglen
+        </button>
+        <button
+          class="deleteBtn inline-flex items-center px-2 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50 text-xs"
+          data-id="${esc(_id)}"
+        >
+          Verwijderen
+        </button>
+      </td>
+    </tr>
+  `;
+}
+
+async function doVerifyCompany(id, notif, table) {
+  if (!confirm("Verificatiestatus wijzigen?")) return;
+
+  try {
+    await safeFetch(`${API_BASE}/admin/verify/${id}`, { method: "PUT" });
+    showNotif(notif, "✔ Verificatie gewijzigd");
+    loadAdminCompanies(table, notif);
+  } catch (err) {
+    console.error(err);
+    showNotif(notif, "❌ Fout bij verificatie", false);
+  }
+}
+
+async function doDeleteCompany(id, notif, table) {
+  if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
+
+  try {
+    await safeFetch(`${API_BASE}/admin/companies/${id}`, { method: "DELETE" });
+    showNotif(notif, "✔ Bedrijf verwijderd");
+    loadAdminCompanies(table, notif);
+  } catch (err) {
+    console.error(err);
+    showNotif(notif, "❌ Fout bij verwijderen bedrijf", false);
+  }
+}
+
+/* ============================================================
+   GEMELDE REVIEWS
+============================================================ */
+async function loadReportedReviews(container, notif) {
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="text-xs text-gray-400">Laden...</div>';
+
+  try {
+    const data = await safeFetch(ENDPOINT_GET_REPORTED);
+    adminState.reported = Array.isArray(data) ? data : [];
+
+    if (!adminState.reported.length) {
+      container.innerHTML =
+        '<div class="text-xs text-gray-400">Geen gemelde reviews.</div>';
+      updateReportedCounters();
       return;
     }
 
-    tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">Laden...</td></tr>';
+    container.innerHTML = adminState.reported
+      .map((r) => renderReportedCard(r))
+      .join("");
 
-    const res = await safeFetch('/api/admin/claims', { method: 'GET' });
-    if (!res.ok) {
-      tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">Fout bij laden van claimverzoeken</td></tr>';
+    updateReportedCounters();
+
+    container.querySelectorAll("[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        handleReportedAction(id, action, notif, container);
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    container.innerHTML =
+      '<div class="text-xs text-red-600">❌ Fout bij laden gemelde reviews</div>';
+    showNotif(notif, "Fout bij laden gemelde reviews", false);
+  }
+}
+
+function renderReportedCard(report) {
+  const {
+    _id,
+    reviewId,
+    companyName,
+    reviewerName,
+    reviewerEmail,
+    rating,
+    text,
+    reason,
+    details,
+    createdAt,
+    status,
+  } = report || {};
+
+  const statusBadge =
+    status === "resolved"
+      ? "bg-emerald-100 text-emerald-700"
+      : "bg-yellow-100 text-yellow-700";
+
+  const statusText =
+    status === "resolved" ? "Afgehandeld" : "Open";
+
+  return `
+    <article class="border border-gray-200 rounded-xl bg-white p-3 flex flex-col gap-2 shadow-sm">
+      <header class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-900">${esc(
+            companyName || "Onbekend bedrijf"
+          )}</h3>
+          <p class="text-xs text-gray-500">
+            Reviewer: ${esc(reviewerName || "Onbekend")} – ${esc(
+    reviewerEmail || ""
+  )}
+          </p>
+        </div>
+        <div class="flex flex-col items-end gap-1">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] ${statusBadge}">
+            ${statusText}
+          </span>
+          <span class="text-[11px] text-gray-400">
+            ${createdAt ? new Date(createdAt).toLocaleString("nl-NL") : ""}
+          </span>
+        </div>
+      </header>
+
+      <p class="text-sm text-gray-800">
+        <span class="font-semibold">${rating ?? "-"}★</span> – ${esc(text || "")}
+      </p>
+
+      <div class="text-xs text-gray-600 bg-gray-50 rounded-lg p-2">
+        <p class="font-semibold mb-0.5">Reden melding:</p>
+        <p>${esc(reason || "Onbekend")}</p>
+        ${
+          details
+            ? `<p class="mt-1 text-gray-500">${esc(details)}</p>`
+            : ""
+        }
+      </div>
+
+      <footer class="flex items-center justify-between gap-2 mt-1">
+        <div class="flex gap-1.5">
+          <button
+            class="px-2 py-1 rounded-md text-xs border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+            data-id="${esc(_id)}"
+            data-action="keep"
+          >
+            Review laten staan
+          </button>
+          <button
+            class="px-2 py-1 rounded-md text-xs border border-red-200 text-red-700 hover:bg-red-50"
+            data-id="${esc(_id)}"
+            data-action="remove"
+          >
+            Review verwijderen
+          </button>
+        </div>
+        <a
+          href="company.html?id=${encodeURIComponent(
+            report.companyId || ""
+          )}#reviews"
+          class="text-xs text-indigo-600 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Bekijk bedrijfsprofiel
+        </a>
+      </footer>
+    </article>
+  `;
+}
+
+async function handleReportedAction(id, action, notif, container) {
+  if (!id || !action) return;
+
+  const confirmText =
+    action === "remove"
+      ? "Weet je zeker dat je deze review wilt verwijderen?"
+      : "Weet je zeker dat je deze melding wilt afhandelen en de review laten staan?";
+
+  if (!confirm(confirmText)) return;
+
+  try {
+    const body = { action };
+    await safeFetch(ENDPOINT_RESOLVE_REPORTED(id), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    showNotif(notif, "✔ Review afgehandeld");
+    loadReportedReviews(container, notif);
+  } catch (err) {
+    console.error(err);
+    showNotif(notif, "❌ Fout bij afhandelen", false);
+  }
+}
+
+function updateReportedCounters() {
+  const total = adminState.reported.length;
+  const openCount = adminState.reported.filter(
+    (r) => !(r.status === "resolved" || r.reported === false)
+  ).length;
+  const resolvedCount = total - openCount;
+
+  const totalEl = byId("total-reported");
+  const openEl = byId("open-reported");
+  const resolvedEl = byId("resolved-reported");
+
+  if (totalEl) totalEl.textContent = total;
+  if (openEl) openEl.textContent = openCount;
+  if (resolvedEl) resolvedEl.textContent = resolvedCount;
+}
+
+/* ============================================================
+   CLAIMS
+============================================================ */
+async function loadClaims(tbody, notif) {
+  if (!tbody) return;
+
+  tbody.innerHTML =
+    '<tr><td colspan="6" class="p-4 text-center text-gray-400">Laden...</td></tr>';
+
+  try {
+    const claims = await safeFetch(ENDPOINT_GET_CLAIMS);
+    adminState.claims = Array.isArray(claims) ? claims : [];
+
+    if (!adminState.claims.length) {
+      tbody.innerHTML =
+        '<tr><td colspan="6" class="p-4 text-center text-gray-400">Geen claims gevonden.</td></tr>';
       return;
     }
 
-    const payload = res.data || {};
-    let list = [];
+    tbody.innerHTML = adminState.claims
+      .map((claim) => renderClaimRow(claim))
+      .join("");
 
-    if (Array.isArray(payload.claims)) {
-      list = payload.claims;
-    } else if (Array.isArray(payload)) {
-      list = payload;
-    }
+    tbody.querySelectorAll("[data-claim-action]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.id;
+        const action = btn.dataset.claimAction;
+        handleClaimAction(id, action, notif, tbody);
+      });
+    });
+  } catch (err) {
+    console.error(err);
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="p-4 text-center text-red-600">❌ Fout bij laden claims</td></tr>';
+    showNotif(notif, "Fout bij laden claims", false);
+  }
+}
+
+function renderClaimRow(claim) {
+  const {
+    _id,
+    createdAt,
+    customerName,
+    companyName,
+    type,
+    status,
+  } = claim || {};
+
+  const statusClass =
+    status === "resolved"
+      ? "bg-emerald-100 text-emerald-700"
+      : status === "rejected"
+      ? "bg-red-100 text-red-700"
+      : "bg-blue-100 text-blue-700";
+
+  const statusText =
+    status === "resolved"
+      ? "Afgehandeld"
+      : status === "rejected"
+      ? "Afgewezen"
+      : "Open";
+
+  return `
+    <tr class="border-b last:border-0">
+      <td class="p-3 text-xs text-gray-500 align-top">
+        ${createdAt ? new Date(createdAt).toLocaleDateString("nl-NL") : "-"}
+      </td>
+      <td class="p-3 text-sm align-top">${esc(customerName || "-")}</td>
+      <td class="p-3 text-sm align-top">${esc(companyName || "-")}</td>
+      <td class="p-3 text-xs align-top">${esc(type || "-")}</td>
+      <td class="p-3 align-top">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs ${statusClass}">
+          ${statusText}
+        </span>
+      </td>
+      <td class="p-3 align-top text-right text-xs space-x-1">
+        <button
+          class="px-2 py-1 rounded border border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+          data-id="${esc(_id)}"
+          data-claim-action="resolve"
+        >
+          Markeer als afgehandeld
+        </button>
+        <button
+          class="px-2 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50"
+          data-id="${esc(_id)}"
+          data-claim-action="reject"
+        >
+          Afwijzen
+        </button>
+      </td>
+    </tr>
+  `;
+}
+
+async function handleClaimAction(id, action, notif, tbody) {
+  if (!id || !action) return;
+
+  const confirmText =
+    action === "reject"
+      ? "Weet je zeker dat je deze claim wilt afwijzen?"
+      : "Weet je zeker dat je deze claim wilt markeren als afgehandeld?";
+
+  if (!confirm(confirmText)) return;
+
+  try {
+    await safeFetch(`${API_BASE}/admin/claims/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+
+    showNotif(notif, "✔ Claim bijgewerkt");
+    loadClaims(tbody, notif);
+  } catch (err) {
+    console.error(err);
+    showNotif(notif, "❌ Fout bij bijwerken claim", false);
+  }
+}
+
+/* ============================================================
+   LOGS
+============================================================ */
+async function loadServerLogs(container, notif) {
+  if (!container) return;
+
+  container.innerHTML = '<div class="text-xs text-gray-500">Laden...</div>';
+
+  try {
+    const logs = await safeFetch(ENDPOINT_GET_LOGS, { allow404: true });
+    const list = Array.isArray(logs) ? logs.slice(-100).reverse() : [];
+
+    adminState.logs = list;
 
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="admin-loading">Geen claimverzoeken gevonden</td></tr>';
+      container.innerHTML =
+        '<div class="text-xs text-gray-500">Geen logs beschikbaar of endpoint niet geactiveerd.</div>';
       return;
     }
 
-    tbody.innerHTML = list.map((claim) => {
-      const companyName =
-        claim.companyName ||
-        (claim.companyId && (claim.companyId.name || claim.companyId.bedrijfsnaam)) ||
-        (claim.company && (claim.company.name || claim.company.bedrijfsnaam)) ||
-        '-';
+    container.innerHTML = list.map((entry) => renderLogEntry(entry)).join("");
+  } catch (err) {
+    console.error(err);
+    container.innerHTML =
+      '<div class="text-xs text-red-600">❌ Kan logs niet laden</div>';
+    showNotif(notif, "Fout bij laden logs", false);
+  }
+}
 
-      const contactName = claim.contactName || claim.name || '-';
-      const email = claim.email || '-';
-      const phone = claim.phone || '-';
-      const status = claim.status || 'Open';
-      const dateStr =
-        claim.createdAt ? formatDateTime(claim.createdAt) : claim.date ? formatDateTime(claim.date) : '-';
-
-      return `
-        <tr>
-          <td class="p-3 whitespace-nowrap">${escapeHtml(dateStr)}</td>
-          <td class="p-3">${escapeHtml(companyName)}</td>
-          <td class="p-3">${escapeHtml(contactName)}</td>
-          <td class="p-3">${escapeHtml(email)}</td>
-          <td class="p-3">${escapeHtml(phone)}</td>
-          <td class="p-3">${escapeHtml(status)}</td>
-        </tr>
-      `;
-    }).join('');
+function renderLogEntry(entry) {
+  if (typeof entry === "string") {
+    return `<div class="text-xs text-gray-800 whitespace-pre-wrap">${esc(entry)}</div>`;
   }
 
-  const refreshClaimsBtn = document.getElementById('refreshClaims');
-  if (refreshClaimsBtn) {
-    refreshClaimsBtn.addEventListener('click', () => {
-      loadClaims();
-    });
-  }
+  const { level, message, timestamp } = entry;
+  const lvl = (level || "info").toLowerCase();
+  const when = timestamp ? new Date(timestamp).toLocaleString("nl-NL") : "";
+  const msg = message || "";
 
-  // ------------------------------
-  // SERVERLOGS
-  // ------------------------------
-  async function loadServerLogs() {
-    const container = document.getElementById('logs-container');
-    if (!container) {
-      console.warn('[admin.js] logs-container niet gevonden.');
-      return;
-    }
+  const badge =
+    lvl === "error"
+      ? "bg-red-100 text-red-700"
+      : lvl === "warn"
+      ? "bg-yellow-100 text-yellow-700"
+      : "bg-blue-100 text-blue-700";
 
-    container.textContent = 'Logs worden geladen...';
+  return `
+    <div class="text-xs bg-white border border-gray-200 rounded px-2 py-1">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[10px] text-gray-500">${esc(when)}</span>
+        <span class="px-1.5 py-0.5 text-[10px] rounded ${badge}">${esc(lvl)}</span>
+      </div>
+      <div class="text-[11px] text-gray-800 break-words whitespace-pre-wrap">${esc(msg)}</div>
+    </div>
+  `;
+}
 
-    const res = await safeFetch('/api/admin/logs', { method: 'GET' });
-    if (!res.ok) {
-      container.textContent = 'Kon de serverlogs niet ophalen.';
-      return;
-    }
-
-    const payload = res.data || {};
-    let lines = [];
-
-    if (Array.isArray(payload.logs)) {
-      lines = payload.logs;
-    } else if (Array.isArray(payload)) {
-      lines = payload;
-    } else if (typeof payload === 'string') {
-      lines = payload.split('\n');
-    }
-
-    if (!lines.length) {
-      container.textContent = 'Geen logregels beschikbaar.';
-      return;
-    }
-
-    container.innerHTML = lines
-      .map((line) => `<div class="font-mono whitespace-pre text-[11px]">${escapeHtml(line)}</div>`)
-      .join('');
-  }
-
-  const refreshLogsBtn = document.getElementById('refreshLogsBtn');
-  if (refreshLogsBtn) {
-    refreshLogsBtn.addEventListener('click', () => {
-      loadServerLogs();
-    });
-  }
-
-  // ------------------------------
-  // INIT
-  // ------------------------------
-  console.log('[admin.js] Admin-module geladen (v20251210-ADMIN-FULL-FIX)');
-  switchSection('section-overview');
-  loadCompanies();
-  loadReportedReviews();
-  loadClaims();
-  loadServerLogs();
-
-})();
+/* ============================================================
+   DOM READY
+============================================================ */
+document.addEventListener("DOMContentLoaded", initAdmin);
