@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v20251210-ADMIN-ALIGN-BACKEND
+// v20251210-ADMIN-ALIGN-BACKEND-FIXED
 //
 // Deze versie is afgestemd op de bestaande backend-routes in backend/routes/admin.js:
 // - GET    /api/admin/companies
@@ -97,8 +97,7 @@ function esc(value) {
   return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/>/g, "&quot;");
 }
 
 /* ============================================================
@@ -190,7 +189,7 @@ async function loadCompanies(tbody, notif) {
   tbody.innerHTML =
     '<tr><td colspan="4" class="p-4 text-center text-gray-400">Laden...</td></tr>';
 
-  try:
+  try {
     const data = await safeFetch(`${API_BASE}/companies`);
     const companies = Array.isArray(data)
       ? data
