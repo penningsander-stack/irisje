@@ -321,7 +321,180 @@
     }
   }
 
+  
   // ------------------------------
+  // Gemelde reviews
+  // ------------------------------
+  async function loadReportedReviews() {
+    const tbody = document.getElementById('reported-table-body');
+    const totalEl = document.getElementById('total-reported');
+    const openEl = document.getElementById('open-reported');
+    const resolvedEl = document.getElementById('resolved-reported');
+
+    if (!tbody) {
+      console.warn('[admin.js] reported-table-body niet gevonden.');
+      return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Laden...</td></tr>';
+    if (totalEl) totalEl.textContent = '0';
+    if (openEl) openEl.textContent = '0';
+    if (resolvedEl) resolvedEl.textContent = '0';
+
+    const res = await safeFetch('/api/admin/reported-reviews', { method: 'GET' });
+    if (!res.ok) {
+      console.error('[admin.js] Fout bij /api/admin/reported-reviews:', res);
+      tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Fout bij laden van gemelde reviews</td></tr>';
+      return;
+    }
+
+    // Mogelijke responsetypen:
+    // { ok: true, reviews: [...] }
+    // { reviews: [...] }
+    // [ ... ]
+    const payload = res.data || {};
+    let list = [];
+
+    if (Array.isArray(payload.reviews)) {
+      list = payload.reviews;
+    } else if (Array.isArray(payload)) {
+      list = payload;
+    } else if (Array.isArray(payload.data?.reviews)) {
+      list = payload.data.reviews;
+    }
+
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="admin-loading">Geen gemelde reviews gevonden</td></tr>';
+      console.log('[admin.js] loadReportedReviews: geen gemelde reviews gevonden.');
+      return;
+    }
+
+    const total = list.length;
+    let openCount = 0;
+    let resolvedCount = 0;
+
+    tbody.innerHTML = list.map((rev) => {
+      const companyName = rev.companyName
+        || (rev.company && (rev.company.name || rev.company.bedrijfsnaam))
+        || '-';
+
+      const name = rev.name || rev.reviewerName || '-';
+      const email = rev.email || rev.reviewerEmail || '-';
+      const rating = (rev.rating != null) ? rev.rating : '-';
+      const message = rev.message || rev.text || '-';
+      const reportedReason = rev.reportReason || rev.reason || 'Gemeld';
+      const dateStr = rev.date ? formatDateTime(rev.date) : (rev.createdAt ? formatDateTime(rev.createdAt) : '-');
+
+      const status = rev.status || (rev.reported === true ? 'Open' : 'Afgehandeld');
+      if (status === 'Open') openCount += 1;
+      else resolvedCount += 1;
+
+      const id = rev._id || rev.id || '';
+
+      const actionCell = id
+        ? `<button type="button"
+              class="px-2 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-700 text-white"
+              onclick="window.clearReportedReview && window.clearReportedReview('${id}')">
+              Melding wissen
+            </button>`
+        : '<span class="text-xs text-slate-400">–</span>';
+
+      return `
+        <tr>
+          <td class="p-3">${escapeHtml(companyName)}</td>
+          <td class="p-3">${escapeHtml(name)}</td>
+          <td class="p-3 text-center">${escapeHtml(String(rating))}</td>
+          <td class="p-3">${escapeHtml(message)}</td>
+          <td class="p-3">${escapeHtml(reportedReason)}</td>
+          <td class="p-3 whitespace-nowrap">${escapeHtml(dateStr)}</td>
+          <td class="p-3">${escapeHtml(status)}</td>
+          <td class="p-3">${actionCell}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (totalEl) totalEl.textContent = String(total);
+    if (openEl) openEl.textContent = String(openCount);
+    if (resolvedEl) resolvedEl.textContent = String(resolvedCount);
+  }
+
+  const refreshReportedBtn = document.getElementById('refreshBtn');
+  if (refreshReportedBtn) {
+    refreshReportedBtn.addEventListener('click', () => {
+      loadReportedReviews();
+    });
+  }
+
+  // Globale helper voor "Melding wissen"
+  window.clearReportedReview = async function (reviewId) {
+    if (!reviewId) return;
+
+    const sure = window.confirm('Weet je zeker dat je de melding van deze review wilt wissen?');
+    if (!sure) return;
+
+    const res = await safeFetch('/api/admin/reported-reviews/' + encodeURIComponent(reviewId) + '/clear', {
+      method: 'POST'
+    });
+
+    if (!res.ok) {
+      console.error('[admin.js] Fout bij POST /api/admin/reported-reviews/:id/clear:', res);
+      window.alert('Kon de melding niet wissen. Zie de console voor details.');
+      return;
+    }
+
+    console.log('[admin.js] Melding gewist voor review', reviewId, res);
+    loadReportedReviews();
+  };
+
+  // ------------------------------
+  // Serverlogs
+  // ------------------------------
+  async function loadServerLogs() {
+    const container = document.getElementById('logs-container');
+    if (!container) {
+      console.warn('[admin.js] logs-container niet gevonden.');
+      return;
+    }
+
+    container.textContent = 'Logs worden geladen...';
+
+    // We proberen een generiek status-/logs-endpoint
+    const res = await safeFetch('/api/status/logs', { method: 'GET' });
+    if (!res.ok) {
+      console.error('[admin.js] Fout bij /api/status/logs:', res);
+      container.textContent = 'Kon de serverlogs niet ophalen.';
+      return;
+    }
+
+    const payload = res.data;
+
+    let lines = [];
+    if (Array.isArray(payload)) {
+      lines = payload;
+    } else if (Array.isArray(payload?.logs)) {
+      lines = payload.logs;
+    } else if (typeof payload === 'string') {
+      lines = payload.split('\\n');
+    }
+
+    if (!lines.length) {
+      container.textContent = 'Geen logregels beschikbaar.';
+      return;
+    }
+
+    container.innerHTML = lines.map((line) => {
+      return '<div class="font-mono whitespace-pre">' + escapeHtml(String(line)) + '</div>';
+    }).join('');
+  }
+
+  const refreshLogsBtn = document.getElementById('refreshLogsBtn');
+  if (refreshLogsBtn) {
+    refreshLogsBtn.addEventListener('click', () => {
+      loadServerLogs();
+    });
+  }
+
+// ------------------------------
   // INIT
   // ------------------------------
   console.log('[admin.js] Admin-module geladen (v20251210-ADMIN-FULL-FIX)');
