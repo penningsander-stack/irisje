@@ -187,6 +187,30 @@ function initAdmin() {
 /* ============================================================
    BEDRIJVEN
 ============================================================ */
+
+function renderCompanyTable(list, table, notif) {
+  if (!table) return;
+
+  if (!Array.isArray(list) || !list.length) {
+    table.innerHTML =
+      '<tr><td colspan="5" class="p-4 text-center text-gray-400">Geen bedrijven gevonden.</td></tr>';
+    return;
+  }
+
+  table.innerHTML = list.map((c) => renderCompanyRow(c)).join("");
+
+  table.querySelectorAll(".verifyBtn").forEach((btn) =>
+    btn.addEventListener("click", () =>
+      doVerifyCompany(btn.dataset.id, notif, table)
+    )
+  );
+  table.querySelectorAll(".deleteBtn").forEach((btn) =>
+    btn.addEventListener("click", () =>
+      doDeleteCompany(btn.dataset.id, notif, table)
+    )
+  );
+}
+
 async function loadAdminCompanies(table, notif) {
   if (!table) return;
 
@@ -203,20 +227,7 @@ async function loadAdminCompanies(table, notif) {
       return;
     }
 
-    table.innerHTML = adminState.companies
-      .map((c) => renderCompanyRow(c))
-      .join("");
-
-    table.querySelectorAll(".verifyBtn").forEach((btn) =>
-      btn.addEventListener("click", () =>
-        doVerifyCompany(btn.dataset.id, notif, table)
-      )
-    );
-    table.querySelectorAll(".deleteBtn").forEach((btn) =>
-      btn.addEventListener("click", () =>
-        doDeleteCompany(btn.dataset.id, notif, table)
-      )
-    );
+        renderCompanyTable(adminState.companies, table, notif);
   } catch (err) {
     console.error(err);
     table.innerHTML =
@@ -656,9 +667,30 @@ function renderLogEntry(entry) {
 /* ============================================================
    DOM READY
 ============================================================ */
+
 document.addEventListener("DOMContentLoaded", initAdmin);
+
 // --- LIVE SEARCH ---
 const searchInput = document.getElementById("companySearch");
 let allCompanies = [];
 
+if (searchInput) {
+  searchInput.addEventListener("input", () => {
+    const table = byId("adminCompanyTable");
+    if (!table) return;
+    const q = searchInput.value.toLowerCase().trim();
+    const source = Array.isArray(adminState.companies) ? adminState.companies : [];
+    allCompanies = source;
+
+    const filtered = !q
+      ? source
+      : source.filter((c) =>
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.email || "").toLowerCase().includes(q)
+        );
+
+    const notif = document.getElementById("notif") || buildNotificationBar();
+    renderCompanyTable(filtered, table, notif);
+  });
+}
 
