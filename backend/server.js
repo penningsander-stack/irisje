@@ -1,31 +1,52 @@
 // backend/server.js
-// v20251213-BACKEND-UPLOADS-FIX-FINAL-V3
+// v20251213-ADMIN-LOGGING-ACTIVE
 //
-// Wijzigingen t.o.v. V2:
-// - Admin-tools router (adminTools.js) expliciet geladen onder /api/admin
-//   voor /api/admin/stats en /api/admin/health.
-// - Foutafhandeling rond adminTools zodat de server niet crasht als het
-//   bestand (nog) ontbreekt.
+// Complete versie mét logging voor adminpanel:
+// - Request logging
+// - Server start logging
+// - MongoDB connect logging
+// - Error logging
+// - Compatibel met jouw huidige backendstructuur
 
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const logger = require("./utils/logger"); // <-- logging toegevoegd
 
 const app = express();
 
+// =========================================
 // Middleware
+// =========================================
 app.use(express.json());
 app.use(cors());
 
-// Verbinding met MongoDB
-connectDB();
+// =========================================
+// MongoDB + logging
+// =========================================
+logger.info("🚀 Backend server wordt gestart…");
 
-// === UPLOADS STATISCH SERVEN (LOGO FIX) ===
-// BELANGRIJK: dit MOET vóór de SPA fallback komen.
+connectDB()
+  .then(() => logger.info("✔️ MongoDB succesvol verbonden"))
+  .catch((err) => logger.error("❌ MongoDB fout: " + err.message));
+
+// =========================================
+// Request logging
+// =========================================
+app.use((req, res, next) => {
+  logger.info(`[REQ] ${req.method} ${req.url}`);
+  next();
+});
+
+// =========================================
+// UPLOADS STATISCH SERVEN
+// =========================================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// === ROUTES DYNAMISCH LADEN ===
+// =========================================
+// ROUTES DYNAMISCH LADEN
+// =========================================
 const routes = [
   "auth",
   "companies",
@@ -46,34 +67,49 @@ const routes = [
 routes.forEach((route) => {
   try {
     app.use(`/api/${route}`, require(`./routes/${route}`));
-    console.log(`✔️ Loaded route: ${route}`);
+    logger.info(`✔️ Loaded route: ${route}`);
   } catch (err) {
-    console.error(`❌ Route '${route}' kon niet geladen worden:`, err.message);
+    logger.error(`❌ Route '${route}' kon niet geladen worden: ${err.message}`);
   }
 });
 
-// === ADMIN TOOLS ROUTES (STATS & HEALTH) ===
-// Deze router vult /api/admin/stats en /api/admin/health aan
-// bovenop de bestaande /api/admin-routes in routes/admin.js.
+// =========================================
+// ADMIN TOOLS (stats/health)
+// =========================================
 try {
   const adminToolsRouter = require("./routes/adminTools");
   app.use("/api/admin", adminToolsRouter);
-  console.log("✔️ Loaded admin tools routes (stats/health)");
+  logger.info("✔️ Loaded admin tools routes (stats/health)");
 } catch (err) {
-  console.error("❌ Admin tools routes konden niet geladen worden:", err.message);
+  logger.error("❌ Admin tools routes konden niet geladen worden: " + err.message);
 }
 
-// === FRONTEND HOSTING ===
+// =========================================
+// FRONTEND HOSTING
+// =========================================
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
-// === JUISTE SPA FALLBACK (OVERSCHRIJFT GEEN UPLOADS) ===
-// Alles behalve /uploads en /api valt terug op index.html
+// =========================================
+// SPA FALLBACK
+// =========================================
 app.get(/^\/((?!uploads|api).)*$/, (req, res) => {
   res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
 });
 
+// =========================================
+// Error logging middleware
+// =========================================
+app.use((err, req, res, next) => {
+  logger.error(`[ERROR] ${err.message}`);
+  next(err);
+});
+
+// =========================================
+// Server starten
+// =========================================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
+  logger.info(`🚀 Backend actief op poort ${PORT}`);
   console.log(`🚀 Backend actief op poort ${PORT}`);
 });
