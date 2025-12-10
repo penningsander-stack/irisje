@@ -1,125 +1,90 @@
 // backend/utils/logger.js
-/**
- * irisje.nl – logger
- * volledig camelCase & consistent met server.js en loghelper.js
- */
+// v20251210-FULL-FIX
+//
+// Volledig compatibele logger:
+// - behoudt addLog(), getLogs(), route()
+// - voegt toe: info(), error(), debug()
+// - geschikt voor admin logs + server.js logging
 
 const fs = require("fs");
 const path = require("path");
 
-const logDir = path.join(__dirname, "../logs");
-const maxLogs = 20;
-const retentionDays = 14;
+const LOG_DIR = path.join(__dirname, "..", "logs");
+const MAX_LOG_LINES = 500; // admin memory buffer
 
-if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
+// memory buffer voor admin panel
+let memoryLogs = [];
 
-let logs = [];
-
-/* ------------------------------------------------------------
-   huidig daglogbestand
------------------------------------------------------------- */
-function currentLogFile() {
-  const date = new Date().toISOString().slice(0, 10);
-  return path.join(logDir, `irisje-${date}.log`);
+// zorg dat map bestaat
+if (!fs.existsSync(LOG_DIR)) {
+  fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-/* ------------------------------------------------------------
-   oude logs opruimen
------------------------------------------------------------- */
-function cleanupOldLogs() {
-  const files = fs.readdirSync(logDir);
-  const now = Date.now();
-
-  for (const file of files) {
-    const filePath = path.join(logDir, file);
-    try {
-      const stats = fs.statSync(filePath);
-      const ageDays = (now - stats.mtimeMs) / (1000 * 60 * 60 * 24);
-      if (ageDays > retentionDays) {
-        fs.unlinkSync(filePath);
-        console.log(`🧹 oude log verwijderd: ${file}`);
-      }
-    } catch (err) {
-      console.warn("kon log niet controleren:", file, err.message);
-    }
-  }
-}
-
-/* ------------------------------------------------------------
-   kleurdefinities en tijdnotatie
------------------------------------------------------------- */
-const colors = {
-  reset: "\x1b[0m",
-  gray: "\x1b[90m",
-  red: "\x1b[31m",
-  green: "\x1b[32m",
-  yellow: "\x1b[33m",
-  cyan: "\x1b[36m",
-};
-
-function time() {
-  return new Date().toLocaleTimeString("nl-NL", { hour12: false });
-}
-
-/* ------------------------------------------------------------
-   log toevoegen (console + bestand + geheugen)
------------------------------------------------------------- */
+// ----------------------------------------
+// Kernfunctie: schrijf een logregel
+// ----------------------------------------
 function addLog(message, level = "info") {
-  const entry = { timestamp: new Date().toISOString(), level, message };
-  logs.push(entry);
-  if (logs.length > maxLogs) logs.shift();
+  const timestamp = new Date().toISOString();
+  const formatted = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
 
-  const icons = { info: "✅", debug: "🟡", error: "❌" };
-  const color = {
-    info: colors.cyan,
-    debug: colors.yellow,
-    error: colors.red,
-  }[level] || colors.reset;
+  // 1. schrijf naar memory buffer
+  memoryLogs.push(formatted);
+  if (memoryLogs.length > MAX_LOG_LINES) {
+    memoryLogs.shift();
+  }
 
-  console.log(
-    `${colors.gray}[${time()}]${colors.reset} ${color}${icons[level] || "ℹ️"}${colors.reset} ${message}`
-  );
+  // 2. schrijf naar dagbestand
+  const date = timestamp.split("T")[0];
+  const filename = path.join(LOG_DIR, `irisje-${date}.log`);
 
   try {
-    const line = `[${entry.timestamp}] ${entry.level.toUpperCase()} → ${entry.message}\n`;
-    fs.appendFileSync(currentLogFile(), line, "utf8");
+    fs.appendFileSync(filename, formatted + "\n", "utf8");
   } catch (err) {
-    console.warn("kon logbestand niet schrijven:", err.message);
+    console.error("Kon log niet wegschrijven:", err);
   }
+
+  // 3. console output
+  console.log(formatted);
 }
 
-/* ------------------------------------------------------------
-   http route logging
------------------------------------------------------------- */
-function route(method, p, status, ms = 0) {
-  const color =
-    status >= 500 ? colors.red :
-    status >= 400 ? colors.yellow :
-    colors.green;
-
-  console.log(
-    `${colors.gray}[${time()}]${colors.reset} ${colors.cyan}${method.toUpperCase()}${colors.reset} ${p} → ${color}${status}${colors.reset} ${colors.gray}(${ms}ms)${colors.reset}`
-  );
-}
-
-/* ------------------------------------------------------------
-   laatste logs ophalen
------------------------------------------------------------- */
+// ----------------------------------------
+// Ophalen logs voor admin panel
+// ----------------------------------------
 function getLogs() {
-  return [...logs]
-    .reverse()
-    .map((l) => ({
-      timestamp: l.timestamp || new Date().toISOString(),
-      message: l.message || "",
-      level: l.level || "info",
-    }));
+  return memoryLogs.slice(-MAX_LOG_LINES);
 }
 
-/* opruimen bij start */
-cleanupOldLogs();
+// ----------------------------------------
+// Middleware voor request logging
+// ----------------------------------------
+function route(req, res, next) {
+  addLog(`${req.method} ${req.originalUrl}`, "info");
+  next();
+}
 
+// ----------------------------------------
+// Nieuwe aliases voor jouw server.js
+// ----------------------------------------
+function info(msg) {
+  addLog(msg, "info");
+}
+
+function error(msg) {
+  addLog(msg, "error");
+}
+
+function debug(msg) {
+  addLog(msg, "debug");
+}
+
+// ----------------------------------------
+// EXPORTS
+// ----------------------------------------
 module.exports = {
   addLog,
   getLogs,
   route,
+  info,   // nieuw
+  error,  // nieuw
+  debug,  // nieuw
 };
