@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v20251210-ADMIN-ALIGN-BACKEND-FIXED
+// v20251210-ADMIN-ALIGN-BACKEND-FIXED + LIVE-SEARCH-COMPANIES
 //
 // Deze versie is afgestemd op de bestaande backend-routes in backend/routes/admin.js:
 // - GET    /api/admin/companies
@@ -11,6 +11,7 @@
 // - GET    /api/admin/logs   (extra route, zie bijgewerkte backend/routes/admin.js)
 
 const API_BASE = "https://irisje-backend.onrender.com/api/admin";
+let adminCompaniesCache = [];
 
 /* ============================================================
    HELPERFUNCTIES
@@ -145,6 +146,7 @@ function initAdmin() {
   // Elementen
   const companiesTableBody = byId("adminCompanyTable");
   const refreshCompaniesBtn = byId("refreshCompaniesBtn");
+  const companySearchInput = byId("companySearch");
   const reportedContainer = byId("reportedCardsContainer");
   const refreshReportedBtn = byId("refreshReportedBtn");
   const claimsTableBody = byId("claimsTableBody");
@@ -157,6 +159,11 @@ function initAdmin() {
     refreshCompaniesBtn.addEventListener("click", () =>
       loadCompanies(companiesTableBody, notif)
     );
+  }
+  if (companySearchInput && companiesTableBody) {
+    companySearchInput.addEventListener("input", () => {
+      renderCompaniesFromCache(companiesTableBody, companySearchInput.value);
+    });
   }
   if (refreshReportedBtn && reportedContainer) {
     refreshReportedBtn.addEventListener("click", () =>
@@ -197,19 +204,46 @@ async function loadCompanies(tbody, notif) {
       ? data.companies
       : [];
 
-    if (!companies.length) {
+    adminCompaniesCache = companies;
+
+    const searchInput = byId("companySearch");
+
+    if (!adminCompaniesCache.length) {
       tbody.innerHTML =
         '<tr><td colspan="4" class="p-4 text-center text-gray-400">Geen bedrijven gevonden.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = companies.map(renderCompanyRow).join("");
+    renderCompaniesFromCache(tbody, searchInput ? searchInput.value : "");
   } catch (err) {
     console.error("[admin] loadCompanies-fout", err);
     tbody.innerHTML =
       '<tr><td colspan="4" class="p-4 text-center text-red-600">❌ Kon bedrijven niet laden</td></tr>';
     showNotif(notif, "Kon bedrijven niet laden", false);
   }
+}
+
+function renderCompaniesFromCache(tbody, searchValue) {
+  if (!tbody) return;
+
+  const term = (searchValue || "").trim().toLowerCase();
+  let list = Array.isArray(adminCompaniesCache) ? adminCompaniesCache.slice() : [];
+
+  if (term) {
+    list = list.filter((company) => {
+      const name = (company?.name || "").toLowerCase();
+      const email = (company?.email || "").toLowerCase();
+      return name.includes(term) || email.includes(term);
+    });
+  }
+
+  if (!list.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="4" class="p-4 text-center text-gray-400">Geen bedrijven gevonden.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(renderCompanyRow).join("");
 }
 
 function renderCompanyRow(company) {
