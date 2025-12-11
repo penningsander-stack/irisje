@@ -1,0 +1,265 @@
+<!-- frontend/admin.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin-dashboard – Irisje.nl</title>
+
+  <meta name="description" content="Beheer gemelde reviews, bedrijven, claims en logs in het admin-dashboard van Irisje.nl." />
+  <meta name="theme-color" content="#4F46E5" />
+
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+  <!-- Algemene styling -->
+  <link rel="stylesheet" href="style.css?v=20251114" />
+</head>
+<body class="min-h-screen bg-slate-100 text-gray-900">
+  <div class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 shadow-sm flex flex-col">
+      <div class="px-4 py-4 border-b border-gray-200 flex items-center gap-3">
+        <span
+          class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-indigo-600 text-white font-semibold text-lg tracking-tight shadow-sm">
+          i
+        </span>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-indigo-600">Irisje.nl</p>
+          <p class="text-sm font-semibold text-gray-900">Admin-dashboard</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 px-2 py-4 space-y-1 text-sm">
+        <button
+          type="button"
+          data-target="section-overview"
+          class="admin-tab w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-600 text-white shadow-sm text-sm"
+        >
+          <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-indigo-500 text-[11px]">OV</span>
+          <span>Overzicht</span>
+        </button>
+
+        <button
+          type="button"
+          data-target="section-reported"
+          class="admin-tab w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+        >
+          <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-gray-100 text-[11px]">GR</span>
+          <span>Gemelde reviews</span>
+        </button>
+
+        <button
+          type="button"
+          data-target="section-claims"
+          class="admin-tab w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+        >
+          <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-gray-100 text-[11px]">CL</span>
+          <span>Claims</span>
+        </button>
+
+        <button
+          type="button"
+          data-target="section-logs"
+          class="admin-tab w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-transparent text-gray-700 hover:bg-indigo-50 hover:text-indigo-700"
+        >
+          <span class="inline-flex h-5 w-5 items-center justify-center rounded-lg bg-gray-100 text-[11px]">LG</span>
+          <span>Logs</span>
+        </button>
+      </nav>
+
+      <div class="px-4 py-3 border-t border-gray-200 text-[11px] text-gray-400">
+        <p class="line-clamp-2">
+          Ingelogd als admin. Gebruik dit dashboard om bedrijven, reviews, claims en logs te beheren.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main content area -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <!-- Header -->
+      <header class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 py-3">
+          <div class="flex items-center gap-3">
+            <div>
+              <h1 class="text-base sm:text-lg font-semibold text-gray-900">Irisje.nl – Admin</h1>
+              <p class="text-xs text-gray-500">
+                Beheer bedrijven, gemelde reviews, claims en serverlogs.
+              </p>
+            </div>
+          </div>
+
+          <nav class="flex items-center gap-2 text-xs sm:text-sm">
+            <a
+              href="index.html"
+              class="px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:border-indigo-500 hover:text-indigo-600 transition"
+            >
+              Terug naar website
+            </a>
+            <button
+              id="logoutBtn"
+              class="px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition"
+            >
+              Uitloggen
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      <!-- Main -->
+      <main class="max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
+        <!-- Status-badge bovenaan -->
+        <section class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-[11px] sm:text-xs text-gray-500">
+            <span
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span id="adminStatusLabel">Verbonden met backend</span>
+            </span>
+          </div>
+        </section>
+
+        <!-- Content sections -->
+        <section class="space-y-6">
+          <!-- OVERZICHT BEDRIJVEN -->
+          <section id="section-overview" class="admin-card bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Bedrijven-overzicht</h2>
+                <p class="text-xs text-gray-500">Overzicht van alle bedrijven in Irisje.nl.</p>
+              </div>
+              <button
+                id="refreshCompaniesBtn"
+                class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+              >
+                Vernieuw overzicht
+              </button>
+            </div>
+
+            <!-- Zoekveld voor bedrijven -->
+            <div class="mb-3">
+              <label for="companySearch" class="sr-only">Zoek in bedrijven</label>
+              <div class="relative max-w-sm">
+                <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400 text-xs">
+                  🔍
+                </span>
+                <input
+                  id="companySearch"
+                  type="text"
+                  placeholder="Zoek op bedrijfsnaam of e-mail..."
+                  class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                />
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-100">
+              <table class="min-w-full text-sm admin-table">
+                <thead class="bg-slate-50/80">
+                  <tr class="border-b border-gray-200">
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Bedrijf</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">E-mail</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                    <th class="text-center p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Reviews</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acties</th>
+                  </tr>
+                </thead>
+                <tbody id="adminCompanyTable">
+                  <tr>
+                    <td colspan="5" class="admin-loading p-4 text-center text-xs text-gray-400">Laden...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- GEMELDE REVIEWS -->
+          <section
+            id="section-reported"
+            class="admin-card hidden bg-white border border-gray-200 rounded-2xl shadow-sm p-4"
+          >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Gemelde reviews</h2>
+                <p class="text-xs text-gray-500">Overzicht van reviews die zijn gemeld.</p>
+              </div>
+              <button
+                id="refreshReportedBtn"
+                class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+              >
+                Vernieuw lijst
+              </button>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" id="reportedCardsContainer">
+              <!-- Cards met gemelde reviews worden hier door JS geplaatst -->
+            </div>
+          </section>
+
+          <!-- CLAIMS -->
+          <section id="section-claims" class="admin-card hidden bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Claims</h2>
+                <p class="text-xs text-gray-500">Overzicht van claims en aangeleverde bewijsstukken.</p>
+              </div>
+              <button
+                id="refreshClaimsBtn"
+                class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+              >
+                Vernieuw claims
+              </button>
+            </div>
+
+            <div class="overflow-x-auto rounded-xl border border-gray-100">
+              <table class="min-w-full text-sm admin-table">
+                <thead class="bg-slate-50/80">
+                  <tr class="border-b border-gray-200">
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Datum</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Klant</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Bedrijf</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
+                    <th class="text-left p-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acties</th>
+                  </tr>
+                </thead>
+                <tbody id="claimsTableBody">
+                  <tr>
+                    <td colspan="6" class="admin-loading p-4 text-center text-xs text-gray-400">Laden...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- LOGS -->
+          <section id="section-logs" class="admin-card hidden bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+              <div>
+                <h2 class="text-lg font-semibold text-gray-900">Serverlogs</h2>
+                <p class="text-xs text-gray-500">
+                  Laatste logregels vanuit de backend. Alleen beschikbaar als het endpoint is geactiveerd.
+                </p>
+              </div>
+              <button
+                id="refreshLogsBtn"
+                class="inline-flex items-center justify-center px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+              >
+                Vernieuw logs
+              </button>
+            </div>
+
+            <div
+              id="logs-container"
+              class="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto space-y-1"
+            >
+              Logs worden geladen...
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/admin.js?v=20251210"></script>
+</body>
+</html>
