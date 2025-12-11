@@ -1,6 +1,6 @@
 {
   "name": "irisje-backend",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Backend van Irisje.nl – platform voor bedrijven, aanvragen en reviews.",
   "main": "server.js",
   "type": "commonjs",
@@ -8,8 +8,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "optimize:images": "node utils/optimizeImages.js",
-    "prebuild": "npm run optimize:images",
-    "rebuild": "rm -rf node_modules package-lock.json && npm install"
+    "prebuild": "npm run optimize:images"
   },
   "dependencies": {
     "axios": "^1.7.3",
@@ -26,7 +25,7 @@
     "node-fetch": "^3.3.2",
     "sharp": "^0.33.4",
     "qs": "6.11.0",
-    "multer": "^1.4.5"
+    "multer": "1.4.5-lts.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
