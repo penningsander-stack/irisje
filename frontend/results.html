@@ -90,7 +90,56 @@
     </div>
 
     <!-- Echte resultaten komen hier -->
-    <div id="resultsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    
+<!-- FILTERS & SORTER BLOCK -->
+<div id="resultsControls" class="surface-card p-4 rounded-2xl shadow-soft mb-5 flex flex-wrap gap-3 items-center">
+
+  <!-- FILTER: Minimale score -->
+  <div class="filter-item">
+    <label class="text-xs text-slate-600 block mb-1">Minimale score</label>
+    <select id="filterMinRating" class="px-2 py-1 border rounded-lg text-sm">
+      <option value="">Alles</option>
+      <option value="5">Minimaal 5.0</option>
+      <option value="4">Minimaal 4.0</option>
+      <option value="3">Minimaal 3.0</option>
+    </select>
+  </div>
+
+  <!-- FILTER: Geverifieerde bedrijven -->
+  <div class="filter-item">
+    <label class="text-xs text-slate-600 block mb-1">Verificatie</label>
+    <select id="filterVerified" class="px-2 py-1 border rounded-lg text-sm">
+      <option value="">Alles</option>
+      <option value="yes">Alleen geverifieerde bedrijven</option>
+    </select>
+  </div>
+
+  <!-- FILTER: Bron -->
+  <div class="filter-item">
+    <label class="text-xs text-slate-600 block mb-1">Bron</label>
+    <select id="filterSource" class="px-2 py-1 border rounded-lg text-sm">
+      <option value="">Alles</option>
+      <option value="google">Alleen Google reviews</option>
+      <option value="irisje">Alleen Irisje reviews</option>
+    </select>
+  </div>
+
+  <!-- SORTER -->
+  <div class="filter-item ml-auto">
+    <label class="text-xs text-slate-600 block mb-1">Sorteren</label>
+    <select id="sortResults" class="px-2 py-1 border rounded-lg text-sm">
+      <option value="relevance">Relevantie</option>
+      <option value="rating">Beoordeling (hoog → laag)</option>
+      <option value="reviews">Aantal reviews (hoog → laag)</option>
+      <option value="verified">Geverifieerd → niet geverifieerd</option>
+      <option value="az">A–Z (alfabetisch)</option>
+    </select>
+  </div>
+
+</div>
+
+
+<div id="resultsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
   </section>
 
