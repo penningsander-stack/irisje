@@ -1,20 +1,13 @@
-<!-- frontend/admin.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin-dashboard – Irisje.nl</title>
-
   <meta name="description" content="Beheer gemelde reviews, bedrijven, claims en logs in het admin-dashboard van Irisje.nl." />
   <meta name="theme-color" content="#4F46E5" />
-
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-
-  <!-- Algemene styling -->
   <link rel="stylesheet" href="style.css?v=20251114" />
-
-  <!-- PWA / manifest (optioneel, sluit aan bij bestaande PWA) -->
   <link rel="manifest" href="manifest.webmanifest" />
 </head>
 <body class="min-h-screen bg-slate-50 text-gray-900">
@@ -30,7 +23,6 @@
           <p class="text-xs text-gray-500">Beheer bedrijven, gemelde reviews, claims en serverlogs.</p>
         </div>
       </div>
-
       <nav class="flex items-center gap-2 text-xs sm:text-sm">
         <a href="index.html"
           class="px-3 py-1.5 rounded-full border border-gray-200 hover:border-indigo-500 hover:text-indigo-600 transition">
@@ -45,7 +37,7 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-    <!-- Tabs -->
+
     <section
       class="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-2 shadow-sm">
       <div class="flex flex-wrap gap-1.5 text-xs sm:text-sm" id="adminTabs">
@@ -75,9 +67,8 @@
       </div>
     </section>
 
-    <!-- Content -->
     <section class="space-y-6">
-      <!-- OVERZICHT BEDRIJVEN -->
+
       <section id="section-overview" class="admin-card">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -88,6 +79,16 @@
             class="px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuw overzicht
           </button>
+        </div>
+
+        <!-- Zoekveld -->
+        <div class="mb-3">
+          <input
+            id="companySearch"
+            type="text"
+            placeholder="Zoek op bedrijfsnaam of e-mail..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          />
         </div>
 
         <div class="overflow-x-auto">
@@ -110,7 +111,8 @@
         </div>
       </section>
 
-      <!-- GEMELDE REVIEWS -->
+      <!-- Andere secties ongewijzigd -->
+      <!-- Gemelde reviews -->
       <section id="section-reported" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -122,13 +124,9 @@
             Vernieuw lijst
           </button>
         </div>
-
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" id="reportedCardsContainer">
-          <!-- Cards met gemelde reviews worden hier door JS geplaatst -->
-        </div>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" id="reportedCardsContainer"></div>
       </section>
 
-      <!-- CLAIMS -->
       <section id="section-claims" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -140,7 +138,6 @@
             Vernieuw claims
           </button>
         </div>
-
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm admin-table">
             <thead>
@@ -162,26 +159,23 @@
         </div>
       </section>
 
-      <!-- LOGS -->
       <section id="section-logs" class="admin-card hidden">
         <div class="flex items-center justify-between mb-3">
           <div>
             <h2 class="text-lg font-semibold text-gray-900">Serverlogs</h2>
-            <p class="text-xs text-gray-500">
-              Laatste logregels vanuit de backend. Alleen beschikbaar als het endpoint is geactiveerd.
-            </p>
+            <p class="text-xs text-gray-500">Laatste logregels vanuit de backend.</p>
           </div>
           <button id="refreshLogsBtn"
             class="px-3 py-1.5 text-xs sm:text-sm rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">
             Vernieuw logs
           </button>
         </div>
-
         <div id="logs-container"
           class="text-xs bg-gray-50 border border-gray-200 rounded-lg p-3 h-64 overflow-auto space-y-1">
           Logs worden geladen...
         </div>
       </section>
+
     </section>
   </main>
 
