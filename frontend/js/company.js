@@ -157,13 +157,13 @@ function renderCompany(company) {
       metaEl.appendChild(citySpan);
     }
 
-    if (reviewCount > 0) {
+        if (reviewCount > 0) {
       const ratingSpan = document.createElement("span");
       ratingSpan.className =
         "inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700";
       ratingSpan.innerHTML =
-  `<span style="color:#f59e0b !important;" class="text-amber-500 text-[18px] drop-shadow-sm">${stars}</span>
-   <span class="ml-1 text-amber-700">${rating.toFixed(1)} • Google • \${reviewCount} reviews</span>`;
+        `<span style="color:#f59e0b !important;" class="text-amber-500 text-[18px] drop-shadow-sm">${stars}</span>
+         <span class="ml-1 text-amber-700">${rating.toFixed(1)} • Google • ${reviewCount} reviews</span>`;
       metaEl.appendChild(ratingSpan);
     }
   }
