@@ -161,7 +161,7 @@ function renderCompany(company) {
       const ratingSpan = document.createElement("span");
       ratingSpan.className =
         "inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700";
-      ratingSpan.textContent = `${stars} ${rating.toFixed(1)} • ${reviewCount} reviews`;
+      ratingSpan.textContent = `${stars} ${rating.toFixed(1)} • Google • ${reviewCount} reviews`;
       metaEl.appendChild(ratingSpan);
     }
   }
