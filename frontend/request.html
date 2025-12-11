@@ -5,183 +5,229 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Offerte aanvragen – Irisje.nl</title>
-  <meta name="description" content="Vraag gratis en vrijblijvend een offerte aan bij betrouwbare bedrijven via Irisje.nl." />
-  <meta name="theme-color" content="#4F46E5" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-<link rel="stylesheet" href="style.css?v=20251205" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 
-<body class="bg-gray-50 text-gray-800 flex flex-col min-h-screen fade-seq">
+<body class="irisje-body">
 
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
-          I
-        </span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
+                     text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
+          <span class="text-[11px] text-slate-500 hidden sm:block">Vraag in één keer offertes aan bij vakmensen</span>
         </div>
       </a>
-
-      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <a href="results.html" class="nav-link">Bedrijven</a>
-        <a href="login.html" class="nav-link">Voor bedrijven</a>
-      </nav>
-
-      <div class="flex items-center space-x-2">
-        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Zoeken
-        </a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">
-          Inloggen
-        </a>
-      </div>
     </div>
   </header>
 
-  <!-- MAIN -->
-  <main class="flex-1 max-w-3xl mx-auto px-4 py-12 space-y-10">
-    <!-- Intro -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8 text-center">
-      <h1 class="text-2xl font-bold text-indigo-700 mb-3">Vraag een vrijblijvende offerte aan</h1>
-      <p class="text-gray-600 text-sm leading-relaxed max-w-2xl mx-auto">
-        Vul hieronder je gegevens en voorkeuren in. Maximaal vijf bedrijven nemen vrijblijvend contact met je op.
-      </p>
-    </section>
+  <!-- PAGE HEADER -->
+  <section class="section-shell card-fade-in mt-4">
+    <h1 class="text-xl font-semibold text-slate-900">Offerte aanvragen</h1>
+    <p class="text-sm text-slate-500">
+      Beschrijf je klus in drie korte stappen. We sturen je aanvraag door naar maximaal vijf passende bedrijven.
+    </p>
+  </section>
 
-    <!-- Formulier -->
-    <section class="bg-white rounded-2xl shadow border border-gray-100 p-8">
-      <h2 class="text-lg font-semibold text-indigo-700 mb-4 text-center">📝 Aanvraagformulier</h2>
+  <!-- WIZARD -->
+  <section class="section-shell">
+    <div id="requestWizard" class="surface-card p-6 rounded-2xl shadow-soft flex flex-col gap-6">
 
-      <form id="requestForm" class="space-y-5">
-        <input type="text" id="hp_field" name="hp_field" class="hidden" tabindex="-1" autocomplete="off" />
+      <!-- Stap-indicator (simpel, zonder progressbar) -->
+      <div class="flex items-center justify-between text-xs text-slate-500">
+        <div id="stepLabel">Stap 1 van 3</div>
+        <div id="stepTitle" class="font-medium text-slate-700">Wat heb je nodig?</div>
+      </div>
 
-        <!-- Naam -->
-        <div>
-          <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Naam</label>
-          <input id="name" type="text" placeholder="Naam" required autocomplete="name"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
+      <!-- STAP 1 -->
+      <div class="wizard-step" data-step="1">
+        <div class="grid gap-4">
 
-        <!-- E-mail -->
-        <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
-          <input id="email" type="email" placeholder="E-mailadres" required autocomplete="email"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
-
-        <!-- Plaats -->
-        <div>
-          <label for="city" class="block text-sm font-medium text-gray-700 mb-1">Plaats</label>
-          <input id="city" type="text" placeholder="Plaats (optioneel)" autocomplete="address-level2"
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" />
-        </div>
-
-        <!-- Categorie -->
-        <div>
-          <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
-          <select id="category" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="">Kies een categorie...</option>
-            <option value="Advocaat">Advocaat</option>
-            <option value="Makelaar">Makelaar</option>
-            <option value="Schoonmaakbedrijf">Schoonmaakbedrijf</option>
-            <option value="Loodgieter">Loodgieter</option>
-            <option value="Timmerman">Timmerman</option>
-          </select>
-        </div>
-
-        <!-- Specialisme -->
-        <div>
-          <label for="specialty" class="block text-sm font-medium text-gray-700 mb-1">Specialisme</label>
-          <select id="specialty" class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            <option value="">Kies een specialisme...</option>
-            <option value="Arbeidsrecht">Arbeidsrecht</option>
-            <option value="Strafrecht">Strafrecht</option>
-            <option value="Familierecht">Familierecht</option>
-            <option value="Huurrecht">Huurrecht</option>
-            <option value="Ondernemingsrecht">Ondernemingsrecht</option>
-            <option value="Bestuursrecht">Bestuursrecht</option>
-            <option value="Letselschade">Letselschade</option>
-            <option value="Contractenrecht">Contractenrecht</option>
-            <option value="Vastgoedrecht">Vastgoedrecht</option>
-            <option value="Sociaal zekerheidsrecht">Sociaal zekerheidsrecht</option>
-            <option value="Overig">Overig</option>
-          </select>
-        </div>
-
-        <!-- Communicatievoorkeur -->
-        <div>
-          <p class="block text-sm font-medium text-gray-700 mb-1">Voorkeur communicatie</p>
-          <div class="flex flex-col gap-1 text-sm text-gray-700">
-            <label><input type="radio" name="communication" value="Telefonisch / e-mail" class="mr-2">Telefonisch / e-mail</label>
-            <label><input type="radio" name="communication" value="Videocall / digitaal" class="mr-2">Videocall / digitaal</label>
-            <label><input type="radio" name="communication" value="Persoonlijk gesprek" class="mr-2">Persoonlijk gesprek</label>
+          <div>
+            <label for="category" class="block text-sm font-medium text-slate-800 mb-1">
+              Categorie <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="category"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="Bijvoorbeeld: schilder, loodgieter, advocaat"
+            />
+            <p class="mt-1 text-[11px] text-slate-500">
+              Vul kort in wat voor soort vakman je zoekt. We gebruiken dit om passende bedrijven te vinden.
+            </p>
           </div>
-        </div>
 
-        <!-- Juridische ervaring -->
-        <div>
-          <p class="block text-sm font-medium text-gray-700 mb-1">Juridische ervaring</p>
-          <div class="flex flex-col gap-1 text-sm text-gray-700">
-            <label><input type="radio" name="experience" value="Ik weet wat ik nodig heb" class="mr-2">Ik weet wat ik nodig heb</label>
-            <label><input type="radio" name="experience" value="Laat me adviseren" class="mr-2">Laat me adviseren</label>
+          <div>
+            <label for="description" class="block text-sm font-medium text-slate-800 mb-1">
+              Beschrijf je klus <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              id="description"
+              rows="4"
+              class="irisje-textarea w-full"
+              placeholder="Beschrijf kort wat er moet gebeuren, waar het ongeveer om gaat en wanneer."
+            ></textarea>
           </div>
-        </div>
 
-        <!-- Voorkeur aanpak -->
-        <div>
-          <p class="block text-sm font-medium text-gray-700 mb-1">Voorkeur aanpak</p>
-          <div class="flex flex-col gap-1 text-sm text-gray-700">
-            <label><input type="radio" name="approach" value="Ik weet de beste aanpak" class="mr-2">Ik weet de beste aanpak</label>
-            <label><input type="radio" name="approach" value="Ik weet het nog niet" class="mr-2">Ik weet het nog niet</label>
+          <div>
+            <label class="block text-sm font-medium text-slate-800 mb-1">
+              Foto's toevoegen <span class="text-slate-400 text-[11px]">(optioneel, max. 3)</span>
+            </label>
+            <input
+              id="photos"
+              type="file"
+              accept="image/*"
+              multiple
+              class="irisje-input w-full"
+            />
+            <p class="mt-1 text-[11px] text-slate-500">
+              Foto's helpen bedrijven om sneller een goede inschatting te maken. Je kunt maximaal drie foto's selecteren.
+            </p>
           </div>
-        </div>
 
-        <!-- Betrokkenheid -->
-        <div>
-          <p class="block text-sm font-medium text-gray-700 mb-1">Betrokkenheid</p>
-          <div class="flex flex-col gap-1 text-sm text-gray-700">
-            <label><input type="radio" name="involvement" value="Actief betrokken blijven" class="mr-2">Ik wil actief betrokken blijven</label>
-            <label><input type="radio" name="involvement" value="Uit handen geven" class="mr-2">Ik geef het liever uit handen</label>
+        </div>
+      </div>
+
+      <!-- STAP 2 -->
+      <div class="wizard-step hidden" data-step="2">
+        <div class="grid gap-4">
+
+          <div>
+            <label for="postcode" class="block text-sm font-medium text-slate-800 mb-1">
+              Postcode <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="postcode"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="1234AB"
+            />
           </div>
-        </div>
 
-        <!-- Bericht -->
-        <div>
-          <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Bericht</label>
-          <textarea id="message" placeholder="Beschrijf je klus of vraag..." required
-            class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none h-32"></textarea>
-        </div>
+          <div>
+            <label for="city" class="block text-sm font-medium text-slate-800 mb-1">
+              Plaats <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="city"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="Bijvoorbeeld: Rotterdam"
+            />
+          </div>
 
-        <!-- Verzenden -->
-        <button type="submit"
-          class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl py-3 text-sm transition">
-          Verstuur aanvraag
+          <div>
+            <label for="street" class="block text-sm font-medium text-slate-800 mb-1">
+              Straat <span class="text-slate-400 text-[11px]">(optioneel)</span>
+            </label>
+            <input
+              id="street"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="Straatnaam"
+            />
+          </div>
+
+          <div>
+            <label for="houseNumber" class="block text-sm font-medium text-slate-800 mb-1">
+              Huisnummer <span class="text-slate-400 text-[11px]">(optioneel)</span>
+            </label>
+            <input
+              id="houseNumber"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="Bijvoorbeeld: 12"
+            />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- STAP 3 -->
+      <div class="wizard-step hidden" data-step="3">
+        <div class="grid gap-4">
+
+          <div>
+            <label for="name" class="block text-sm font-medium text-slate-800 mb-1">
+              Naam <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="name"
+              type="text"
+              class="irisje-input w-full"
+              placeholder="Voor- en achternaam"
+            />
+          </div>
+
+          <div>
+            <label for="email" class="block text-sm font-medium text-slate-800 mb-1">
+              E-mailadres <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="email"
+              type="email"
+              class="irisje-input w-full"
+              placeholder="jouw@mailadres.nl"
+            />
+          </div>
+
+          <div>
+            <label for="phone" class="block text-sm font-medium text-slate-800 mb-1">
+              Telefoonnummer <span class="text-slate-400 text-[11px]">(optioneel)</span>
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              class="irisje-input w-full"
+              placeholder="Alleen als je graag teruggebeld wilt worden"
+            />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOUTMELDING -->
+      <div id="wizardError" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2"></div>
+
+      <!-- KNOPPEN -->
+      <div class="flex items-center justify-between pt-2">
+        <button
+          id="btnPrev"
+          type="button"
+          class="btn-secondary"
+        >
+          ← Terug
         </button>
 
-        <p id="statusMsg" class="text-center text-sm mt-2 min-h-[1.25rem]"></p>
-      </form>
-    </section>
-  </main>
+        <div class="flex items-center gap-2">
+          <button
+            id="btnNext"
+            type="button"
+            class="btn-primary"
+          >
+            Volgende →
+          </button>
 
-  <!-- FOOTER -->
-  <footer class="footer-shell card-fade-in">
-    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
-      </p>
-      <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
-        <a href="results.html" class="link-inline">Bedrijven</a>
-        <a href="login.html" class="link-inline">Voor bedrijven</a>
-        <a href="error.html" class="link-inline">Contact</a>
+          <button
+            id="btnSubmit"
+            type="button"
+            class="btn-primary hidden"
+          >
+            Verstuur aanvraag
+          </button>
+        </div>
       </div>
-    </div>
-  </footer>
 
-  <!-- SCRIPTS -->
-  <script src="js/request.js?v=20251111"></script>
+      <!-- LOADER / STATUS -->
+      <div id="wizardStatus" class="text-xs text-slate-500"></div>
+
+    </div>
+  </section>
+
+  <script src="js/request.js?v=20251211"></script>
 </body>
 </html>
