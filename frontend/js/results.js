@@ -159,8 +159,7 @@ function renderCompanies(items) {
       <div class="text-lg font-semibold mb-1 text-slate-800">${name}</div>
 
       <div class="flex items-center gap-1 text-[13px] text-amber-500 mb-1">
-        <span class="text-amber-500 drop-shadow-sm text-[15px]">${stars}</span>
-
+        <span style="color:#f59e0b !important;" class="text-amber-500 text-[16px] drop-shadow-sm">${stars}</span>
         <span class="text-slate-700 ml-1">${rating.toFixed(1)}</span>
         <span class="text-slate-500 text-[12px] ml-1">Google • ${reviews} reviews</span>
       </div>
