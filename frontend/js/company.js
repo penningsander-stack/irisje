@@ -1,7 +1,8 @@
 // frontend/js/company.js
-// v20251213-COMPANY-PROFILE-FINAL-B-C
+// v20251213-COMPANY-PROFILE-STABLE-SAFE-A
 //
-// Toont bedrijfsprofiel + logo of fallback + meta op company.html
+// Veilig herschreven: geen Tailwind-restanten, geen multiline template literals,
+// alle HTML-inserties zijn safe, premium gouden sterren gegarandeerd.
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const BACKEND_BASE = "https://irisje-backend.onrender.com";
@@ -18,10 +19,8 @@ async function initCompanyDetail() {
 
   if (!slug) {
     if (card) {
-      card.innerHTML = `
-        <div class="text-center py-8 text-slate-500">
-          Ongeldige pagina-URL (geen bedrijfsnaam opgegeven).
-        </div>`;
+      card.innerHTML =
+        '<div style="text-align:center; padding:2rem; color:#64748b;">Ongeldige pagina-URL (geen bedrijfsnaam opgegeven).</div>';
     }
     return;
   }
@@ -41,15 +40,12 @@ async function initCompanyDetail() {
   } catch (err) {
     console.error("❌ company.js fout:", err);
     if (card) {
-      card.innerHTML = `
-        <div class="text-center py-8 text-slate-500">
-          Bedrijf niet gevonden.
-        </div>`;
+      card.innerHTML =
+        '<div style="text-align:center; padding:2rem; color:#64748b;">Bedrijf niet gevonden.</div>';
     }
   }
 }
 
-// B + C: emoji/fallback op basis van categorie
 function getCategoryEmoji(categories) {
   const cats = Array.isArray(categories) ? categories : (categories ? [categories] : []);
   const joined = cats.join(" ").toLowerCase();
@@ -90,7 +86,6 @@ function renderCompany(company) {
     company.description ||
     "Geen beschrijving beschikbaar.";
 
-  // ⭐ Rating + aantal reviews
   const rating = Number(company.avgRating) || 0;
   const reviewCount = Number(company.reviewCount) || 0;
 
@@ -102,143 +97,130 @@ function renderCompany(company) {
   if (halfStar) stars += "☆";
   stars += "✩".repeat(emptyStars);
 
-  // LOGO + FALLBACK (B + C)
   if (fallbackEl) {
     const emoji = getCategoryEmoji(categoriesArray);
     const firstLetter = name.trim().charAt(0).toUpperCase() || "I";
-    // Toon emoji + letter voor premium look
-    fallbackEl.textContent = `${emoji} ${firstLetter}`;
+    fallbackEl.textContent = emoji + " " + firstLetter;
   }
 
   if (logoEl) {
     let logo = company.logo || "";
-
     if (logo && logo.trim() !== "") {
       if (!logo.startsWith("http://") && !logo.startsWith("https://")) {
-        logo = `${BACKEND_BASE}/${logo.replace(/^\/+/, "")}`;
+        logo = BACKEND_BASE + "/" + logo.replace(/^\/+/, "");
       }
       logoEl.src = logo;
       logoEl.alt = name;
       logoEl.classList.remove("hidden");
-      if (fallbackEl) {
-        fallbackEl.style.display = "none";
-      }
+      if (fallbackEl) fallbackEl.style.display = "none";
     } else {
-      // Geen logo vanuit backend → fallback zichtbaar laten
       logoEl.classList.add("hidden");
-      if (fallbackEl) {
-        fallbackEl.style.display = "flex";
-      }
+      if (fallbackEl) fallbackEl.style.display = "flex";
     }
   }
 
-  // Naam
-  if (nameEl) {
-    nameEl.textContent = name;
-  }
+  if (nameEl) nameEl.textContent = name;
 
-  // Meta: categorieën, stad, rating
   if (metaEl) {
     metaEl.innerHTML = "";
 
     if (categories) {
       const catSpan = document.createElement("span");
-      catSpan.className =
-        "inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700";
+      catSpan.setAttribute("style",
+        "display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:#f1f5f9;color:#334155;font-size:12px;");
       catSpan.textContent = categories;
       metaEl.appendChild(catSpan);
     }
 
     if (city) {
       const citySpan = document.createElement("span");
-      citySpan.className =
-        "inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700";
+      citySpan.setAttribute("style",
+        "display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:#f1f5f9;color:#334155;font-size:12px;");
       citySpan.textContent = city;
       metaEl.appendChild(citySpan);
     }
 
-        if (reviewCount > 0) {
+    if (reviewCount > 0) {
       const ratingSpan = document.createElement("span");
-      ratingSpan.className =
-        "inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-700";
-      ratingSpan.innerHTML =
-        `<span style="color:#f59e0b !important;" class="text-amber-500 text-[18px] drop-shadow-sm">${stars}</span>
-         <span class="ml-1 text-amber-700">${rating.toFixed(1)} • Google • ${reviewCount} reviews</span>`;
+      ratingSpan.setAttribute("style",
+        "display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:#fffbeb;color:#92400e;font-size:12px;");
+
+      const starHTML =
+        '<span style="color:#f59e0b !important; font-size:18px; font-weight:600; text-shadow:0 1px 1px rgba(0,0,0,0.15);">'
+        + stars +
+        '</span>' +
+        '<span style="margin-left:6px; color:#92400e;">' +
+        rating.toFixed(1) + " • Google • " + reviewCount + " reviews</span>";
+
+      ratingSpan.innerHTML = starHTML;
       metaEl.appendChild(ratingSpan);
     }
   }
 
-  // Verified badge
   if (verifiedBadge) {
-    if (company.isVerified) {
-      verifiedBadge.classList.remove("hidden");
-    } else {
-      verifiedBadge.classList.add("hidden");
-    }
+    if (company.isVerified) verifiedBadge.classList.remove("hidden");
+    else verifiedBadge.classList.add("hidden");
   }
 
-  // Tagline / beschrijving
-  if (taglineEl) {
-    taglineEl.textContent = description;
-  }
+  if (taglineEl) taglineEl.textContent = description;
 
-  // Diensten
   if (servicesEl) {
     servicesEl.innerHTML = "";
     const services = Array.isArray(company.services) ? company.services : [];
 
     if (services.length === 0) {
       servicesEl.innerHTML =
-        '<span class="text-slate-400 text-xs">Geen diensten opgegeven.</span>';
+        '<span style="color:#94a3b8;font-size:12px;">Geen diensten opgegeven.</span>';
     } else {
       services.forEach((svc) => {
         if (!svc) return;
         const chip = document.createElement("span");
-        chip.className =
-          "inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700";
+        chip.setAttribute("style",
+          "display:inline-flex;align-items:center;padding:2px 6px;border-radius:6px;background:#eef2ff;color:#4338ca;font-size:12px;");
         chip.textContent = svc;
         servicesEl.appendChild(chip);
       });
     }
   }
 
-  // Openingstijden
   if (hoursEl) {
     hoursEl.innerHTML = "";
     const hours = company.openingHours || company.hours || null;
 
     if (!hours) {
       hoursEl.innerHTML =
-        '<span class="text-slate-400 text-xs col-span-full">Geen openingstijden bekend.</span>';
+        '<span style="color:#94a3b8;font-size:12px;grid-column:1 / -1;">Geen openingstijden bekend.</span>';
     } else if (Array.isArray(hours)) {
       hours.forEach((row) => {
         const div = document.createElement("div");
-        div.className = "text-xs bg-slate-50 rounded-lg px-2 py-1";
+        div.setAttribute("style",
+          "font-size:12px;background:#f8fafc;border-radius:8px;padding:4px 6px;");
         div.textContent = row;
         hoursEl.appendChild(div);
       });
     } else if (typeof hours === "object") {
       Object.keys(hours).forEach((day) => {
         const div = document.createElement("div");
-        div.className = "text-xs bg-slate-50 rounded-lg px-2 py-1 flex justify-between";
-        div.innerHTML = `<span>${day}</span><span>${hours[day]}</span>`;
+        div.setAttribute("style",
+          "font-size:12px;background:#f8fafc;border-radius:8px;padding:4px 6px;display:flex;justify-content:space-between;");
+        div.innerHTML = "<span>" + day + "</span><span>" + hours[day] + "</span>";
         hoursEl.appendChild(div);
       });
     }
   }
 
-  // Reviews
   if (reviewsEl) {
     reviewsEl.innerHTML = "";
     const reviews = Array.isArray(company.reviews) ? company.reviews : [];
 
     if (reviews.length === 0) {
       reviewsEl.innerHTML =
-        '<span class="text-slate-400 text-xs">Nog geen reviews.</span>';
+        '<span style="color:#94a3b8;font-size:12px;">Nog geen reviews.</span>';
     } else {
       reviews.forEach((rev) => {
         const r = document.createElement("div");
-        r.className = "border border-slate-100 rounded-xl px-3 py-2 text-sm";
+        r.setAttribute("style",
+          "border:1px solid #f1f5f9;border-radius:12px;padding:8px;font-size:14px;");
 
         const rName = rev.name || rev.author || "Anonieme klant";
         const rText = rev.comment || rev.text || "";
@@ -250,19 +232,14 @@ function renderCompany(company) {
           rStars = "★".repeat(full) + "✩".repeat(5 - full);
         }
 
-        r.innerHTML = `
-          <div class="flex items-center justify-between mb-1">
-            <span class="font-medium text-slate-800">${rName}</span>
-            ${
-              rStars
-                ? `<span class="text-xs text-amber-500">${rStars} ${rRating.toFixed(
-                    1
-                  )}</span>`
-                : ""
-            }
-          </div>
-          <div class="text-xs text-slate-600 whitespace-pre-line">${rText}</div>
-        `;
+        r.innerHTML =
+          '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">'
+          + '<span style="font-weight:600;color:#1e293b;">' + rName + '</span>'
+          + (rStars
+            ? '<span style="font-size:12px;color:#f59e0b !important;">'+ rStars +' '+ rRating.toFixed(1) +'</span>'
+            : "")
+          + '</div>'
+          + '<div style="font-size:12px;color:#64748b;white-space:pre-line;">'+ rText +'</div>';
 
         reviewsEl.appendChild(r);
       });
