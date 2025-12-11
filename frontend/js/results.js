@@ -1,5 +1,7 @@
 // frontend/js/results.js
-// v20251213-RESULTS-FIX-LIMIT-RATING
+// v20251213-RESULTS-GOOGLE-LABEL
+//
+// Zoekresultatenpagina: laadt bedrijven vanuit /api/companies/search en toont ze in een grid.
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -158,7 +160,8 @@ function renderCompanies(items) {
 
       <div class="flex items-center gap-1 text-[13px] text-amber-500 mb-1">
         <span>${stars}</span>
-        <span class="text-slate-600 ml-1">${rating.toFixed(1)} • ${reviews} reviews</span>
+        <span class="text-slate-700 ml-1">${rating.toFixed(1)}</span>
+        <span class="text-slate-500 text-[12px] ml-1">Google • ${reviews} reviews</span>
       </div>
 
       <div class="text-sm text-slate-600 truncate">${categoryDisplay}</div>
