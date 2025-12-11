@@ -693,4 +693,3 @@ if (searchInput) {
     renderCompanyTable(filtered, table, notif);
   });
 }
-
