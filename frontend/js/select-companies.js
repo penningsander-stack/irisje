@@ -1,82 +1,130 @@
-// select-companies.js
-// full version
+// frontend/js/select-companies.js
+// v20251211 - fully wired to new backend /api/publicRequests/:id
 
-const API_BASE = "https://irisje-backend.onrender.com/api";
+(async function () {
+  const API = "https://irisje-backend.onrender.com";
 
-document.addEventListener("DOMContentLoaded", init);
+  function $(id) {
+    return document.getElementById(id);
+  }
 
-function param(k){return new URLSearchParams(window.location.search).get(k)||"";}
+  const companiesContainer = $("companiesContainer");
+  const statusBox = $("statusBox");
+  const sendBtn = $("sendRequestsBtn");
 
-async function init(){
-  const firstId = param("firstCompanyId");
-  const firstName = decodeURIComponent(param("firstCompanyName"));
-  const city = decodeURIComponent(param("city"));
-  const category = decodeURIComponent(param("category"));
-  document.getElementById("titleMain").textContent = `Je hebt offerte aangevraagd bij ${firstName}.`;
-  document.getElementById("titleSub").textContent = `Wil je ook andere bedrijven in ${city} vergelijken?`;
-  const r = await fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(category)}&city=${encodeURIComponent(city)}`);
-  const d = await r.json();
-  let items = d.items||[];
-  items = items.filter(c=>c._id!==firstId);
-  items.sort((a,b)=>{
-    if(b.isVerified - a.isVerified) return b.isVerified - a.isVerified;
-    if((b.avgRating||0)-(a.avgRating||0)) return (b.avgRating||0)-(a.avgRating||0);
-    return (b.reviewCount||0)-(a.reviewCount||0);
-  });
-  build(items);
-}
+  function setStatus(msg) {
+    if (statusBox) statusBox.textContent = msg || "";
+  }
 
-function build(items){
-  const box=document.getElementById("companyList");
-  box.innerHTML="";
-  items.forEach(c=>{
-    let stars="★".repeat(Math.round(c.avgRating||0));
-    stars+= "☆".repeat(5-stars.length);
-    const div=document.createElement("div");
-    div.innerHTML = `
+  function getParam(key) {
+    const url = new URL(window.location.href);
+    return url.searchParams.get(key);
+  }
+
+  async function fetchJSON(url) {
+    try {
+      const res = await fetch(url);
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  // Load request
+  const requestId = getParam("requestId");
+  if (!requestId) {
+    setStatus("Geen aanvraag-ID gevonden.");
+    return;
+  }
+
+  setStatus("Aanvraag laden...");
+
+  const reqData = await fetchJSON(`${API}/api/publicRequests/${requestId}`);
+  if (!reqData || !reqData.ok) {
+    setStatus("Aanvraag niet gevonden.");
+    return;
+  }
+
+  const request = reqData.request;
+  const category = request.category || "";
+  const city = request.city || "";
+
+  if (!category || !city) {
+    setStatus("Onvoldoende gegevens om bedrijven te zoeken.");
+    return;
+  }
+
+  setStatus("Bedrijven zoeken...");
+
+  // Search companies
+  const searchUrl = `${API}/api/companies/search?category=${encodeURIComponent(
+    category
+  )}&city=${encodeURIComponent(city)}`;
+
+  const companiesData = await fetchJSON(searchUrl);
+
+  if (!companiesData || !companiesData.ok || !Array.isArray(companiesData.results)) {
+    setStatus("Kon geen bedrijven vinden.");
+    return;
+  }
+
+  const companies = companiesData.results;
+
+  if (!companies.length) {
+    setStatus("Geen bedrijven gevonden voor deze aanvraag.");
+    return;
+  }
+
+  setStatus("");
+
+  // Render list
+  companiesContainer.innerHTML = "";
+
+  companies.forEach((c) => {
+    const item = document.createElement("div");
+    item.className =
+      "company-item p-4 border rounded mb-3 flex justify-between items-center";
+
+    item.innerHTML = `
       <div>
-        <b>${c.name}</b><br>
-        <span>${stars} ${(c.avgRating||0).toFixed(1)} • ${c.reviewCount||0} reviews</span>
+        <strong>${c.name}</strong><br>
+        <span>${c.city || ""}</span>
       </div>
-      <input type="checkbox" class="chk" value="${c._id}">
+      <input type="checkbox" class="company-select" value="${c._id}">
     `;
-    div.style.border="1px solid #ccc";
-    div.style.padding="10px";
-    div.style.margin="5px 0";
-    box.appendChild(div);
+
+    companiesContainer.appendChild(item);
   });
-  document.getElementById("sendBtn").onclick = sendReq;
-}
 
-async function sendReq(){
-  const sel=[...document.querySelectorAll(".chk:checked")].map(x=>x.value).slice(0,4);
-  const p=new URLSearchParams(window.location.search);
-  const firstId=p.get("firstCompanyId");
-  const base={};
-  for(const [k,v] of p.entries()) base[k]=decodeURIComponent(v);
+  // send requests
+  sendBtn.addEventListener("click", async () => {
+    const selected = Array.from(
+      document.querySelectorAll(".company-select:checked")
+    ).map((el) => el.value);
 
-  await postOne(firstId, base);
-  for(const id of sel) await postOne(id, base);
+    if (!selected.length) {
+      setStatus("Selecteer minstens één bedrijf.");
+      return;
+    }
 
-  window.location.href="success.html";
-}
+    setStatus("Aanvraag versturen...");
 
-async function postOne(id, base){
-  const body={
-    name: base.name,
-    email: base.email,
-    phone: base.phone,
-    city: base.city,
-    message: base.message + (base.photos?`\n\nFoto's: ${base.photos}`:""),
-    category: base.category,
-    postcode: base.postcode,
-    street: base.street,
-    houseNumber: base.houseNumber,
-    companyId: id
-  };
-  await fetch(`${API_BASE}/requests`,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(body)
+    const res = await fetch(`${API}/api/companies/send-requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requestId,
+        companyIds: selected,
+      }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data || !data.ok) {
+      setStatus("Kon aanvragen niet versturen.");
+      return;
+    }
+
+    setStatus("Aanvragen verstuurd!");
   });
-}
+})();
