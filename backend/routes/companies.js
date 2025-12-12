@@ -200,5 +200,75 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+
+/* ============================================================
+   7. AANVRAAG VERSTUREN NAAR GEKOZEN BEDRIJVEN
+   ------------------------------------------------------------
+   POST /api/companies/send-requests
+   Body: { requestId, companyIds: [..] }
+   - Geeft de basis-aanvraag terug
+   - Geeft de lijst bedrijven terug waarheen verzonden is
+   - (Later uit te breiden met e-mail / logging)
+============================================================ */
+const Request = require("../models/request");
+
+router.post("/send-requests", async (req, res) => {
+  try {
+    const { requestId, companyIds } = req.body || {};
+
+    if (!requestId || !Array.isArray(companyIds) || companyIds.length === 0) {
+      return res
+        .status(400)
+        .json({ ok: false, error: "requestId en minstens één bedrijf zijn verplicht." });
+    }
+
+    const request = await Request.findById(requestId).lean();
+    if (!request) {
+      return res.status(404).json({ ok: false, error: "Aanvraag niet gevonden." });
+    }
+
+    const companies = await Company.find({ _id: { $in: companyIds } })
+      .lean();
+
+    if (!companies.length) {
+      return res
+        .status(404)
+        .json({ ok: false, error: "Geen bedrijven gevonden voor de opgegeven IDs." });
+    }
+
+    // Basis-info voor de frontend (thank-you pagina).
+    const cleanRequest = {
+      id: String(request._id),
+      name: request.name || "",
+      email: request.email || "",
+      city: request.city || "",
+      category: request.category || "",
+      message: request.message || "",
+    };
+
+    const sentTo = companies.map((c) => ({
+      id: String(c._id),
+      name: c.name || "(naam onbekend)",
+      city: c.city || "",
+      slug: c.slug || "",
+      email: c.email || "",
+      reviewCount: c.reviewCount || 0,
+      rating: c.rating || null,
+    }));
+
+    // TODO: hier later e-mails / logging / dupliceren per bedrijf toevoegen.
+
+    return res.json({
+      ok: true,
+      request: cleanRequest,
+      sentTo,
+    });
+  } catch (err) {
+    console.error("❌ Fout in /companies/send-requests:", err);
+    return res.status(500).json({ ok: false, error: "Serverfout bij versturen aanvragen." });
+  }
+});
+
+
 module.exports = router;
 

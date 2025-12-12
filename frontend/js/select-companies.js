@@ -1,5 +1,5 @@
 // frontend/js/select-companies.js
-// v20251211 - fully wired to new backend /api/publicRequests/:id
+// v20251212 - publicRequests + send-requests + thank-you flow
 
 (async function () {
   const API = "https://irisje-backend.onrender.com";
@@ -30,7 +30,7 @@
     }
   }
 
-  // Load request
+  // 1. Aanvraag ophalen
   const requestId = getParam("requestId");
   if (!requestId) {
     setStatus("Geen aanvraag-ID gevonden.");
@@ -56,7 +56,7 @@
 
   setStatus("Bedrijven zoeken...");
 
-  // Search companies
+  // 2. Bedrijven zoeken op basis van categorie + plaats
   const searchUrl = `${API}/api/companies/search?category=${encodeURIComponent(
     category
   )}&city=${encodeURIComponent(city)}`;
@@ -77,26 +77,40 @@
 
   setStatus("");
 
-  // Render list
+  // 3. Lijst renderen
+  if (!companiesContainer) {
+    console.warn("Geen #companiesContainer gevonden in HTML.");
+    return;
+  }
+
   companiesContainer.innerHTML = "";
 
   companies.forEach((c) => {
     const item = document.createElement("div");
     item.className =
-      "company-item p-4 border rounded mb-3 flex justify-between items-center";
+      "company-item p-4 border rounded mb-3 flex justify-between items-center gap-4 bg-white shadow-sm";
+
+    const cityLabel = c.city ? `<span class=\"text-sm text-gray-500\">${c.city}</span>` : "";
 
     item.innerHTML = `
       <div>
-        <strong>${c.name}</strong><br>
-        <span>${c.city || ""}</span>
+        <div class=\"font-semibold text-gray-900\">${c.name}</div>
+        ${cityLabel}
       </div>
-      <input type="checkbox" class="company-select" value="${c._id}">
+      <div>
+        <input type=\"checkbox\" class=\"company-select h-5 w-5\" value=\"${c._id}\">
+      </div>
     `;
 
     companiesContainer.appendChild(item);
   });
 
-  // send requests
+  if (!sendBtn) {
+    console.warn("Geen #sendRequestsBtn gevonden in HTML.");
+    return;
+  }
+
+  // 4. Aanvragen versturen
   sendBtn.addEventListener("click", async () => {
     const selected = Array.from(
       document.querySelectorAll(".company-select:checked")
@@ -109,22 +123,35 @@
 
     setStatus("Aanvraag versturen...");
 
-    const res = await fetch(`${API}/api/companies/send-requests`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        requestId,
-        companyIds: selected,
-      }),
-    });
+    try {
+      const res = await fetch(`${API}/api/companies/send-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId,
+          companyIds: selected,
+        }),
+      });
 
-    const data = await res.json().catch(() => null);
+      const data = await res.json().catch(() => null);
 
-    if (!res.ok || !data || !data.ok) {
-      setStatus("Kon aanvragen niet versturen.");
-      return;
+      if (!res.ok || !data || !data.ok) {
+        setStatus("Kon aanvragen niet versturen.");
+        return;
+      }
+
+      // Bewaar data voor de bedankt-pagina
+      try {
+        sessionStorage.setItem("irisje_thankyou", JSON.stringify(data));
+      } catch (e) {
+        console.warn("Kon irisje_thankyou niet in sessionStorage opslaan:", e);
+      }
+
+      // Doorsturen naar bedankt-pagina
+      window.location.href = "/thank-you.html";
+    } catch (err) {
+      console.error("Fout bij versturen aanvragen:", err);
+      setStatus("Er ging iets mis bij het versturen van de aanvragen.");
     }
-
-    setStatus("Aanvragen verstuurd!");
   });
 })();
