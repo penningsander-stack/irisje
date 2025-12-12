@@ -54,6 +54,50 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+// -----------------------------------------------------------------------------
+// CATEGORIEËN VOOR HOMEPAGE
+// GET /api/companies/lists
+// -----------------------------------------------------------------------------
+router.get("/lists", async (req, res) => {
+  try {
+    const categories = await Company.distinct("category");
+
+    const cleaned = categories
+      .filter(Boolean)
+      .map((c) => c.trim())
+      .filter((c, i, arr) => arr.indexOf(c) === i)
+      .sort();
+
+    res.json({
+      ok: true,
+      categories: cleaned,
+    });
+  } catch (err) {
+    console.error("❌ companies/lists error:", err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // -----------------------------------------------------------------------------
 // ZOEKEN + FALLBACK (MOET BOVEN :id)
 // -----------------------------------------------------------------------------
