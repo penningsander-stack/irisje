@@ -4,8 +4,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Company = require("../models/Company");
-const Request = require("../models/Request");
+const Company = require("../models/company");
+const Request = require("../models/request");
 
 // -----------------------------------------------------------------------------
 // Fallback-plaatsen op Schouwen-Duiveland (A1)
