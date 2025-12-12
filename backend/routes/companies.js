@@ -69,14 +69,53 @@ router.get("/search", async (req, res) => {
   try {
     const { category, city } = req.query;
 
-    if (!category || !city) {
-      return res.json({
-        ok: true,
-        results: [],
-        fallbackUsed: false,
-        message: null,
-      });
+    router.get("/search", async (req, res) => {
+  try {
+    const { category, city, q } = req.query;
+
+    let query = {};
+
+    if (category) {
+      query.category = buildCategoryFilter(category);
     }
+
+    if (q) {
+      query.name = { $regex: q, $options: "i" };
+    }
+
+    if (city) {
+      query.city = buildCityFilter(city);
+    }
+
+    let results = await Company.find(query).lean();
+
+    let fallbackUsed = false;
+    let message = null;
+
+    // Alleen fallback gebruiken ALS city is opgegeven
+    if (city && results.length === 0 && category) {
+      results = await Company.find({
+        category: buildCategoryFilter(category),
+        city: { $in: FALLBACK_CITIES },
+      }).lean();
+
+      if (results.length > 0) {
+        fallbackUsed = true;
+        message = `Geen bedrijven in ${city}, wel in de buurt.`;
+      }
+    }
+
+    return res.json({
+      ok: true,
+      results,
+      fallbackUsed,
+      message,
+    });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 
     let results = await Company.find({
       category: buildCategoryFilter(category),
