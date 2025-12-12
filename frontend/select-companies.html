@@ -2,21 +2,31 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Extra bedrijven selecteren – Irisje.nl</title>
-  <link rel="stylesheet" href="style.css">
+  <title>Bedrijven selecteren – Irisje.nl</title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-<header>
-  <h1 id="titleMain"></h1>
-  <p id="titleSub"></p>
-</header>
+<body class="bg-slate-50 text-gray-900">
 
-<section>
-  <div id="companyList"></div>
-  <button id="sendBtn">Verstuur aanvragen</button>
-</section>
+  <header class="p-4 bg-white shadow mb-4">
+    <h1 class="text-2xl font-semibold">Kies bedrijven voor je aanvraag</h1>
+    <p class="text-gray-600">Selecteer maximaal 5 bedrijven</p>
+  </header>
 
-<script src="/js/select-companies.js?v=20251212"></script>
+  <main class="max-w-3xl mx-auto p-4">
+    <!-- Status box -->
+    <div id="statusBox" class="mb-4 text-sm text-gray-700"></div>
 
+    <!-- Container waar bedrijvenlijst komt -->
+    <div id="companiesContainer" class="space-y-4"></div>
+
+    <!-- Verstuur knop -->
+    <button 
+      id="sendRequestsBtn"
+      class="mt-6 w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition">
+      Verstuur aanvragen
+    </button>
+  </main>
+
+  <script src="/js/select-companies.js?v=20251212"></script>
 </body>
 </html>
