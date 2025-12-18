@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20251218-A1-STABLE
+// v20251218-A1-STABLE-FIXED
 
 const express = require("express");
 const router = express.Router();
@@ -36,6 +36,10 @@ function exactRegex(value) {
   return new RegExp(`^${escapeRegex(value)}$`, "i");
 }
 
+function containsRegex(value) {
+  return new RegExp(escapeRegex(value), "i");
+}
+
 // -----------------------------------------------------------------------------
 // CRUD
 // -----------------------------------------------------------------------------
@@ -67,7 +71,6 @@ router.get("/lists", async (req, res) => {
     const categories = await Company.distinct("categories");
 
     const cleaned = categories
-      .flat()
       .filter(Boolean)
       .map((c) => c.trim())
       .filter((c, i, arr) => arr.indexOf(c) === i)
@@ -92,17 +95,17 @@ router.get("/search", async (req, res) => {
 
     const query = {};
 
-    // categorie (array!)
+    // categorie (arrayveld)
     if (category) {
-      query.categories = { $in: [new RegExp(escapeRegex(category), "i")] };
+      query.categories = { $in: [containsRegex(category)] };
     }
 
     // vrije zoekterm
     if (q) {
-      query.name = new RegExp(escapeRegex(q), "i");
+      query.name = containsRegex(q);
     }
 
-    // plaats
+    // exacte plaats
     if (city) {
       query.city = exactRegex(city);
     }
@@ -112,11 +115,13 @@ router.get("/search", async (req, res) => {
     let fallbackUsed = false;
     let message = null;
 
-    // fallback alleen als category + city bestaan
+    // fallback: alleen als category + city bestaan
     if (category && city && results.length === 0) {
       results = await Company.find({
-        categories: { $in: [new RegExp(escapeRegex(category), "i")] },
-        city: { $in: FALLBACK_CITIES },
+        categories: { $in: [containsRegex(category)] },
+        city: {
+          $in: FALLBACK_CITIES.map((c) => exactRegex(c)),
+        },
       }).lean();
 
       if (results.length > 0) {
