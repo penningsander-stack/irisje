@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20251212-A1-FINAL
+// v20251218-A1-STABLE
 
 const express = require("express");
 const router = express.Router();
@@ -26,10 +26,14 @@ const FALLBACK_CITIES = [
 ];
 
 // -----------------------------------------------------------------------------
-// Helpers (GEEN $regex objecten!)
+// Helpers
 // -----------------------------------------------------------------------------
-function buildExactRegex(value) {
-  return new RegExp(`^${value}$`, "i");
+function escapeRegex(value = "") {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function exactRegex(value) {
+  return new RegExp(`^${escapeRegex(value)}$`, "i");
 }
 
 // -----------------------------------------------------------------------------
@@ -54,21 +58,16 @@ router.get("/", async (req, res) => {
   }
 });
 
-
-
-
-
-
-
 // -----------------------------------------------------------------------------
 // CATEGORIEËN VOOR HOMEPAGE
 // GET /api/companies/lists
 // -----------------------------------------------------------------------------
 router.get("/lists", async (req, res) => {
   try {
-    const categories = await Company.distinct("category");
+    const categories = await Company.distinct("categories");
 
     const cleaned = categories
+      .flat()
       .filter(Boolean)
       .map((c) => c.trim())
       .filter((c, i, arr) => arr.indexOf(c) === i)
@@ -84,20 +83,6 @@ router.get("/lists", async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // -----------------------------------------------------------------------------
 // ZOEKEN + FALLBACK (MOET BOVEN :id)
 // -----------------------------------------------------------------------------
@@ -105,20 +90,21 @@ router.get("/search", async (req, res) => {
   try {
     const { category, city, q } = req.query;
 
-    let query = {};
+    const query = {};
 
+    // categorie (array!)
     if (category) {
-  query.categories = { $in: [new RegExp(category, "i")] };
-}
-
+      query.categories = { $in: [new RegExp(escapeRegex(category), "i")] };
     }
 
+    // vrije zoekterm
     if (q) {
-      query.name = new RegExp(q, "i");
+      query.name = new RegExp(escapeRegex(q), "i");
     }
 
+    // plaats
     if (city) {
-      query.city = buildExactRegex(city);
+      query.city = exactRegex(city);
     }
 
     let results = await Company.find(query).lean();
@@ -126,9 +112,10 @@ router.get("/search", async (req, res) => {
     let fallbackUsed = false;
     let message = null;
 
-    if (city && category && results.length === 0) {
+    // fallback alleen als category + city bestaan
+    if (category && city && results.length === 0) {
       results = await Company.find({
-        category: buildExactRegex(category),
+        categories: { $in: [new RegExp(escapeRegex(category), "i")] },
         city: { $in: FALLBACK_CITIES },
       }).lean();
 
