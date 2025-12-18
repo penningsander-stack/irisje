@@ -1,5 +1,9 @@
 // frontend/js/results.js
-// v20251218-RESULTS-STABLE-FIXED
+// v20251218-RESULTS-FALLBACK-NOTICE
+//
+// Zoekresultatenpagina: laadt bedrijven vanuit /api/companies/search,
+// toont ze in een grid en ondersteunt filters + sorteren.
+// Inclusief fallback-melding indien backend fallbackUsed=true retourneert.
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -18,34 +22,26 @@ document.addEventListener("DOMContentLoaded", () => {
 async function initSearchResults() {
   const params = new URLSearchParams(window.location.search);
 
-  let category = params.get("category") || "";
+  const category = params.get("category") || "";
   const q = params.get("q") || "";
   const city = params.get("city") || "";
-
-  // 🔧 FIX: slug → leesbare categorie
-  if (category.includes("-")) {
-    category = category
-      .split("-")
-      .map(w => capitalizeFirst(w))
-      .join(" ");
-  } else {
-    category = capitalizeFirst(category);
-  }
+  const fullMode = params.get("full") === "1";
 
   const titleEl = document.getElementById("resultsTitle");
   const skeleton = document.getElementById("resultsSkeleton");
   const container = document.getElementById("resultsContainer");
-  const messageEl = document.getElementById("resultsMessage");
+  const noticeEl = document.getElementById("fallbackNotice");
 
   if (container) container.innerHTML = "";
-  if (messageEl) messageEl.innerHTML = "";
+  if (noticeEl) noticeEl.remove();
+
   if (skeleton) skeleton.style.display = "grid";
 
   if (titleEl) {
     if (category && city) {
-      titleEl.textContent = `${category} in ${city}`;
+      titleEl.textContent = `${capitalizeFirst(category)} in ${city}`;
     } else if (category) {
-      titleEl.textContent = `${category} in jouw regio`;
+      titleEl.textContent = `${capitalizeFirst(category)} in jouw regio`;
     } else if (city) {
       titleEl.textContent = `Bedrijven in ${city}`;
     } else {
@@ -58,23 +54,33 @@ async function initSearchResults() {
   if (q) searchParams.set("q", q);
   if (city) searchParams.set("city", city);
 
+  const url = `${API_BASE}/companies/search?${searchParams.toString()}`;
+
   try {
-    const res = await fetch(`${API_BASE}/companies/search?${searchParams}`);
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
-    const items = Array.isArray(data.results) ? data.results : [];
+
+    let items = Array.isArray(data.results)
+      ? data.results
+      : Array.isArray(data.items)
+      ? data.items
+      : [];
 
     allResults = items.map(normalizeCompany).filter(Boolean);
 
     if (skeleton) skeleton.style.display = "none";
+    if (!container) return;
 
-    if (data.message && messageEl) {
-      messageEl.innerHTML = `
-        <div class="text-sm text-indigo-600 mb-4">
-          ${escapeHtml(data.message)}
-        </div>
-      `;
+    // 🔔 Fallback-melding tonen indien van toepassing
+    if (data.fallbackUsed === true && data.message) {
+      const notice = document.createElement("div");
+      notice.id = "fallbackNotice";
+      notice.className =
+        "mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800";
+      notice.textContent = data.message;
+      container.parentNode.insertBefore(notice, container);
     }
 
     if (!allResults.length) {
@@ -87,35 +93,40 @@ async function initSearchResults() {
     }
 
     initFilterControls();
-    renderResults();
+    renderResults(fullMode);
   } catch (err) {
     console.error("❌ Fout bij laden resultaten:", err);
     if (skeleton) skeleton.style.display = "none";
-    container.innerHTML = `
-      <div class="text-sm text-red-500">
-        Er ging iets mis bij het laden van de resultaten.
-      </div>
-    `;
+    if (container) {
+      container.innerHTML = `
+        <div class="text-sm text-red-500">
+          Er ging iets mis bij het laden van de resultaten. Probeer het later opnieuw.
+        </div>
+      `;
+    }
   }
 }
 
 function normalizeCompany(item) {
   if (!item || typeof item !== "object") return null;
 
+  const rating = Number(item.avgRating) || 0;
+  const reviewCount = Number(item.reviewCount) || 0;
+
   const email = item.email || "";
   const isGoogleImported =
     email.startsWith("noemail_") && email.endsWith("@irisje.nl");
 
   return {
-    id: item._id,
+    id: item._id || "",
     name: item.name || "Onbekend bedrijf",
     slug: item.slug || "",
     tagline: item.tagline || "",
     categories: Array.isArray(item.categories) ? item.categories : [],
     city: item.city || "",
     isVerified: Boolean(item.isVerified),
-    rating: Number(item.avgRating) || 0,
-    reviewCount: Number(item.reviewCount) || 0,
+    rating,
+    reviewCount,
     isGoogleImported,
   };
 }
@@ -136,31 +147,35 @@ function initFilterControls() {
   bind("sortResults", "sort");
 }
 
-function renderResults() {
+function renderResults(forceFullMode) {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
 
-  let list = [...allResults];
+  const params = new URLSearchParams(window.location.search);
+  const fullMode = forceFullMode || params.get("full") === "1";
+  const LIMIT = 12;
+
+  let filtered = [...allResults];
 
   if (currentFilters.minRating) {
-    list = list.filter(c => c.rating >= Number(currentFilters.minRating));
+    const min = Number(currentFilters.minRating);
+    filtered = filtered.filter((c) => c.rating >= min);
   }
 
   if (currentFilters.verified === "yes") {
-    list = list.filter(c => c.isVerified);
+    filtered = filtered.filter((c) => c.isVerified);
   }
 
   if (currentFilters.source === "google") {
-    list = list.filter(c => c.isGoogleImported);
+    filtered = filtered.filter((c) => c.isGoogleImported);
   } else if (currentFilters.source === "irisje") {
-    list = list.filter(c => !c.isGoogleImported);
+    filtered = filtered.filter((c) => !c.isGoogleImported);
   }
 
-  list = sortResults(list, currentFilters.sort);
-
+  filtered = sortResults(filtered, currentFilters.sort);
   container.innerHTML = "";
 
-  if (!list.length) {
+  if (!filtered.length) {
     container.innerHTML = `
       <div class="text-sm text-slate-500">
         Geen bedrijven gevonden met deze filters.
@@ -169,56 +184,38 @@ function renderResults() {
     return;
   }
 
-  list.forEach(c => container.appendChild(buildCompanyCard(c)));
+  const toShow = fullMode ? filtered : filtered.slice(0, LIMIT);
+  toShow.forEach((c) => container.appendChild(buildCompanyCard(c)));
+
+  if (!fullMode && filtered.length > LIMIT) {
+    const btn = document.createElement("a");
+    const base = new URLSearchParams(window.location.search);
+    base.set("full", "1");
+    btn.href = `?${base.toString()}`;
+    btn.className =
+      "col-span-full mt-4 inline-flex justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700";
+    btn.textContent = `Toon alle resultaten (${filtered.length})`;
+    container.appendChild(btn);
+  }
 }
 
 function sortResults(list, mode) {
   const arr = [...list];
-  switch (mode) {
-    case "rating":
-      return arr.sort((a, b) => b.rating - a.rating);
-    case "reviews":
-      return arr.sort((a, b) => b.reviewCount - a.reviewCount);
-    case "verified":
-      return arr.sort((a, b) => Number(b.isVerified) - Number(a.isVerified));
-    case "az":
-      return arr.sort((a, b) => a.name.localeCompare(b.name, "nl"));
-    default:
-      return arr;
-  }
+  if (mode === "rating") arr.sort((a, b) => b.rating - a.rating);
+  if (mode === "reviews") arr.sort((a, b) => b.reviewCount - a.reviewCount);
+  if (mode === "az") arr.sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  if (mode === "verified")
+    arr.sort((a, b) => (a.isVerified === b.isVerified ? 0 : a.isVerified ? -1 : 1));
+  return arr;
 }
 
 function buildCompanyCard(c) {
-  const stars =
-    "★".repeat(Math.round(c.rating)) +
-    "☆".repeat(5 - Math.round(c.rating));
-
-  const link = `company.html?slug=${encodeURIComponent(c.slug)}`;
-
   const el = document.createElement("article");
   el.className = "surface-card p-5 rounded-2xl shadow-soft flex flex-col gap-3";
-
   el.innerHTML = `
-    <h2 class="text-base font-semibold">
-      <a href="${link}" class="hover:underline">${escapeHtml(c.name)}</a>
-    </h2>
-    <div class="text-xs text-slate-600">${escapeHtml(c.city)}</div>
-    ${
-      c.reviewCount
-        ? `<div class="text-sm text-amber-500">${stars} (${c.reviewCount})</div>`
-        : ""
-    }
-    ${
-      c.isVerified
-        ? `<span class="text-xs text-emerald-600">✔ Geverifieerd</span>`
-        : ""
-    }
-    ${
-      c.tagline
-        ? `<p class="text-sm text-slate-700">${escapeHtml(c.tagline)}</p>`
-        : ""
-    }
-    <a href="${link}" class="btn-primary btn-xs self-start">Bekijk bedrijf</a>
+    <h2 class="text-base font-semibold">${escapeHtml(c.name)}</h2>
+    <div class="text-sm text-slate-600">${escapeHtml(c.city)}</div>
+    ${c.isVerified ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>` : ""}
   `;
   return el;
 }
