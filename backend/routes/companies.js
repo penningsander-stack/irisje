@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20251218-A1-STABLE-FIXED
+// v20251218-A2-FIXED
 
 const express = require("express");
 const router = express.Router();
@@ -36,50 +36,21 @@ function exactRegex(value) {
   return new RegExp(`^${escapeRegex(value)}$`, "i");
 }
 
-function containsRegex(value) {
-  return new RegExp(escapeRegex(value), "i");
-}
-
-// -----------------------------------------------------------------------------
-// CRUD
-// -----------------------------------------------------------------------------
-router.post("/", async (req, res) => {
-  try {
-    const company = new Company(req.body);
-    await company.save();
-    res.json({ ok: true, item: company });
-  } catch (err) {
-    res.status(400).json({ ok: false, error: err.message });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
-    const items = await Company.find().sort({ createdAt: -1 }).lean();
-    res.json({ ok: true, items });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
 // -----------------------------------------------------------------------------
 // CATEGORIEËN VOOR HOMEPAGE
-// GET /api/companies/lists
 // -----------------------------------------------------------------------------
 router.get("/lists", async (req, res) => {
   try {
     const categories = await Company.distinct("categories");
 
     const cleaned = categories
+      .flat()
       .filter(Boolean)
       .map((c) => c.trim())
       .filter((c, i, arr) => arr.indexOf(c) === i)
       .sort();
 
-    res.json({
-      ok: true,
-      categories: cleaned,
-    });
+    res.json({ ok: true, categories: cleaned });
   } catch (err) {
     console.error("❌ companies/lists error:", err);
     res.status(500).json({ ok: false, error: err.message });
@@ -87,25 +58,23 @@ router.get("/lists", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// ZOEKEN + FALLBACK (MOET BOVEN :id)
+// ZOEKEN + FALLBACK
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
   try {
     const { category, city, q } = req.query;
-
     const query = {};
 
-    // categorie (arrayveld)
     if (category) {
-      query.categories = { $in: [containsRegex(category)] };
+      query.categories = {
+        $in: [new RegExp(escapeRegex(category), "i")],
+      };
     }
 
-    // vrije zoekterm
     if (q) {
-      query.name = containsRegex(q);
+      query.name = new RegExp(escapeRegex(q), "i");
     }
 
-    // exacte plaats
     if (city) {
       query.city = exactRegex(city);
     }
@@ -115,13 +84,17 @@ router.get("/search", async (req, res) => {
     let fallbackUsed = false;
     let message = null;
 
-    // fallback: alleen als category + city bestaan
+    // 🔥 GEFIXTE FALLBACK
     if (category && city && results.length === 0) {
+      const cityRegexes = FALLBACK_CITIES.map(
+        (c) => new RegExp(`^${escapeRegex(c)}$`, "i")
+      );
+
       results = await Company.find({
-        categories: { $in: [containsRegex(category)] },
-        city: {
-          $in: FALLBACK_CITIES.map((c) => exactRegex(c)),
+        categories: {
+          $in: [new RegExp(escapeRegex(category), "i")],
         },
+        city: { $in: cityRegexes },
       }).lean();
 
       if (results.length > 0) {
