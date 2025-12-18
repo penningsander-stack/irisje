@@ -108,7 +108,9 @@ router.get("/search", async (req, res) => {
     let query = {};
 
     if (category) {
-      query.category = buildExactRegex(category);
+  query.categories = { $in: [new RegExp(category, "i")] };
+}
+
     }
 
     if (q) {
