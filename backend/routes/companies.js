@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20251218-A2-FIXED
+// v20251218-A3-STABLE
 
 const express = require("express");
 const router = express.Router();
@@ -36,8 +36,13 @@ function exactRegex(value) {
   return new RegExp(`^${escapeRegex(value)}$`, "i");
 }
 
+function looseRegex(value) {
+  return new RegExp(escapeRegex(value), "i");
+}
+
 // -----------------------------------------------------------------------------
 // CATEGORIEËN VOOR HOMEPAGE
+// GET /api/companies/lists
 // -----------------------------------------------------------------------------
 router.get("/lists", async (req, res) => {
   try {
@@ -59,47 +64,61 @@ router.get("/lists", async (req, res) => {
 
 // -----------------------------------------------------------------------------
 // ZOEKEN + FALLBACK
+// GET /api/companies/search
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
   try {
     const { category, city, q } = req.query;
-    const query = {};
 
-    if (category) {
-      query.categories = {
-        $in: [new RegExp(escapeRegex(category), "i")],
-      };
+    const categoryRegex = category ? looseRegex(category) : null;
+    const cityRegex = city ? exactRegex(city) : null;
+
+    const baseQuery = {};
+
+    if (categoryRegex) {
+      baseQuery.categories = { $in: [categoryRegex] };
     }
 
     if (q) {
-      query.name = new RegExp(escapeRegex(q), "i");
+      baseQuery.name = looseRegex(q);
     }
 
-    if (city) {
-      query.city = exactRegex(city);
+    if (cityRegex) {
+      baseQuery.city = cityRegex;
     }
 
-    let results = await Company.find(query).lean();
+    // 1️⃣ Primaire zoekopdracht
+    let results = await Company.find(baseQuery).lean();
 
     let fallbackUsed = false;
     let message = null;
 
-    // 🔥 GEFIXTE FALLBACK
+    // 2️⃣ Regionale fallback
     if (category && city && results.length === 0) {
-      const cityRegexes = FALLBACK_CITIES.map(
-        (c) => new RegExp(`^${escapeRegex(c)}$`, "i")
+      const fallbackCityRegexes = FALLBACK_CITIES.map(
+        (c) => exactRegex(c)
       );
 
       results = await Company.find({
-        categories: {
-          $in: [new RegExp(escapeRegex(category), "i")],
-        },
-        city: { $in: cityRegexes },
+        categories: { $in: [categoryRegex] },
+        city: { $in: fallbackCityRegexes },
       }).lean();
 
       if (results.length > 0) {
         fallbackUsed = true;
         message = `Geen bedrijven in ${city}, wel in de buurt.`;
+      }
+    }
+
+    // 3️⃣ Landelijke fallback (ALTIJD laatste redmiddel)
+    if (category && results.length === 0) {
+      results = await Company.find({
+        categories: { $in: [categoryRegex] },
+      }).lean();
+
+      if (results.length > 0) {
+        fallbackUsed = true;
+        message = `Geen bedrijven in ${city}, wel elders beschikbaar.`;
       }
     }
 
