@@ -1,9 +1,5 @@
 // frontend/js/results.js
-// v20251218-RESULTS-FALLBACK-NOTICE
-//
-// Zoekresultatenpagina: laadt bedrijven vanuit /api/companies/search,
-// toont ze in een grid en ondersteunt filters + sorteren.
-// Inclusief fallback-melding indien backend fallbackUsed=true retourneert.
+// v20251218-RESULTS-FALLBACK-NOTICE-FIXED
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -30,11 +26,10 @@ async function initSearchResults() {
   const titleEl = document.getElementById("resultsTitle");
   const skeleton = document.getElementById("resultsSkeleton");
   const container = document.getElementById("resultsContainer");
-  const noticeEl = document.getElementById("fallbackNotice");
+  const oldNotice = document.getElementById("fallbackNotice");
 
   if (container) container.innerHTML = "";
-  if (noticeEl) noticeEl.remove();
-
+  if (oldNotice) oldNotice.remove();
   if (skeleton) skeleton.style.display = "grid";
 
   if (titleEl) {
@@ -54,15 +49,15 @@ async function initSearchResults() {
   if (q) searchParams.set("q", q);
   if (city) searchParams.set("city", city);
 
-  const url = `${API_BASE}/companies/search?${searchParams.toString()}`;
-
   try {
-    const res = await fetch(url);
+    const res = await fetch(
+      `${API_BASE}/companies/search?${searchParams.toString()}`
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
 
-    let items = Array.isArray(data.results)
+    const items = Array.isArray(data.results)
       ? data.results
       : Array.isArray(data.items)
       ? data.items
@@ -73,8 +68,8 @@ async function initSearchResults() {
     if (skeleton) skeleton.style.display = "none";
     if (!container) return;
 
-    // 🔔 Fallback-melding tonen indien van toepassing
-    if (data.fallbackUsed === true && data.message) {
+    // 🔔 Fallback-melding
+    if (data.fallbackUsed === true && data.message && container.parentNode) {
       const notice = document.createElement("div");
       notice.id = "fallbackNotice";
       notice.className =
@@ -100,7 +95,7 @@ async function initSearchResults() {
     if (container) {
       container.innerHTML = `
         <div class="text-sm text-red-500">
-          Er ging iets mis bij het laden van de resultaten. Probeer het later opnieuw.
+          Er ging iets mis bij het laden van de resultaten.
         </div>
       `;
     }
@@ -152,7 +147,7 @@ function renderResults(forceFullMode) {
   if (!container) return;
 
   const params = new URLSearchParams(window.location.search);
-  const fullMode = forceFullMode || params.get("full") === "1";
+  const fullMode = forceFullMode === true || params.get("full") === "1";
   const LIMIT = 12;
 
   let filtered = [...allResults];
@@ -205,7 +200,9 @@ function sortResults(list, mode) {
   if (mode === "reviews") arr.sort((a, b) => b.reviewCount - a.reviewCount);
   if (mode === "az") arr.sort((a, b) => a.name.localeCompare(b.name, "nl"));
   if (mode === "verified")
-    arr.sort((a, b) => (a.isVerified === b.isVerified ? 0 : a.isVerified ? -1 : 1));
+    arr.sort((a, b) =>
+      a.isVerified === b.isVerified ? 0 : a.isVerified ? -1 : 1
+    );
   return arr;
 }
 
@@ -215,7 +212,11 @@ function buildCompanyCard(c) {
   el.innerHTML = `
     <h2 class="text-base font-semibold">${escapeHtml(c.name)}</h2>
     <div class="text-sm text-slate-600">${escapeHtml(c.city)}</div>
-    ${c.isVerified ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>` : ""}
+    ${
+      c.isVerified
+        ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>`
+        : ""
+    }
   `;
   return el;
 }
@@ -228,5 +229,7 @@ function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
