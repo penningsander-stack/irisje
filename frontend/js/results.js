@@ -1,5 +1,11 @@
 // frontend/js/results.js
-// v20251218-RESULTS-FALLBACK-NOTICE-FIXED
+// v20251219-RESULTS-REVIEWS-RESTORE
+//
+// Zoekresultatenpagina: laadt bedrijven vanuit /api/companies/search,
+// toont ze in een grid en ondersteunt filters + sorteren.
+// Inclusief fallback-melding indien backend fallbackUsed=true retourneert.
+//
+// FIX: reviewCount + rating (sterren) weer zichtbaar op de bedrijfscards (regressie-herstel).
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -209,16 +215,59 @@ function sortResults(list, mode) {
 function buildCompanyCard(c) {
   const el = document.createElement("article");
   el.className = "surface-card p-5 rounded-2xl shadow-soft flex flex-col gap-3";
+
+  const stars = renderStars(c.rating);
+  const ratingLine =
+    c.reviewCount > 0
+      ? `${stars}<span class="ml-2 text-slate-600">${formatRating(
+          c.rating
+        )}</span><span class="ml-2 text-slate-500">(${c.reviewCount} review${
+          c.reviewCount === 1 ? "" : "s"
+        })</span>`
+      : `<span class="text-slate-500">Nog geen reviews</span>`;
+
   el.innerHTML = `
     <h2 class="text-base font-semibold">${escapeHtml(c.name)}</h2>
-    <div class="text-sm text-slate-600">${escapeHtml(c.city)}</div>
-    ${
-      c.isVerified
-        ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>`
-        : ""
-    }
+
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+      <div class="text-slate-600">${escapeHtml(c.city)}</div>
+      ${
+        c.isVerified
+          ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>`
+          : ""
+      }
+      <div class="ml-auto text-sm whitespace-nowrap">${ratingLine}</div>
+    </div>
+
+    ${c.tagline ? `<div class="text-sm text-slate-600">${escapeHtml(c.tagline)}</div>` : ""}
   `;
+
   return el;
+}
+
+function renderStars(rating) {
+  const r = Math.max(0, Math.min(5, Number(rating) || 0));
+  const full = Math.floor(r);
+  const half = r - full >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
+
+  const fullStar = `<span aria-hidden="true">★</span>`;
+  const halfStar = `<span aria-hidden="true">☆</span>`; // half-star fallback (simple)
+  const emptyStar = `<span aria-hidden="true">☆</span>`;
+
+  // Keep it simple and stable: full stars for integer part; if half => one empty star (visual hint), rest empty.
+  const starsHtml =
+    `<span class="text-amber-500">${fullStar.repeat(full)}</span>` +
+    (half ? `<span class="text-amber-500">${halfStar}</span>` : "") +
+    `<span class="text-slate-300">${emptyStar.repeat(empty)}</span>`;
+
+  return `<span class="inline-flex items-center leading-none" aria-label="${formatRating(r)} van 5">${starsHtml}</span>`;
+}
+
+function formatRating(n) {
+  const num = Number(n) || 0;
+  // 1 decimaal, NL-notatie
+  return (Math.round(num * 10) / 10).toString().replace(".", ",");
 }
 
 function capitalizeFirst(str) {
