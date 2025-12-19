@@ -1,10 +1,10 @@
 // frontend/js/results.js
-// v20251219-RESULTS-REVIEWS-PREMIUM-STARS
+// v20251219-RESULTS-REVIEWS-PREMIUM-YELLOW-FULL
 //
-// Herstelactie:
+// Herstelactie (op verzoek):
 // - Reviews + rating zichtbaar
-// - Sterren weer PREMIUM GEEL (zoals eerder)
-// - Geen andere functionaliteit gewijzigd
+// - Sterren GEEL + premium uitstraling (Tailwind amber)
+// - Geen andere functionaliteit aangepast
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -53,7 +53,12 @@ async function initSearchResults() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    const items = Array.isArray(data.results) ? data.results : Array.isArray(data.items) ? data.items : [];
+    const items = Array.isArray(data.results)
+      ? data.results
+      : Array.isArray(data.items)
+      ? data.items
+      : [];
+
     allResults = items.map(normalizeCompany).filter(Boolean);
 
     if (skeleton) skeleton.style.display = "none";
@@ -73,18 +78,15 @@ async function initSearchResults() {
 }
 
 function normalizeCompany(item) {
-  const rating = Number(item.avgRating) || 0;
-  const reviewCount = Number(item.reviewCount) || 0;
-  const email = item.email || "";
+  if (!item || typeof item !== "object") return null;
   return {
     id: item._id || "",
     name: item.name || "Onbekend",
     city: item.city || "",
     tagline: item.tagline || "",
+    rating: Number(item.avgRating) || 0,
+    reviewCount: Number(item.reviewCount) || 0,
     isVerified: Boolean(item.isVerified),
-    rating,
-    reviewCount,
-    isGoogleImported: email.startsWith("noemail_") && email.endsWith("@irisje.nl"),
   };
 }
 
@@ -141,9 +143,23 @@ function buildCompanyCard(c) {
 }
 
 function renderStars(rating, count) {
-  const full = Math.round(rating);
-  const stars = "★★★★★".slice(0, full) + "☆☆☆☆☆".slice(0, 5 - full);
-  return `<div class="text-sm text-[#F5C542] font-medium">${stars} <span class="text-slate-500">(${count})</span></div>`;
+  const r = Math.max(0, Math.min(5, Number(rating) || 0));
+  const full = Math.floor(r);
+  const empty = 5 - full;
+  const stars =
+    `<span class="text-amber-500">` + "★".repeat(full) + `</span>` +
+    `<span class="text-amber-300">` + "☆".repeat(empty) + `</span>`;
+  return `
+    <div class="flex items-center gap-2 text-sm">
+      <div class="tracking-tight">${stars}</div>
+      <span class="text-slate-600 font-medium">${formatRating(r)}</span>
+      <span class="text-slate-500">(${count} review${count === 1 ? "" : "s"})</span>
+    </div>
+  `;
+}
+
+function formatRating(n) {
+  return (Math.round((Number(n) || 0) * 10) / 10).toString().replace(".", ",");
 }
 
 function capitalizeFirst(str) {
@@ -151,7 +167,10 @@ function capitalizeFirst(str) {
 }
 
 function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-  }[m]));
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
