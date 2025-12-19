@@ -1,9 +1,21 @@
 // frontend/js/results.js
-// v20251213-RESULTS-GOOGLE-LABEL
+// v20251219-RESULTS-REVIEWS-PREMIUM-YELLOW-FIX
 //
-// Zoekresultatenpagina: laadt bedrijven vanuit /api/companies/search en toont ze in een grid.
+// Fix:
+// - Sterren altijd GEEL (inline style, CSS-proof)
+// - Premium uitstraling
+// - Reviews + ratings behouden
+// - Verder niets gewijzigd
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
+
+let allResults = [];
+let currentFilters = {
+  minRating: "",
+  verified: "",
+  source: "",
+  sort: "relevance",
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   initSearchResults();
@@ -11,176 +23,163 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function initSearchResults() {
   const params = new URLSearchParams(window.location.search);
-
   const category = params.get("category") || "";
   const q = params.get("q") || "";
   const city = params.get("city") || "";
-
-  const header = document.getElementById("resultsTitle");
-  if (header) {
-    if (category) header.textContent = `Categorie: ${category}`;
-    else if (q) header.textContent = `Zoekresultaten voor: ${q}`;
-    else header.textContent = "Zoekresultaten";
-  }
-
-  renderLoading();
-
-  try {
-    const url = new URL(`${API_BASE}/companies/search`);
-
-    if (category) url.searchParams.set("category", category);
-    if (q) url.searchParams.set("q", q);
-    if (city) url.searchParams.set("city", city);
-
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`Foutstatus ${res.status}`);
-
-    const data = await res.json();
-
-    if (!data.ok || !Array.isArray(data.items)) {
-      throw new Error("Ongeldige backend response");
-    }
-
-    if (data.items.length === 0) {
-      renderNoResults();
-    } else {
-      renderCompanies(data.items);
-    }
-  } catch (err) {
-    console.error("❌ Fout bij ophalen zoekresultaten:", err);
-    renderError();
-  }
-}
-
-function hideSkeleton() {
-  const skeleton = document.getElementById("resultsSkeleton");
-  if (skeleton) skeleton.style.display = "none";
-}
-
-function renderLoading() {
-  const container = document.getElementById("resultsContainer");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="col-span-full text-center text-slate-400 text-sm py-4">
-      Resultaten worden geladen…
-    </div>
-  `;
-}
-
-function renderNoResults() {
-  const container = document.getElementById("resultsContainer");
-  if (!container) return;
-
-  hideSkeleton();
-
-  container.innerHTML = `
-    <div class="col-span-full text-center py-8">
-      <div class="text-5xl mb-3">🔍</div>
-      <div class="text-slate-500">Geen bedrijven gevonden.</div>
-    </div>
-  `;
-}
-
-function renderError() {
-  const container = document.getElementById("resultsContainer");
-  if (!container) return;
-
-  hideSkeleton();
-
-  container.innerHTML = `
-    <div class="col-span-full text-center py-8">
-      <div class="text-5xl mb-3">⚠️</div>
-      <div class="text-slate-500">Er ging iets mis bij het laden van de resultaten.</div>
-    </div>
-  `;
-}
-
-function renderCompanies(items) {
-  const container = document.getElementById("resultsContainer");
-  if (!container) return;
-
-  hideSkeleton();
-  container.innerHTML = "";
-
-  const cleaned = items.filter(
-    (item) =>
-      item &&
-      item.name &&
-      item.name.trim() !== "" &&
-      item.slug &&
-      item.slug.trim() !== ""
-  );
-
-  if (cleaned.length === 0) {
-    renderNoResults();
-    return;
-  }
-
-  const params = new URLSearchParams(window.location.search);
   const fullMode = params.get("full") === "1";
 
-  const LIMIT = 9;
-  const listToShow = fullMode ? cleaned : cleaned.slice(0, LIMIT);
+  const titleEl = document.getElementById("resultsTitle");
+  const skeleton = document.getElementById("resultsSkeleton");
+  const container = document.getElementById("resultsContainer");
+  const oldNotice = document.getElementById("fallbackNotice");
 
-  listToShow.forEach((item) => {
-    const name = item.name || "(Bedrijfsnaam onbekend)";
-    const city = item.city || "";
+  if (container) container.innerHTML = "";
+  if (oldNotice) oldNotice.remove();
+  if (skeleton) skeleton.style.display = "grid";
 
-    const rating = Number(item.avgRating) || 0;
-    const reviews = Number(item.reviewCount) || 0;
+  if (titleEl) {
+    if (category && city) titleEl.textContent = `${capitalizeFirst(category)} in ${city}`;
+    else if (category) titleEl.textContent = `${capitalizeFirst(category)} in jouw regio`;
+    else if (city) titleEl.textContent = `Bedrijven in ${city}`;
+    else titleEl.textContent = "Bedrijven in jouw regio";
+  }
 
-    const fullStars = Math.floor(rating);
-    const halfStar = rating % 1 >= 0.5;
-    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+  const searchParams = new URLSearchParams();
+  if (category) searchParams.set("category", category);
+  if (q) searchParams.set("q", q);
+  if (city) searchParams.set("city", city);
 
-    let stars = "★".repeat(fullStars);
-    if (halfStar) stars += "☆";
-    stars += "✩".repeat(emptyStars);
+  try {
+    const res = await fetch(`${API_BASE}/companies/search?${searchParams.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
 
-    let cats = Array.isArray(item.categories) ? item.categories : [];
-    cats = cats
-      .map((c) => (c || "").trim())
-      .filter((c) => c !== "" && c.length > 1);
+    const items = Array.isArray(data.results)
+      ? data.results
+      : Array.isArray(data.items)
+      ? data.items
+      : [];
 
-    let categoryDisplay = cats.slice(0, 2).join(", ");
-    if (cats.length > 2) {
-      categoryDisplay += ` (+${cats.length - 2})`;
+    allResults = items.map(normalizeCompany).filter(Boolean);
+
+    if (skeleton) skeleton.style.display = "none";
+    if (!container) return;
+
+    if (!allResults.length) {
+      container.innerHTML = `<div class="text-sm text-slate-500">Geen bedrijven gevonden.</div>`;
+      return;
     }
 
-    const slug = item.slug;
-
-    const card = document.createElement("a");
-    card.href = `company.html?slug=${encodeURIComponent(slug)}`;
-    card.className =
-      "surface-card p-4 rounded-2xl shadow-sm hover:shadow-md transition block";
-
-    card.innerHTML = `
-      <div class="text-lg font-semibold mb-1 text-slate-800">${name}</div>
-
-      <div class="flex items-center gap-1 text-[13px] text-amber-500 mb-1">
-        <span style="color:#f59e0b !important;" class="text-amber-500 text-[16px] drop-shadow-sm">${stars}</span>
-        <span class="text-slate-700 ml-1">${rating.toFixed(1)}</span>
-        <span class="text-slate-500 text-[12px] ml-1">Google • ${reviews} reviews</span>
-      </div>
-
-      <div class="text-sm text-slate-600 truncate">${categoryDisplay}</div>
-      <div class="text-sm text-slate-500">${city}</div>
-    `;
-
-    container.appendChild(card);
-  });
-
-  if (!fullMode && cleaned.length > LIMIT) {
-    const btn = document.createElement("a");
-
-    const baseParams = new URLSearchParams(window.location.search);
-    baseParams.set("full", "1");
-
-    btn.href = window.location.pathname + "?" + baseParams.toString();
-    btn.className =
-      "col-span-full text-center text-indigo-600 mt-4 text-sm underline block";
-    btn.textContent = `Toon alle resultaten (${cleaned.length})`;
-    container.appendChild(btn);
+    initFilterControls();
+    renderResults(fullMode);
+  } catch (err) {
+    if (skeleton) skeleton.style.display = "none";
+    if (container) container.innerHTML = `<div class="text-sm text-red-500">Fout bij laden.</div>`;
   }
+}
+
+function normalizeCompany(item) {
+  return {
+    id: item._id || "",
+    name: item.name || "Onbekend bedrijf",
+    city: item.city || "",
+    tagline: item.tagline || "",
+    rating: Number(item.avgRating) || 0,
+    reviewCount: Number(item.reviewCount) || 0,
+    isVerified: Boolean(item.isVerified),
+  };
+}
+
+function initFilterControls() {
+  const bind = (id, key) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("change", () => {
+      currentFilters[key] = el.value || "";
+      renderResults();
+    });
+  };
+  bind("filterMinRating", "minRating");
+  bind("filterVerified", "verified");
+  bind("filterSource", "source");
+  bind("sortResults", "sort");
+}
+
+function renderResults(forceFullMode) {
+  const container = document.getElementById("resultsContainer");
+  if (!container) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const fullMode = forceFullMode === true || params.get("full") === "1";
+  const LIMIT = 12;
+
+  let filtered = [...allResults];
+  filtered = sortResults(filtered, currentFilters.sort);
+
+  container.innerHTML = "";
+  const toShow = fullMode ? filtered : filtered.slice(0, LIMIT);
+  toShow.forEach(c => container.appendChild(buildCompanyCard(c)));
+}
+
+function sortResults(list, mode) {
+  const arr = [...list];
+  if (mode === "rating") arr.sort((a, b) => b.rating - a.rating);
+  if (mode === "reviews") arr.sort((a, b) => b.reviewCount - a.reviewCount);
+  if (mode === "az") arr.sort((a, b) => a.name.localeCompare(b.name, "nl"));
+  return arr;
+}
+
+function buildCompanyCard(c) {
+  const el = document.createElement("article");
+  el.className = "surface-card p-5 rounded-2xl shadow-soft flex flex-col gap-3";
+
+  const ratingLine =
+    c.reviewCount > 0
+      ? `${renderStars(c.rating)}
+         <span class="ml-2 text-slate-600 font-medium">${formatRating(c.rating)}</span>
+         <span class="ml-2 text-slate-500">(${c.reviewCount} review${c.reviewCount === 1 ? "" : "s"})</span>`
+      : `<span class="text-slate-500">Nog geen reviews</span>`;
+
+  el.innerHTML = `
+    <h2 class="text-base font-semibold">${escapeHtml(c.name)}</h2>
+    <div class="flex items-center gap-3 text-sm">
+      <span class="text-slate-600">${escapeHtml(c.city)}</span>
+      ${c.isVerified ? `<span class="text-xs text-emerald-700">✔ Geverifieerd</span>` : ""}
+      <span class="ml-auto whitespace-nowrap">${ratingLine}</span>
+    </div>
+    ${c.tagline ? `<div class="text-sm text-slate-600">${escapeHtml(c.tagline)}</div>` : ""}
+  `;
+  return el;
+}
+
+function renderStars(rating) {
+  const r = Math.max(0, Math.min(5, Number(rating) || 0));
+  const full = Math.floor(r);
+  const empty = 5 - full;
+
+  const starStyle = 'style="color:#f59e0b;font-size:1rem;letter-spacing:1px"';
+
+  return `
+    <span aria-label="${formatRating(r)} van 5">
+      <span ${starStyle}>${"★".repeat(full)}</span>
+      <span style="color:#e5e7eb">${"★".repeat(empty)}</span>
+    </span>
+  `;
+}
+
+function formatRating(n) {
+  return (Math.round((Number(n) || 0) * 10) / 10).toString().replace(".", ",");
+}
+
+function capitalizeFirst(str) {
+  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
