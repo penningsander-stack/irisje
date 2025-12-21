@@ -1,55 +1,139 @@
+/* frontend/style.css */
+/* === IRISJE PREMIUM LIGHT – STABIELE DEFINITIEVE BASIS === */
 
-/* Irisje Premium Plus — CSS-only (safe) */
-/* Load AFTER style.css and style-premium.css */
-
-/* ===== Premium color system ===== */
+/* ===============================
+   THEMA & VARIABELEN
+   =============================== */
 :root {
-  --irisje-blue-900: #0b1f44;
-  --irisje-blue-700: #1e40af;
-  --irisje-blue-600: #2563eb;
-  --irisje-blue-100: #e0e7ff;
+  --irisje-bg: #f3f4ff;
+  --irisje-bg-soft: #f9fafb;
+  --irisje-surface: #ffffff;
+  --irisje-border-subtle: rgba(148, 163, 184, 0.35);
+  --irisje-text-main: #0f172a;
+  --irisje-text-soft: #64748b;
 
-  --irisje-gold: #facc15; /* yellow stars */
-  --irisje-gold-soft: #fde68a;
+  --irisje-indigo: #4f46e5;
+  --irisje-indigo-strong: #4338ca;
+  --irisje-indigo-soft: #e0e7ff;
 
-  --irisje-shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.08);
-  --irisje-shadow-strong: 0 14px 36px rgba(15, 23, 42, 0.14);
+  --irisje-emerald: #10b981;
+  --irisje-gold: #facc15;
+
+  --irisje-radius-lg: 1.25rem;
+  --irisje-radius-md: 0.9rem;
+  --irisje-radius-pill: 999px;
+
+  --irisje-shadow-soft: 0 20px 50px rgba(15, 23, 42, 0.08);
+  --irisje-shadow-strong: 0 24px 70px rgba(15, 23, 42, 0.18);
 }
 
-/* ===== Result cards ===== */
+/* ===============================
+   BODY – HIER ZAT DE BUG
+   =============================== */
+body,
+.irisje-body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at top left, #eef2ff 0, #f9fafb 42%, #ffffff 100%);
+  color: var(--irisje-text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===============================
+   LINKS
+   =============================== */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===============================
+   HEADER
+   =============================== */
+.irisje-header {
+  backdrop-filter: blur(12px);
+  background: linear-gradient(135deg, rgba(255,255,255,0.94), rgba(248,250,252,0.96));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.04);
+}
+
+/* ===============================
+   BUTTONS
+   =============================== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.6rem;
+  font-size: 0.86rem;
+  font-weight: 600;
+  border-radius: var(--irisje-radius-pill);
+  background: linear-gradient(135deg, var(--irisje-indigo), #6366f1);
+  color: #fff;
+  border: none;
+  box-shadow: 0 18px 42px rgba(79, 70, 229, 0.55);
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 24px 60px rgba(79, 70, 229, 0.7);
+}
+
+/* ===============================
+   CARDS
+   =============================== */
 .surface-card,
 .result-card,
 .company-card {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.96));
-  border: 1px solid rgba(37, 99, 235, 0.08);
+  background: #ffffff;
+  border-radius: var(--irisje-radius-lg);
+  border: 1px solid var(--irisje-border-subtle);
   box-shadow: var(--irisje-shadow-soft);
-  transition: box-shadow .2s ease, transform .2s ease;
+  padding: 1.4rem;
 }
 
-.surface-card:hover,
-.result-card:hover,
-.company-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--irisje-shadow-strong);
+/* ===============================
+   RESULTS
+   =============================== */
+.results-main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
 }
 
-/* ===== Company name ===== */
-.surface-card h2,
-.company-card h2 {
-  color: var(--irisje-blue-900);
+.results-list {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.result-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--irisje-indigo-strong);
+}
+
+.result-location {
+  font-size: 0.8rem;
+  color: var(--irisje-text-soft);
+}
+
+.result-rating {
+  text-align: right;
+}
+
+.result-stars {
+  color: var(--irisje-gold);
   font-weight: 600;
 }
 
-/* ===== City / meta ===== */
-.surface-card .meta,
-.surface-card .city,
-.company-card .city {
-  color: #475569;
-}
-
-/* ===== Verified badge ===== */
-.verified,
+/* ===============================
+   VERIFIED BADGE
+   =============================== */
 .badge-verified {
   display: inline-flex;
   align-items: center;
@@ -63,48 +147,62 @@
   border: 1px solid #a7f3d0;
 }
 
-/* ===== Rating stars (force premium yellow) ===== */
-.rating-stars svg,
-.stars svg {
-  fill: var(--irisje-gold) !important;
-  stroke: #ca8a04 !important;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.18));
+/* ===============================
+   FORMS
+   =============================== */
+.form-input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.84rem;
+  border-radius: 0.9rem;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
 }
 
-.rating-value {
-  color: #1f2937;
-  font-weight: 600;
+.form-input:focus {
+  outline: none;
+  border-color: var(--irisje-indigo);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.35);
 }
 
-.review-count {
-  color: #64748b;
-  font-size: 13px;
+/* ===============================
+   CTA SECTION
+   =============================== */
+.section-business {
+  background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+  padding: 4rem 1rem;
+  color: #ffffff;
 }
 
-/* ===== Filter bar polish ===== */
-.filters,
-.filter-bar {
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid rgba(37, 99, 235, 0.08);
-  border-radius: 14px;
-  box-shadow: 0 6px 16px rgba(15,23,42,.06);
+.section-business h2 {
+  font-size: 2rem;
+  font-weight: 700;
 }
 
-/* ===== Primary action button ===== */
-.btn-primary,
-.button-primary {
-  background: linear-gradient(180deg, var(--irisje-blue-600), var(--irisje-blue-700));
-  color: #fff;
-  border-radius: 999px;
-  box-shadow: 0 6px 18px rgba(37,99,235,.35);
+.section-business p {
+  color: rgba(255,255,255,0.88);
 }
 
-.btn-primary:hover,
-.button-primary:hover {
-  filter: brightness(1.05);
+/* ===============================
+   FOOTER
+   =============================== */
+.footer-shell {
+  border-top: 1px solid var(--irisje-border-subtle);
+  background: linear-gradient(to top, #f9fafb, rgba(249, 250, 251, 0.9));
 }
 
-/* ===== Empty state ===== */
-.empty-state {
-  color: #475569;
-}
+/* ===============================
+   UTILITIES (wat je HTML gebruikt)
+   =============================== */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-4 { gap: 1rem; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-center { text-align: center; }
+.rounded-xl { border-radius: 0.75rem; }
+.shadow { box-shadow: var(--irisje-shadow-soft); }
+.w-full { width: 100%; }
