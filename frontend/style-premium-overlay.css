@@ -1,87 +1,51 @@
-/* ============================================================
-   IRISJE — PREMIUM VISUAL OVERLAY (SAFE)
-   Laadt NA style.css
-   Doel: luxere look, GEEN layout-wijzigingen
-   ============================================================ */
+/* === IRISJE PREMIUM OVERLAY — ZICHTBAAR === */
+/* Laadt NA style.css */
 
-/* ---------- Cards: dieper maar subtiel ---------- */
+/* 1️⃣ Cards duidelijk luxer */
 .surface-card,
 .result-card,
 .filter-card,
 .request-box {
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, 0.12),
+    0 8px 18px rgba(79, 70, 229, 0.08);
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fafbff 100%
+  );
+}
+
+/* Hover = premium lift */
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 35px 80px rgba(15, 23, 42, 0.18),
+    0 12px 28px rgba(79, 70, 229, 0.18);
+}
+
+/* 2️⃣ Buttons meer diepte */
+.btn-primary {
+  box-shadow:
+    0 18px 45px rgba(79, 70, 229, 0.55),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 26px 65px rgba(79, 70, 229, 0.75);
+}
+
+/* 3️⃣ Koppen iets strakker */
+h1, h2, .hero-title, .result-title {
+  letter-spacing: -0.025em;
+}
+
+/* 4️⃣ Subtiele premium achtergrond */
+body {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
-  box-shadow:
-    0 18px 40px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255,255,255,0.6);
-  transition: box-shadow .18s ease, transform .12s ease, background-color .18s ease;
+    radial-gradient(circle at top left, #eef2ff 0%, transparent 55%),
+    radial-gradient(circle at bottom right, #ecfeff 0%, transparent 55%),
+    #f9fafb;
 }
-
-.result-card:hover,
-.surface-card:hover {
-  box-shadow:
-    0 26px 60px rgba(15, 23, 42, 0.14),
-    inset 0 1px 0 rgba(255,255,255,0.7);
-}
-
-/* ---------- Top highlight (beste match) ---------- */
-.result-card.top-highlight {
-  box-shadow:
-    0 30px 70px rgba(79, 70, 229, 0.18),
-    inset 0 1px 0 rgba(255,255,255,0.7);
-  border-color: rgba(79, 70, 229, 0.35);
-}
-
-/* ---------- Buttons: rijkere gradient ---------- */
-.btn-primary,
-.button-primary {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  box-shadow: 0 18px 42px rgba(79, 70, 229, 0.55);
-}
-
-.btn-primary:hover,
-.button-primary:hover {
-  background: linear-gradient(135deg, #4338ca, #4f46e5);
-  box-shadow: 0 24px 60px rgba(79, 70, 229, 0.7);
-}
-
-/* ---------- Verified badge: cleaner ---------- */
-.verified,
-.badge-verified {
-  background: linear-gradient(180deg, #ecfdf5, #d1fae5);
-  border-color: #a7f3d0;
-  color: #065f46;
-}
-
-/* ---------- Ratings: warm premium gold ---------- */
-.rating-stars svg,
-.stars svg,
-.result-stars {
-  color: #facc15;
-  fill: #facc15 !important;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.18));
-}
-
-/* ---------- Headers & titles: net iets scherper ---------- */
-.result-title,
-.page-title-block h1,
-.results-title-block h1 {
-  text-shadow: 0 1px 0 rgba(255,255,255,0.6);
-}
-
-/* ---------- Filters: glassy maar veilig ---------- */
-.filters,
-.filter-bar,
-.selection-bar {
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  box-shadow: 0 14px 32px rgba(15,23,42,.08);
-}
-
-/* ---------- Micro-animaties (geen layout) ---------- */
-.fade-seq,
-.card-fade-in {
-  will-change: opacity, transform;
-}
-
-/* ---------- Niets onder deze regel aan layout ---------- */
-/* (bewust leeg gehouden) */
