@@ -44,6 +44,25 @@ app.use((req, res, next) => {
 // =========================================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+
+// =========================================
+// FRONTEND STATISCH SERVEN (EXPLICIET)
+// =========================================
+app.use(
+  "/frontend",
+  express.static(path.join(__dirname, "..", "frontend"), {
+    extensions: ["css", "js", "html"],
+  })
+);
+
+
+
+
+
+
+
+
+
 // =========================================
 // ROUTES DYNAMISCH LADEN
 // =========================================
