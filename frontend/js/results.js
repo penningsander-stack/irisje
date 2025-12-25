@@ -1,11 +1,10 @@
 // frontend/js/results.js
-// v20251225-RESULTS-FIX-CLICKABLE-CARDS
+// v20251225-RESULTS-FIX-SLUG-COMPATIBLE
 //
-// Volledige versie:
-// - Search / filters / sort / full-mode
-// - Premium UI (gele sterren)
-// - Klikbare kaarten (FIX)
-// - Geen afhankelijkheid van CSS of service worker
+// FIXES:
+// - Klikbare kaarten via slug (NIET id)
+// - Compatibel met company.js
+// - Verder exact jouw bestaande functionaliteit
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -68,7 +67,8 @@ async function initSearchResults() {
     if (skeleton) skeleton.style.display = "none";
 
     if (!allResults.length) {
-      container.innerHTML = `<div class="text-sm text-slate-500">Geen bedrijven gevonden.</div>`;
+      container.innerHTML =
+        `<div class="text-sm text-slate-500">Geen bedrijven gevonden.</div>`;
       return;
     }
 
@@ -77,12 +77,13 @@ async function initSearchResults() {
   } catch (err) {
     console.error(err);
     if (skeleton) skeleton.style.display = "none";
-    container.innerHTML = `<div class="text-sm text-red-500">Fout bij laden resultaten.</div>`;
+    container.innerHTML =
+      `<div class="text-sm text-red-500">Fout bij laden resultaten.</div>`;
   }
 }
 
 /* =========================
-   NORMALIZE
+   NORMALIZE  ✅ SLUG TOEGEVOEGD
 ========================= */
 function normalizeCompany(item) {
   if (!item || typeof item !== "object") return null;
@@ -95,6 +96,7 @@ function normalizeCompany(item) {
 
   return {
     id: item._id || "",
+    slug: item.slug || "",              // ✅ BELANGRIJK
     name: item.name || "Onbekend bedrijf",
     tagline: item.tagline || "",
     categories: Array.isArray(item.categories) ? item.categories : [],
@@ -179,17 +181,20 @@ function sortResults(arr, mode) {
   if (mode === "rating") a.sort((x, y) => y.rating - x.rating);
   if (mode === "reviews") a.sort((x, y) => y.reviewCount - x.reviewCount);
   if (mode === "az") a.sort((x, y) => x.name.localeCompare(y.name, "nl"));
-  if (mode === "verified") a.sort((x, y) => (y.isVerified ? 1 : 0) - (x.isVerified ? 1 : 0));
+  if (mode === "verified") a.sort((x, y) =>
+    (y.isVerified ? 1 : 0) - (x.isVerified ? 1 : 0)
+  );
   return a;
 }
 
 /* =========================
-   CARD (FIX)
+   CARD
 ========================= */
 function buildCompanyCard(c) {
   const el = document.createElement("article");
-  el.className = "surface-card result-card p-6 rounded-2xl shadow-soft flex flex-col gap-4";
-  el.dataset.id = c.id;
+  el.className =
+    "surface-card result-card p-6 rounded-2xl shadow-soft flex flex-col gap-4";
+  el.dataset.slug = c.slug;              // ✅ SLUG
   el.style.cursor = "pointer";
 
   el.innerHTML = `
@@ -205,12 +210,13 @@ function buildCompanyCard(c) {
 }
 
 /* =========================
-   CLICK HANDLER (FIX)
+   CLICK HANDLER  ✅ FIX
 ========================= */
 document.addEventListener("click", (e) => {
   const card = e.target.closest(".result-card");
-  if (!card || !card.dataset.id) return;
-  window.location.href = `/company.html?id=${encodeURIComponent(card.dataset.id)}`;
+  if (!card || !card.dataset.slug) return;
+  window.location.href =
+    `/company.html?slug=${encodeURIComponent(card.dataset.slug)}`;
 });
 
 /* =========================
@@ -225,7 +231,9 @@ function renderRating(c) {
       <span style="color:#f59e0b">${"★".repeat(Math.round(c.rating))}</span>
       <span>${formatRating(c.rating)}</span>
       <span class="text-xs text-slate-500">(${c.reviewCount})</span>
-      ${c.isVerified ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>` : ""}
+      ${c.isVerified
+        ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>`
+        : ""}
     </div>
   `;
 }
