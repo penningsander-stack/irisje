@@ -31,7 +31,8 @@ async function initCompanyDetail() {
     if (!res.ok) throw new Error("Niet gevonden");
 
     const data = await res.json();
-    const company = data.company || data.item || data;
+    const company = data && (data.item || data.company || data);
+
 
     if (!company) throw new Error("Leeg resultaat");
 
