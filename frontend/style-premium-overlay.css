@@ -1,37 +1,39 @@
 /* frontend/style-premium-overlay.css */
-/* === IRISJE PREMIUM OVERLAY — CLICK SAFE === */
-/* Laadt NA style.css */
+/* === IRISJE PREMIUM OVERLAY — CLICK SAFE FINAL === */
 
 /* ================================
-   1️⃣ Cards luxer, maar klikbaar
+   Cards — luxe maar 100% klikbaar
    ================================ */
 .surface-card,
 .result-card,
 .filter-card,
 .request-box {
-  position: relative; /* belangrijk */
+  position: relative;
+  cursor: pointer;
   border: 1px solid rgba(79, 70, 229, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
   box-shadow:
-    0 25px 60px rgba(15, 23, 42, 0.12),
-    0 8px 18px rgba(79, 70, 229, 0.08);
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #fafbff 100%
-  );
-  z-index: 1; /* boven achtergrond */
+    0 20px 45px rgba(15, 23, 42, 0.10),
+    0 6px 14px rgba(79, 70, 229, 0.06);
+  transition: box-shadow 0.2s ease;
+  z-index: 1;
 }
 
-/* Hover lift */
+/* ❌ GEEN transform → klik blijft werken */
 .result-card:hover {
-  transform: translateY(-2px);
   box-shadow:
-    0 35px 80px rgba(15, 23, 42, 0.18),
-    0 12px 28px rgba(79, 70, 229, 0.18);
+    0 32px 75px rgba(15, 23, 42, 0.18),
+    0 12px 26px rgba(79, 70, 229, 0.16);
+}
+
+/* Zorg dat ALLES in de card klikbaar blijft */
+.result-card *,
+.surface-card * {
+  pointer-events: auto;
 }
 
 /* ================================
-   2️⃣ Buttons diepte
+   Buttons
    ================================ */
 .btn-primary {
   box-shadow:
@@ -39,20 +41,15 @@
     inset 0 1px 0 rgba(255,255,255,0.35);
 }
 
-.btn-primary:hover {
-  box-shadow:
-    0 26px 65px rgba(79, 70, 229, 0.75);
-}
-
 /* ================================
-   3️⃣ Typografie subtiel strakker
+   Typografie
    ================================ */
 h1, h2, .hero-title, .result-title {
   letter-spacing: -0.025em;
 }
 
 /* ================================
-   4️⃣ Premium achtergrond — VEILIG
+   Achtergrond — veilig
    ================================ */
 body::before {
   content: "";
