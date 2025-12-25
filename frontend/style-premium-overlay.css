@@ -1,3 +1,4 @@
+/* frontend/style-premium-overlay.css */
 /* === IRISJE PREMIUM OVERLAY — ZICHTBAAR === */
 /* Laadt NA style.css */
 
@@ -42,8 +43,9 @@ h1, h2, .hero-title, .result-title {
   letter-spacing: -0.025em;
 }
 
-/* 4️⃣ Subtiele premium achtergrond */
-body {
+/* 4️⃣ Subtiele premium achtergrond (body én irisje-body) */
+body,
+.irisje-body {
   background:
     radial-gradient(circle at top left, #eef2ff 0%, transparent 55%),
     radial-gradient(circle at bottom right, #ecfeff 0%, transparent 55%),
