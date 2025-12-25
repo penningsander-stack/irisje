@@ -2,13 +2,58 @@
 /* === IRISJE PREMIUM OVERLAY — CLICK SAFE === */
 /* Laadt NA style.css */
 
-/* BODY blijft normaal klikbaar */
-body {
-  position: relative;
-  z-index: 0;
+/* ================================
+   1️⃣ Cards luxer, maar klikbaar
+   ================================ */
+.surface-card,
+.result-card,
+.filter-card,
+.request-box {
+  position: relative; /* belangrijk */
+  border: 1px solid rgba(79, 70, 229, 0.18);
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, 0.12),
+    0 8px 18px rgba(79, 70, 229, 0.08);
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #fafbff 100%
+  );
+  z-index: 1; /* boven achtergrond */
 }
 
-/* Alleen de achtergrondlaag (pseudo), nooit body zelf fixed maken */
+/* Hover lift */
+.result-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 35px 80px rgba(15, 23, 42, 0.18),
+    0 12px 28px rgba(79, 70, 229, 0.18);
+}
+
+/* ================================
+   2️⃣ Buttons diepte
+   ================================ */
+.btn-primary {
+  box-shadow:
+    0 18px 45px rgba(79, 70, 229, 0.55),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
+.btn-primary:hover {
+  box-shadow:
+    0 26px 65px rgba(79, 70, 229, 0.75);
+}
+
+/* ================================
+   3️⃣ Typografie subtiel strakker
+   ================================ */
+h1, h2, .hero-title, .result-title {
+  letter-spacing: -0.025em;
+}
+
+/* ================================
+   4️⃣ Premium achtergrond — VEILIG
+   ================================ */
 body::before {
   content: "";
   position: fixed;
@@ -19,41 +64,4 @@ body::before {
     radial-gradient(circle at top left, #eef2ff 0%, transparent 55%),
     radial-gradient(circle at bottom right, #ecfeff 0%, transparent 55%),
     #f9fafb;
-}
-
-/* Extra safety: alle interactie-elementen bovenop */
-a, button, input, select, textarea,
-.surface-card, .result-card, .filter-card, .request-box {
-  position: relative;
-  z-index: 1;
-}
-
-/* Premium cards */
-.surface-card,
-.result-card,
-.filter-card,
-.request-box {
-  border: 1px solid rgba(79, 70, 229, 0.18);
-  box-shadow:
-    0 25px 60px rgba(15, 23, 42, 0.12),
-    0 8px 18px rgba(79, 70, 229, 0.08);
-  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
-  transition: box-shadow .2s ease, transform .2s ease;
-}
-
-.result-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 35px 80px rgba(15, 23, 42, 0.18),
-    0 12px 28px rgba(79, 70, 229, 0.18);
-}
-
-/* Buttons */
-.btn-primary {
-  box-shadow:
-    0 18px 45px rgba(79, 70, 229, 0.55),
-    inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.btn-primary:hover {
-  box-shadow: 0 26px 65px rgba(79, 70, 229, 0.75);
 }
