@@ -45,7 +45,12 @@ h1, h2, .hero-title, .result-title {
 
 /* 4️⃣ Subtiele premium achtergrond (body én irisje-body) */
 body,
-.irisje-body {
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background:
     radial-gradient(circle at top left, #eef2ff 0%, transparent 55%),
     radial-gradient(circle at bottom right, #ecfeff 0%, transparent 55%),
