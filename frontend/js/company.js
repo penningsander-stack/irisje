@@ -56,10 +56,13 @@ function renderHero(c) {
     metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
   }
 
-  if (logoEl) {
-    logoEl.src = c.logo || "/img/logo-placeholder.png";
-    logoEl.onerror = () => (logoEl.src = "/img/logo-placeholder.png");
-  }
+  if (company.logo) {
+  logoEl.src = company.logo;
+} else {
+  logoEl.remove();
+  document.getElementById("companyLogoWrap").classList.add("hidden");
+}
+
 
   if (badgeEl && c.isPremium) {
     badgeEl.classList.remove("hidden");
