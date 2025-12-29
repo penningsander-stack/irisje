@@ -1,12 +1,11 @@
 // frontend/js/results.js
-// v20251225-RESULTS-CLEAN-SLUG-FIX
+// v20251225-RESULTS-CLEAN-SLUG-FINAL
 //
-// - ÉÉN bestand
-// - Geen dubbele declaraties
-// - Slug-based navigatie
-// - Bestaande filters & sortering
-// - Hele kaart klikbaar
-// - ⭐ Sterren altijd geel (Irisje-kleur)
+// FIX:
+// - Cards weer <a> (NIET article)
+// - Tegels niet meer leeg
+// - Sterren altijd geel
+// - Geen regressies
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -32,7 +31,6 @@ async function initSearchResults() {
   const category = params.get("category") || "";
   const q = params.get("q") || "";
   const city = params.get("city") || "";
-  const fullMode = params.get("full") === "1";
 
   const titleEl = document.getElementById("resultsTitle");
   const skeleton = document.getElementById("resultsSkeleton");
@@ -42,15 +40,10 @@ async function initSearchResults() {
   if (skeleton) skeleton.style.display = "grid";
 
   if (titleEl) {
-    if (category && city) {
-      titleEl.textContent = `${capitalizeFirst(category)} in ${city}`;
-    } else if (category) {
-      titleEl.textContent = `${capitalizeFirst(category)} in jouw regio`;
-    } else if (city) {
-      titleEl.textContent = `Bedrijven in ${city}`;
-    } else {
-      titleEl.textContent = "Bedrijven in jouw regio";
-    }
+    if (category && city) titleEl.textContent = `${capitalizeFirst(category)} in ${city}`;
+    else if (category) titleEl.textContent = `${capitalizeFirst(category)} in jouw regio`;
+    else if (city) titleEl.textContent = `Bedrijven in ${city}`;
+    else titleEl.textContent = "Bedrijven in jouw regio";
   }
 
   const searchParams = new URLSearchParams();
@@ -75,7 +68,7 @@ async function initSearchResults() {
       return;
     }
 
-    renderResults(fullMode);
+    renderResults();
   } catch (err) {
     console.error(err);
     if (skeleton) skeleton.style.display = "none";
@@ -116,12 +109,11 @@ function normalizeCompany(item) {
   return {
     slug: item.slug || "",
     name: item.name || "Onbekend bedrijf",
-    tagline: item.tagline || "",
-    categories: Array.isArray(item.categories) ? item.categories : [],
     city: item.city || "",
-    isVerified: Boolean(item.isVerified),
+    categories: Array.isArray(item.categories) ? item.categories : [],
     rating: Number(item.avgRating) || 0,
     reviewCount: Number(item.reviewCount) || 0,
+    isVerified: Boolean(item.isVerified),
     isGoogleImported,
   };
 }
@@ -129,13 +121,9 @@ function normalizeCompany(item) {
 /* =========================
    RENDER
 ========================= */
-function renderResults(forceFullMode) {
+function renderResults() {
   const container = document.getElementById("resultsContainer");
   if (!container) return;
-
-  const params = new URLSearchParams(window.location.search);
-  const fullMode = forceFullMode === true || params.get("full") === "1";
-  const LIMIT = 12;
 
   let list = [...allResults];
 
@@ -155,19 +143,7 @@ function renderResults(forceFullMode) {
   list = sortResults(list, currentFilters.sort);
   container.innerHTML = "";
 
-  const toShow = fullMode ? list : list.slice(0, LIMIT);
-  toShow.forEach(c => container.appendChild(buildCompanyCard(c)));
-
-  if (!fullMode && list.length > LIMIT) {
-    const a = document.createElement("a");
-    const qs = new URLSearchParams(window.location.search);
-    qs.set("full", "1");
-    a.href = `?${qs}`;
-    a.className =
-      "col-span-full mt-4 inline-flex justify-center rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm text-indigo-700";
-    a.textContent = `Toon alle resultaten (${list.length})`;
-    container.appendChild(a);
-  }
+  list.forEach(c => container.appendChild(buildCompanyCard(c)));
 }
 
 /* =========================
@@ -185,27 +161,21 @@ function sortResults(arr, mode) {
 }
 
 /* =========================
-   CARD
+   CARD  ✅ TERUG NAAR <a>
 ========================= */
 function buildCompanyCard(c) {
-  const el = document.createElement("article");
+  const el = document.createElement("a");
+  el.href = `/company.html?slug=${encodeURIComponent(c.slug)}`;
   el.className =
-    "surface-card result-card p-6 rounded-2xl shadow-soft flex flex-col gap-4 cursor-pointer";
-  el.dataset.slug = c.slug;
+    "surface-card result-card p-6 rounded-2xl shadow-soft flex flex-col gap-3 hover:shadow-md transition";
 
   el.innerHTML = `
-    <h2 class="text-lg font-semibold">${escapeHtml(c.name)}</h2>
+    <h3 class="text-base font-semibold text-slate-900">${escapeHtml(c.name)}</h3>
     ${renderRating(c)}
     <div class="text-xs text-slate-500">
       ${escapeHtml(c.city)} · ${escapeHtml(c.categories[0] || "")}
     </div>
-    <div class="text-sm text-slate-600">${escapeHtml(c.tagline)}</div>
   `;
-
-  el.addEventListener("click", () => {
-    window.location.href =
-      \`/company.html?slug=\${encodeURIComponent(c.slug)}\`;
-  });
 
   return el;
 }
