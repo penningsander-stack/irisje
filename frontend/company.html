@@ -15,7 +15,7 @@
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90
                      text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
@@ -28,13 +28,19 @@
   <!-- HERO -->
   <section class="section-shell mt-4">
     <div id="companyHero" class="surface-card p-6 rounded-2xl shadow-soft relative">
+      <!-- premium badge (optioneel) -->
       <div id="premiumBadge" class="premium-badge absolute top-4 right-4 hidden">Premium</div>
 
       <div class="flex items-start gap-4">
         <div id="companyLogoWrap"
              class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
-          <img id="companyLogo" src="/img/logo-placeholder.png" alt="Logo"
-               class="w-full h-full object-contain p-2" />
+          <!-- ✅ GEEN placeholder src meer (voorkomt 404 vóór JS) -->
+          <img id="companyLogo" alt="Logo" class="hidden w-full h-full object-contain p-2" />
+          <!-- ✅ Initials fallback (wordt door JS gevuld indien geen logo) -->
+          <div id="companyLogoFallback"
+               class="hidden w-full h-full flex items-center justify-center font-bold text-indigo-700">
+            <!-- JS zet hier initialen -->
+          </div>
         </div>
 
         <div class="min-w-0">
@@ -44,26 +50,44 @@
         </div>
       </div>
 
-      <!-- CTA's -->
       <div class="mt-4 flex flex-wrap gap-3">
         <button id="ctaRequest"
                 class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
           Vraag offerte aan
         </button>
-
-        <a
-          id="writeReviewBtn"
-          class="inline-flex items-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-        >
-          Schrijf een review
-        </a>
-
         <a href="results.html"
            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
           Terug naar resultaten
         </a>
       </div>
     </div>
+  </section>
+
+  <!-- Schrijf review knop (slug -> review.html) -->
+  <section class="section-shell mt-4">
+    <a
+      id="writeReviewBtn"
+      class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+    >
+      Schrijf een review
+    </a>
+
+    <script>
+      (() => {
+        const btn = document.getElementById("writeReviewBtn");
+        if (!btn) return;
+
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get("slug");
+
+        if (!slug) {
+          btn.style.display = "none";
+          return;
+        }
+
+        btn.href = `/review.html?companySlug=${encodeURIComponent(slug)}`;
+      })();
+    </script>
   </section>
 
   <!-- CONTENT -->
@@ -82,8 +106,7 @@
       <div class="surface-card p-6 rounded-2xl shadow-soft">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold">Reviews</h2>
-          <select id="reviewSort"
-                  class="px-2 py-1 border rounded-lg text-sm">
+          <select id="reviewSort" class="px-2 py-1 border rounded-lg text-sm">
             <option value="newest">Nieuwste</option>
             <option value="highest">Hoogste score</option>
           </select>
@@ -98,33 +121,16 @@
 
     <!-- RIGHT -->
     <aside class="space-y-6">
+
+      <!-- DETAILS -->
       <div class="surface-card p-6 rounded-2xl shadow-soft">
         <h3 class="text-sm font-semibold mb-2">Bedrijfsgegevens</h3>
         <ul class="text-sm text-slate-600 space-y-1" id="companyDetails"></ul>
       </div>
+
     </aside>
   </section>
 
-  <!-- JS -->
-  <script src="/js/company.js?v=20251225"></script>
-
-  <!-- Review link logic -->
-  <script>
-  (() => {
-    const btn = document.getElementById("writeReviewBtn");
-    if (!btn) return;
-
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get("slug");
-
-    if (!slug) {
-      btn.style.display = "none";
-      return;
-    }
-
-    btn.href = `/review.html?companySlug=${encodeURIComponent(slug)}`;
-  })();
-  </script>
-
+  <script src="/js/company.js?v=20251229"></script>
 </body>
 </html>
