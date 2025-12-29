@@ -1,10 +1,13 @@
 // frontend/js/company.js
-// v20251229-COMPANY-HERO-RATING
+// v20251229-COMPANY-HERO-RATING-FINAL
 //
+// - Laadt bedrijf via slug
+// - Toont logo (alleen als aanwezig)
 // - Toont rating + reviewCount in hero
 // - Gele sterren (#f59e0b)
-// - Fallback: "Nog geen reviews"
+// - Reviews laden via company _id
 // - Geen backend-wijzigingen
+// - Geen placeholders / geen 404's
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -12,6 +15,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initCompany();
 });
 
+/* =========================
+   INIT
+========================= */
 async function initCompany() {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
@@ -22,7 +28,9 @@ async function initCompany() {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
+    const res = await fetch(
+      `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     const data = await res.json();
@@ -33,7 +41,6 @@ async function initCompany() {
     renderHero(company);
     renderDetails(company);
     loadReviews(company._id);
-
   } catch (err) {
     console.error("❌ Company load error:", err);
   }
@@ -47,28 +54,36 @@ function renderHero(c) {
   const metaEl = document.getElementById("companyMeta");
   const ratingEl = document.getElementById("companyRating");
   const logoEl = document.getElementById("companyLogo");
+  const logoWrap = document.getElementById("companyLogoWrap");
   const badgeEl = document.getElementById("premiumBadge");
 
-  if (nameEl) nameEl.textContent = c.name || "Onbekend bedrijf";
+  if (nameEl) {
+    nameEl.textContent = c.name || "Onbekend bedrijf";
+  }
 
   if (metaEl) {
-    const cat = Array.isArray(c.categories) ? c.categories[0] : "";
+    const cat =
+      Array.isArray(c.categories) && c.categories.length
+        ? c.categories[0]
+        : "";
     metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
   }
 
-  if (company.logo) {
-  logoEl.src = company.logo;
-} else {
-  logoEl.remove();
-  document.getElementById("companyLogoWrap").classList.add("hidden");
-}
+  // ✅ Logo: alleen tonen als het bestaat
+  if (logoEl && logoWrap) {
+    if (c.logo) {
+      logoEl.src = c.logo;
+    } else {
+      logoWrap.classList.add("hidden");
+    }
+  }
 
-
+  // Premium badge
   if (badgeEl && c.isPremium) {
     badgeEl.classList.remove("hidden");
   }
 
-  // ⭐ Rating + count
+  // ⭐ Rating + reviewcount
   if (ratingEl) {
     ratingEl.innerHTML = renderHeroRating(
       Number(c.avgRating) || 0,
@@ -91,7 +106,11 @@ function renderHeroRating(avg, count, verified) {
       <span style="color:#f59e0b">${stars}</span>
       <span class="font-medium">${formatRating(avg)}</span>
       <span class="text-slate-500">(${count} ${label})</span>
-      ${verified ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>` : ""}
+      ${
+        verified
+          ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>`
+          : ""
+      }
     </div>
   `;
 }
@@ -106,7 +125,11 @@ function renderDetails(c) {
   list.innerHTML = "";
 
   addDetail(list, "Plaats", c.city);
-  addDetail(list, "Categorie", Array.isArray(c.categories) ? c.categories.join(", ") : "");
+  addDetail(
+    list,
+    "Categorie",
+    Array.isArray(c.categories) ? c.categories.join(", ") : ""
+  );
   addDetail(list, "Telefoon", c.phone);
   addDetail(list, "Website", c.website, true);
   addDetail(list, "Geverifieerd", c.isVerified ? "Ja" : "Nee");
@@ -114,10 +137,12 @@ function renderDetails(c) {
 
 function addDetail(list, label, value, isLink = false) {
   if (!value) return;
+
   const li = document.createElement("li");
   li.innerHTML = isLink
-    ? `<strong>${label}:</strong> <a href="${value}" target="_blank" class="text-indigo-600">${value}</a>`
+    ? `<strong>${label}:</strong> <a href="${value}" target="_blank" rel="noopener" class="text-indigo-600">${value}</a>`
     : `<strong>${label}:</strong> ${escapeHtml(String(value))}`;
+
   list.appendChild(li);
 }
 
@@ -146,17 +171,24 @@ async function loadReviews(companyId) {
       return;
     }
 
-    reviews.forEach(r => {
+    if (empty) empty.classList.add("hidden");
+
+    reviews.forEach((r) => {
       const div = document.createElement("div");
       div.className = "border-b border-slate-100 pb-3";
 
       div.innerHTML = `
         <div class="flex items-center gap-2 text-sm mb-1">
-          <span style="color:#f59e0b">${"★".repeat(Math.round(r.rating || 0))}</span>
+          <span style="color:#f59e0b">${"★".repeat(
+            Math.round(r.rating || 0)
+          )}</span>
           <span class="text-slate-500">${formatRating(r.rating)}</span>
         </div>
-        <div class="text-sm text-slate-700">${escapeHtml(r.comment || "")}</div>
+        <div class="text-sm text-slate-700">${escapeHtml(
+          r.comment || ""
+        )}</div>
       `;
+
       container.appendChild(div);
     });
   } catch (err) {
