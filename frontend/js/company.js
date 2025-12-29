@@ -1,23 +1,21 @@
 // frontend/js/company.js
-// v20251229-COMPANY-HERO-RATING-LOGO-FIX
+// v20251229-COMPANY-NO-PLACEHOLDERS
 //
-// - Laadt bedrijf via slug
-// - Toon logo als aanwezig (meerdere veldnamen)
-// - Geen placeholder-image (dus geen 404)
-// - Initials fallback als er geen logo is
+// - Slug-based load
+// - Toont ALLEEN echte logo-URL
+// - Geen placeholders / geen initialen
 // - Gele sterren (#f59e0b)
 // - Reviews via company _id
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", () => {
-  initCompany();
-});
+document.addEventListener("DOMContentLoaded", initCompany);
 
+/* =========================
+   INIT
+========================= */
 async function initCompany() {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get("slug");
-
+  const slug = new URLSearchParams(window.location.search).get("slug");
   if (!slug) {
     console.error("❌ slug ontbreekt");
     return;
@@ -35,8 +33,8 @@ async function initCompany() {
     renderAbout(company);
     renderDetails(company);
     loadReviews(company._id);
-  } catch (err) {
-    console.error("❌ Company load error:", err);
+  } catch (e) {
+    console.error("❌ Company load error:", e);
   }
 }
 
@@ -49,18 +47,17 @@ function renderHero(c) {
   const ratingEl = document.getElementById("companyRating");
   const badgeEl = document.getElementById("premiumBadge");
 
+  const logoWrap = document.getElementById("companyLogoWrap");
+  const logoEl = document.getElementById("companyLogo");
+
   if (nameEl) nameEl.textContent = c.name || "Onbekend bedrijf";
 
   if (metaEl) {
-    const cat = Array.isArray(c.categories) && c.categories.length ? c.categories[0] : "";
+    const cat = Array.isArray(c.categories) ? c.categories[0] : "";
     metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
   }
 
-  if (badgeEl && (c.isPremium || c.premium)) {
-    badgeEl.classList.remove("hidden");
-  }
-
-  // ⭐ rating in hero
+  // ⭐ rating
   if (ratingEl) {
     ratingEl.innerHTML = renderHeroRating(
       Number(c.avgRating) || 0,
@@ -69,50 +66,32 @@ function renderHero(c) {
     );
   }
 
-  // ✅ logo (zonder placeholder)
-  applyCompanyLogo(c);
-}
-
-function applyCompanyLogo(c) {
-  const logoEl = document.getElementById("companyLogo");
-  const fallbackEl = document.getElementById("companyLogoFallback");
-  const wrapEl = document.getElementById("companyLogoWrap");
-
-  if (!wrapEl) return;
-
-  const logoUrl = pickLogoUrl(c);
-
-  // reset state
-  if (logoEl) {
-    logoEl.classList.add("hidden");
-    logoEl.removeAttribute("src");
-  }
-  if (fallbackEl) {
-    fallbackEl.classList.add("hidden");
-    fallbackEl.textContent = "";
+  // Premium badge
+  if (badgeEl && (c.isPremium || c.premium)) {
+    badgeEl.classList.remove("hidden");
   }
 
-  if (logoUrl && logoEl) {
+  // ✅ LOGO: alleen tonen als er een ECHTE URL is
+  const logoUrl = getLogoUrl(c);
+
+  if (logoUrl && logoEl && logoWrap) {
     logoEl.src = logoUrl;
     logoEl.classList.remove("hidden");
+    logoWrap.classList.remove("hidden");
 
-    // als de url tóch stuk is: toon initials fallback i.p.v. 404-loop
+    // als logo-URL tóch faalt → hele blok weg, geen fallback
     logoEl.onerror = () => {
       logoEl.onerror = null;
-      logoEl.classList.add("hidden");
-      logoEl.removeAttribute("src");
-      showInitialsFallback(c, fallbackEl);
+      logoWrap.remove();
     };
-
-    return;
+  } else if (logoWrap) {
+    // geen logo → hele logo-sectie weg
+    logoWrap.remove();
   }
-
-  // geen logo -> initials
-  showInitialsFallback(c, fallbackEl);
 }
 
-function pickLogoUrl(c) {
-  // accepteer meerdere mogelijke veldnamen (veilig)
+function getLogoUrl(c) {
+  // accepteer meerdere mogelijke backend-velden, maar ALLEEN als ze bestaan
   const candidates = [
     c.logo,
     c.logoUrl,
@@ -122,24 +101,8 @@ function pickLogoUrl(c) {
     c.imageURL,
     c.brandLogo,
   ];
-
-  const found = candidates.find((v) => typeof v === "string" && v.trim().length > 0);
+  const found = candidates.find(v => typeof v === "string" && v.trim().length > 0);
   return found ? found.trim() : "";
-}
-
-function showInitialsFallback(c, fallbackEl) {
-  if (!fallbackEl) return;
-
-  const initials = makeInitials(c?.name || "");
-  fallbackEl.textContent = initials || "I";
-  fallbackEl.classList.remove("hidden");
-}
-
-function makeInitials(name) {
-  const parts = String(name).trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
 function renderHeroRating(avg, count, verified) {
@@ -167,11 +130,10 @@ function renderAbout(c) {
   const aboutEl = document.getElementById("companyAbout");
   if (!aboutEl) return;
 
-  const text = (c.description && String(c.description).trim())
-    ? String(c.description).trim()
-    : "Dit bedrijf heeft nog geen uitgebreide beschrijving toegevoegd.";
-
-  aboutEl.textContent = text;
+  aboutEl.textContent =
+    (c.description && String(c.description).trim())
+      ? String(c.description).trim()
+      : "Dit bedrijf heeft nog geen uitgebreide beschrijving toegevoegd.";
 }
 
 /* =========================
@@ -215,27 +177,19 @@ async function loadReviews(companyId) {
 
     const container = document.getElementById("reviewsContainer");
     const empty = document.getElementById("noReviews");
-
     if (!container) return;
 
     container.innerHTML = "";
 
     if (!reviews.length) {
-      if (empty) empty.classList.remove("hidden");
+      empty?.classList.remove("hidden");
       return;
     }
+    empty?.classList.add("hidden");
 
-    if (empty) empty.classList.add("hidden");
-
-    // sort
-    const sortEl = document.getElementById("reviewSort");
-    const sortMode = sortEl?.value || "newest";
-    const sorted = sortReviews(reviews, sortMode);
-
-    sorted.forEach((r) => {
+    reviews.forEach(r => {
       const div = document.createElement("div");
       div.className = "border-b border-slate-100 pb-3";
-
       div.innerHTML = `
         <div class="flex items-center gap-2 text-sm mb-1">
           <span style="color:#f59e0b">${"★".repeat(Math.round(r.rating || 0))}</span>
@@ -245,28 +199,9 @@ async function loadReviews(companyId) {
       `;
       container.appendChild(div);
     });
-
-    // bind sort change once
-    if (sortEl && !sortEl.dataset.bound) {
-      sortEl.dataset.bound = "1";
-      sortEl.addEventListener("change", () => loadReviews(companyId));
-    }
-  } catch (err) {
-    console.error("❌ Reviews load error:", err);
+  } catch (e) {
+    console.error("❌ Reviews error:", e);
   }
-}
-
-function sortReviews(items, mode) {
-  const arr = [...items];
-  if (mode === "highest") {
-    return arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-  }
-  // newest default (op createdAt)
-  return arr.sort((a, b) => {
-    const da = Date.parse(a.createdAt || "") || 0;
-    const db = Date.parse(b.createdAt || "") || 0;
-    return db - da;
-  });
 }
 
 /* =========================
