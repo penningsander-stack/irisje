@@ -58,6 +58,42 @@
     </div>
   </section>
 
+
+
+
+
+
+<a
+  id="writeReviewBtn"
+  class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+>
+  Schrijf een review
+</a>
+
+<script>
+(() => {
+  const btn = document.getElementById("writeReviewBtn");
+  if (!btn) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("slug");
+
+  if (!slug) {
+    btn.style.display = "none";
+    return;
+  }
+
+  btn.href = `/review.html?companySlug=${encodeURIComponent(slug)}`;
+})();
+</script>
+
+
+
+
+
+
+
+
   <!-- CONTENT -->
   <section class="section-shell grid grid-cols-1 lg:grid-cols-3 gap-6">
 
