@@ -1,11 +1,12 @@
 // frontend/js/results.js
-// v20251225-RESULTS-CLEAN-SLUG
+// v20251225-RESULTS-CLEAN-SLUG-FIX
 //
 // - ÉÉN bestand
 // - Geen dubbele declaraties
 // - Slug-based navigatie
 // - Bestaande filters & sortering
 // - Hele kaart klikbaar
+// - ⭐ Sterren altijd geel (Irisje-kleur)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -103,7 +104,7 @@ function bind(id, key) {
 }
 
 /* =========================
-   NORMALIZE (SLUG)
+   NORMALIZE
 ========================= */
 function normalizeCompany(item) {
   if (!item || typeof item !== "object") return null;
@@ -203,7 +204,7 @@ function buildCompanyCard(c) {
 
   el.addEventListener("click", () => {
     window.location.href =
-      `/company.html?slug=${encodeURIComponent(c.slug)}`;
+      \`/company.html?slug=\${encodeURIComponent(c.slug)}\`;
   });
 
   return el;
@@ -213,13 +214,16 @@ function buildCompanyCard(c) {
    HELPERS
 ========================= */
 function renderRating(c) {
-  if (!c.reviewCount) {
+  if (!c.reviewCount || c.reviewCount < 1) {
     return `<div class="text-xs text-slate-500">Nog geen reviews</div>`;
   }
+
+  const stars = "★".repeat(Math.round(c.rating));
+
   return `
     <div class="flex items-center gap-2 text-sm">
-      <span style="color:#f59e0b">${"★".repeat(Math.round(c.rating))}</span>
-      <span>${formatRating(c.rating)}</span>
+      <span style="color:#f59e0b">${stars}</span>
+      <span class="font-medium">${formatRating(c.rating)}</span>
       <span class="text-xs text-slate-500">(${c.reviewCount})</span>
       ${c.isVerified ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>` : ""}
     </div>
@@ -240,4 +244,3 @@ function escapeHtml(str) {
 function capitalizeFirst(str) {
   return str ? str.charAt(0).toUpperCase() + str.slice(1) : "";
 }
-
