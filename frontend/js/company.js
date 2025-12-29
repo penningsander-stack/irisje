@@ -52,7 +52,18 @@ function renderCompany(c) {
   );
 
   const logo = document.getElementById("companyLogo");
-  if (c.logo) logo.src = c.logo;
+
+if (c.logo) {
+  logo.src = c.logo;
+} else if (c.website) {
+  try {
+    const domain = new URL(c.website).hostname;
+    logo.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+  } catch {
+    logo.src = "/img/logo-placeholder.png";
+  }
+}
+
 
   if (c.isPremium) {
     document.getElementById("premiumBadge").classList.remove("hidden");
