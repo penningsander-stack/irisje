@@ -1,11 +1,10 @@
 // frontend/js/company.js
-// v20251225-COMPANY-STEP-B
+// v20251225-COMPANY-STEP-B-FIXED
 //
-// Frontend-only:
-// - Fallback "Over dit bedrijf"
-// - Reviews sorteren + 0-reviews melding
-// - CTA robuust
-// - Premium accent consistent
+// FIX:
+// - Backend response { ok, item } correct uitlezen
+// - Geen aannames meer over response-structuur
+// - Frontend-only, veilig
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -25,17 +24,27 @@ async function initCompany() {
 
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const company = await res.json();
+
+    const data = await res.json();
+
+    // 🔑 HIER DE FIX:
+    const company =
+      data?.item ||
+      data?.company ||
+      data;
+
+    if (!company || !company.name) {
+      throw new Error("Company data ontbreekt");
+    }
 
     renderCompany(company);
     bindReviewSort(company.reviews || []);
   } catch (err) {
-    console.error(err);
+    console.error("Company load error:", err);
   }
 }
 
 function renderCompany(c) {
-  // HERO
   setText("companyName", c.name || "Onbekend bedrijf");
   setText(
     "companyMeta",
@@ -51,7 +60,7 @@ function renderCompany(c) {
 
   renderRating("companyRating", c.avgRating, c.reviewCount);
 
-  // ABOUT (fallback)
+  // Over dit bedrijf – fallback
   setText(
     "companyAbout",
     c.description && c.description.trim()
@@ -59,19 +68,21 @@ function renderCompany(c) {
       : "Dit bedrijf heeft nog geen uitgebreide beschrijving toegevoegd."
   );
 
-  // DETAILS
+  // Bedrijfsgegevens
   const details = document.getElementById("companyDetails");
   details.innerHTML = "";
   addDetail(details, "Plaats", c.city);
   addDetail(details, "Categorie", (c.categories || [])[0]);
+  addDetail(details, "Telefoon", c.phone);
+  addDetail(details, "Website", c.website);
   addDetail(details, "Geverifieerd", c.isVerified ? "Ja" : "Nee");
 
   // CTA
   document.getElementById("ctaRequest").onclick = () => {
-    window.location.href = `/ad-company.html?slug=${encodeURIComponent(c.slug || "")}`;
+    window.location.href =
+      `/ad-company.html?slug=${encodeURIComponent(c.slug || "")}`;
   };
 
-  // REVIEWS
   renderReviews(c.reviews || []);
 }
 
@@ -151,4 +162,3 @@ function escapeHtml(str) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
-
