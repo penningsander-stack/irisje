@@ -10,104 +10,137 @@
 <body class="irisje-body">
 
   <section class="section-shell max-w-xl mx-auto mt-8">
-    <h1 id="reviewTitle" class="text-xl font-semibold mb-4">
-  Schrijf een review
-</h1>
-
+    <h1 id="reviewTitle" class="text-xl font-semibold mb-4">Schrijf een review</h1>
 
     <form id="reviewForm" class="surface-card p-6 rounded-2xl shadow-soft flex flex-col gap-4">
 
+      <!-- Rating -->
       <div class="text-sm">
-  <span class="block mb-1">Beoordeling</span>
+        <span class="block mb-1">Beoordeling</span>
 
-  <div id="starRating" class="flex gap-1 text-2xl cursor-pointer select-none">
-    <span data-value="1">★</span>
-    <span data-value="2">★</span>
-    <span data-value="3">★</span>
-    <span data-value="4">★</span>
-    <span data-value="5">★</span>
-  </div>
+        <div id="starRating" class="flex gap-1 text-2xl cursor-pointer select-none" aria-label="Beoordeling">
+          <span data-value="1" aria-label="1 ster">★</span>
+          <span data-value="2" aria-label="2 sterren">★</span>
+          <span data-value="3" aria-label="3 sterren">★</span>
+          <span data-value="4" aria-label="4 sterren">★</span>
+          <span data-value="5" aria-label="5 sterren">★</span>
+        </div>
 
-  <input type="hidden" name="rating" value="" />
-</div>
+        <input type="hidden" name="rating" value="" />
+        <div id="ratingHint" class="mt-1 text-xs text-slate-500">Klik op de sterren om te kiezen.</div>
+      </div>
 
-
+      <!-- Comment -->
       <label class="text-sm">
         Jouw review
-        <textarea name="comment" required rows="4"
-          class="mt-1 w-full border rounded px-2 py-1"></textarea>
+        <textarea
+          name="comment"
+          required
+          rows="4"
+          class="mt-1 w-full border rounded px-2 py-1"
+          placeholder="Schrijf kort je ervaring…"
+        ></textarea>
       </label>
 
-      <button type="submit"
-        class="mt-3 bg-indigo-600 text-white rounded-lg py-2">
+      <button type="submit" class="mt-3 bg-indigo-600 text-white rounded-lg py-2">
         Review verzenden
       </button>
 
     </form>
   </section>
 
-  <!-- ✅ HIER KOMT DE JS -->
- <script>
-(() => {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-  const form = document.getElementById("reviewForm");
-  if (!form) return;
+  <!-- Inline JS: sterren + submit + validatie -->
+  <script>
+  (() => {
+    const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const errorBox = document.createElement("div");
-  errorBox.className = "text-sm text-red-600";
-  form.prepend(errorBox);
+    const form = document.getElementById("reviewForm");
+    if (!form) return;
 
-  const params = new URLSearchParams(window.location.search);
-  const companySlug = params.get("companySlug");
+    // Error box bovenaan formulier
+    const errorBox = document.createElement("div");
+    errorBox.className = "text-sm text-red-600";
+    form.prepend(errorBox);
 
-  if (!companySlug) {
-    errorBox.textContent = "Ongeldig reviewverzoek.";
-    return;
-  }
+    // Company slug uit URL
+    const params = new URLSearchParams(window.location.search);
+    const companySlug = params.get("companySlug");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    errorBox.textContent = "";
-
-    const rating = form.rating.value;
-    const comment = form.comment.value.trim();
-
-    // ✅ Frontend-validatie
-    if (!rating) {
-      errorBox.textContent = "Kies een beoordeling (1–5).";
+    if (!companySlug) {
+      errorBox.textContent = "Ongeldig reviewverzoek.";
       return;
     }
 
-    if (!comment) {
-      errorBox.textContent = "Schrijf een korte toelichting bij je review.";
-      return;
-    }
+    // ⭐ Star rating logic
+    const stars = document.querySelectorAll("#starRating span");
+    const ratingInput = form.querySelector('input[name="rating"]');
 
-    const payload = { rating, comment, companySlug };
+    // default sterren (grijs)
+    highlightStars(0);
 
-    try {
-      const res = await fetch(`${API_BASE}/reviews`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+    stars.forEach((star) => {
+      star.addEventListener("mouseenter", () => {
+        highlightStars(Number(star.dataset.value));
       });
 
-      if (!res.ok) {
-        throw new Error("Submit failed");
+      star.addEventListener("mouseleave", () => {
+        highlightStars(Number(ratingInput.value || 0));
+      });
+
+      star.addEventListener("click", () => {
+        ratingInput.value = String(star.dataset.value);
+        highlightStars(Number(star.dataset.value));
+        errorBox.textContent = ""; // eventuele rating-error weg
+      });
+    });
+
+    function highlightStars(value) {
+      stars.forEach((s) => {
+        const n = Number(s.dataset.value);
+        s.style.color = n <= value ? "#f59e0b" : "#cbd5e1";
+      });
+    }
+
+    // Submit
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.textContent = "";
+
+      const rating = (ratingInput && ratingInput.value) ? ratingInput.value : "";
+      const comment = (form.comment?.value || "").trim();
+
+      // Validatie
+      if (!rating) {
+        errorBox.textContent = "Kies een beoordeling (1–5).";
+        return;
       }
 
-      window.location.href = "/review-confirm.html";
-    } catch (err) {
-      errorBox.textContent =
-        "Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
-    }
-  });
-})();
-</script>
+      if (!comment) {
+        errorBox.textContent = "Schrijf een korte toelichting bij je review.";
+        return;
+      }
 
+      const payload = { rating, comment, companySlug };
 
-<script src="/js/review.js?v=20251230"></script>
+      try {
+        const res = await fetch(`${API_BASE}/reviews`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
+        if (!res.ok) throw new Error("Submit failed");
+
+        window.location.href = "/review-confirm.html";
+      } catch (err) {
+        errorBox.textContent = "Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
+      }
+    });
+  })();
+  </script>
+
+  <!-- Titel-context script (company naam) -->
+  <script src="/js/review.js?v=20251230"></script>
 
 </body>
 </html>
