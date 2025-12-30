@@ -1,9 +1,9 @@
 // backend/routes/admin.js
-// v20251210-ADMIN-BACKEND-LOGS-ALIGN
+// v20251230-ADMIN-REVIEWS-PENDING
 //
-// Deze versie is afgestemd op de nieuwe frontend/js/admin.js:
-// - behoudt bestaande endpoints (companies, reported-reviews, claims)
-// - voegt GET /api/admin/logs toe, op basis van utils/logger.getLogs()
+// Uitbreiding:
+// - Behoudt ALLE bestaande admin-functionaliteit
+// - Voegt beheer toe voor pending reviews (goedkeuren / afwijzen)
 
 const express = require("express");
 const router = express.Router();
@@ -16,10 +16,14 @@ const Request = require("../models/request");
 const Claim = require("../models/claim");
 const { getLogs } = require("../utils/logger");
 
-// ADMIN AUTH – alle routes hieronder vereisen admin
+// ============================================================
+// ADMIN AUTH – alles hieronder vereist admin
+// ============================================================
 router.use(authMiddleware, requireAdmin);
 
+// ============================================================
 // GET companies
+// ============================================================
 router.get("/companies", async (req, res) => {
   try {
     const companies = await Company.find({})
@@ -37,7 +41,9 @@ router.get("/companies", async (req, res) => {
   }
 });
 
+// ============================================================
 // GET reported reviews
+// ============================================================
 router.get("/reported-reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ reported: true })
@@ -85,7 +91,9 @@ router.post("/reported-reviews/:id/clear", async (req, res) => {
   }
 });
 
+// ============================================================
 // GET claims
+// ============================================================
 router.get("/claims", async (req, res) => {
   try {
     const claims = await Claim.find({})
@@ -115,9 +123,7 @@ router.post("/claims/:id/approve", async (req, res) => {
       });
     }
 
-    // bedrijf verifiëren
     await Company.findByIdAndUpdate(claim.companyId, { verified: true });
-    // claim verwijderen
     await Claim.findByIdAndDelete(req.params.id);
 
     return res.json({
@@ -159,7 +165,67 @@ router.post("/claims/:id/reject", async (req, res) => {
   }
 });
 
-// GET logs – gebruikt utils/logger.getLogs()
+// ============================================================
+// 🆕 GET pending reviews (admin)
+// ============================================================
+router.get("/reviews/pending", async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: "pending" })
+      .populate("companyId", "name slug")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({ ok: true, items: reviews });
+  } catch (err) {
+    console.error("❌ Pending reviews error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Kon pending reviews niet ophalen",
+    });
+  }
+});
+
+// ============================================================
+// 🆕 Update review status (approve / reject)
+// ============================================================
+router.patch("/reviews/:id/status", async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Ongeldige status",
+      });
+    }
+
+    const review = await Review.findById(req.params.id);
+    if (!review) {
+      return res.status(404).json({
+        ok: false,
+        error: "Review niet gevonden",
+      });
+    }
+
+    review.status = status;
+    await review.save();
+
+    return res.json({
+      ok: true,
+      message: `Review ${status}`,
+    });
+  } catch (err) {
+    console.error("❌ Review status update error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Kon reviewstatus niet aanpassen",
+    });
+  }
+});
+
+// ============================================================
+// GET logs
+// ============================================================
 router.get("/logs", (req, res) => {
   try {
     const logs = getLogs();
