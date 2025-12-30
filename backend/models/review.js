@@ -1,21 +1,62 @@
 // backend/models/review.js
+// v20251230-REVIEW-STATUS
+//
+// Wijzigingen:
+// - status toegevoegd: approved | pending | rejected
+// - default = pending (voor nieuwe reviews)
+// - backward compatible: oude reviews zonder status => approved
+// - GEEN breaking changes
+
 const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
   {
-    company: { type: mongoose.Schema.Types.ObjectId, ref: "Company", required: true },
-    name: { type: String, required: true },
-    email: { type: String },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    message: { type: String, required: true },
-    reported: { type: Boolean, default: false },
-    date: { type: Date, default: Date.now },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Company",
+      required: true,
+      index: true,
+    },
 
-    // ✅ Nieuw: reviewbevestiging
-    isConfirmed: { type: Boolean, default: false },
-    confirmToken: { type: String, index: true, required: false }
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+
+    comment: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    reviewerName: {
+      type: String,
+      trim: true,
+    },
+
+    reviewerEmail: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+
+    // ✅ NIEUW: review status
+    status: {
+      type: String,
+      enum: ["approved", "pending", "rejected"],
+      default: "pending",
+      index: true,
+    },
   },
   { timestamps: true }
 );
+
+// ✅ Backward compatibility: oude docs zonder status => approved
+reviewSchema.pre("save", function (next) {
+  if (!this.status) this.status = "approved";
+  next();
+});
 
 module.exports = mongoose.model("Review", reviewSchema);
