@@ -1,11 +1,12 @@
 // frontend/js/company.js
-// v20251230-COMPANY-FAVICON-FALLBACK
+// v20251230-COMPANY-LOGO-ROBUST
 //
-// - Toont bedrijfslogo indien aanwezig
-// - Fallback naar Google favicon o.b.v. website
-// - NOOIT placeholder-images
+// - Bedrijfslogo tonen als het bestaat
+// - Favicon-fallback via website (Google s2)
+// - GEEN placeholders
+// - GEEN lege kaders
 // - Gele sterren (#f59e0b)
-// - Werkt met bestaande backend
+// - Geen backend-wijzigingen
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -48,6 +49,7 @@ function renderHero(c) {
   const nameEl = document.getElementById("companyName");
   const metaEl = document.getElementById("companyMeta");
   const ratingEl = document.getElementById("companyRating");
+  const logoWrap = document.getElementById("companyLogoWrap");
   const logoEl = document.getElementById("companyLogo");
   const badgeEl = document.getElementById("premiumBadge");
 
@@ -58,19 +60,36 @@ function renderHero(c) {
     metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
   }
 
-  // ✅ LOGO / FAVICON FALLBACK
-  if (logoEl) {
+  /* ===== LOGO / FAVICON (ROBUST) ===== */
+  if (logoWrap && logoEl) {
+    let logoUrl = null;
+
     if (c.logo) {
-      logoEl.src = c.logo;
+      logoUrl = c.logo;
     } else if (c.website) {
       try {
         const domain = new URL(c.website).hostname;
-        logoEl.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+        logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
       } catch {
-        logoEl.style.display = "none";
+        logoUrl = null;
       }
+    }
+
+    if (!logoUrl) {
+      logoWrap.classList.add("hidden");
     } else {
-      logoEl.style.display = "none";
+      // verberg standaard
+      logoEl.classList.add("hidden");
+
+      logoEl.onload = () => {
+        logoEl.classList.remove("hidden");
+      };
+
+      logoEl.onerror = () => {
+        logoWrap.classList.add("hidden");
+      };
+
+      logoEl.src = logoUrl;
     }
   }
 
