@@ -17,17 +17,20 @@
 
     <form id="reviewForm" class="surface-card p-6 rounded-2xl shadow-soft flex flex-col gap-4">
 
-      <label class="text-sm">
-        Beoordeling (1–5)
-        <select name="rating" required class="mt-1 w-full border rounded px-2 py-1">
-          <option value="">Kies</option>
-          <option value="5">5 – Uitstekend</option>
-          <option value="4">4 – Goed</option>
-          <option value="3">3 – Voldoende</option>
-          <option value="2">2 – Matig</option>
-          <option value="1">1 – Slecht</option>
-        </select>
-      </label>
+      <div class="text-sm">
+  <span class="block mb-1">Beoordeling</span>
+
+  <div id="starRating" class="flex gap-1 text-2xl cursor-pointer select-none">
+    <span data-value="1">★</span>
+    <span data-value="2">★</span>
+    <span data-value="3">★</span>
+    <span data-value="4">★</span>
+    <span data-value="5">★</span>
+  </div>
+
+  <input type="hidden" name="rating" value="" />
+</div>
+
 
       <label class="text-sm">
         Jouw review
