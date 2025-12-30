@@ -47,9 +47,11 @@ router.get("/companies", async (req, res) => {
 router.get("/reported-reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ reported: true })
-      .sort({ createdAt: -1 })
-      .lean()
-      .exec();
+  .populate("company", "name slug")
+  .sort({ createdAt: -1 })
+  .lean()
+  .exec();
+
 
     return res.json({ ok: true, reviews });
   } catch (err) {
