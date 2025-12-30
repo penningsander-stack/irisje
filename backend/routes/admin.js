@@ -47,7 +47,7 @@ router.get("/companies", async (req, res) => {
 router.get("/reported-reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ reported: true })
-  .populate("company", "name slug")
+  .populate("companyId", "name slug")
   .sort({ createdAt: -1 })
   .lean()
   .exec();
