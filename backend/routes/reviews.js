@@ -52,15 +52,45 @@ router.get("/company/:identifier", async (req, res) => {
 ============================================================ */
 router.post("/", async (req, res) => {
   try {
-    const { companyId, name, email, rating, message } = req.body || {};
+    const { companySlug, rating, comment } = req.body || {};
 
-    if (!companyId || !name || !email || !rating || !message) {
-      return res
-        .status(400)
-        .json({ ok: false, error: "Alle velden zijn verplicht." });
+    if (!companySlug || !rating || !comment) {
+      return res.status(400).json({
+        ok: false,
+        error: "companySlug, rating en comment zijn verplicht",
+      });
     }
 
-    const company = await Company.findById(companyId).lean();
+    const company = await Company.findOne({ slug: companySlug });
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Bedrijf niet gevonden",
+      });
+    }
+
+    const review = new Review({
+      companyId: company._id,
+      rating,
+      comment,
+      status: "pending",
+    });
+
+    await review.save();
+
+    res.json({
+      ok: true,
+      message: "Review ontvangen en wacht op goedkeuring.",
+    });
+  } catch (error) {
+    console.error("❌ Fout bij opslaan review:", error);
+    res.status(500).json({
+      ok: false,
+      error: "Serverfout bij opslaan review.",
+    });
+  }
+});
+
     if (!company) {
       return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden." });
     }
