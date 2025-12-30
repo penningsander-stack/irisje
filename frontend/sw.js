@@ -1,25 +1,28 @@
-// Irisje Service Worker — SAFE CACHE FIX
-// v20251221-SAFE-CSS-JS-REFRESH
+// Irisje Service Worker — SAFE & DEFENSIVE CACHE
+// v20251230-SAFE-NO-EXTENSION
 
-const CACHE_NAME = "irisje-cache-v20251221";
-const ASSETS = [
+const CACHE_NAME = "irisje-cache-v20251230";
+
+const CORE_ASSETS = [
   "/",
   "/index.html",
   "/style.css",
   "/manifest.json",
 ];
 
-// ===== Install =====
+/* =========================
+   INSTALL
+========================= */
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS))
   );
 });
 
-// ===== Activate =====
+/* =========================
+   ACTIVATE
+========================= */
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -35,31 +38,41 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// ===== Fetch =====
+/* =========================
+   FETCH
+========================= */
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-  const url = new URL(req.url);
 
-  // 🔴 HTML: altijd network-first (BELANGRIJK)
-  if (req.headers.get("accept")?.includes("text/html")) {
+  // ❌ NOOIT niet-http(s) requests (chrome-extension, etc.)
+  if (!req.url.startsWith("http")) {
+    return;
+  }
+
+  const accept = req.headers.get("accept") || "";
+
+  /* 🔴 HTML — network first */
+  if (accept.includes("text/html")) {
     event.respondWith(
       fetch(req).catch(() => caches.match(req))
     );
     return;
   }
 
-  // 🟡 CSS & JS: network-first + cache update (FIX)
+  /* 🟡 CSS / JS — network first + cache update */
   if (
-    url.pathname.endsWith(".css") ||
-    url.pathname.endsWith(".js")
+    req.destination === "style" ||
+    req.destination === "script"
   ) {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(req, clone);
-          });
+          if (res && res.status === 200 && res.type === "basic") {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(req, copy);
+            });
+          }
           return res;
         })
         .catch(() => caches.match(req))
@@ -67,10 +80,31 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 🔵 Overig: cache-first
+  /* 🔵 Images / fonts — cache first */
+  if (
+    req.destination === "image" ||
+    req.destination === "font"
+  ) {
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        if (cached) return cached;
+
+        return fetch(req).then((res) => {
+          if (res && res.status === 200 && res.type === "basic") {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(req, copy);
+            });
+          }
+          return res;
+        });
+      })
+    );
+    return;
+  }
+
+  /* ⚪ Overig — network fallback */
   event.respondWith(
-    caches.match(req).then((cached) => {
-      return cached || fetch(req);
-    })
+    fetch(req).catch(() => caches.match(req))
   );
 });
