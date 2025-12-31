@@ -76,14 +76,12 @@ router.post("/", async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
 
     const review = new Review({
-      company: company._id,
-      name,
-      email,
-      rating,
-      comment,
-      confirmToken: token,
-      isConfirmed: false,
-    });
+  companyId: company._id,   // 👈 verplicht veld, NU correct gezet
+  rating: Number(rating),
+  comment,
+  status: "pending",
+});
+
 
     await review.save();
 
