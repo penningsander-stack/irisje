@@ -332,7 +332,7 @@ async function loadReportedReviews(container, notif) {
 }
 
 function renderReportedCard(review) {
-  const companyName = esc(review?.company?.name || "Onbekend bedrijf");
+  const companyName = esc(review?.companyId?.name || "Onbekend bedrijf");
   const reviewerName = esc(review?.name || review?.reviewerName || "Onbekende reviewer");
   const email = esc(review?.email || review?.reviewerEmail || "");
   const rating = review?.rating ?? "-";
