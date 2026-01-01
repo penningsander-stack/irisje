@@ -1,5 +1,5 @@
 <!-- frontend/review.html -->
-<!-- v20260101-REVIEW-FETCH-FIX -->
+<!-- v20260101-REVIEW-API-BASE-FIX -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -44,10 +44,7 @@
         <textarea id="comment" required rows="5" class="irisje-input w-full"></textarea>
       </div>
 
-      <button
-        type="submit"
-        class="irisje-btn-primary w-full"
-      >
+      <button type="submit" class="irisje-btn-primary w-full">
         Review verzenden
       </button>
     </form>
@@ -56,6 +53,9 @@
   </main>
 
   <script>
+    // 🔒 API base – expliciet naar backend
+    const API_BASE = "https://irisje-backend.onrender.com/api";
+
     // companySlug uit URL
     const params = new URLSearchParams(window.location.search);
     const slug = params.get("companySlug");
@@ -80,8 +80,7 @@
       };
 
       try {
-        // 🔧 ENIGE WIJZIGING: juiste endpoint
-        const res = await fetch("/api/reviews", {
+        const res = await fetch(`${API_BASE}/reviews`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
