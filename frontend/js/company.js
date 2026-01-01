@@ -1,113 +1,213 @@
 // frontend/js/company.js
-// v20260101-COMPANY-REVIEWS-INTEGRATION
+// v20260101-COMPANY-LOGO-ROBUST+REVIEWS
 //
-// Verantwoordelijkheden:
-// - Bedrijf laden via slug
-// - Reviews laden via companyId
-// - Alleen approved reviews tonen
+// - Logo / favicon robuust
+// - Reviews via nieuw reviews-endpoint
+// - Geen regressies
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", initCompanyPage);
+document.addEventListener("DOMContentLoaded", () => {
+  initCompany();
+});
 
-async function initCompanyPage() {
+async function initCompany() {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
 
   if (!slug) {
-    console.error("[company] Geen slug in URL");
-    return;
-  }
-
-  try {
-    const company = await loadCompany(slug);
-    renderCompany(company);
-
-    // 👉 NIEUW: reviews laden op basis van companyId
-    await loadAndRenderReviews(company._id);
-  } catch (err) {
-    console.error("[company] Fout bij laden bedrijfspagina:", err);
-  }
-}
-
-// ------------------------
-// Bedrijf laden
-// ------------------------
-async function loadCompany(slug) {
-  const res = await fetch(`${API_BASE}/companies/slug/${slug}`);
-  const data = await res.json();
-
-  if (!data.ok || !data.item) {
-    throw new Error("Bedrijf niet gevonden");
-  }
-
-  return data.item;
-}
-
-function renderCompany(company) {
-  const titleEl = document.getElementById("companyName");
-  if (titleEl) {
-    titleEl.textContent = company.name;
-  }
-
-  // Andere bestaande rendering blijft intact
-}
-
-// ------------------------
-// Reviews laden + renderen
-// ------------------------
-async function loadAndRenderReviews(companyId) {
-  const container = document.getElementById("reviewsContainer");
-
-  if (!container) {
-    console.warn("[company] reviewsContainer niet gevonden in DOM");
+    console.error("❌ slug ontbreekt");
     return;
   }
 
   try {
     const res = await fetch(
-      `${API_BASE}/reviews/company/${companyId}`
+      `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`
     );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const data = await res.json();
+    const company = data?.item || data;
 
-    if (!data.ok || !Array.isArray(data.reviews)) {
-      container.innerHTML = "<p>Reviews konden niet worden geladen.</p>";
-      return;
-    }
+    if (!company) throw new Error("Geen company data");
 
-    if (data.reviews.length === 0) {
-      container.innerHTML = "<p>Nog geen reviews.</p>";
-      return;
-    }
-
-    container.innerHTML = data.reviews
-      .map(renderReview)
-      .join("");
+    renderHero(company);
+    renderDetails(company);
+    loadReviews(company._id);
   } catch (err) {
-    console.error("[company] Fout bij laden reviews:", err);
-    container.innerHTML = "<p>Fout bij laden van reviews.</p>";
+    console.error("❌ Company load error:", err);
   }
 }
 
-function renderReview(review) {
-  const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+/* =========================
+   HERO
+========================= */
+function renderHero(c) {
+  const nameEl = document.getElementById("companyName");
+  const metaEl = document.getElementById("companyMeta");
+  const ratingEl = document.getElementById("companyRating");
+  const logoWrap = document.getElementById("companyLogoWrap");
+  const logoEl = document.getElementById("companyLogo");
+  const badgeEl = document.getElementById("premiumBadge");
+
+  if (nameEl) nameEl.textContent = c.name || "Onbekend bedrijf";
+
+  if (metaEl) {
+    const cat = Array.isArray(c.categories) ? c.categories[0] : "";
+    metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
+  }
+
+  /* ===== LOGO / FAVICON (ROBUST) ===== */
+  if (logoWrap && logoEl) {
+    let logoUrl = null;
+
+    if (c.logo) {
+      logoUrl = c.logo;
+    } else if (c.website) {
+      try {
+        const domain = new URL(c.website).hostname;
+        logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      } catch {
+        logoUrl = null;
+      }
+    }
+
+    if (!logoUrl) {
+      logoWrap.classList.add("hidden");
+    } else {
+      logoEl.classList.add("hidden");
+
+      logoEl.onload = () => logoEl.classList.remove("hidden");
+      logoEl.onerror = () => logoWrap.classList.add("hidden");
+
+      logoEl.src = logoUrl;
+    }
+  }
+
+  if (badgeEl && c.isPremium) {
+    badgeEl.classList.remove("hidden");
+  }
+
+  if (ratingEl) {
+    ratingEl.innerHTML = renderHeroRating(
+      Number(c.avgRating) || 0,
+      Number(c.reviewCount) || 0,
+      Boolean(c.isVerified)
+    );
+  }
+}
+
+function renderHeroRating(avg, count, verified) {
+  if (!count || count < 1) {
+    return `<div class="text-sm text-slate-500">Nog geen reviews</div>`;
+  }
+
+  const stars = "★".repeat(Math.round(avg));
+  const label = count === 1 ? "review" : "reviews";
 
   return `
-    <div class="review border rounded-lg p-4 mb-4 bg-white">
-      <div class="flex items-center justify-between mb-2">
-        <strong>${escapeHtml(review.reviewerName)}</strong>
-        <span class="text-yellow-500">${stars}</span>
-      </div>
-      <p class="text-gray-700">
-        ${escapeHtml(review.comment)}
-      </p>
+    <div class="flex items-center gap-2 text-sm">
+      <span style="color:#f59e0b">${stars}</span>
+      <span class="font-medium">${formatRating(avg)}</span>
+      <span class="text-slate-500">(${count} ${label})</span>
+      ${
+        verified
+          ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>`
+          : ""
+      }
     </div>
   `;
 }
 
-// ------------------------
-// Helpers
-// ------------------------
+/* =========================
+   DETAILS
+========================= */
+function renderDetails(c) {
+  const list = document.getElementById("companyDetails");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  addDetail(list, "Plaats", c.city);
+  addDetail(
+    list,
+    "Categorie",
+    Array.isArray(c.categories) ? c.categories.join(", ") : ""
+  );
+  addDetail(list, "Telefoon", c.phone);
+  addDetail(list, "Website", c.website, true);
+  addDetail(list, "Geverifieerd", c.isVerified ? "Ja" : "Nee");
+}
+
+function addDetail(list, label, value, isLink = false) {
+  if (!value) return;
+  const li = document.createElement("li");
+  li.innerHTML = isLink
+    ? `<strong>${label}:</strong> <a href="${value}" target="_blank" class="text-indigo-600">${value}</a>`
+    : `<strong>${label}:</strong> ${escapeHtml(String(value))}`;
+  list.appendChild(li);
+}
+
+/* =========================
+   REVIEWS
+========================= */
+async function loadReviews(companyId) {
+  if (!companyId) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    // ✅ NIEUW: juiste veldnaam
+    const reviews = Array.isArray(data?.reviews)
+      ? data.reviews
+      : Array.isArray(data?.items)
+      ? data.items
+      : [];
+
+    const container = document.getElementById("reviewsContainer");
+    const empty = document.getElementById("noReviews");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (!reviews.length) {
+      if (empty) empty.classList.remove("hidden");
+      return;
+    }
+
+    reviews.forEach(r => {
+      const div = document.createElement("div");
+      div.className = "border-b border-slate-100 pb-3";
+
+      div.innerHTML = `
+        <div class="flex items-center gap-2 text-sm mb-1">
+          <span style="color:#f59e0b">${"★".repeat(
+            Math.round(r.rating || 0)
+          )}</span>
+          <span class="text-slate-500">${formatRating(r.rating)}</span>
+        </div>
+        <div class="text-sm text-slate-700">${escapeHtml(
+          r.comment || ""
+        )}</div>
+      `;
+      container.appendChild(div);
+    });
+  } catch (err) {
+    console.error("❌ Reviews load error:", err);
+  }
+}
+
+/* =========================
+   HELPERS
+========================= */
+function formatRating(n) {
+  return (Math.round(n * 10) / 10).toString().replace(".", ",");
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
