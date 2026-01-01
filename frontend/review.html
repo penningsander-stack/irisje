@@ -5,65 +5,85 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Review plaatsen – Irisje.nl</title>
 
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style.css?v=20251208">
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
 </head>
 
-<body class="irisje-body">
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- Header (consistent met andere pagina’s) -->
-  <header class="irisje-header">
-    <div class="max-w-6xl mx-auto px-4 py-4">
-      <a href="/" class="text-indigo-600 font-semibold">← Terug naar Irisje.nl</a>
+<header class="irisje-header sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+    <a href="index.html" class="flex items-center space-x-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <div class="flex flex-col leading-tight">
+        <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+        <span class="text-[11px] text-slate-500 hidden sm:block">Reviews</span>
+      </div>
+    </a>
+  </div>
+</header>
+
+<main class="page-shell">
+
+  <section class="page-header-bar">
+    <div class="page-title-block">
+      <h1 id="reviewTitle">📝 Review plaatsen</h1>
+      <p>Deel je ervaring met dit bedrijf.</p>
     </div>
-  </header>
+  </section>
 
-  <main class="max-w-xl mx-auto px-4 py-10">
-    <!-- 🔧 HERSTELDE CONTEXT -->
-    <h1 id="reviewTitle" class="text-2xl font-semibold text-slate-900 mb-2">
-      Plaats een review
-    </h1>
-    <p class="text-slate-600 mb-8">
-      Deel je ervaring met dit bedrijf.
-    </p>
+  <section>
+    <div class="max-w-xl mx-auto">
+      <div class="surface-card">
 
-    <form id="reviewForm" class="space-y-4">
-      <input type="hidden" id="companySlug" />
+        <form id="reviewForm" class="space-y-4" novalidate>
+          <input type="hidden" id="companySlug">
 
-      <div>
-        <label class="block text-sm font-medium">Naam</label>
-        <input id="reviewerName" required class="input" />
+          <div class="form-group">
+            <label for="reviewerName">Naam</label>
+            <input id="reviewerName" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="reviewerEmail">E-mail</label>
+            <input id="reviewerEmail" type="email" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="rating">Beoordeling</label>
+            <select id="rating" class="form-input" required>
+              <option value="">Kies…</option>
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★</option>
+              <option value="3">★★★</option>
+              <option value="2">★★</option>
+              <option value="1">★</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="comment">Review</label>
+            <textarea id="comment" class="form-input h-28" required></textarea>
+          </div>
+
+          <p id="statusMessage" class="rq-status"></p>
+
+          <button type="submit" class="btn-primary w-full">
+            Review verzenden
+          </button>
+        </form>
+
       </div>
+    </div>
+  </section>
+</main>
 
-      <div>
-        <label class="block text-sm font-medium">E-mail</label>
-        <input id="reviewerEmail" type="email" required class="input" />
-      </div>
+<footer class="footer-shell card-fade-in mt-auto">
+  <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">
+    <p class="text-[11px] text-slate-400">© 2026 Irisje.nl</p>
+  </div>
+</footer>
 
-      <div>
-        <label class="block text-sm font-medium">Beoordeling (1–5)</label>
-        <select id="rating" required class="input">
-          <option value="">Kies…</option>
-          <option value="5">★★★★★</option>
-          <option value="4">★★★★</option>
-          <option value="3">★★★</option>
-          <option value="2">★★</option>
-          <option value="1">★</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Review</label>
-        <textarea id="comment" required class="input h-28"></textarea>
-      </div>
-
-      <button class="btn-primary w-full">
-        Review verzenden
-      </button>
-
-      <p id="statusMessage" class="text-sm mt-4"></p>
-    </form>
-  </main>
-
-  <script src="/js/review.js"></script>
+<script src="/js/review.js"></script>
 </body>
 </html>
