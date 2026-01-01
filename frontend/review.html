@@ -1,163 +1,109 @@
+<!-- frontend/review.html -->
+<!-- v20260101-REVIEW-FETCH-FIX -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Review schrijven – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css">
-</head>
+  <title>Review plaatsen – Irisje.nl</title>
 
+  <link rel="stylesheet" href="/style.css?v=20251208" />
+</head>
 <body class="irisje-body">
 
-  <section class="section-shell max-w-xl mx-auto mt-8">
-    <h1 id="reviewTitle" class="text-xl font-semibold mb-4">
-      Schrijf een review
-    </h1>
+  <main class="max-w-xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-6">Plaats een review</h1>
 
-    <form id="reviewForm" class="surface-card p-6 rounded-2xl shadow-soft flex flex-col gap-4">
+    <form id="reviewForm" class="space-y-4">
+      <input type="hidden" id="companySlug" />
 
-      <!-- Naam -->
-      <label class="text-sm">
-        Jouw naam
-        <input
-          type="text"
-          name="name"
-          required
-          class="mt-1 w-full border rounded px-2 py-1"
-        />
-      </label>
-
-      <!-- E-mail -->
-      <label class="text-sm">
-        Jouw e-mailadres
-        <input
-          type="email"
-          name="email"
-          required
-          class="mt-1 w-full border rounded px-2 py-1"
-        />
-      </label>
-
-      <!-- Rating -->
-      <div class="text-sm">
-        <span class="block mb-1">Beoordeling</span>
-
-        <div id="starRating" class="flex gap-1 text-2xl cursor-pointer select-none">
-          <span data-value="1">★</span>
-          <span data-value="2">★</span>
-          <span data-value="3">★</span>
-          <span data-value="4">★</span>
-          <span data-value="5">★</span>
-        </div>
-
-        <input type="hidden" name="rating" value="" />
-        <div class="mt-1 text-xs text-slate-500">
-          Klik op de sterren om te kiezen.
-        </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Naam</label>
+        <input id="reviewerName" required class="irisje-input w-full" />
       </div>
 
-      <!-- Reviewtekst -->
-      <label class="text-sm">
-        Jouw review
-        <textarea
-          name="comment"
-          required
-          rows="4"
-          class="mt-1 w-full border rounded px-2 py-1"
-        ></textarea>
-      </label>
+      <div>
+        <label class="block text-sm font-medium mb-1">E-mail</label>
+        <input id="reviewerEmail" type="email" required class="irisje-input w-full" />
+      </div>
 
-      <button type="submit" class="mt-3 bg-indigo-600 text-white rounded-lg py-2">
+      <div>
+        <label class="block text-sm font-medium mb-1">Beoordeling (1–5)</label>
+        <select id="rating" required class="irisje-input w-full">
+          <option value="">Kies…</option>
+          <option value="5">★★★★★</option>
+          <option value="4">★★★★</option>
+          <option value="3">★★★</option>
+          <option value="2">★★</option>
+          <option value="1">★</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1">Review</label>
+        <textarea id="comment" required rows="5" class="irisje-input w-full"></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="irisje-btn-primary w-full"
+      >
         Review verzenden
       </button>
-
     </form>
-  </section>
 
-  <!-- ⭐ Inline JS: sterren + submit -->
+    <p id="reviewStatus" class="mt-4 text-sm"></p>
+  </main>
+
   <script>
-  (() => {
-    const API_BASE = "https://irisje-backend.onrender.com/api";
-    const form = document.getElementById("reviewForm");
-    if (!form) return;
-
-    // foutmelding
-    const errorBox = document.createElement("div");
-    errorBox.className = "text-sm text-red-600 mb-2";
-    form.prepend(errorBox);
-
+    // companySlug uit URL
     const params = new URLSearchParams(window.location.search);
-    const companySlug = params.get("companySlug");
-
-    if (!companySlug) {
-      errorBox.textContent = "Ongeldig reviewverzoek.";
-      return;
+    const slug = params.get("companySlug");
+    if (slug) {
+      document.getElementById("companySlug").value = slug;
     }
 
-    // sterren
-    const stars = document.querySelectorAll("#starRating span");
-    const ratingInput = form.querySelector('input[name="rating"]');
+    const form = document.getElementById("reviewForm");
+    const statusEl = document.getElementById("reviewStatus");
 
-    function highlight(value) {
-      stars.forEach(s => {
-        s.style.color =
-          Number(s.dataset.value) <= value ? "#f59e0b" : "#cbd5e1";
-      });
-    }
-
-    highlight(0);
-
-    stars.forEach(star => {
-      star.addEventListener("mouseenter", () => {
-        highlight(Number(star.dataset.value));
-      });
-      star.addEventListener("mouseleave", () => {
-        highlight(Number(ratingInput.value || 0));
-      });
-      star.addEventListener("click", () => {
-        ratingInput.value = star.dataset.value;
-        highlight(Number(star.dataset.value));
-        errorBox.textContent = "";
-      });
-    });
-
-    // submit
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      errorBox.textContent = "";
 
-      const name = form.name.value.trim();
-      const email = form.email.value.trim();
-      const rating = ratingInput.value;
-      const comment = form.comment.value.trim();
+      statusEl.textContent = "Bezig met verzenden…";
 
-      if (!name || !email || !rating || !comment) {
-        errorBox.textContent = "Vul alle velden in.";
-        return;
-      }
+      const payload = {
+        companySlug: document.getElementById("companySlug").value,
+        reviewerName: document.getElementById("reviewerName").value.trim(),
+        reviewerEmail: document.getElementById("reviewerEmail").value.trim(),
+        rating: Number(document.getElementById("rating").value),
+        comment: document.getElementById("comment").value.trim(),
+      };
 
       try {
-        const res = await fetch(`${API_BASE}/reviews`, {
+        // 🔧 ENIGE WIJZIGING: juiste endpoint
+        const res = await fetch("/api/reviews", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            email,
-            rating,
-            comment,
-            companySlug
-          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
 
-        if (!res.ok) throw new Error();
+        const data = await res.json();
 
-        window.location.href = "/review-confirm.html";
-      } catch {
-        errorBox.textContent =
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Verzenden mislukt.");
+        }
+
+        statusEl.textContent =
+          "Dank je wel! Controleer je e-mail om je review te bevestigen.";
+        form.reset();
+      } catch (err) {
+        console.error("[review] submit error:", err);
+        statusEl.textContent =
           "Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
       }
     });
-  })();
   </script>
 
 </body>
