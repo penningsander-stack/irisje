@@ -20,7 +20,7 @@ const crypto = require("crypto");
 const router = express.Router();
 
 const Review = require("../models/review");
-const Company = require("../models/Company");
+const Company = require("../models/company");
 
 // Optioneel: mailer (alleen gebruiken NA succesvolle save)
 const mailer = require("../utils/mailer");
