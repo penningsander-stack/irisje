@@ -1,5 +1,5 @@
 // backend/routes/reviews.js
-// v20260101-REVIEWS-OPTION-B-FIXED
+// v20260101-REVIEWS-OPTION-B-PUBLICATION-FILTER
 
 const express = require("express");
 const crypto = require("crypto");
@@ -78,9 +78,7 @@ router.post("/", async (req, res) => {
 
     await review.save();
 
-    // ------------------------
     // Bevestigingsmail (mag falen)
-    // ------------------------
     try {
       if (mailer && typeof mailer.sendMail === "function") {
         const confirmUrl = `https://irisje.nl/review-confirm.html?token=${token}`;
@@ -104,7 +102,6 @@ router.post("/", async (req, res) => {
         });
       }
     } catch (mailErr) {
-      // Mailfout mag review NIET blokkeren
       console.error("[reviews] confirm mail failed:", mailErr.message);
     }
 
@@ -148,12 +145,16 @@ router.get("/confirm/:token", async (req, res) => {
 
 // ------------------------
 // GET /api/reviews/company/:companyId
+// Publiek: alleen approved
 // ------------------------
 router.get("/company/:companyId", async (req, res) => {
   try {
     const { companyId } = req.params;
 
-    const reviews = await Review.find({ companyId })
+    const reviews = await Review.find({
+      companyId,
+      status: "approved",
+    })
       .sort({ createdAt: -1 })
       .lean();
 
