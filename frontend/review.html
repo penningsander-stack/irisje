@@ -1,5 +1,3 @@
-<!-- frontend/review.html -->
-<!-- v20260101-REVIEW-API-BASE-FIX -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -7,29 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Review plaatsen – Irisje.nl</title>
 
-  <link rel="stylesheet" href="/style.css?v=20251208" />
+  <link rel="stylesheet" href="/style.css">
 </head>
+
 <body class="irisje-body">
 
-  <main class="max-w-xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-semibold mb-6">Plaats een review</h1>
+  <!-- Header (consistent met andere pagina’s) -->
+  <header class="irisje-header">
+    <div class="max-w-6xl mx-auto px-4 py-4">
+      <a href="/" class="text-indigo-600 font-semibold">← Terug naar Irisje.nl</a>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 py-10">
+    <!-- 🔧 HERSTELDE CONTEXT -->
+    <h1 id="reviewTitle" class="text-2xl font-semibold text-slate-900 mb-2">
+      Plaats een review
+    </h1>
+    <p class="text-slate-600 mb-8">
+      Deel je ervaring met dit bedrijf.
+    </p>
 
     <form id="reviewForm" class="space-y-4">
       <input type="hidden" id="companySlug" />
 
       <div>
-        <label class="block text-sm font-medium mb-1">Naam</label>
-        <input id="reviewerName" required class="irisje-input w-full" />
+        <label class="block text-sm font-medium">Naam</label>
+        <input id="reviewerName" required class="input" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium mb-1">E-mail</label>
-        <input id="reviewerEmail" type="email" required class="irisje-input w-full" />
+        <label class="block text-sm font-medium">E-mail</label>
+        <input id="reviewerEmail" type="email" required class="input" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium mb-1">Beoordeling (1–5)</label>
-        <select id="rating" required class="irisje-input w-full">
+        <label class="block text-sm font-medium">Beoordeling (1–5)</label>
+        <select id="rating" required class="input">
           <option value="">Kies…</option>
           <option value="5">★★★★★</option>
           <option value="4">★★★★</option>
@@ -40,70 +52,18 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium mb-1">Review</label>
-        <textarea id="comment" required rows="5" class="irisje-input w-full"></textarea>
+        <label class="block text-sm font-medium">Review</label>
+        <textarea id="comment" required class="input h-28"></textarea>
       </div>
 
-      <button type="submit" class="irisje-btn-primary w-full">
+      <button class="btn-primary w-full">
         Review verzenden
       </button>
-    </form>
 
-    <p id="reviewStatus" class="mt-4 text-sm"></p>
+      <p id="statusMessage" class="text-sm mt-4"></p>
+    </form>
   </main>
 
-  <script>
-    // 🔒 API base – expliciet naar backend
-    const API_BASE = "https://irisje-backend.onrender.com/api";
-
-    // companySlug uit URL
-    const params = new URLSearchParams(window.location.search);
-    const slug = params.get("companySlug");
-    if (slug) {
-      document.getElementById("companySlug").value = slug;
-    }
-
-    const form = document.getElementById("reviewForm");
-    const statusEl = document.getElementById("reviewStatus");
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-
-      statusEl.textContent = "Bezig met verzenden…";
-
-      const payload = {
-        companySlug: document.getElementById("companySlug").value,
-        reviewerName: document.getElementById("reviewerName").value.trim(),
-        reviewerEmail: document.getElementById("reviewerEmail").value.trim(),
-        rating: Number(document.getElementById("rating").value),
-        comment: document.getElementById("comment").value.trim(),
-      };
-
-      try {
-        const res = await fetch(`${API_BASE}/reviews`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Verzenden mislukt.");
-        }
-
-        statusEl.textContent =
-          "Dank je wel! Controleer je e-mail om je review te bevestigen.";
-        form.reset();
-      } catch (err) {
-        console.error("[review] submit error:", err);
-        statusEl.textContent =
-          "Er ging iets mis bij het verzenden. Probeer het later opnieuw.";
-      }
-    });
-  </script>
-
+  <script src="/js/review.js"></script>
 </body>
 </html>
