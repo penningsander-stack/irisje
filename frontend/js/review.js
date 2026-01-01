@@ -1,38 +1,53 @@
 // frontend/js/review.js
-// v20251230-REVIEW-TITLE-CONTEXT
-//
-// - Toont bedrijfsnaam in reviewtitel
-// - Gebruikt companySlug uit URL
-// - Geen submit-logica
-// - Geen redirects
-// - Veilig falen (geen crashes)
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", () => {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("companySlug");
 
-  if (!slug) return;
+  const slugInput = document.getElementById("companySlug");
+  const titleEl = document.getElementById("reviewTitle");
 
-  loadCompanyName(slug);
-});
+  if (slugInput) slugInput.value = slug || "";
 
-async function loadCompanyName(slug) {
-  try {
-    const res = await fetch(
-      `https://irisje-backend.onrender.com/api/companies/slug/${encodeURIComponent(slug)}`
-    );
-    if (!res.ok) return;
-
-    const data = await res.json();
-    const company = data?.item || data;
-
-    if (!company || !company.name) return;
-
-    const titleEl = document.getElementById("reviewTitle");
-    if (titleEl) {
-      titleEl.textContent = `Schrijf een review over ${company.name}`;
-    }
-  } catch (err) {
-    // stil falen = UX blijft intact
+  if (titleEl && slug) {
+    const readable = slug.replace(/-/g, " ");
+    titleEl.textContent = `Plaats een review voor ${readable}`;
   }
-}
+
+  const form = document.getElementById("reviewForm");
+  const status = document.getElementById("statusMessage");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    status.textContent = "Bezig met verzenden…";
+
+    const payload = {
+      companySlug: slug,
+      reviewerName: document.getElementById("reviewerName").value,
+      reviewerEmail: document.getElementById("reviewerEmail").value,
+      rating: document.getElementById("rating").value,
+      comment: document.getElementById("comment").value,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error);
+
+      status.className = "text-green-600 text-sm mt-4";
+      status.textContent =
+        "Dank je wel! Controleer je e-mail om je review te bevestigen.";
+
+      form.reset();
+    } catch (err) {
+      status.className = "text-red-600 text-sm mt-4";
+      status.textContent = err.message || "Fout bij verzenden.";
+    }
+  });
+});
