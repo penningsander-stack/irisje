@@ -1,134 +1,107 @@
 // backend/server.js
-// v20251213-ADMIN-LOGGING-ACTIVE
+// v20260101-CORS-FIX
 //
-// Complete versie mét logging voor adminpanel:
-// - Request logging
-// - Server start logging
-// - MongoDB connect logging
-// - Error logging
-// - Compatibel met jouw huidige backendstructuur
+// Doel:
+// - Frontend https://irisje.nl mag POST/GET/PATCH doen naar backend
+// - CORS expliciet en correct
+// - Geen impliciete defaults
+// - Werkt met aparte frontend/backend origins
 
+require("dotenv").config();
 const express = require("express");
-const path = require("path");
+const mongoose = require("mongoose");
 const cors = require("cors");
-const connectDB = require("./config/db");
-const logger = require("./utils/logger"); // <-- logging toegevoegd
+const path = require("path");
 
 const app = express();
 
-// =========================================
-// Middleware
-// =========================================
-app.use(express.json());
-app.use(cors());
+// --------------------
+// CORS (KRITISCH)
+// --------------------
+const ALLOWED_ORIGINS = [
+  "https://irisje.nl",
+  "https://www.irisje.nl",
+  // lokaal / test (optioneel, laat staan of verwijder)
+  "http://localhost:3000",
+  "http://localhost:5173",
+];
 
-// =========================================
-// MongoDB + logging
-// =========================================
-logger.info("🚀 Backend server wordt gestart…");
-
-connectDB()
-  .then(() => logger.info("✔️ MongoDB succesvol verbonden"))
-  .catch((err) => logger.error("❌ MongoDB fout: " + err.message));
-
-// =========================================
-// Request logging
-// =========================================
-app.use((req, res, next) => {
-  logger.info(`[REQ] ${req.method} ${req.url}`);
-  next();
-});
-
-// =========================================
-// UPLOADS STATISCH SERVEN
-// =========================================
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-
-// =========================================
-// FRONTEND STATISCH SERVEN (EXPLICIET)
-// =========================================
 app.use(
-  "/frontend",
-  express.static(path.join(__dirname, "..", "frontend"), {
-    extensions: ["css", "js", "html"],
+  cors({
+    origin: function (origin, callback) {
+      // allow server-to-server & tools (no origin)
+      if (!origin) return callback(null, true);
+
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("CORS blocked: " + origin));
+    },
+    methods: ["GET", "POST", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    maxAge: 86400,
   })
 );
 
+// Preflight expliciet afhandelen
+app.options("*", cors());
 
+// --------------------
+// Middleware
+// --------------------
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 
+// --------------------
+// Database
+// --------------------
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+    process.exit(1);
+  });
 
+// --------------------
+// Routes
+// --------------------
+app.use("/api/reviews", require("./routes/reviews"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/companies", require("./routes/companies"));
+app.use("/api/requests", require("./routes/requests"));
+app.use("/api/admin", require("./routes/admin"));
+// voeg andere routes hier toe indien aanwezig
 
-
-
-
-
-// =========================================
-// ROUTES DYNAMISCH LADEN
-// =========================================
-const routes = [
-  "auth",
-  "companies",
-  "requests",
-  "publicRequests",
-  "reviews",
-  "admin",
-  "email",
-  "payments",
-  "status",
-  "claims",
-  "dashboard",
-  "googlereviews",
-  "seed",
-  "importer_places",
-];
-
-routes.forEach((route) => {
-  try {
-    app.use(`/api/${route}`, require(`./routes/${route}`));
-    logger.info(`✔️ Loaded route: ${route}`);
-  } catch (err) {
-    logger.error(`❌ Route '${route}' kon niet geladen worden: ${err.message}`);
-  }
+// --------------------
+// Healthcheck
+// --------------------
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
 });
 
-// =========================================
-// ADMIN TOOLS (stats/health)
-// =========================================
-try {
-  const adminToolsRouter = require("./routes/adminTools");
-  app.use("/api/admin", adminToolsRouter);
-  logger.info("✔️ Loaded admin tools routes (stats/health)");
-} catch (err) {
-  logger.error("❌ Admin tools routes konden niet geladen worden: " + err.message);
-}
+// --------------------
+// Static (optioneel)
+// --------------------
+app.use(express.static(path.join(__dirname, "public")));
 
-// =========================================
-// FRONTEND HOSTING
-// =========================================
-app.use(express.static(path.join(__dirname, "..", "frontend")));
-
-// =========================================
-// SPA FALLBACK
-// =========================================
-app.get(/^\/((?!uploads|api).)*$/, (req, res) => {
-  res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
-});
-
-// =========================================
-// Error logging middleware
-// =========================================
+// --------------------
+// Error handler
+// --------------------
 app.use((err, req, res, next) => {
-  logger.error(`[ERROR] ${err.message}`);
-  next(err);
+  if (err && err.message && err.message.startsWith("CORS blocked")) {
+    return res.status(403).json({ ok: false, error: err.message });
+  }
+  console.error("Server error:", err);
+  res.status(500).json({ ok: false, error: "Server error" });
 });
 
-// =========================================
-// Server starten
-// =========================================
+// --------------------
+// Start
+// --------------------
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  logger.info(`🚀 Backend actief op poort ${PORT}`);
-  console.log(`🚀 Backend actief op poort ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
