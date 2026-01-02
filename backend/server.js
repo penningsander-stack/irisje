@@ -1,16 +1,13 @@
 // backend/server.js
-import express from "express";
-import mongoose from "mongoose";
-import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
+
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const path = require("path");
 
 // Routes
-import publicRequestsRoutes from "./routes/publicRequests.js";
-import companiesRoutes from "./routes/companies.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const publicRequestsRoutes = require("./routes/publicRequests");
+const companiesRoutes = require("./routes/companies");
 
 const app = express();
 
@@ -32,23 +29,25 @@ mongoose
   });
 
 /* =========================
-   API Routes
+   API routes
 ========================= */
 app.use("/api/publicRequests", publicRequestsRoutes);
 app.use("/api/companies", companiesRoutes);
 
 /* =========================
-   FRONTEND STATIC FILES
+   Frontend static files
 ========================= */
 const FRONTEND_PATH = path.join(__dirname, "../frontend");
 
-// Normale root ( / )
+// Root static ( /style.css, /select-companies.html, etc.)
 app.use(express.static(FRONTEND_PATH));
 
-// 🔥 CRUCIAAL: /css → frontend
+// 🔥 CRUCIAAL: support voor /css/style.css
 app.use("/css", express.static(FRONTEND_PATH));
 
-// fallback voor html
+/* =========================
+   HTML fallback
+========================= */
 app.get("*", (req, res) => {
   res.sendFile(path.join(FRONTEND_PATH, "index.html"));
 });
