@@ -76,28 +76,31 @@ router.post("/", async (req, res) => {
 
     await review.save();
 
-    try {
-      const confirmUrl = `https://irisje.nl/review-confirm.html?token=${token}`;
-      await mailer.sendMail({
-        to: reviewerEmail,
-        subject: "Bevestig je review op Irisje.nl",
-        html: `
-          <p>Hoi ${reviewerName},</p>
-          <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
-          <p>
-            <a href="${confirmUrl}"
-               style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
-              Review bevestigen
-            </a>
-          </p>
-          <p>Werkt de knop niet? Kopieer deze link:</p>
-          <p>${confirmUrl}</p>
-          <p>Groet,<br>Irisje.nl</p>
-        `,
-      });
-    } catch (mailErr) {
-      console.error("[reviews] confirm mail failed:", mailErr.message);
-    }
+    // Bevestigingsmail PAS NA succesvolle save
+try {
+  const confirmUrl = `https://irisje-backend.onrender.com/api/reviews/confirm/${token}`;
+
+  await mailer.sendMail({
+    to: reviewerEmail,
+    subject: "Bevestig je review op Irisje.nl",
+    html: `
+      <p>Hoi ${reviewerName},</p>
+      <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
+      <p>
+        <a href="${confirmUrl}"
+           style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
+          Review bevestigen
+        </a>
+      </p>
+      <p>Werkt de knop niet? Kopieer deze link:</p>
+      <p>${confirmUrl}</p>
+      <p>Groet,<br>Irisje.nl</p>
+    `,
+  });
+} catch (mailErr) {
+  console.error("[reviews] confirm mail failed:", mailErr.message);
+}
+
 
     return res.json({ ok: true });
   } catch (err) {
