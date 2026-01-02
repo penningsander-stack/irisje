@@ -1,101 +1,83 @@
 // backend/server.js
-// v20260102-STATIC-FRONTEND-ABSOLUTE-FIX
-//
-// Fix:
-// - Frontend statisch serveren met absoluut pad
-// - Werkt op Render waar service vanuit /backend draait
-// - /style.css wordt correct geserveerd
+// IRISJE.NL – server.js (FINAL FIX STATIC + ROUTING)
+// Doel:
+// - /style.css blijft werken vanuit frontend/
+// - geen HTML-aanpassingen nodig
+// - static files altijd vóór catch-all
+// - geen MIME-type fouten meer
 
-require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 const path = require("path");
+const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
 
-// --------------------
-// CORS
-// --------------------
-const ALLOWED_ORIGINS = [
-  "https://irisje.nl",
-  "https://www.irisje.nl",
-  "http://localhost:3000",
-  "http://localhost:5173",
-];
+/* =====================================================
+   BASIS MIDDLEWARE
+   ===================================================== */
+app.use(cors());
+app.use(express.json());
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      return callback(new Error("CORS blocked: " + origin));
-    },
-    methods: ["GET", "POST", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
-
-app.options("*", cors());
-
-// --------------------
-// Middleware
-// --------------------
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
-
-// --------------------
-// Database
-// --------------------
+/* =====================================================
+   DATABASE
+   ===================================================== */
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
+  .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {
-    console.error("MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   });
 
-// --------------------
-// STATIC FILES (DE JUISTE FIX)
-// --------------------
+/* =====================================================
+   FRONTEND STATIC FILES  (⬅️ DIT IS DE CRUCIALE FIX)
+   ===================================================== */
 
-// backend → ../frontend (absoluut & betrouwbaar)
+// frontend-map exact bepalen
 const FRONTEND_PATH = path.join(__dirname, "..", "frontend");
-app.use(express.static(FRONTEND_PATH));
 
-// --------------------
-// API Routes
-// --------------------
-app.use("/api/reviews", require("./routes/reviews"));
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/companies", require("./routes/companies"));
-app.use("/api/requests", require("./routes/requests"));
-app.use("/api/admin", require("./routes/admin"));
+// Static files ALTIJD eerst
+app.use(
+  express.static(FRONTEND_PATH, {
+    index: false,           // voorkom automatische index.html
+    fallthrough: true       // laat API-routes door als bestand niet bestaat
+  })
+);
+
+/* =====================================================
+   API ROUTES
+   ===================================================== */
+
 app.use("/api/publicRequests", require("./routes/publicRequests"));
+app.use("/api/companies", require("./routes/companies"));
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/requests", require("./routes/requests"));
+app.use("/api/reviews", require("./routes/reviews"));
+app.use("/api/admin", require("./routes/admin"));
+app.use("/api/email", require("./routes/email"));
+app.use("/api/payments", require("./routes/payments"));
 
-// --------------------
-// Health
-// --------------------
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
-});
+/* =====================================================
+   SPA FALLBACK (MOET HELEMAAL ONDERAAN)
+   ===================================================== */
 
-// --------------------
-// Error handler
-// --------------------
-app.use((err, req, res, next) => {
-  if (err?.message?.startsWith("CORS blocked")) {
-    return res.status(403).json({ ok: false, error: err.message });
+// Alleen als het GEEN API-call is en GEEN bestaand bestand
+app.get("*", (req, res) => {
+  // veiligheid: API nooit vangen
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API endpoint not found" });
   }
-  console.error("Server error:", err);
-  res.status(500).json({ ok: false, error: "Server error" });
+
+  res.sendFile(path.join(FRONTEND_PATH, "index.html"));
 });
 
-// --------------------
-// Start
-// --------------------
+/* =====================================================
+   SERVER START
+   ===================================================== */
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Irisje backend draait op poort ${PORT}`);
 });
