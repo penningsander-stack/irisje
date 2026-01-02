@@ -1,8 +1,13 @@
 // backend/routes/reviews.js
-// v20260102-REVIEWS-CONFIRM-FIX
+// v20260102-REVIEWS-CONFIRM-REDIRECT-FIX
 //
 // Reviews API – Optie B (status + confirmToken)
-// Confirm-route deterministisch gemaakt (stap 7g.6)
+//
+// Endpoints:
+// - POST   /api/reviews
+// - GET    /api/reviews/confirm/:token
+// - GET    /api/reviews/company/:companyId
+// - PATCH  /api/reviews/report/:id
 
 const express = require("express");
 const crypto = require("crypto");
@@ -34,6 +39,7 @@ router.post("/", async (req, res) => {
       message, // legacy
     } = req.body || {};
 
+    // Basisvalidatie input
     if (!rating || !reviewerName || !reviewerEmail || (!comment && !message)) {
       return res.status(400).json({
         ok: false,
@@ -41,6 +47,7 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Resolve companyId
     let resolvedCompanyId = companyId || null;
 
     if (!resolvedCompanyId && companySlug) {
@@ -61,6 +68,7 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Canonieke mapping
     const mappedComment = comment || message;
     const token = generateToken();
 
@@ -77,30 +85,30 @@ router.post("/", async (req, res) => {
     await review.save();
 
     // Bevestigingsmail PAS NA succesvolle save
-try {
-  const confirmUrl = `https://irisje-backend.onrender.com/api/reviews/confirm/${token}`;
+    try {
+      // ✅ DIRECT naar backend confirm-route (server-side bevestiging)
+      const confirmUrl = `https://irisje-backend.onrender.com/api/reviews/confirm/${token}`;
 
-  await mailer.sendMail({
-    to: reviewerEmail,
-    subject: "Bevestig je review op Irisje.nl",
-    html: `
-      <p>Hoi ${reviewerName},</p>
-      <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
-      <p>
-        <a href="${confirmUrl}"
-           style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
-          Review bevestigen
-        </a>
-      </p>
-      <p>Werkt de knop niet? Kopieer deze link:</p>
-      <p>${confirmUrl}</p>
-      <p>Groet,<br>Irisje.nl</p>
-    `,
-  });
-} catch (mailErr) {
-  console.error("[reviews] confirm mail failed:", mailErr.message);
-}
-
+      await mailer.sendMail({
+        to: reviewerEmail,
+        subject: "Bevestig je review op Irisje.nl",
+        html: `
+          <p>Hoi ${reviewerName},</p>
+          <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
+          <p>
+            <a href="${confirmUrl}"
+               style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
+              Review bevestigen
+            </a>
+          </p>
+          <p>Werkt de knop niet? Kopieer deze link:</p>
+          <p>${confirmUrl}</p>
+          <p>Groet,<br>Irisje.nl</p>
+        `,
+      });
+    } catch (mailErr) {
+      console.error("[reviews] confirm mail failed:", mailErr.message);
+    }
 
     return res.json({ ok: true });
   } catch (err) {
@@ -118,25 +126,24 @@ try {
 router.get("/confirm/:token", async (req, res) => {
   try {
     const { token } = req.params;
+
     if (!token) {
       return res.redirect("https://irisje.nl/review-failed.html");
     }
 
-    // 1. Review zoeken
     const review = await Review.findOne({ confirmToken: token });
+
     if (!review) {
       return res.redirect("https://irisje.nl/review-failed.html");
     }
 
-    // 2. Status aanpassen
+    // Zet status naar approved
     review.status = "approved";
-    review.confirmToken = null;
-
-    // 3. ALTIJD eerst opslaan
+    review.confirmToken = null; // token eenmalig gebruiken
     await review.save();
 
-    // 4. Pas daarna redirect
-    return res.redirect("https://irisje.nl/review-confirmed.html");
+    // ✅ JOUW BESTAANDE CONFIRM-PAGINA
+    return res.redirect("https://irisje.nl/review-confirm.html");
   } catch (err) {
     console.error("[reviews] confirm error:", err);
     return res.redirect("https://irisje.nl/review-failed.html");
