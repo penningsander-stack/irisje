@@ -1,9 +1,10 @@
 // frontend/js/request.js
-// v20260102-REQUEST-WIZARD-13H
+// v20260102-REQUEST-WIZARD-CLEAN
 //
-// FIX: submit-knop correct tonen op laatste stap
-// - btnSubmit zichtbaar bij step === totalSteps
-// - btnNext verborgen bij step === totalSteps
+// ✔ Eén wizard
+// ✔ Publieke endpoint: /api/publicRequests
+// ✔ Geen token nodig
+// ✔ Submit-knop alleen op laatste stap
 
 (function () {
   "use strict";
@@ -11,7 +12,9 @@
   const API_BASE = "https://irisje-backend.onrender.com";
 
   document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("requestWizard") || document.getElementById("requestForm");
+    const form =
+      document.getElementById("requestWizard") ||
+      document.getElementById("requestForm");
     const steps = Array.from(document.querySelectorAll(".wizard-step"));
     if (!form || !steps.length) return;
 
@@ -31,7 +34,7 @@
 
     const byId = (id) => document.getElementById(id);
     const exists = (id) => !!byId(id);
-    const trimValue = (id) => (byId(id)?.value || "").trim();
+    const val = (id) => (byId(id)?.value || "").trim();
 
     function setError(msg) {
       if (!errorBox) return;
@@ -44,19 +47,14 @@
     }
 
     function needsContext() {
-      const s = trimValue("specialty");
+      const s = val("specialty");
       return s === "arbeidsrecht" || s === "ontslag-vso";
     }
 
     function updateHeader() {
-      if (stepLabel) stepLabel.textContent = `Stap ${currentStep} van ${totalSteps}`;
+      if (stepLabel)
+        stepLabel.textContent = `Stap ${currentStep} van ${totalSteps}`;
       if (!stepTitle) return;
-
-      if (!exists("specialty")) {
-        const legacy = { 1: "Wat heb je nodig?", 2: "Waar is de klus?", 3: "Contactgegevens" };
-        stepTitle.textContent = legacy[currentStep] || "";
-        return;
-      }
 
       const titles = {
         1: "Categorie",
@@ -71,155 +69,96 @@
     function updateButtons() {
       const isLast = currentStep === totalSteps;
 
-      if (btnPrev) btnPrev.disabled = currentStep <= 1 || isSubmitting;
-
-      if (btnNext) {
+      btnPrev && (btnPrev.disabled = currentStep <= 1 || isSubmitting);
+      btnNext &&
         btnNext.classList.toggle("hidden", isLast);
-        btnNext.disabled = isSubmitting;
-      }
-
-      if (btnSubmit) {
+      btnSubmit &&
         btnSubmit.classList.toggle("hidden", !isLast);
-        btnSubmit.disabled = isSubmitting;
-      }
+
+      btnNext && (btnNext.disabled = isSubmitting);
+      btnSubmit && (btnSubmit.disabled = isSubmitting);
     }
 
-    function showStep(stepNumber) {
-      const next = Math.min(Math.max(stepNumber, 1), totalSteps);
-
+    function showStep(n) {
+      const next = Math.min(Math.max(n, 1), totalSteps);
       steps.forEach((el) => {
-        const n = Number(el.dataset.step || "0");
-        el.classList.toggle("hidden", n !== next);
+        el.classList.toggle(
+          "hidden",
+          Number(el.dataset.step) !== next
+        );
       });
-
       currentStep = next;
       setError("");
       updateHeader();
       updateButtons();
 
-      if (exists("specialty") && currentStep === 3 && exists("context") && !needsContext()) {
+      if (exists("context") && currentStep === 3 && !needsContext()) {
         byId("context").value = "";
         showStep(4);
       }
     }
 
     function validateStep(step) {
-      if (!exists("specialty")) {
-        if (step === 1) {
-          if (!trimValue("category")) return setError("Categorie verplicht."), false;
-          if (!trimValue("description")) return setError("Omschrijf je aanvraag."), false;
-        }
-        if (step === 2) {
-          if (!trimValue("postcode")) return setError("Postcode verplicht."), false;
-          if (!trimValue("city")) return setError("Plaats verplicht."), false;
-        }
-        if (step === 3) {
-          if (!trimValue("name")) return setError("Naam verplicht."), false;
-          if (!trimValue("email")) return setError("E-mailadres verplicht."), false;
-        }
-        return true;
-      }
+      if (step === 2 && !val("specialty"))
+        return setError("Kies een specialisme."), false;
 
-      if (step === 2 && !trimValue("specialty")) return setError("Kies een specialisme."), false;
-      if (step === 3 && needsContext() && !trimValue("context"))
+      if (step === 3 && needsContext() && !val("context"))
         return setError("Kies werknemer of werkgever."), false;
-      if (step === 4 && !(trimValue("message") || trimValue("description")))
+
+      if (step === 4 && !val("message"))
         return setError("Licht je aanvraag toe."), false;
+
       if (step === 5) {
-        if (!trimValue("name")) return setError("Naam verplicht."), false;
-        if (!trimValue("email")) return setError("E-mailadres verplicht."), false;
+        if (!val("name")) return setError("Naam verplicht."), false;
+        if (!val("email")) return setError("E-mailadres verplicht."), false;
       }
       return true;
     }
 
-    function buildFormData() {
-      const fd = new FormData();
-      fd.append("category", trimValue("category") || "advocaat");
-      if (exists("specialty")) fd.append("specialty", trimValue("specialty"));
-      if (exists("context")) fd.append("context", trimValue("context"));
-      fd.append("message", trimValue("message") || trimValue("description"));
-      fd.append("name", trimValue("name"));
-      fd.append("email", trimValue("email"));
-      return fd;
+    function buildPayload() {
+      return {
+        category: val("category") || "advocaat",
+        specialty: val("specialty"),
+        context: val("context"),
+        message: val("message"),
+        name: val("name"),
+        email: val("email"),
+      };
     }
 
     async function submitWizard(e) {
       e.preventDefault();
       if (isSubmitting) return;
 
-      for (let s = 1; s <= totalSteps; s++) {
-        if (!validateStep(s)) {
-          showStep(s);
+      for (let i = 1; i <= totalSteps; i++) {
+        if (!validateStep(i)) {
+          showStep(i);
           return;
         }
       }
 
       isSubmitting = true;
       updateButtons();
-      setStatus("Bezig met versturen...");
+      setStatus("Bezig met versturen…");
 
       try {
-        const res = await fetch(`${API_BASE}/api/requests`, {
+        const res = await fetch(`${API_BASE}/api/publicRequests`, {
           method: "POST",
-          body: buildFormData(),// frontend/js/request.js
-// v20260102-REQUEST-WIZARD-PUBLIC
-//
-// Publieke aanvraag-wizard
-// Stuurt aanvragen naar /api/publicRequests (GEEN token)
-
-const API_BASE = "https://irisje-backend.onrender.com/api";
-
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("requestForm");
-  if (!form) return;
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    // Verzamel wizard-data (pas aan indien jouw IDs anders heten)
-    const data = {
-      category: document.querySelector("[name='category']")?.value || "",
-      specialty: document.querySelector("[name='specialty']")?.value || "",
-      context: document.querySelector("[name='context']")?.value || "", // bv. werknemer/werkgever
-      name: document.querySelector("[name='name']")?.value || "",
-      email: document.querySelector("[name='email']")?.value || "",
-      phone: document.querySelector("[name='phone']")?.value || "",
-      message: document.querySelector("[name='message']")?.value || "",
-    };
-
-    try {
-      const res = await fetch(`${API_BASE}/publicRequests`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok || !json.ok) {
-        throw new Error(json?.error || "Aanvraag mislukt.");
-      }
-
-      // Succes → door naar selectiepagina
-      window.location.href = "select-companies.html";
-    } catch (err) {
-      console.error("[request] submit error:", err);
-      alert(err.message || "Er ging iets mis bij het verzenden.");
-    }
-  });
-});
-
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildPayload()),
         });
-        const data = await res.json();
-        if (!res.ok || !data?.ok) throw new Error(data?.message || "Fout");
 
-        const id = data.requestId || data.id || data._id;
-        window.location.href = `select-companies.html?requestId=${encodeURIComponent(id)}`;
+        const data = await res.json();
+        if (!res.ok || !data?.ok)
+          throw new Error(data?.error || "Aanvraag mislukt.");
+
+        const id = data.requestId || data._id;
+        window.location.href =
+          "select-companies.html?requestId=" +
+          encodeURIComponent(id);
       } catch (err) {
         setStatus("");
-        setError("Kan aanvraag niet versturen.");
+        setError(err.message || "Kan aanvraag niet versturen.");
       } finally {
         isSubmitting = false;
         updateButtons();
@@ -227,8 +166,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     btnPrev?.addEventListener("click", () => showStep(currentStep - 1));
-    btnNext?.addEventListener("click", () => validateStep(currentStep) && showStep(currentStep + 1));
-    byId("specialty")?.addEventListener("change", () => !needsContext() && exists("context") && (byId("context").value = ""));
+    btnNext?.addEventListener("click", () =>
+      validateStep(currentStep) && showStep(currentStep + 1)
+    );
     form.addEventListener("submit", submitWizard);
 
     showStep(1);
