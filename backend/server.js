@@ -1,11 +1,5 @@
 // backend/server.js
-// v20260101-CORS-FIX
-//
-// Doel:
-// - Frontend https://irisje.nl mag POST/GET/PATCH doen naar backend
-// - CORS expliciet en correct
-// - Geen impliciete defaults
-// - Werkt met aparte frontend/backend origins
+// v20260102-STATIC-FRONTEND-FIX
 
 require("dotenv").config();
 const express = require("express");
@@ -21,7 +15,6 @@ const app = express();
 const ALLOWED_ORIGINS = [
   "https://irisje.nl",
   "https://www.irisje.nl",
-  // lokaal / test (optioneel, laat staan of verwijder)
   "http://localhost:3000",
   "http://localhost:5173",
 ];
@@ -29,13 +22,10 @@ const ALLOWED_ORIGINS = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow server-to-server & tools (no origin)
       if (!origin) return callback(null, true);
-
       if (ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
-
       return callback(new Error("CORS blocked: " + origin));
     },
     methods: ["GET", "POST", "PATCH", "OPTIONS"],
@@ -45,7 +35,6 @@ app.use(
   })
 );
 
-// Preflight expliciet afhandelen
 app.options("*", cors());
 
 // --------------------
@@ -66,18 +55,24 @@ mongoose
   });
 
 // --------------------
-// Routes
+// STATIC FILES (BELANGRIJK)
+// --------------------
+
+// Frontend (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, "../frontend")));
+
+// Eventuele backend-public map (optioneel)
+app.use(express.static(path.join(__dirname, "public")));
+
+// --------------------
+// Routes (API)
 // --------------------
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/admin", require("./routes/admin"));
-
-// Publieke aanvragen (wizard)
 app.use("/api/publicRequests", require("./routes/publicRequests"));
-
-// voeg andere routes hier toe indien aanwezig
 
 // --------------------
 // Healthcheck
@@ -85,11 +80,6 @@ app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
-
-// --------------------
-// Static (optioneel)
-// --------------------
-app.use(express.static(path.join(__dirname, "public")));
 
 // --------------------
 // Error handler
