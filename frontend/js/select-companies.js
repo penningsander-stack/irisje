@@ -1,157 +1,70 @@
 // frontend/js/select-companies.js
-// v20251212 - publicRequests + send-requests + thank-you flow
+// v20260102-step14d
+// Selectiepagina bedrijven – matching op category + specialty (GEEN locatie)
 
-(async function () {
-  const API = "https://irisje-backend.onrender.com";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  function $(id) {
-    return document.getElementById(id);
+document.addEventListener("DOMContentLoaded", initSelectCompanies);
+
+async function initSelectCompanies() {
+  const params = new URLSearchParams(window.location.search);
+
+  const category = params.get("category") || "";
+  const specialty = params.get("specialty") || "";
+
+  const errorEl = document.getElementById("selectError");
+  const listEl = document.getElementById("companyList");
+
+  errorEl.textContent = "";
+  listEl.innerHTML = "";
+
+  // ✅ ENIGE vereiste: category
+  if (!category) {
+    errorEl.textContent = "Categorie ontbreekt.";
+    return;
   }
 
-  const companiesContainer = $("companiesContainer");
-  const statusBox = $("statusBox");
-  const sendBtn = $("sendRequestsBtn");
+  try {
+    const query = new URLSearchParams();
+    query.set("category", category);
+    if (specialty) query.set("specialty", specialty);
 
-  function setStatus(msg) {
-    if (statusBox) statusBox.textContent = msg || "";
-  }
+    const res = await fetch(`${API_BASE}/companies/search?${query.toString()}`);
+    const data = await res.json();
 
-  function getParam(key) {
-    const url = new URL(window.location.href);
-    return url.searchParams.get(key);
-  }
-
-  async function fetchJSON(url) {
-    try {
-      const res = await fetch(url);
-      return await res.json();
-    } catch {
-      return null;
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "Zoeken mislukt");
     }
-  }
 
-  // 1. Aanvraag ophalen
-  const requestId = getParam("requestId");
-  if (!requestId) {
-    setStatus("Geen aanvraag-ID gevonden.");
-    return;
-  }
-
-  setStatus("Aanvraag laden...");
-
-  const reqData = await fetchJSON(`${API}/api/publicRequests/${requestId}`);
-  if (!reqData || !reqData.ok) {
-    setStatus("Aanvraag niet gevonden.");
-    return;
-  }
-
-  const request = reqData.request;
-  const category = request.category || "";
-  const city = request.city || "";
-
-  if (!category || !city) {
-    setStatus("Onvoldoende gegevens om bedrijven te zoeken.");
-    return;
-  }
-
-  setStatus("Bedrijven zoeken...");
-
-  // 2. Bedrijven zoeken op basis van categorie + plaats
-  const searchUrl = `${API}/api/companies/search?category=${encodeURIComponent(
-    category
-  )}&city=${encodeURIComponent(city)}`;
-
-  const companiesData = await fetchJSON(searchUrl);
-
-  if (!companiesData || !companiesData.ok || !Array.isArray(companiesData.results)) {
-    setStatus("Kon geen bedrijven vinden.");
-    return;
-  }
-
-  const companies = companiesData.results;
-
-  if (!companies.length) {
-    setStatus("Geen bedrijven gevonden voor deze aanvraag.");
-    return;
-  }
-
-  setStatus("");
-
-  // 3. Lijst renderen
-  if (!companiesContainer) {
-    console.warn("Geen #companiesContainer gevonden in HTML.");
-    return;
-  }
-
-  companiesContainer.innerHTML = "";
-
-  companies.forEach((c) => {
-    const item = document.createElement("div");
-    item.className =
-      "company-item p-4 border rounded mb-3 flex justify-between items-center gap-4 bg-white shadow-sm";
-
-    const cityLabel = c.city ? `<span class=\"text-sm text-gray-500\">${c.city}</span>` : "";
-
-    item.innerHTML = `
-      <div>
-        <div class=\"font-semibold text-gray-900\">${c.name}</div>
-        ${cityLabel}
-      </div>
-      <div>
-        <input type=\"checkbox\" class=\"company-select h-5 w-5\" value=\"${c._id}\">
-      </div>
-    `;
-
-    companiesContainer.appendChild(item);
-  });
-
-  if (!sendBtn) {
-    console.warn("Geen #sendRequestsBtn gevonden in HTML.");
-    return;
-  }
-
-  // 4. Aanvragen versturen
-  sendBtn.addEventListener("click", async () => {
-    const selected = Array.from(
-      document.querySelectorAll(".company-select:checked")
-    ).map((el) => el.value);
-
-    if (!selected.length) {
-      setStatus("Selecteer minstens één bedrijf.");
+    if (!data.items || data.items.length === 0) {
+      errorEl.textContent = "Geen bedrijven gevonden voor deze aanvraag.";
       return;
     }
 
-    setStatus("Aanvraag versturen...");
+    renderCompanies(data.items);
+  } catch (err) {
+    console.error("❌ Fout bij laden bedrijven:", err);
+    errorEl.textContent = "Fout bij laden van bedrijven.";
+  }
+}
 
-    try {
-      const res = await fetch(`${API}/api/companies/send-requests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requestId,
-          companyIds: selected,
-        }),
-      });
+function renderCompanies(companies) {
+  const listEl = document.getElementById("companyList");
 
-      const data = await res.json().catch(() => null);
+  companies.forEach(company => {
+    const card = document.createElement("div");
+    card.className = "company-card";
 
-      if (!res.ok || !data || !data.ok) {
-        setStatus("Kon aanvragen niet versturen.");
-        return;
-      }
+    card.innerHTML = `
+      <label class="company-select">
+        <input type="checkbox" name="company" value="${company._id}">
+        <div class="company-info">
+          <strong>${company.name}</strong><br>
+          <span>${company.city || ""}</span>
+        </div>
+      </label>
+    `;
 
-      // Bewaar data voor de bedankt-pagina
-      try {
-        sessionStorage.setItem("irisje_thankyou", JSON.stringify(data));
-      } catch (e) {
-        console.warn("Kon irisje_thankyou niet in sessionStorage opslaan:", e);
-      }
-
-      // Doorsturen naar bedankt-pagina
-      window.location.href = "/thank-you.html";
-    } catch (err) {
-      console.error("Fout bij versturen aanvragen:", err);
-      setStatus("Er ging iets mis bij het versturen van de aanvragen.");
-    }
+    listEl.appendChild(card);
   });
-})();
+}
