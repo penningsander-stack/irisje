@@ -1,5 +1,9 @@
 // backend/server.js
-// v20260102-STATIC-FRONTEND-FIX
+// v20260102-STATIC-ROOT-FIX
+//
+// FIX:
+// - Static files serveren vanaf project root
+// - CSS /css/style.css werkt gegarandeerd op Render
 
 require("dotenv").config();
 const express = require("express");
@@ -10,7 +14,7 @@ const path = require("path");
 const app = express();
 
 // --------------------
-// CORS (KRITISCH)
+// CORS
 // --------------------
 const ALLOWED_ORIGINS = [
   "https://irisje.nl",
@@ -21,17 +25,14 @@ const ALLOWED_ORIGINS = [
 
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin(origin, callback) {
       if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
+      if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
       return callback(new Error("CORS blocked: " + origin));
     },
     methods: ["GET", "POST", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-    maxAge: 86400,
   })
 );
 
@@ -55,17 +56,17 @@ mongoose
   });
 
 // --------------------
-// STATIC FILES (BELANGRIJK)
+// STATIC FILES (CRUCIAAL)
 // --------------------
 
-// Frontend (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, "../frontend")));
+// 👉 Project root (werkt altijd op Render)
+const PROJECT_ROOT = process.cwd();
 
-// Eventuele backend-public map (optioneel)
-app.use(express.static(path.join(__dirname, "public")));
+// Serve frontend (HTML / CSS / JS)
+app.use(express.static(path.join(PROJECT_ROOT, "frontend")));
 
 // --------------------
-// Routes (API)
+// API Routes
 // --------------------
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/auth", require("./routes/auth"));
@@ -75,7 +76,7 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
 
 // --------------------
-// Healthcheck
+// Health
 // --------------------
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
@@ -85,7 +86,7 @@ app.get("/api/health", (req, res) => {
 // Error handler
 // --------------------
 app.use((err, req, res, next) => {
-  if (err && err.message && err.message.startsWith("CORS blocked")) {
+  if (err?.message?.startsWith("CORS blocked")) {
     return res.status(403).json({ ok: false, error: err.message });
   }
   console.error("Server error:", err);
