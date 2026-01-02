@@ -1,11 +1,6 @@
 // frontend/js/select-companies.js
-// v20260102-step14d-optionA
-// Selectiepagina bedrijven
-// Flow:
-// 1. Lees requestId uit URL
-// 2. Haal aanvraag op via /api/publicRequests/:id
-// 3. Zoek bedrijven op category + specialty
-// 4. Toon bedrijven (max 5 selecteerbaar volgt in stap 14e)
+// v20260102-step14d-optionA-fix
+// Defensieve versie: crasht niet als HTML-element ontbreekt
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -18,16 +13,16 @@ async function initSelectCompanies() {
   const errorEl = document.getElementById("selectError");
   const listEl = document.getElementById("companyList");
 
-  errorEl.textContent = "";
-  listEl.innerHTML = "";
+  if (errorEl) errorEl.textContent = "";
+  if (listEl) listEl.innerHTML = "";
 
   if (!requestId) {
-    errorEl.textContent = "Aanvraag-ID ontbreekt.";
+    if (errorEl) errorEl.textContent = "Aanvraag-ID ontbreekt.";
     return;
   }
 
   try {
-    // 1️⃣ Haal aanvraag op
+    // 1. aanvraag ophalen
     const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
     const reqData = await reqRes.json();
 
@@ -38,11 +33,11 @@ async function initSelectCompanies() {
     const { category, specialty } = reqData.request;
 
     if (!category) {
-      errorEl.textContent = "Categorie ontbreekt in aanvraag.";
+      if (errorEl) errorEl.textContent = "Categorie ontbreekt in aanvraag.";
       return;
     }
 
-    // 2️⃣ Zoek bedrijven op category + specialty
+    // 2. bedrijven zoeken
     const query = new URLSearchParams();
     query.set("category", category);
     if (specialty) query.set("specialty", specialty);
@@ -57,19 +52,20 @@ async function initSelectCompanies() {
     }
 
     if (!compData.items || compData.items.length === 0) {
-      errorEl.textContent = "Geen bedrijven gevonden voor deze aanvraag.";
+      if (errorEl) errorEl.textContent = "Geen bedrijven gevonden.";
       return;
     }
 
     renderCompanies(compData.items);
   } catch (err) {
-    console.error("❌ Fout in selectiepagina:", err);
-    errorEl.textContent = "Fout bij laden van bedrijven.";
+    console.error("❌ Selectiepagina fout:", err);
+    if (errorEl) errorEl.textContent = "Fout bij laden van bedrijven.";
   }
 }
 
 function renderCompanies(companies) {
   const listEl = document.getElementById("companyList");
+  if (!listEl) return;
 
   companies.forEach(company => {
     const card = document.createElement("div");
