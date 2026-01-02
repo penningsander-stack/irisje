@@ -1,83 +1,62 @@
 // backend/server.js
-// IRISJE.NL – server.js (FINAL FIX STATIC + ROUTING)
-// Doel:
-// - /style.css blijft werken vanuit frontend/
-// - geen HTML-aanpassingen nodig
-// - static files altijd vóór catch-all
-// - geen MIME-type fouten meer
+import express from "express";
+import mongoose from "mongoose";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const express = require("express");
-const path = require("path");
-const cors = require("cors");
-const mongoose = require("mongoose");
-require("dotenv").config();
+// Routes
+import publicRequestsRoutes from "./routes/publicRequests.js";
+import companiesRoutes from "./routes/companies.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-/* =====================================================
-   BASIS MIDDLEWARE
-   ===================================================== */
+/* =========================
+   Middleware
+========================= */
 app.use(cors());
 app.use(express.json());
 
-/* =====================================================
-   DATABASE
-   ===================================================== */
+/* =========================
+   Database
+========================= */
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+  .catch(err => {
+    console.error("❌ MongoDB error:", err);
     process.exit(1);
   });
 
-/* =====================================================
-   FRONTEND STATIC FILES  (⬅️ DIT IS DE CRUCIALE FIX)
-   ===================================================== */
+/* =========================
+   API Routes
+========================= */
+app.use("/api/publicRequests", publicRequestsRoutes);
+app.use("/api/companies", companiesRoutes);
 
-// frontend-map exact bepalen
-const FRONTEND_PATH = path.join(__dirname, "..", "frontend");
+/* =========================
+   FRONTEND STATIC FILES
+========================= */
+const FRONTEND_PATH = path.join(__dirname, "../frontend");
 
-// Static files ALTIJD eerst
-app.use(
-  express.static(FRONTEND_PATH, {
-    index: false,           // voorkom automatische index.html
-    fallthrough: true       // laat API-routes door als bestand niet bestaat
-  })
-);
+// Normale root ( / )
+app.use(express.static(FRONTEND_PATH));
 
-/* =====================================================
-   API ROUTES
-   ===================================================== */
+// 🔥 CRUCIAAL: /css → frontend
+app.use("/css", express.static(FRONTEND_PATH));
 
-app.use("/api/publicRequests", require("./routes/publicRequests"));
-app.use("/api/companies", require("./routes/companies"));
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/requests", require("./routes/requests"));
-app.use("/api/reviews", require("./routes/reviews"));
-app.use("/api/admin", require("./routes/admin"));
-app.use("/api/email", require("./routes/email"));
-app.use("/api/payments", require("./routes/payments"));
-
-/* =====================================================
-   SPA FALLBACK (MOET HELEMAAL ONDERAAN)
-   ===================================================== */
-
-// Alleen als het GEEN API-call is en GEEN bestaand bestand
+// fallback voor html
 app.get("*", (req, res) => {
-  // veiligheid: API nooit vangen
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ error: "API endpoint not found" });
-  }
-
   res.sendFile(path.join(FRONTEND_PATH, "index.html"));
 });
 
-/* =====================================================
-   SERVER START
-   ===================================================== */
-
+/* =========================
+   Server start
+========================= */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Irisje backend draait op poort ${PORT}`);
+  console.log(`🚀 Server draait op poort ${PORT}`);
 });
