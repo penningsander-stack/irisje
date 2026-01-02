@@ -10,7 +10,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 
-const Request = require("../models/Request");
+const Request = require("../models/request");
 
 const upload = multer({ limits: { files: 3 } });
 
