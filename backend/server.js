@@ -1,8 +1,6 @@
 // backend/server.js
-// v20260102-FIX-STATIC-CSS-ALIAS-CJS
-// - Herstelt CommonJS (require) zodat Render/Node CJS niet crasht
-// - Serve frontend statics (incl. correcte CSS content-type)
-// - Alias: /css/style.css -> /style.css (zodat je GEEN HTML hoeft aan te passen)
+// v20260102-FINAL-FRONTEND-STATIC-FIX
+// Serve frontend EXACT zoals hij is: frontend/style.css -> /style.css
 
 require("dotenv").config();
 
@@ -10,44 +8,28 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
-// ---- App
 const app = express();
 
-// ---- Basic middleware
-app.use(express.json({ limit: "2mb" }));
+/* =====================
+   Middleware
+===================== */
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
-// ---- CORS (laat je bestaande origin(s) toe)
-const allowedOrigins = [
-  "https://irisje.nl",
-  "https://www.irisje.nl",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-];
-app.use(
-  cors({
-    origin: function (origin, cb) {
-      // allow no-origin (curl/postman)
-      if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(null, true); // soepel houden zoals je eerder deed
-    },
-    credentials: true,
-  })
-);
-
-// ---- DB connect (als je dit al hebt: laat het zo, maar dit is safe)
+/* =====================
+   Database
+===================== */
 try {
-  // Als je db helper hebt:
-  // const connectDB = require("./config/db");
-  // connectDB();
   const connectDB = require("./config/db");
   if (typeof connectDB === "function") connectDB();
 } catch (e) {
-  console.warn("[server] DB connect skipped/failed:", e.message);
+  console.warn("DB connect skipped:", e.message);
 }
 
-// ---- API routes (zoals je projectstructuur aangeeft)
+/* =====================
+   API routes
+===================== */
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
@@ -58,69 +40,29 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/seed", require("./routes/seed"));
 
-// ---- Health
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
-});
-
-// =====================================================
-// FRONTEND STATIC (irisje.nl)
-// =====================================================
-
-// In jouw repo staat frontend als sibling van backend: /frontend
+/* =====================
+   FRONTEND (DIT IS DE KEY)
+===================== */
 const FRONTEND_DIR = path.join(__dirname, "../frontend");
 
-// 1) Static serve frontend root (zodat /style.css werkt)
-app.use(
-  express.static(FRONTEND_DIR, {
-    setHeaders: (res, filePath) => {
-      // Force correcte mime types (met name CSS)
-      if (filePath.endsWith(".css")) {
-        res.setHeader("Content-Type", "text/css; charset=utf-8");
-      }
-      if (filePath.endsWith(".js")) {
-        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-      }
-    },
-  })
-);
+/**
+ * 👉 DIT is de ENIGE static serve die je nodig hebt
+ * frontend/style.css  -> https://irisje.nl/style.css
+ * frontend/select-companies.html -> https://irisje.nl/select-companies.html
+ */
+app.use(express.static(FRONTEND_DIR));
 
-// 2) Alias: /css/style.css -> frontend/style.css
-//    (Dit fixt je “Refused to apply style ... /css/style.css” zonder HTML aanpassen)
-app.get("/css/style.css", (req, res) => {
-  const cssFile = path.join(FRONTEND_DIR, "style.css");
-  res.type("text/css");
-  res.sendFile(cssFile, (err) => {
-    if (err) {
-      res.status(404).send("Not Found");
-    }
-  });
-});
-
-// 3) Als je wél een /frontend/css map hebt, serve die ook (optioneel, safe)
-app.use(
-  "/css",
-  express.static(path.join(FRONTEND_DIR, "css"), {
-    setHeaders: (res, filePath) => {
-      if (filePath.endsWith(".css")) {
-        res.setHeader("Content-Type", "text/css; charset=utf-8");
-      }
-    },
-  })
-);
-
-// 4) SPA fallback (alleen voor niet-API routes)
+/* =====================
+   SPA fallback (geen API)
+===================== */
 app.get(/^\/(?!api\/).*/, (req, res) => {
   res.sendFile(path.join(FRONTEND_DIR, "index.html"));
 });
 
-// ---- API 404 (na routes)
-app.use("/api", (req, res) => {
-  res.status(404).json({ ok: false, error: "Not Found" });
-});
-
-// ---- Start
+/* =====================
+   Start
+===================== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`[server] listening on ${PORT}`);
+  console.log(`Server draait op poort ${PORT}`);
 });
