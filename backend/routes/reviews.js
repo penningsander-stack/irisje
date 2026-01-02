@@ -1,5 +1,8 @@
 // backend/routes/reviews.js
-// v20260101-REVIEWS-OPTION-B-PUBLICATION-FILTER
+// v20260102-REVIEWS-CONFIRM-FIX
+//
+// Reviews API – Optie B (status + confirmToken)
+// Confirm-route deterministisch gemaakt (stap 7g.6)
 
 const express = require("express");
 const crypto = require("crypto");
@@ -7,8 +10,6 @@ const router = express.Router();
 
 const Review = require("../models/review");
 const Company = require("../models/company");
-
-// Mailer (optioneel)
 const mailer = require("../utils/mailer");
 
 // ------------------------
@@ -33,7 +34,6 @@ router.post("/", async (req, res) => {
       message, // legacy
     } = req.body || {};
 
-    // Basisvalidatie
     if (!rating || !reviewerName || !reviewerEmail || (!comment && !message)) {
       return res.status(400).json({
         ok: false,
@@ -41,7 +41,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Resolve companyId
     let resolvedCompanyId = companyId || null;
 
     if (!resolvedCompanyId && companySlug) {
@@ -62,7 +61,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Canonieke mapping
     const mappedComment = comment || message;
     const token = generateToken();
 
@@ -78,29 +76,25 @@ router.post("/", async (req, res) => {
 
     await review.save();
 
-    // Bevestigingsmail (mag falen)
     try {
-      if (mailer && typeof mailer.sendMail === "function") {
-        const confirmUrl = `https://irisje.nl/review-confirm.html?token=${token}`;
-
-        await mailer.sendMail({
-          to: reviewerEmail,
-          subject: "Bevestig je review op Irisje.nl",
-          html: `
-            <p>Hoi ${reviewerName},</p>
-            <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
-            <p>
-              <a href="${confirmUrl}"
-                 style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
-                Review bevestigen
-              </a>
-            </p>
-            <p>Werkt de knop niet? Kopieer deze link:</p>
-            <p>${confirmUrl}</p>
-            <p>Groet,<br>Irisje.nl</p>
-          `,
-        });
-      }
+      const confirmUrl = `https://irisje.nl/review-confirm.html?token=${token}`;
+      await mailer.sendMail({
+        to: reviewerEmail,
+        subject: "Bevestig je review op Irisje.nl",
+        html: `
+          <p>Hoi ${reviewerName},</p>
+          <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
+          <p>
+            <a href="${confirmUrl}"
+               style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
+              Review bevestigen
+            </a>
+          </p>
+          <p>Werkt de knop niet? Kopieer deze link:</p>
+          <p>${confirmUrl}</p>
+          <p>Groet,<br>Irisje.nl</p>
+        `,
+      });
     } catch (mailErr) {
       console.error("[reviews] confirm mail failed:", mailErr.message);
     }
@@ -121,21 +115,24 @@ router.post("/", async (req, res) => {
 router.get("/confirm/:token", async (req, res) => {
   try {
     const { token } = req.params;
-
     if (!token) {
       return res.redirect("https://irisje.nl/review-failed.html");
     }
 
+    // 1. Review zoeken
     const review = await Review.findOne({ confirmToken: token });
-
     if (!review) {
       return res.redirect("https://irisje.nl/review-failed.html");
     }
 
+    // 2. Status aanpassen
     review.status = "approved";
     review.confirmToken = null;
+
+    // 3. ALTIJD eerst opslaan
     await review.save();
 
+    // 4. Pas daarna redirect
     return res.redirect("https://irisje.nl/review-confirmed.html");
   } catch (err) {
     console.error("[reviews] confirm error:", err);
@@ -145,7 +142,6 @@ router.get("/confirm/:token", async (req, res) => {
 
 // ------------------------
 // GET /api/reviews/company/:companyId
-// Publiek: alleen approved
 // ------------------------
 router.get("/company/:companyId", async (req, res) => {
   try {
@@ -158,7 +154,10 @@ router.get("/company/:companyId", async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    return res.json({ ok: true, reviews });
+    return res.json({
+      ok: true,
+      reviews,
+    });
   } catch (err) {
     console.error("[reviews] company load error:", err);
     return res.status(500).json({
