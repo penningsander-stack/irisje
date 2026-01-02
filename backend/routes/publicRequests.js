@@ -1,11 +1,13 @@
 // backend/routes/publicRequests.js
-// v20260102-step14d
+// v20260102-step14d-FIX
 // Publieke aanvragen + matching op category + specialty (GEEN locatie)
 
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/Company");
-const Request = require("../models/Request");
+
+// 🔴 BELANGRIJK: exact match met bestandsnaam (Linux case-sensitive)
+const Company = require("../models/Company.js");
+const Request = require("../models/Request.js");
 
 // POST /api/publicRequests
 router.post("/", async (req, res) => {
@@ -28,7 +30,7 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // ✅ Aanvraag opslaan
+    // Aanvraag opslaan
     const request = await Request.create({
       name,
       email,
@@ -42,7 +44,7 @@ router.post("/", async (req, res) => {
       source: "public",
     });
 
-    // ✅ MATCHING – GEEN locatie
+    // Matching: ALLEEN category + specialty
     const companyQuery = {
       category,
       active: true,
@@ -63,7 +65,7 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Fout bij public request:", err);
-    res.status(500).json({
+    return res.status(500).json({
       ok: false,
       error: "Serverfout bij verwerken aanvraag",
     });
