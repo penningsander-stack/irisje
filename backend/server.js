@@ -1,9 +1,10 @@
 // backend/server.js
-// v20260102-STATIC-ROOT-FIX
+// v20260102-STATIC-FRONTEND-ABSOLUTE-FIX
 //
-// FIX:
-// - Static files serveren vanaf project root
-// - CSS /css/style.css werkt gegarandeerd op Render
+// Fix:
+// - Frontend statisch serveren met absoluut pad
+// - Werkt op Render waar service vanuit /backend draait
+// - /style.css wordt correct geserveerd
 
 require("dotenv").config();
 const express = require("express");
@@ -56,14 +57,12 @@ mongoose
   });
 
 // --------------------
-// STATIC FILES (CRUCIAAL)
+// STATIC FILES (DE JUISTE FIX)
 // --------------------
 
-// 👉 Project root (werkt altijd op Render)
-const PROJECT_ROOT = process.cwd();
-
-// Serve frontend (HTML / CSS / JS)
-app.use(express.static(path.join(PROJECT_ROOT, "frontend")));
+// backend → ../frontend (absoluut & betrouwbaar)
+const FRONTEND_PATH = path.join(__dirname, "..", "frontend");
+app.use(express.static(FRONTEND_PATH));
 
 // --------------------
 // API Routes
