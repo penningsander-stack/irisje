@@ -1,137 +1,129 @@
-<!-- frontend/request.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <title>Aanvraag plaatsen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aanvraag versturen – Irisje.nl</title>
 
-  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/style.css?v=20260102">
 </head>
 
 <body class="irisje-body">
 
-  <!-- Header -->
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
-                     text-indigo-700 text-sm font-bold shadow-brand">I</span>
-        <div class="flex flex-col leading-tight">
-          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500">Vind de juiste specialist</span>
-        </div>
-      </a>
+<header class="irisje-header">
+  <div class="max-w-6xl mx-auto px-4 py-4">
+    <a href="/" class="text-indigo-700 font-bold text-lg">Irisje.nl</a>
+  </div>
+</header>
+
+<main class="max-w-3xl mx-auto px-4 py-10">
+  <div class="bg-white rounded-2xl shadow-brand p-6 md:p-8">
+
+    <div class="mb-6">
+      <div id="stepLabel" class="text-sm text-slate-500 mb-1">Stap 1 van 5</div>
+      <h1 id="stepTitle" class="text-xl font-semibold text-slate-900">
+        Categorie
+      </h1>
     </div>
-  </header>
 
-  <!-- Main -->
-  <main class="flex-1">
-    <section class="section-shell">
-      <div class="max-w-3xl mx-auto px-4">
+    <div id="wizardError" class="hidden mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm"></div>
+    <div id="wizardStatus" class="mb-4 text-sm text-slate-600"></div>
 
-        <!-- Hoofdkaart -->
-        <div class="surface-card p-6 md:p-8 shadow-soft rounded-2xl">
+    <form id="requestWizard">
 
-          <!-- Titel + intro -->
-          <header class="mb-6">
-            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900">
-              Verstuur je aanvraag
-            </h1>
-            <p class="mt-2 text-slate-600 leading-relaxed">
-              Beschrijf je aanvraag zo duidelijk mogelijk.  
-              Je aanvraag wordt doorgestuurd naar maximaal vijf passende bedrijven.
-            </p>
-          </header>
+      <!-- Stap 1: Categorie -->
+      <section class="wizard-step" data-step="1">
+        <input type="hidden" id="category" name="category" value="advocaat">
 
-          <!-- Formulier -->
-          <form id="requestForm" class="space-y-6">
+        <div class="p-4 rounded-xl bg-indigo-50 text-indigo-900">
+          <p class="font-medium">Categorie</p>
+          <p class="mt-1">Advocaat</p>
+        </div>
+      </section>
 
-            <!-- Categorie -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">
-                Voor welk type specialist is deze aanvraag bedoeld?
-              </label>
-              <select name="category" required class="input-base">
-                <option value="">Kies een categorie…</option>
-                <option value="lawyer">Advocaat</option>
-                <option value="contractor">Aannemer</option>
-                <option value="plumber">Loodgieter</option>
-                <option value="electrician">Elektricien</option>
-                <option value="installer">Installateur</option>
-                <option value="realtor">Makelaar</option>
-                <option value="notary">Notaris</option>
-                <option value="gardener">Hovenier</option>
-                <option value="other">Anders / weet ik niet</option>
-              </select>
-            </div>
+      <!-- Stap 2: Specialisme -->
+      <section class="wizard-step hidden" data-step="2">
+        <label class="block mb-2 font-medium">Kies een specialisme</label>
+        <select id="specialty" name="specialty" class="irisje-input" required>
+          <option value="">Maak een keuze</option>
+          <option value="arbeidsrecht">Arbeidsrecht</option>
+          <option value="ontslag-vso">Ontslag / vaststellingsovereenkomst</option>
+          <option value="huurrecht">Huurrecht</option>
+          <option value="familierecht">Familierecht</option>
+          <option value="strafrecht">Strafrecht</option>
+          <option value="bestuursrecht">Bestuursrecht</option>
+        </select>
+      </section>
 
-            <!-- Korte toelichting -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">
-                Waarmee kan de specialist je helpen? <span class="text-slate-400">(optioneel)</span>
-              </label>
-              <input
-                type="text"
-                name="specialty"
-                placeholder="Bijv. ontslag, verbouwing, lekkage"
-                class="input-base"
-              />
-            </div>
+      <!-- Stap 3: Context -->
+      <section class="wizard-step hidden" data-step="3">
+        <label class="block mb-2 font-medium">
+          In welke rol doet u deze aanvraag?
+        </label>
+        <select id="context" name="context" class="irisje-input">
+          <option value="">Maak een keuze</option>
+          <option value="werknemer">Werknemer</option>
+          <option value="werkgever">Werkgever</option>
+        </select>
+      </section>
 
-            <!-- Omschrijving -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">
-                Omschrijf je aanvraag
-              </label>
-              <textarea
-                name="message"
-                rows="4"
-                required
-                class="input-base"
-              ></textarea>
-            </div>
+      <!-- Stap 4: Toelichting -->
+      <section class="wizard-step hidden" data-step="4">
+        <label class="block mb-2 font-medium">
+          Licht uw aanvraag toe
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows="5"
+          class="irisje-input"
+          placeholder="Beschrijf kort uw situatie of vraag"
+          required
+        ></textarea>
+      </section>
 
-            <!-- Naam -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">
-                Naam
-              </label>
-              <input
-                type="text"
-                name="name"
-                required
-                class="input-base"
-              />
-            </div>
+      <!-- Stap 5: Contact -->
+      <section class="wizard-step hidden" data-step="5">
+        <label class="block mb-2 font-medium">Uw naam</label>
+        <input id="name" name="name" class="irisje-input mb-4" required>
 
-            <!-- E-mail -->
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1">
-                E-mail
-              </label>
-              <input
-                type="email"
-                name="email"
-                required
-                class="input-base"
-              />
-            </div>
+        <label class="block mb-2 font-medium">E-mailadres</label>
+        <input id="email" name="email" type="email" class="irisje-input" required>
+      </section>
 
-            <!-- Submit -->
-            <div class="pt-2">
-              <button type="submit" class="btn-primary w-full">
-                Aanvraag versturen
-              </button>
-            </div>
+      <!-- Controls -->
+      <div class="mt-8 flex justify-between items-center">
+        <button
+          type="button"
+          id="btnPrev"
+          class="irisje-btn-secondary"
+        >
+          Vorige
+        </button>
 
-          </form>
+        <div class="flex gap-3">
+          <button
+            type="button"
+            id="btnNext"
+            class="irisje-btn"
+          >
+            Volgende
+          </button>
 
+          <button
+            type="submit"
+            id="btnSubmit"
+            class="irisje-btn hidden"
+          >
+            Aanvraag versturen
+          </button>
         </div>
       </div>
-    </section>
-  </main>
 
-  <script src="/js/request.js"></script>
+    </form>
+  </div>
+</main>
+
+<script src="/js/request.js?v=20260102"></script>
 </body>
 </html>
