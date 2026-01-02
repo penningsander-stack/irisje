@@ -159,7 +159,7 @@
       setStatus("Bezig met versturen...");
 
       try {
-        const res = await fetch(`${API_BASE}/api/publicRequests`, {
+        const res = await fetch(`${API_BASE}/api/requests`, {
           method: "POST",
           body: buildFormData(),
         });
