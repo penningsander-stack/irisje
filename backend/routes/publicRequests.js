@@ -1,13 +1,14 @@
 // backend/routes/publicRequests.js
-// v20260102-step14d-FIX
-// Publieke aanvragen + matching op category + specialty (GEEN locatie)
+// v20260102-step14d-FINAL
+// Publieke aanvragen + matching op category + specialty
+// GEEN city / postcode / geo
+// LET OP: models zijn lowercase (Linux case-sensitive)
 
 const express = require("express");
 const router = express.Router();
 
-// 🔴 BELANGRIJK: exact match met bestandsnaam (Linux case-sensitive)
-const Company = require("../models/Company.js");
-const Request = require("../models/Request.js");
+const Company = require("../models/company.js");
+const Request = require("../models/request.js");
 
 // POST /api/publicRequests
 router.post("/", async (req, res) => {
@@ -44,7 +45,7 @@ router.post("/", async (req, res) => {
       source: "public",
     });
 
-    // Matching: ALLEEN category + specialty
+    // Matching: alleen category + specialty
     const companyQuery = {
       category,
       active: true,
