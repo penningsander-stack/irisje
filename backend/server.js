@@ -73,6 +73,10 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/admin", require("./routes/admin"));
+
+// Publieke aanvragen (wizard)
+app.use("/api/publicRequests", require("./routes/publicRequests"));
+
 // voeg andere routes hier toe indien aanwezig
 
 // --------------------
