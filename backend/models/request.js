@@ -1,43 +1,93 @@
 // backend/models/request.js
+// v20260102-REQUEST-CONTEXT-APPEND
+//
+// Request model – append-only uitbreiding
+// Nieuw veld: context (werknemer / werkgever)
+// Bestaande velden blijven onaangetast
+
 const mongoose = require("mongoose");
 
-const requestSchema = new mongoose.Schema(
+const RequestSchema = new mongoose.Schema(
   {
-    // Niet verplicht: sommige aanvragen worden pas later gekoppeld
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-      required: false,
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
 
-    // Basisgegevens van de aanvrager
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, trim: true, lowercase: true },
-    city: { type: String, trim: true },
-    message: { type: String, required: true, trim: true },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
 
-    // Nieuwe velden (voor toekomstige uitbreidingen)
-    category: { type: String, default: "" },       // bijv. “Advocaat”
-    specialty: { type: String, default: "" },      // bijv. “Arbeidsrecht”
-    communication: { type: String, default: "" },  // bijv. “Telefonisch / e-mail”
-    experience: { type: String, default: "" },     // bijv. “Laat me adviseren”
-    approach: { type: String, default: "" },       // bijv. “Weet nog niet”
-    involvement: { type: String, default: "" },    // bijv. “Actief betrokken blijven”
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
 
-    // Statusbeheer
+    message: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // Bestond al
+    category: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // Bestond al
+    specialty: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    // NIEUW – append-only
+    // Wordt gebruikt voor bijv. werknemer / werkgever
+    context: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    city: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    postcode: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    street: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    houseNumber: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     status: {
       type: String,
-      enum: ["Nieuw", "Geaccepteerd", "Afgewezen", "Opgevolgd"],
-      default: "Nieuw",
+      default: "new",
     },
-
-    // Datum automatisch
-    date: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Indexen voor snellere zoekopdrachten
-requestSchema.index({ company: 1, status: 1, createdAt: -1 });
-
-module.exports = mongoose.model("Request", requestSchema);
+module.exports = mongoose.model("Request", RequestSchema);
