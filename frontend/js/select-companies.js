@@ -51,12 +51,14 @@ async function initSelectCompanies() {
       throw new Error("Zoeken naar bedrijven mislukt");
     }
 
-    if (!compData.items || compData.items.length === 0) {
+    if (!compData.results || compData.results.length === 0)
+ {
       if (errorEl) errorEl.textContent = "Geen bedrijven gevonden.";
       return;
     }
 
-    renderCompanies(compData.items);
+    renderCompanies(compData.results);
+
   } catch (err) {
     console.error("❌ Selectiepagina fout:", err);
     if (errorEl) errorEl.textContent = "Fout bij laden van bedrijven.";

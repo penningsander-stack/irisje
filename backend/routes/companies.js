@@ -65,27 +65,39 @@ router.get("/lists", async (req, res) => {
 // -----------------------------------------------------------------------------
 // ZOEKEN + FALLBACK
 // GET /api/companies/search
-// -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
   try {
-    const { category, city, q } = req.query;
+    const { category, specialty } = req.query;
 
-    const categoryRegex = category ? looseRegex(category) : null;
-    const cityRegex = city ? exactRegex(city) : null;
-
-    const baseQuery = {};
-
-    if (categoryRegex) {
-      baseQuery.categories = { $in: [categoryRegex] };
+    if (!category) {
+      return res.json({ ok: true, results: [] });
     }
 
-    if (q) {
-      baseQuery.name = looseRegex(q);
+    const query = {
+      categories: { $in: [new RegExp(category, "i")] },
+      active: true,
+    };
+
+    if (specialty) {
+      query.specialties = { $in: [new RegExp(specialty, "i")] };
     }
 
-    if (cityRegex) {
-      baseQuery.city = cityRegex;
-    }
+    const results = await Company.find(query)
+      .limit(20)
+      .select("_id name city rating premium")
+      .lean();
+
+    return res.json({
+      ok: true,
+      results,
+      fallbackUsed: false,
+      message: null,
+    });
+  } catch (err) {
+    console.error("❌ companies/search error:", err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
     // 1️⃣ Primaire zoekopdracht
     let results = await Company.find(baseQuery).lean();
