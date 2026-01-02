@@ -161,7 +161,56 @@
       try {
         const res = await fetch(`${API_BASE}/api/requests`, {
           method: "POST",
-          body: buildFormData(),
+          body: buildFormData(),// frontend/js/request.js
+// v20260102-REQUEST-WIZARD-PUBLIC
+//
+// Publieke aanvraag-wizard
+// Stuurt aanvragen naar /api/publicRequests (GEEN token)
+
+const API_BASE = "https://irisje-backend.onrender.com/api";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("requestForm");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    // Verzamel wizard-data (pas aan indien jouw IDs anders heten)
+    const data = {
+      category: document.querySelector("[name='category']")?.value || "",
+      specialty: document.querySelector("[name='specialty']")?.value || "",
+      context: document.querySelector("[name='context']")?.value || "", // bv. werknemer/werkgever
+      name: document.querySelector("[name='name']")?.value || "",
+      email: document.querySelector("[name='email']")?.value || "",
+      phone: document.querySelector("[name='phone']")?.value || "",
+      message: document.querySelector("[name='message']")?.value || "",
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/publicRequests`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.ok) {
+        throw new Error(json?.error || "Aanvraag mislukt.");
+      }
+
+      // Succes → door naar selectiepagina
+      window.location.href = "select-companies.html";
+    } catch (err) {
+      console.error("[request] submit error:", err);
+      alert(err.message || "Er ging iets mis bij het verzenden.");
+    }
+  });
+});
+
         });
         const data = await res.json();
         if (!res.ok || !data?.ok) throw new Error(data?.message || "Fout");
