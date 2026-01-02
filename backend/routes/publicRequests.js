@@ -49,6 +49,29 @@ router.post("/", upload.array("photos", 3), async (req, res) => {
       return res.status(400).json({ ok: false, message: "Naam en e-mail zijn verplicht." });
     }
 
+
+
+// GET /api/publicRequests/:id
+router.get("/:id", async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id).lean();
+    if (!request) {
+      return res.status(404).json({ ok: false, message: "Aanvraag niet gevonden." });
+    }
+
+    return res.json({ ok: true, request });
+  } catch (err) {
+    console.error("[publicRequests] GET error:", err);
+    return res.status(500).json({ ok: false, message: "Serverfout." });
+  }
+});
+
+
+
+
+
+
+
     // Alleen locatie afdwingen bij niet-juridische categorieën
     const isLegal = category === "advocaat";
 
