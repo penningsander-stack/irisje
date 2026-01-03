@@ -1,93 +1,44 @@
 // backend/models/request.js
-// v20260102-REQUEST-CONTEXT-APPEND
-//
-// Request model – append-only uitbreiding
-// Nieuw veld: context (werknemer / werkgever)
-// Bestaande velden blijven onaangetast
+// v20260103-FIX-REQUEST-MODEL
+// - herstelt syntaxis (geen placeholders)
+// - ondersteunt multi-bedrijf: companyId (child) + parentRequestId + selectedCompanyIds (parent)
 
 const mongoose = require("mongoose");
 
 const RequestSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    // Aanvrager
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, trim: true, lowercase: true },
+    city: { type: String, default: "", trim: true },
 
-    email: {
-      type: String,
-      required: true,
-      trim: true,
-      lowercase: true,
-    },
+    // Inhoud
+    message: { type: String, default: "", trim: true },
 
-    phone: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+    // Matching velden (wizard)
+    category: { type: String, required: true, trim: true },
+    specialty: { type: String, default: "", trim: true },
+    communication: { type: String, default: "", trim: true },
+    experience: { type: String, default: "", trim: true },
+    approach: { type: String, default: "", trim: true },
+    involvement: { type: String, default: "", trim: true },
 
-    message: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    // Status / herkomst
+    status: { type: String, default: "Nieuw", trim: true },
+    source: { type: String, default: "public", trim: true },
 
-    // Bestond al
-    category: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+    // Koppeling naar bedrijf (child requests)
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company", default: null },
 
-    // Bestond al
-    specialty: {
-      type: String,
-      default: "",
-      trim: true,
-    },
+    // Multi-bedrijf parent/child
+    isParent: { type: Boolean, default: false },
+    parentRequestId: { type: mongoose.Schema.Types.ObjectId, ref: "Request", default: null },
+    selectedCompanyIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Company" }],
 
-    // NIEUW – append-only
-    // Wordt gebruikt voor bijv. werknemer / werkgever
-    context: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    city: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    postcode: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    street: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    houseNumber: {
-      type: String,
-      default: "",
-      trim: true,
-    },
-
-    status: {
-      type: String,
-      default: "new",
-    },
+    // Extra
+    sentAt: { type: Date, default: null },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-module.exports = mongoose.model("Request", RequestSchema);
+module.exports = mongoose.models.Request || mongoose.model("Request", RequestSchema);
