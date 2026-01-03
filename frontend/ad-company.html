@@ -5,10 +5,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijf aanmelden – Irisje.nl</title>
-  <meta name="description" content="Voeg eenvoudig je bedrijf toe aan Irisje.nl en ontvang directe aanvragen van klanten in jouw regio." />
+  <meta name="description" content="Voeg eenvoudig je bedrijf toe aan Irisje.nl en ontvang directe aanvragen van klanten." />
   <meta name="theme-color" content="#4F46E5" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="stylesheet" href="style.css?v=20251206" />
+  <link rel="icon" href="favicon.ico" />
+  <link rel="stylesheet" href="style.css?v=20260103" />
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen">
@@ -22,7 +22,6 @@
         <span class="text-[11px] text-slate-500">Bedrijf aanmelden</span>
       </div>
     </a>
-    <a href="login.html" class="btn-ghost btn-xs">Inloggen</a>
   </div>
 </header>
 
@@ -73,7 +72,7 @@
 <script>
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-/* Centrale categorie-config */
+/* ✅ VOLLEDIGE, GOEDGEKEURDE LIJST */
 const CATEGORIES = {
   "Juridisch": [
     "Arbeidsrecht",
@@ -85,10 +84,55 @@ const CATEGORIES = {
     "Aansprakelijkheidsrecht",
     "Mediation",
     "Overheidsrecht (Awb/Woo)"
+  ],
+  "Bouw & Vastgoed": [
+    "Aannemer",
+    "Bouwkundig advies",
+    "Constructieberekeningen",
+    "Vergunningen (omgevingsvergunning)",
+    "Vastgoedrecht",
+    "Bouwgeschillen",
+    "Projectontwikkeling",
+    "Taxaties"
+  ],
+  "Financieel & Administratie": [
+    "Boekhouding",
+    "Salarisadministratie",
+    "Belastingadvies",
+    "Jaarrekening",
+    "Subsidies",
+    "Financiële planning"
+  ],
+  "IT & Digital": [
+    "Webdevelopment",
+    "Softwareontwikkeling",
+    "Hosting & beheer",
+    "Cybersecurity",
+    "Data & integraties",
+    "UX/UI design"
+  ],
+  "Marketing & Communicatie": [
+    "Online marketing",
+    "SEO/SEA",
+    "Social media",
+    "Branding",
+    "Content & copywriting",
+    "Grafisch ontwerp"
+  ],
+  "Zorg & Welzijn": [
+    "Coaching",
+    "Psychosociale hulp",
+    "Bedrijfsmaatschappelijk werk",
+    "Re-integratie",
+    "Verzuimbegeleiding"
+  ],
+  "Overig": [
+    "Advies op maat",
+    "Projectbegeleiding",
+    "Interim management"
   ]
 };
 
-/* Elementen expliciet ophalen */
 const form = document.getElementById("companyForm");
 const nameInput = document.getElementById("name");
 const categorySelect = document.getElementById("category");
@@ -97,12 +141,11 @@ const descriptionInput = document.getElementById("description");
 const specialtiesContainer = document.getElementById("specialtiesContainer");
 const messageEl = document.getElementById("message");
 
-/* Veilig lezen helper */
-function readValue(el) {
+function read(el) {
   return String(el && el.value ? el.value : "").trim();
 }
 
-/* Categorieën vullen */
+/* vul categorieën */
 Object.keys(CATEGORIES).forEach(cat => {
   const opt = document.createElement("option");
   opt.value = cat;
@@ -110,14 +153,10 @@ Object.keys(CATEGORIES).forEach(cat => {
   categorySelect.appendChild(opt);
 });
 
-/* Specialismes dynamisch */
+/* dynamische specialties */
 categorySelect.addEventListener("change", () => {
   specialtiesContainer.innerHTML = "";
   const list = CATEGORIES[categorySelect.value] || [];
-  if (!list.length) {
-    specialtiesContainer.innerHTML = "<p class='text-gray-400 text-xs'>Geen specialismes</p>";
-    return;
-  }
   list.forEach(spec => {
     const label = document.createElement("label");
     label.className = "flex items-center gap-2";
@@ -126,32 +165,25 @@ categorySelect.addEventListener("change", () => {
   });
 });
 
-/* Submit */
+/* submit */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const name = readValue(nameInput);
-  const category = readValue(categorySelect);
-  const city = readValue(locationInput);
-  const description = readValue(descriptionInput);
+  const payload = {
+    name: read(nameInput),
+    categories: [read(categorySelect)],
+    specialties: Array.from(
+      specialtiesContainer.querySelectorAll("input:checked")
+    ).map(cb => cb.value),
+    city: read(locationInput),
+    description: read(descriptionInput)
+  };
 
-  if (!name || !category || !city || !description) {
+  if (!payload.name || !payload.categories[0] || !payload.city || !payload.description) {
     messageEl.textContent = "❌ Vul alle verplichte velden in.";
     messageEl.className = "text-red-600 text-center text-sm";
     return;
   }
-
-  const specialties = Array.from(
-    specialtiesContainer.querySelectorAll("input:checked")
-  ).map(cb => cb.value);
-
-  const payload = {
-    name,
-    categories: [category],
-    specialties,
-    city,
-    description
-  };
 
   try {
     messageEl.textContent = "⏳ Bezig met toevoegen...";
