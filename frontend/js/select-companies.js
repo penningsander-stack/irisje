@@ -4,7 +4,7 @@
 // - Selecteer max 5 bedrijven
 // - Versturen via POST /api/publicRequests/:id/send
 
-const API_BASE = `${window.location.origin}/api`;
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
 let requestId = "";
 let companies = [];
