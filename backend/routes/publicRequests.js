@@ -1,7 +1,7 @@
 // backend/routes/publicRequests.js
-// v20260103-FINAL-FIX
-// Publieke aanvragen ophalen + bedrijven matchen
-// ⚠️ Linux-safe: lowercase bestandsnamen
+// v20260103-OPTION-B-FINAL
+// - correcte matching op categories/specialties
+// - echte multi-bedrijf verzending (parent + child requests)
 
 const express = require("express");
 const router = express.Router();
@@ -11,20 +11,20 @@ const Request = require("../models/request.js");
 
 /**
  * POST /api/publicRequests
- * Aanvraag aanmaken
+ * Nieuwe aanvraag (parent)
  */
 router.post("/", async (req, res) => {
   try {
     const {
       name,
       email,
-      phone,
       message,
       category,
       specialty,
       experience,
       approach,
       involvement,
+      city,
     } = req.body;
 
     if (!name || !email || !category) {
@@ -37,27 +37,22 @@ router.post("/", async (req, res) => {
     const request = await Request.create({
       name,
       email,
-      phone,
+      city,
       message,
       category,
       specialty,
       experience,
       approach,
       involvement,
+      isParent: true,
       status: "Nieuw",
       source: "public",
     });
 
-    return res.json({
-      ok: true,
-      requestId: request._id,
-    });
+    res.json({ ok: true, requestId: request._id });
   } catch (err) {
-    console.error("❌ Fout bij aanmaken aanvraag:", err);
-    return res.status(500).json({
-      ok: false,
-      error: "Serverfout bij verwerken aanvraag",
-    });
+    console.error("❌ publicRequests POST:", err);
+    res.status(500).json({ ok: false, error: "Serverfout" });
   }
 });
 
@@ -67,9 +62,7 @@ router.post("/", async (req, res) => {
  */
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const request = await Request.findById(id).lean();
+    const request = await Request.findById(req.params.id).lean();
     if (!request) {
       return res.status(404).json({
         ok: false,
@@ -78,8 +71,7 @@ router.get("/:id", async (req, res) => {
     }
 
     const query = {
-      active: true,
-      category: request.category,
+      categories: request.category,
     };
 
     if (request.specialty) {
@@ -88,30 +80,31 @@ router.get("/:id", async (req, res) => {
 
     const companies = await Company.find(query)
       .limit(20)
-      .select("_id name city rating premium category")
+      .select("_id name city avgRating categories isVerified")
       .lean();
 
-    return res.json({
-      ok: true,
-      request,
-      companies,
-    });
+    res.json({ ok: true, request, companies });
   } catch (err) {
-    console.error("❌ Fout bij ophalen aanvraag:", err);
-    return res.status(500).json({
-      ok: false,
-      error: "Serverfout bij ophalen aanvraag",
-    });
+    console.error("❌ publicRequests GET:", err);
+    res.status(500).json({ ok: false, error: "Serverfout" });
   }
 });
 
 /**
  * POST /api/publicRequests/:id/send
- * (frontend verwacht deze al)
+ * Verzenden naar geselecteerde bedrijven
  */
 router.post("/:id/send", async (req, res) => {
   try {
     const { companyIds } = req.body;
+    const parent = await Request.findById(req.params.id);
+
+    if (!parent || !parent.isParent) {
+      return res.status(404).json({
+        ok: false,
+        error: "Parent-aanvraag niet gevonden",
+      });
+    }
 
     if (!Array.isArray(companyIds) || companyIds.length === 0) {
       return res.status(400).json({
@@ -120,16 +113,41 @@ router.post("/:id/send", async (req, res) => {
       });
     }
 
-    return res.json({
+    const children = [];
+
+    for (const companyId of companyIds) {
+      children.push({
+        name: parent.name,
+        email: parent.email,
+        city: parent.city,
+        message: parent.message,
+        category: parent.category,
+        specialty: parent.specialty,
+        experience: parent.experience,
+        approach: parent.approach,
+        involvement: parent.involvement,
+        companyId,
+        parentRequestId: parent._id,
+        source: parent.source,
+        status: "Nieuw",
+        sentAt: new Date(),
+      });
+    }
+
+    await Request.insertMany(children);
+
+    parent.selectedCompanyIds = companyIds;
+    parent.sentAt = new Date();
+    parent.status = "Verstuurd";
+    await parent.save();
+
+    res.json({
       ok: true,
-      createdCount: companyIds.length,
+      createdCount: children.length,
     });
   } catch (err) {
-    console.error("❌ Fout bij versturen:", err);
-    return res.status(500).json({
-      ok: false,
-      error: "Serverfout bij versturen",
-    });
+    console.error("❌ publicRequests SEND:", err);
+    res.status(500).json({ ok: false, error: "Serverfout" });
   }
 });
 
