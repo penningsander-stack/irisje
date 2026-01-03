@@ -1,32 +1,84 @@
+<!-- frontend/select-companies.html -->
+<!-- v20260103-FIX-SELECT-COMPANIES -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <title>Bedrijven selecteren – Irisje.nl</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body class="bg-slate-50 text-gray-900">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kies bedrijven – Irisje.nl</title>
 
-  <header class="p-4 bg-white shadow mb-4">
-    <h1 class="text-2xl font-semibold">Kies bedrijven voor je aanvraag</h1>
-    <p class="text-gray-600">Selecteer maximaal 5 bedrijven</p>
+  <!-- Belangrijk: deze pagina gebruikt /css/style.css -->
+  <link rel="stylesheet" href="/css/style.css?v=20260103" />
+</head>
+
+<body class="irisje-body min-h-screen">
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+      <a href="/index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+        <div class="flex flex-col leading-tight">
+          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
+          <span class="text-xs text-slate-500">Aanvraag versturen</span>
+        </div>
+      </a>
+
+      <nav class="hidden sm:flex items-center space-x-6 text-sm text-slate-600">
+        <a class="nav-link" href="/index.html">Home</a>
+        <a class="nav-link" href="/ad-company.html">Bedrijf aanmelden</a>
+        <a class="nav-link" href="/login.html">Inloggen</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="max-w-3xl mx-auto p-4">
-    <!-- Status box -->
-    <div id="statusBox" class="mb-4 text-sm text-gray-700"></div>
+  <main class="results-main">
+    <div class="results-header-bar">
+      <div class="results-title-block">
+        <h1 id="pageTitle">Kies bedrijven voor je aanvraag</h1>
+        <p>Selecteer maximaal 5 bedrijven</p>
+      </div>
+      <div class="results-meta">
+        <span class="badge-soft" id="requestBadge">Aanvraag</span>
+      </div>
+    </div>
 
-    <!-- Container waar bedrijvenlijst komt -->
-    <div id="companiesContainer" class="space-y-4"></div>
+    <div class="filter-card">
+      <div id="statusBox" class="rq-status text-sm text-slate-600 min-h-[1.25rem]"></div>
+    </div>
 
-    <!-- Verstuur knop -->
-    <button 
-      id="sendRequestsBtn"
-      class="mt-6 w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition">
-      Verstuur aanvragen
-    </button>
+    <section class="surface-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="emoji">🏢</span>
+          <div>
+            <h2>Bedrijven</h2>
+            <p>Kies 1–5 bedrijven. Daarna kun je je aanvraag versturen.</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="companiesContainer" class="results-list"></div>
+    </section>
+
+    <section class="request-box">
+      <div class="request-header-title">Verstuur aanvragen</div>
+      <div class="request-header-sub">Je selectie wordt direct doorgestuurd naar de gekozen bedrijven.</div>
+
+      <div class="selection-bar">
+        <div>
+          <strong id="selectedCount">0 geselecteerd</strong>
+          <div class="selection-names" id="selectedNames"></div>
+        </div>
+
+        <div class="selection-actions">
+          <button class="btn-ghost btn-xs" id="clearSelectionBtn" type="button">Selectie wissen</button>
+          <button class="btn-primary primary-cta" id="sendBtn" type="button">Verstuur aanvragen</button>
+        </div>
+      </div>
+
+      <div class="request-note">Tip: begin met 1 bedrijf, en voeg er later eventueel nog meer toe (max 5).</div>
+    </section>
   </main>
 
-  <script src="/js/select-companies.js?v=20251212"></script>
+  <script src="/js/select-companies.js?v=20260103" defer></script>
 </body>
 </html>
