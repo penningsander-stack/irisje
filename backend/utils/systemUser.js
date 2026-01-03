@@ -1,7 +1,7 @@
 // backend/utils/systemUser.js
-// v20260103-SYSTEM-USER-FIXED
+// v20260103-SYSTEM-USER-FINAL
 
-const User = require("../models/user"); // 🔴 lowercase, dit was fout
+const User = require("../models/user"); // ⚠️ lowercase is cruciaal
 
 const SYSTEM_EMAIL = "system@irisje.nl";
 
@@ -15,7 +15,6 @@ async function getSystemUser() {
       password: Math.random().toString(36).slice(-12),
       role: "admin",
     });
-
     console.log("[systemUser] System user aangemaakt:", SYSTEM_EMAIL);
   }
 

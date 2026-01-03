@@ -1,18 +1,20 @@
 // backend/routes/publicCompanies.js
-// v20260103-PUBLIC-COMPANIES-SLUG-OWNER-FIX
+// v20260103-PUBLIC-COMPANIES-FINAL
 
 const express = require("express");
 const router = express.Router();
 
-const Company = require("../models/company.js");
+const Company = require("../models/company");
 const { getSystemUser } = require("../utils/systemUser");
 
-function slugify(str) {
-  return String(str)
+// Uniek + veilig sluggen
+function slugifyUnique(name) {
+  const base = String(name)
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+  return `${base}-${Date.now()}`;
 }
 
 router.post("/", async (req, res) => {
@@ -32,25 +34,24 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // 👇 altijd geldige owner
     const systemUser = await getSystemUser();
-
-    const slug = slugify(name) + "-" + Date.now();
 
     const company = await Company.create({
       name: String(name).trim(),
-      slug,
+      slug: slugifyUnique(name),          // 👈 verplicht + uniek
       categories: categories.map(String),
       specialties: Array.isArray(specialties) ? specialties.map(String) : [],
       city: String(city).trim(),
       description: String(description).trim(),
       isVerified: false,
-      owner: systemUser._id,
+      owner: systemUser._id,              // 👈 verplicht
     });
 
-    res.json({ ok: true, companyId: company._id });
+    return res.json({ ok: true, companyId: company._id });
   } catch (err) {
     console.error("❌ publicCompanies:", err);
-    res.status(500).json({
+    return res.status(500).json({
       ok: false,
       error: "Serverfout bij aanmelden bedrijf",
     });
