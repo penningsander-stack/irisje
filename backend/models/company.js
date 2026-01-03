@@ -89,6 +89,14 @@ const companySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-companySchema.index({ categories: 1, specialties: 1, regions: 1 });
+/*
+ ❗ MongoDB kan geen parallelle arrays indexeren
+ ❗ Daarom GEEN samengestelde index meer
+*/
+
+// Losse indexen (veilig)
+companySchema.index({ categories: 1 });
+companySchema.index({ specialties: 1 });
+companySchema.index({ regions: 1 });
 
 module.exports = mongoose.model("Company", companySchema);
