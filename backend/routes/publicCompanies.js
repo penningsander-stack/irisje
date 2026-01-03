@@ -1,15 +1,15 @@
 // backend/routes/publicCompanies.js
-// v20260103-PUBLIC-COMPANIES
+// v20260103-PUBLIC-COMPANIES-SYSTEM-OWNER
 
 const express = require("express");
 const router = express.Router();
 
 const Company = require("../models/company.js");
+const { getSystemUser } = require("../utils/systemUser");
 
 /**
  * POST /api/publicCompanies
  * Publieke aanmelding van bedrijf (zonder login)
- * Wordt als "pending" aangemaakt
  */
 router.post("/", async (req, res) => {
   try {
@@ -21,12 +21,21 @@ router.post("/", async (req, res) => {
       description
     } = req.body;
 
-    if (!name || !Array.isArray(categories) || !categories.length || !city || !description) {
+    if (
+      !name ||
+      !Array.isArray(categories) ||
+      categories.length === 0 ||
+      !city ||
+      !description
+    ) {
       return res.status(400).json({
         ok: false,
         error: "Ontbrekende verplichte velden"
       });
     }
+
+    // 👇 haal (of maak) system user
+    const systemUser = await getSystemUser();
 
     const company = await Company.create({
       name: String(name).trim(),
@@ -35,11 +44,8 @@ router.post("/", async (req, res) => {
       city: String(city).trim(),
       description: String(description).trim(),
 
-      // 👇 expliciet: nog niet actief / niet geverifieerd
       isVerified: false,
-
-      // 👇 owner is verplicht in schema → dummy placeholder
-      owner: null
+      owner: systemUser._id
     });
 
     res.json({
