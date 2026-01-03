@@ -11,7 +11,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 
-const Request = require("../models/Request");
+const Request = require("../models/request");
 const Company = require("../models/company");
 
 // Helper: veilige case-insensitive regex (exact match, maar tolerant voor hoofdletters)
