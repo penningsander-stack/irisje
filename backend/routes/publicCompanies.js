@@ -1,5 +1,5 @@
 // backend/routes/publicCompanies.js
-// v20260103-PUBLIC-COMPANIES-FINAL
+// v20260103-PUBLIC-COMPANIES-FINAL-FIX
 
 const express = require("express");
 const router = express.Router();
@@ -7,7 +7,6 @@ const router = express.Router();
 const Company = require("../models/company");
 const { getSystemUser } = require("../utils/systemUser");
 
-// Uniek + veilig sluggen
 function slugifyUnique(name) {
   const base = String(name)
     .toLowerCase()
@@ -34,18 +33,25 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // 👇 altijd geldige owner
     const systemUser = await getSystemUser();
+    const slug = slugifyUnique(name);
 
     const company = await Company.create({
       name: String(name).trim(),
-      slug: slugifyUnique(name),          // 👈 verplicht + uniek
+      slug,
+
+      // 🔽 VERPLICHTE SCHEMA-VELDEN
+      email: `${slug}@irisje.nl`,
+      status: "pending",
+      source: "public",
+
       categories: categories.map(String),
       specialties: Array.isArray(specialties) ? specialties.map(String) : [],
       city: String(city).trim(),
       description: String(description).trim(),
+
       isVerified: false,
-      owner: systemUser._id,              // 👈 verplicht
+      owner: systemUser._id,
     });
 
     return res.json({ ok: true, companyId: company._id });
