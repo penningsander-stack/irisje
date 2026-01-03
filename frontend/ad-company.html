@@ -11,63 +11,54 @@
   <link rel="stylesheet" href="style.css?v=20251206" />
 </head>
 
-<body class="irisje-body flex flex-col min-h-screen fade-seq">
+<body class="irisje-body flex flex-col min-h-screen">
 
 <header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
     <a href="index.html" class="flex items-center space-x-2">
-      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold">I</span>
       <div class="flex flex-col leading-tight">
-        <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-        <span class="text-[11px] text-slate-500 hidden sm:block">Bedrijf aanmelden</span>
+        <span class="font-semibold text-sm">Irisje.nl</span>
+        <span class="text-[11px] text-slate-500">Bedrijf aanmelden</span>
       </div>
     </a>
-    <a href="login.html" class="btn-ghost btn-xs">Inloggen voor bedrijven</a>
+    <a href="login.html" class="btn-ghost btn-xs">Inloggen</a>
   </div>
 </header>
 
 <main class="page-shell">
-  <section class="surface-card p-6 md:p-8 w-full max-w-xl mx-auto">
+  <section class="surface-card p-6 w-full max-w-xl mx-auto">
     <h1 class="text-2xl font-bold text-indigo-700 mb-4 text-center">🏢 Nieuw bedrijf aanmelden</h1>
-    <p class="text-sm text-gray-600 text-center mb-6">
-      Vul hieronder je bedrijfsgegevens in. Na goedkeuring wordt je profiel zichtbaar voor klanten op Irisje.nl.
-    </p>
 
     <form id="companyForm" class="space-y-5">
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijfsnaam</label>
-        <input id="name" required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
+        <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
+        <input id="name" required class="w-full border rounded-xl p-3 text-sm" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
-        <select id="category" required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500">
+        <label class="block text-sm font-medium mb-1">Categorie</label>
+        <select id="category" required class="w-full border rounded-xl p-3 text-sm">
           <option value="">— Kies een categorie —</option>
         </select>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
-          Specialismes (meerdere mogelijk)
-        </label>
+        <label class="block text-sm font-medium mb-1">Specialismes</label>
         <div id="specialtiesContainer" class="space-y-2 text-sm text-gray-700">
           <p class="text-gray-400 text-xs">Kies eerst een categorie</p>
         </div>
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Plaats</label>
-        <input id="location" required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500" />
+        <label class="block text-sm font-medium mb-1">Plaats</label>
+        <input id="location" required class="w-full border rounded-xl p-3 text-sm" />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Korte beschrijving</label>
-        <textarea id="description" rows="4" required
-          class="w-full border border-gray-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"></textarea>
+        <label class="block text-sm font-medium mb-1">Beschrijving</label>
+        <textarea id="description" rows="4" required class="w-full border rounded-xl p-3 text-sm"></textarea>
       </div>
 
       <button type="submit" class="w-full btn-primary py-3 text-sm font-semibold rounded-xl">
@@ -79,16 +70,10 @@
   </section>
 </main>
 
-<footer class="footer-shell mt-auto">
-  <div class="max-w-6xl mx-auto px-4 py-6 text-center text-[11px] text-slate-400">
-    © 2025 Irisje.nl
-  </div>
-</footer>
-
 <script>
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-/* 🔒 Centrale categorie-config (goedgekeurd) */
+/* Centrale categorie-config */
 const CATEGORIES = {
   "Juridisch": [
     "Arbeidsrecht",
@@ -100,59 +85,18 @@ const CATEGORIES = {
     "Aansprakelijkheidsrecht",
     "Mediation",
     "Overheidsrecht (Awb/Woo)"
-  ],
-  "Bouw & Vastgoed": [
-    "Aannemer",
-    "Bouwkundig advies",
-    "Constructieberekeningen",
-    "Vergunningen (omgevingsvergunning)",
-    "Vastgoedrecht",
-    "Bouwgeschillen",
-    "Projectontwikkeling",
-    "Taxaties"
-  ],
-  "Financieel & Administratie": [
-    "Boekhouding",
-    "Salarisadministratie",
-    "Belastingadvies",
-    "Jaarrekening",
-    "Subsidies",
-    "Financiële planning"
-  ],
-  "IT & Digital": [
-    "Webdevelopment",
-    "Softwareontwikkeling",
-    "Hosting & beheer",
-    "Cybersecurity",
-    "Data & integraties",
-    "UX/UI design"
-  ],
-  "Marketing & Communicatie": [
-    "Online marketing",
-    "SEO/SEA",
-    "Social media",
-    "Branding",
-    "Content & copywriting",
-    "Grafisch ontwerp"
-  ],
-  "Zorg & Welzijn": [
-    "Coaching",
-    "Psychosociale hulp",
-    "Bedrijfsmaatschappelijk werk",
-    "Re-integratie",
-    "Verzuimbegeleiding"
-  ],
-  "Overig": [
-    "Advies op maat",
-    "Projectbegeleiding",
-    "Interim management"
   ]
 };
 
-/* Populate categorie */
+const form = document.getElementById("companyForm");
+const nameInput = document.getElementById("name");
 const categorySelect = document.getElementById("category");
+const locationInput = document.getElementById("location");
+const descriptionInput = document.getElementById("description");
 const specialtiesContainer = document.getElementById("specialtiesContainer");
+const messageEl = document.getElementById("message");
 
+/* Categorieën vullen */
 Object.keys(CATEGORIES).forEach(cat => {
   const opt = document.createElement("option");
   opt.value = cat;
@@ -160,7 +104,7 @@ Object.keys(CATEGORIES).forEach(cat => {
   categorySelect.appendChild(opt);
 });
 
-/* Dynamische specialties */
+/* Specialismes dynamisch */
 categorySelect.addEventListener("change", () => {
   specialtiesContainer.innerHTML = "";
   const list = CATEGORIES[categorySelect.value] || [];
@@ -173,39 +117,39 @@ categorySelect.addEventListener("change", () => {
 });
 
 /* Submit */
-document.getElementById("companyForm").addEventListener("submit", async (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const msg = document.getElementById("message");
 
   const specialties = Array.from(
     specialtiesContainer.querySelectorAll("input:checked")
   ).map(cb => cb.value);
 
   const payload = {
-    name: name.value.trim(),
+    name: nameInput.value.trim(),
     categories: [categorySelect.value],
     specialties,
-    city: location.value.trim(),
-    description: description.value.trim()
+    city: locationInput.value.trim(),
+    description: descriptionInput.value.trim()
   };
 
   try {
-    msg.textContent = "⏳ Bezig met toevoegen...";
+    messageEl.textContent = "⏳ Bezig met toevoegen...";
     const res = await fetch(`${API_BASE}/companies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "Fout bij toevoegen.");
 
-    msg.textContent = "✅ Bedrijf succesvol toegevoegd!";
-    msg.className = "text-green-600 text-center text-sm";
-    e.target.reset();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Fout bij toevoegen");
+
+    messageEl.textContent = "✅ Bedrijf succesvol toegevoegd!";
+    messageEl.className = "text-green-600 text-center text-sm";
+    form.reset();
     specialtiesContainer.innerHTML = "<p class='text-gray-400 text-xs'>Kies eerst een categorie</p>";
   } catch (err) {
-    msg.textContent = "❌ " + err.message;
-    msg.className = "text-red-600 text-center text-sm";
+    messageEl.textContent = "❌ " + err.message;
+    messageEl.className = "text-red-600 text-center text-sm";
   }
 });
 </script>
