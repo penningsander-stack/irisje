@@ -43,7 +43,9 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/email", require("./routes/email"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publicRequests", require("./routes/publicRequests"));
+app.use("/api/publicCompanies", require("./routes/publicCompanies"));
 app.use("/api/seed", require("./routes/seed"));
+
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
