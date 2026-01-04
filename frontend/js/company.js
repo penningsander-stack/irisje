@@ -2,7 +2,7 @@
 // Laadt één bedrijf:
 // - via ?company=ID  → GET /api/publicCompanies/:id
 // - anders via ?slug= → GET /api/companies/slug/:slug
-// Bestaand slug-gedrag blijft intact.
+// Logo wordt alleen getoond als het veld bestaat.
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -19,8 +19,9 @@ async function initCompanyPage() {
     let data;
 
     if (companyId) {
-      // Nieuw pad: ophalen op ID (publiek)
-      data = await safeJsonFetch(`${API_BASE}/publicCompanies/${encodeURIComponent(companyId)}`);
+      data = await safeJsonFetch(
+        `${API_BASE}/publicCompanies/${encodeURIComponent(companyId)}`
+      );
       if (!data || !data.ok || !data.company) {
         throw new Error("Bedrijf niet gevonden (ID)");
       }
@@ -29,9 +30,9 @@ async function initCompanyPage() {
     }
 
     if (slug) {
-      // Bestaand pad: ophalen op slug
-      data = await safeJsonFetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
-      // Sommige endpoints geven { company }, andere { item }
+      data = await safeJsonFetch(
+        `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`
+      );
       const company = data.company || data.item;
       if (!company) {
         throw new Error("Bedrijf niet gevonden (slug)");
@@ -57,18 +58,13 @@ async function safeJsonFetch(url, options = {}) {
     throw new Error(`Geen geldige JSON (${res.status})`);
   }
   if (!res.ok) {
-    const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
+    const msg = json && json.error ? json.error : `HTTP ${res.status}`;
     throw new Error(msg);
   }
   return json;
 }
 
 function renderCompany(c) {
-  // Verwachte elementen in company.html (ongewijzigd gebruikt):
-  // #companyName, #companyTagline, #companyDescription,
-  // #companyCity, #companyPhone, #companyEmail, #companyWebsite,
-  // #companyCategories, #companyRating
-
   setText("companyName", c.name);
   setText("companyTagline", c.tagline || "");
   setText("companyDescription", c.description || "");
@@ -78,6 +74,9 @@ function renderCompany(c) {
   setLink("companyWebsite", c.website || "");
   setList("companyCategories", c.categories || []);
   setRating("companyRating", c.avgRating, c.reviewCount);
+
+  // ✅ Logo: alleen tonen als het veld bestaat
+  setImage("companyLogo", c.logo || c.logoUrl || "");
 }
 
 function setText(id, value) {
@@ -120,6 +119,17 @@ function setRating(id, avg, count) {
     el.textContent = `${avg.toFixed(1)} (${count})`;
   } else {
     el.textContent = "";
+  }
+}
+
+function setImage(id, src) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (src) {
+    el.src = src;
+    el.style.display = "";
+  } else {
+    el.style.display = "none";
   }
 }
 
