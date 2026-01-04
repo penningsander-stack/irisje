@@ -69,3 +69,4 @@ form.addEventListener("submit", async (e) => {
 });
 
 showStep(currentStep);
+
