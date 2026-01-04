@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v20260104-results-fallback-safe
+// v20260104-results-final-hard-guard
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -7,39 +7,28 @@ document.addEventListener("DOMContentLoaded", initResults);
 
 async function initResults() {
   const params = new URLSearchParams(window.location.search);
-
-  const q = params.get("q") || "";
-  const category = params.get("category") || "";
-  const requestId = params.get("requestId") || "";
-
-  // ⚠️ city telt NIET mee als zoektrigger
-  const hasSearchContext =
-  (q && q.trim().length > 0) ||
-  (requestId && requestId.trim().length > 0);
-
+  const requestId = params.get("requestId");
 
   let url;
 
-  if (!hasSearchContext) {
-    // fallback → alle publieke bedrijven
-    url = `${API_BASE}/publicCompanies`;
+  // 🔒 HARD GUARD
+  // Alleen zoeken ALS er een requestId is
+  if (requestId && requestId.trim().length > 0) {
+    const sp = new URLSearchParams();
+    sp.set("requestId", requestId);
+    url = `${API_BASE}/companies/search?${sp.toString()}`;
+
     setHeader(
-      "Populaire bedrijven",
-      "Selecteer filters of kies een bedrijf om verder te gaan."
+      "Bedrijven voor jouw aanvraag",
+      "Selecteer maximaal vijf bedrijven om je aanvraag te versturen."
     );
   } else {
-    const searchParams = new URLSearchParams();
-    if (q) searchParams.set("q", q);
-    if (category && category.trim().length > 0) {
-  searchParams.set("category", category);
-}
+    // 🔁 ALTIJD fallback
+    url = `${API_BASE}/publicCompanies`;
 
-    if (requestId) searchParams.set("requestId", requestId);
-
-    url = `${API_BASE}/companies/search?${searchParams.toString()}`;
     setHeader(
-      "Bedrijven in jouw regio",
-      "Vergelijk bedrijven, lees reviews en vraag in één keer een offerte aan."
+      "Populaire bedrijven",
+      "Bekijk bedrijven of start een aanvraag om gericht te zoeken."
     );
   }
 
@@ -60,13 +49,16 @@ async function initResults() {
 
 function setHeader(title, subtitle) {
   const t = document.getElementById("resultsTitle");
-  const s = document.getElementById("resultsSubtitle");
+  const s = document.querySelector(".section-shell p");
   if (t) t.textContent = title;
   if (s) s.textContent = subtitle;
 }
 
 function renderResults(companies) {
-  const grid = document.getElementById("resultsGrid");
+  const grid = document.getElementById("resultsContainer");
+  const skeleton = document.getElementById("resultsSkeleton");
+
+  if (skeleton) skeleton.style.display = "none";
   if (!grid) return;
 
   grid.innerHTML = "";
@@ -78,20 +70,26 @@ function renderResults(companies) {
 
   companies.forEach((c) => {
     const el = document.createElement("div");
-    el.className = "company-card";
+    el.className = "surface-card p-5 rounded-2xl shadow-soft flex flex-col gap-2";
+
     el.innerHTML = `
-      <h3>${c.name}</h3>
-      ${c.avgRating ? `<div>⭐ ${c.avgRating} (${c.reviewCount || 0})</div>` : ""}
-      ${c.city ? `<div>${c.city}</div>` : ""}
-      <a href="/company.html?company=${c._id}" class="btn">Bekijk bedrijf</a>
+      <h3 class="font-semibold text-slate-900">${c.name}</h3>
+      ${c.avgRating ? `<div class="text-sm">⭐ ${c.avgRating} (${c.reviewCount || 0})</div>` : ""}
+      ${c.city ? `<div class="text-sm text-slate-500">${c.city}</div>` : ""}
+      <a href="/company.html?company=${c._id}" class="btn mt-auto">Bekijk bedrijf</a>
     `;
+
     grid.appendChild(el);
   });
 }
 
 function renderEmpty() {
-  const grid = document.getElementById("resultsGrid");
+  const grid = document.getElementById("resultsContainer");
+  const skeleton = document.getElementById("resultsSkeleton");
+
+  if (skeleton) skeleton.style.display = "none";
   if (!grid) return;
+
   grid.innerHTML = "<p>Geen bedrijven gevonden.</p>";
 }
 
