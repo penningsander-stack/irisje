@@ -1,102 +1,67 @@
 // frontend/js/request.js
-<<<<<<< HEAD
-// v2026-01-06 FIX-WIZARD
-=======
-// v2026-01-06 FIX-POST-PUBLICREQUESTS
->>>>>>> parent of de64fcc (Diversen)
+// v2026-01-06 RESTORED-WIZARD
 
-document.addEventListener("DOMContentLoaded", () => {
-  const steps = Array.from(document.querySelectorAll(".wizard-step"));
-  let current = 0;
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-<<<<<<< HEAD
-  function showStep(i) {
-    steps.forEach((s, idx) => {
-      s.style.display = idx === i ? "block" : "none";
-    });
-  }
+let currentStep = 1;
+const steps = Array.from(document.querySelectorAll(".wizard-step"));
 
-  showStep(current);
+const btnPrev = document.getElementById("btnPrev");
+const btnNext = document.getElementById("btnNext");
+const btnSubmit = document.getElementById("btnSubmit");
+const errorBox = document.getElementById("wizardError");
 
-  document.querySelectorAll("[data-next]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (current < steps.length - 1) {
-        current++;
-        showStep(current);
-      }
-    });
+function showStep(n) {
+  steps.forEach(s => {
+    s.classList.toggle("hidden", Number(s.dataset.step) !== n);
   });
 
-  document.querySelectorAll("[data-prev]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (current > 0) {
-        current--;
-        showStep(current);
-      }
-    });
-  });
+  btnPrev.disabled = n === 1;
+  btnNext.classList.toggle("hidden", n === steps.length);
+  btnSubmit.classList.toggle("hidden", n !== steps.length);
 
-  document.getElementById("requestWizard").addEventListener("submit", async e => {
-    e.preventDefault();
-
-    const payload = {
-      category: document.getElementById("category").value,
-      message: document.getElementById("message").value,
-      name: document.getElementById("name").value,
-      email: document.getElementById("email").value
-    };
-
-    const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await res.json();
-    if (!data.ok) {
-      alert("Fout bij versturen");
-      return;
-    }
-
-    window.location.href = `/results.html?requestId=${data.requestId}`;
-  });
-=======
-async function submitRequest(payload) {
-  const res = await fetch(`${API_BASE}/publicRequests`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch {}
-
-  if (!res.ok || !data || data.ok !== true) {
-    throw new Error((data && data.error) || "Not Found");
-  }
-  return data;
+  errorBox.classList.add("hidden");
 }
 
-// Voorbeeld aanroep (laat jouw bestaande UI dit gebruiken)
-document.addEventListener("submit", async (e) => {
-  if (!e.target.matches("#requestForm")) return;
+btnPrev.onclick = () => {
+  if (currentStep > 1) {
+    currentStep--;
+    showStep(currentStep);
+  }
+};
+
+btnNext.onclick = () => {
+  currentStep++;
+  showStep(currentStep);
+};
+
+document.getElementById("requestWizard").onsubmit = async (e) => {
   e.preventDefault();
 
   const payload = {
-    name: document.querySelector("[name='name']")?.value || "",
-    email: document.querySelector("[name='email']")?.value || "",
-    message: document.querySelector("[name='message']")?.value || "",
-    category: document.querySelector("[name='category']")?.value || "",
-    specialty: document.querySelector("[name='specialty']")?.value || "",
+    category: category.value.trim(),
+    specialty: specialty.value.trim(),
+    context: context.value.trim(),
+    message: message.value.trim(),
+    name: name.value.trim(),
+    email: email.value.trim(),
   };
 
   try {
-    const out = await submitRequest(payload);
-    console.log("OK", out);
+    const res = await fetch(`${API_BASE}/publicRequests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "Fout");
+
+    window.location.href = `results.html?requestId=${data.requestId}`;
   } catch (err) {
-    console.error("❌ Submit error:", err.message);
-    alert("Aanvraag mislukt.");
+    errorBox.textContent = err.message;
+    errorBox.classList.remove("hidden");
   }
->>>>>>> parent of de64fcc (Diversen)
-});
+};
+
+showStep(currentStep);

@@ -2,112 +2,48 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-<<<<<<< HEAD
-  <title>Aanvraag – Irisje.nl</title>
-  <link rel="stylesheet" href="/css/style.css">
-</head>
-<body>
-
-<form id="requestWizard">
-
-  <!-- Stap 1 -->
-  <div class="wizard-step">
-    <h2>Categorie</h2>
-    <select id="category">
-      <option value="">Kies categorie</option>
-      <option value="Advocaat">Advocaat</option>
-    </select>
-
-    <div class="nav">
-      <button type="button" data-next>Volgende</button>
-    </div>
-  </div>
-
-  <!-- Stap 2 -->
-  <div class="wizard-step">
-    <h2>Bericht</h2>
-    <textarea id="message"></textarea>
-
-    <div class="nav">
-      <button type="button" data-prev>Vorige</button>
-      <button type="button" data-next>Volgende</button>
-    </div>
-  </div>
-
-  <!-- Stap 3 -->
-  <div class="wizard-step">
-    <h2>Contactgegevens</h2>
-    <input id="name" placeholder="Uw naam">
-    <input id="email" placeholder="E-mailadres">
-
-    <div class="nav">
-      <button type="button" data-prev>Vorige</button>
-      <button type="submit">Aanvraag versturen</button>
-    </div>
-  </div>
-
-</form>
-
-<script src="/js/request.js"></script>
-=======
-  <title>Aanvraag plaatsen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <link rel="stylesheet" href="/style.css?v=20260102">
+  <title>Aanvraag plaatsen – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260106">
 </head>
 
 <body class="irisje-body">
 
 <header class="irisje-header">
   <div class="max-w-6xl mx-auto px-4 py-4">
-    <a href="/" class="text-indigo-700 font-bold text-lg">Irisje.nl</a>
+    <a href="index.html" class="text-indigo-700 font-bold text-lg">Irisje.nl</a>
   </div>
 </header>
 
 <main class="max-w-3xl mx-auto px-4 py-10">
   <div class="bg-white rounded-2xl shadow-brand p-6 md:p-8">
 
-    <div class="mb-6">
-      <div id="stepLabel" class="text-sm text-slate-500 mb-1">Stap 1 van 5</div>
-      <h1 id="stepTitle" class="text-xl font-semibold text-slate-900">
-        Categorie
-      </h1>
-    </div>
-
     <div id="wizardError" class="hidden mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm"></div>
-    <div id="wizardStatus" class="mb-4 text-sm text-slate-600"></div>
 
     <form id="requestWizard">
 
-      <!-- Stap 1: Categorie -->
+      <!-- Stap 1 -->
       <section class="wizard-step" data-step="1">
-        <input type="hidden" id="category" name="category" value="advocaat">
-
-        <div class="p-4 rounded-xl bg-indigo-50 text-indigo-900">
-          <p class="font-medium">Categorie</p>
-          <p class="mt-1">Advocaat</p>
-        </div>
-      </section>
-
-      <!-- Stap 2: Specialisme -->
-      <section class="wizard-step hidden" data-step="2">
-        <label class="block mb-2 font-medium">Kies een specialisme</label>
-        <select id="specialty" name="specialty" class="irisje-input" required>
-          <option value="">Maak een keuze</option>
-          <option value="arbeidsrecht">Arbeidsrecht</option>
-          <option value="ontslag-vso">Ontslag / vaststellingsovereenkomst</option>
-          <option value="huurrecht">Huurrecht</option>
-          <option value="familierecht">Familierecht</option>
-          <option value="strafrecht">Strafrecht</option>
-          <option value="bestuursrecht">Bestuursrecht</option>
+        <h2 class="text-xl font-semibold mb-4">Categorie</h2>
+        <select id="category" name="category" class="irisje-input">
+          <option value="">Kies categorie</option>
+          <option value="Advocaat">Advocaat</option>
         </select>
       </section>
 
-      <!-- Stap 3: Context -->
+      <!-- Stap 2 -->
+      <section class="wizard-step hidden" data-step="2">
+        <h2 class="text-xl font-semibold mb-4">Specialisme</h2>
+        <select id="specialty" name="specialty" class="irisje-input">
+          <option value="">Maak een keuze</option>
+          <option value="arbeidsrecht">Arbeidsrecht</option>
+          <option value="huurrecht">Huurrecht</option>
+        </select>
+      </section>
+
+      <!-- Stap 3 -->
       <section class="wizard-step hidden" data-step="3">
-        <label class="block mb-2 font-medium">
-          In welke rol doet u deze aanvraag?
-        </label>
+        <h2 class="text-xl font-semibold mb-4">Context</h2>
         <select id="context" name="context" class="irisje-input">
           <option value="">Maak een keuze</option>
           <option value="werknemer">Werknemer</option>
@@ -115,64 +51,30 @@
         </select>
       </section>
 
-      <!-- Stap 4: Toelichting -->
+      <!-- Stap 4 -->
       <section class="wizard-step hidden" data-step="4">
-        <label class="block mb-2 font-medium">
-          Licht uw aanvraag toe
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          rows="5"
-          class="irisje-input"
-          placeholder="Beschrijf kort uw situatie of vraag"
-          required
-        ></textarea>
+        <h2 class="text-xl font-semibold mb-4">Toelichting</h2>
+        <textarea id="message" name="message" rows="5" class="irisje-input" required></textarea>
       </section>
 
-      <!-- Stap 5: Contact -->
+      <!-- Stap 5 -->
       <section class="wizard-step hidden" data-step="5">
-        <label class="block mb-2 font-medium">Uw naam</label>
-        <input id="name" name="name" class="irisje-input mb-4" required>
-
-        <label class="block mb-2 font-medium">E-mailadres</label>
-        <input id="email" name="email" type="email" class="irisje-input" required>
+        <h2 class="text-xl font-semibold mb-4">Contactgegevens</h2>
+        <input id="name" name="name" class="irisje-input mb-4" placeholder="Uw naam" required>
+        <input id="email" name="email" type="email" class="irisje-input" placeholder="E-mailadres" required>
       </section>
 
-      <!-- Controls -->
-      <div class="mt-8 flex justify-between items-center">
-        <button
-          type="button"
-          id="btnPrev"
-          class="irisje-btn-secondary"
-        >
-          Vorige
-        </button>
-
-        <div class="flex gap-3">
-          <button
-            type="button"
-            id="btnNext"
-            class="irisje-btn"
-          >
-            Volgende
-          </button>
-
-          <button
-            type="submit"
-            id="btnSubmit"
-            class="irisje-btn hidden"
-          >
-            Aanvraag versturen
-          </button>
-        </div>
+      <div class="mt-8 flex justify-between">
+        <button type="button" id="btnPrev" class="irisje-btn-secondary">Vorige</button>
+        <button type="button" id="btnNext" class="irisje-btn">Volgende</button>
+        <button type="submit" id="btnSubmit" class="irisje-btn hidden">Aanvraag versturen</button>
       </div>
 
     </form>
+
   </div>
 </main>
 
-<script src="/js/request.js?v=20260102"></script>
->>>>>>> parent of de64fcc (Diversen)
+<script src="/js/request.js?v=20260106"></script>
 </body>
 </html>
