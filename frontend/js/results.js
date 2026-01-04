@@ -17,7 +17,8 @@ async function initResults() {
   const city = params.get("city") || "";
   const requestId = params.get("requestId") || "";
 
-  const hasSearchContext = q || category || city || requestId;
+  const hasSearchContext = q || category || requestId;
+
 
   let url;
 
@@ -69,6 +70,9 @@ function setResultsHeader(title, subtitle) {
 
 function renderResults(companies) {
   const grid = document.getElementById("resultsGrid");
+if (!grid) return;
+grid.innerHTML = `<p>Geen bedrijven gevonden.</p>`;
+
   grid.innerHTML = "";
 
   if (!companies.length) {
