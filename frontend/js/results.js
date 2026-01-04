@@ -100,7 +100,10 @@ function applyAndRenderResults(hasRequestContext) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> parent of de64fcc (Diversen)
 function renderCompanyCard(company) {
   const rating = company.avgRating ? company.avgRating.toFixed(1) : "—";
   const reviews = company.reviewCount || 0;
@@ -161,4 +164,7 @@ function escapeHtml(str) {
     });
   }
 });
+<<<<<<< HEAD
+>>>>>>> parent of de64fcc (Diversen)
+=======
 >>>>>>> parent of de64fcc (Diversen)
