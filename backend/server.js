@@ -1,8 +1,7 @@
 // backend/server.js
-// v2026-01-06 FULL-FIX-PUBLIC-REQUESTS-MOUNT
+// v2026-01-06 BACKEND-ONLY-NO-FRONTEND
 
 require("dotenv").config();
-const path = require("path");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -26,7 +25,7 @@ if (!MONGO_URI) {
 }
 
 mongoose
-  .connect(MONGO_URI, { autoIndex: true })
+  .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB connected"))
   .catch((err) => {
     console.error("❌ MongoDB error:", err);
@@ -34,10 +33,10 @@ mongoose
   });
 
 /* =========================
- * Routes
+ * API Routes
  * ========================= */
 app.use("/api/publicCompanies", require("./routes/publicCompanies"));
-app.use("/api/publicRequests", require("./routes/publicRequests")); // ← BELANGRIJK
+app.use("/api/publicRequests", require("./routes/publicRequests"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/reviews", require("./routes/reviews"));
@@ -48,17 +47,15 @@ app.use("/api/payments", require("./routes/payments"));
 /* =========================
  * Health
  * ========================= */
-app.get("/api/health", (req, res) => res.json({ ok: true }));
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
+});
 
 /* =========================
- * Frontend (static)
+ * 404 fallback (API only)
  * ========================= */
-const frontendPath = path.join(__dirname, "public");
-app.use(express.static(frontendPath));
-
-// Fallback voor SPA
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+app.use((req, res) => {
+  res.status(404).json({ ok: false, error: "Not Found" });
 });
 
 /* =========================
@@ -66,5 +63,5 @@ app.get("*", (req, res) => {
  * ========================= */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
