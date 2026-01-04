@@ -1,90 +1,52 @@
-<!-- frontend/request.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Aanvraag – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260106">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="irisje-body">
+<body>
 
-<main class="max-w-3xl mx-auto px-4 py-8">
-  <section class="irisje-card p-6">
-    <h1 class="text-xl font-semibold mb-2">Aanvraag</h1>
-    <p class="text-sm text-slate-600 mb-6">
-      Stap <span id="wizardStepNow">1</span> van <span id="wizardStepTotal">5</span>
-    </p>
+<form id="requestWizard">
 
-    <form id="requestWizard">
+  <!-- Stap 1 -->
+  <div class="wizard-step">
+    <h2>Categorie</h2>
+    <select id="category">
+      <option value="">Kies categorie</option>
+      <option value="Advocaat">Advocaat</option>
+    </select>
 
-      <!-- STAP 1 -->
-      <div class="wizard-step" data-step="1">
-        <label class="irisje-label">Categorie</label>
-        <select id="categorySelect" class="irisje-input">
-          <option value="">Categorie</option>
-          <option value="Advocaat">Advocaat</option>
-          <option value="Loodgieter">Loodgieter</option>
-        </select>
+    <div class="nav">
+      <button type="button" data-next>Volgende</button>
+    </div>
+  </div>
 
-        <div class="mt-6 flex justify-between">
-          <button type="button" class="irisje-btn-secondary" disabled>Vorige</button>
-          <button type="button" class="irisje-btn" data-action="next">Volgende</button>
-        </div>
-      </div>
+  <!-- Stap 2 -->
+  <div class="wizard-step">
+    <h2>Bericht</h2>
+    <textarea id="message"></textarea>
 
-      <!-- STAP 2 -->
-      <div class="wizard-step hidden" data-step="2">
-        <label class="irisje-label">Specialisme</label>
-        <input id="specialtyInput" class="irisje-input" type="text">
+    <div class="nav">
+      <button type="button" data-prev>Vorige</button>
+      <button type="button" data-next>Volgende</button>
+    </div>
+  </div>
 
-        <div class="mt-6 flex justify-between">
-          <button type="button" class="irisje-btn-secondary" data-action="prev">Vorige</button>
-          <button type="button" class="irisje-btn" data-action="next">Volgende</button>
-        </div>
-      </div>
+  <!-- Stap 3 -->
+  <div class="wizard-step">
+    <h2>Contactgegevens</h2>
+    <input id="name" placeholder="Uw naam">
+    <input id="email" placeholder="E-mailadres">
 
-      <!-- STAP 3 -->
-      <div class="wizard-step hidden" data-step="3">
-        <label class="irisje-label">Bericht</label>
-        <textarea id="messageInput" class="irisje-input" rows="4"></textarea>
+    <div class="nav">
+      <button type="button" data-prev>Vorige</button>
+      <button type="submit">Aanvraag versturen</button>
+    </div>
+  </div>
 
-        <div class="mt-6 flex justify-between">
-          <button type="button" class="irisje-btn-secondary" data-action="prev">Vorige</button>
-          <button type="button" class="irisje-btn" data-action="next">Volgende</button>
-        </div>
-      </div>
+</form>
 
-      <!-- STAP 4 -->
-      <div class="wizard-step hidden" data-step="4">
-        <p class="text-sm text-slate-600">Bedrijven worden automatisch gematcht.</p>
-
-        <div class="mt-6 flex justify-between">
-          <button type="button" class="irisje-btn-secondary" data-action="prev">Vorige</button>
-          <button type="button" class="irisje-btn" data-action="next">Volgende</button>
-        </div>
-      </div>
-
-      <!-- STAP 5 -->
-      <div class="wizard-step hidden" data-step="5">
-        <label class="irisje-label">Naam</label>
-        <input id="nameInput" class="irisje-input" type="text">
-
-        <label class="irisje-label mt-3">E-mail</label>
-        <input id="emailInput" class="irisje-input" type="email">
-
-        <div id="submitError" class="hidden text-red-600 mt-3"></div>
-
-        <div class="mt-6 flex justify-between">
-          <button type="button" class="irisje-btn-secondary" data-action="prev">Vorige</button>
-          <button type="submit" class="irisje-btn">Aanvraag versturen</button>
-        </div>
-      </div>
-
-    </form>
-  </section>
-</main>
-
-<script src="/js/request.js?v=20260106"></script>
+<script src="/js/request.js"></script>
 </body>
 </html>
