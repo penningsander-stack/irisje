@@ -10,7 +10,6 @@ const Request = require("../models/request");
  * =========================================================
  * POST /api/publicCompanies
  * Publiek: bedrijf aanmelden
- * (ongewijzigd gedrag – werkt al)
  * =========================================================
  */
 router.post("/", async (req, res) => {
@@ -30,7 +29,6 @@ router.post("/", async (req, res) => {
     });
 
     await company.save();
-
     res.json({ ok: true, company });
   } catch (err) {
     console.warn("❌ publicCompanies POST:", err);
@@ -41,7 +39,7 @@ router.post("/", async (req, res) => {
 /**
  * =========================================================
  * GET /api/publicCompanies/:id
- * Publiek: één bedrijf ophalen (results.html)
+ * Publiek: één bedrijf ophalen
  * =========================================================
  */
 router.get("/:id", async (req, res) => {
@@ -61,35 +59,43 @@ router.get("/:id", async (req, res) => {
 
 /**
  * =========================================================
- * GET /api/publicCompanies?requestId=...
- * Publiek: bedrijven selecteren bij aanvraag
- * (select-companies.html)
+ * GET /api/publicCompanies
+ * - zonder requestId → ALLE publieke bedrijven
+ * - met requestId → matchen bij aanvraag
  * =========================================================
  */
 router.get("/", async (req, res) => {
   try {
     const { requestId } = req.query;
 
+    // 🔁 GEEN requestId → algemene lijst
     if (!requestId) {
-      return res.status(400).json({ ok: false, error: "requestId missing" });
+      const companies = await Company.find({ source: "public" })
+        .limit(50)
+        .lean();
+
+      return res.json({
+        ok: true,
+        companies,
+      });
     }
 
+    // 🎯 MET requestId → selectie bij aanvraag
     const request = await Request.findById(requestId).lean();
 
     if (!request) {
       return res.status(404).json({ ok: false, error: "Request not found" });
     }
 
-    // fallback: oude enkele velden → arrays
     const categories =
-      request.categories && request.categories.length
+      request.categories?.length
         ? request.categories
         : request.category
         ? [request.category]
         : [];
 
     const specialties =
-      request.specialties && request.specialties.length
+      request.specialties?.length
         ? request.specialties
         : request.specialty
         ? [request.specialty]
@@ -112,7 +118,7 @@ router.get("/", async (req, res) => {
       companies,
     });
   } catch (err) {
-    console.warn("❌ publicCompanies GET by request:", err);
+    console.warn("❌ publicCompanies GET:", err);
     res.status(500).json({ ok: false, error: "Server error" });
   }
 });
