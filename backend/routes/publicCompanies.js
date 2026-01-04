@@ -1,5 +1,7 @@
 // backend/routes/publicCompanies.js
+
 const express = require("express");
+const mongoose = require("mongoose");
 const Company = require("../models/company");
 
 const router = express.Router();
@@ -65,7 +67,45 @@ router.get("/", async (req, res) => {
       companies,
     });
   } catch (err) {
-    console.error("❌ publicCompanies error:", err);
+    console.error("❌ publicCompanies list error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Server error",
+    });
+  }
+});
+
+/**
+ * GET /api/publicCompanies/:id
+ * - Voor company detailpagina
+ * - Retourneert exact 1 bedrijf
+ */
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({
+        ok: false,
+        error: "Company not found",
+      });
+    }
+
+    const company = await Company.findById(id).lean();
+
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Company not found",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      company,
+    });
+  } catch (err) {
+    console.error("❌ publicCompanies by id error:", err);
     return res.status(500).json({
       ok: false,
       error: "Server error",
@@ -74,4 +114,3 @@ router.get("/", async (req, res) => {
 });
 
 module.exports = router;
-
