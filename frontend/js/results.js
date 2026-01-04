@@ -51,3 +51,4 @@ function renderCompanies(companies) {
     )
     .join("");
 }
+
