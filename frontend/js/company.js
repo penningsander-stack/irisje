@@ -1,216 +1,134 @@
 // frontend/js/company.js
-// v20260101-COMPANY-LOGO-ROBUST+REVIEWS
-//
-// - Logo / favicon robuust
-// - Reviews via nieuw reviews-endpoint
-// - Geen regressies
+// Laadt één bedrijf:
+// - via ?company=ID  → GET /api/publicCompanies/:id
+// - anders via ?slug= → GET /api/companies/slug/:slug
+// Bestaand slug-gedrag blijft intact.
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", () => {
-  initCompany();
+  initCompanyPage();
 });
 
-async function initCompany() {
+async function initCompanyPage() {
   const params = new URLSearchParams(window.location.search);
+  const companyId = params.get("company");
   const slug = params.get("slug");
 
-  if (!slug) {
-    console.error("❌ slug ontbreekt");
-    return;
-  }
-
   try {
-    const res = await fetch(
-      `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`
-    );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    let data;
 
-    const data = await res.json();
-    const company = data?.item || data;
-
-    if (!company) throw new Error("Geen company data");
-
-    renderHero(company);
-    renderDetails(company);
-    loadReviews(company._id);
-  } catch (err) {
-    console.error("❌ Company load error:", err);
-  }
-}
-
-/* =========================
-   HERO
-========================= */
-function renderHero(c) {
-  const nameEl = document.getElementById("companyName");
-  const metaEl = document.getElementById("companyMeta");
-  const ratingEl = document.getElementById("companyRating");
-  const logoWrap = document.getElementById("companyLogoWrap");
-  const logoEl = document.getElementById("companyLogo");
-  const badgeEl = document.getElementById("premiumBadge");
-
-  if (nameEl) nameEl.textContent = c.name || "Onbekend bedrijf";
-
-  if (metaEl) {
-    const cat = Array.isArray(c.categories) ? c.categories[0] : "";
-    metaEl.textContent = [c.city, cat].filter(Boolean).join(" · ");
-  }
-
-  /* ===== LOGO / FAVICON (ROBUST) ===== */
-  if (logoWrap && logoEl) {
-    let logoUrl = null;
-
-    if (c.logo) {
-      logoUrl = c.logo;
-    } else if (c.website) {
-      try {
-        const domain = new URL(c.website).hostname;
-        logoUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-      } catch {
-        logoUrl = null;
+    if (companyId) {
+      // Nieuw pad: ophalen op ID (publiek)
+      data = await safeJsonFetch(`${API_BASE}/publicCompanies/${encodeURIComponent(companyId)}`);
+      if (!data || !data.ok || !data.company) {
+        throw new Error("Bedrijf niet gevonden (ID)");
       }
-    }
-
-    if (!logoUrl) {
-      logoWrap.classList.add("hidden");
-    } else {
-      logoEl.classList.add("hidden");
-
-      logoEl.onload = () => logoEl.classList.remove("hidden");
-      logoEl.onerror = () => logoWrap.classList.add("hidden");
-
-      logoEl.src = logoUrl;
-    }
-  }
-
-  if (badgeEl && c.isPremium) {
-    badgeEl.classList.remove("hidden");
-  }
-
-  if (ratingEl) {
-    ratingEl.innerHTML = renderHeroRating(
-      Number(c.avgRating) || 0,
-      Number(c.reviewCount) || 0,
-      Boolean(c.isVerified)
-    );
-  }
-}
-
-function renderHeroRating(avg, count, verified) {
-  if (!count || count < 1) {
-    return `<div class="text-sm text-slate-500">Nog geen reviews</div>`;
-  }
-
-  const stars = "★".repeat(Math.round(avg));
-  const label = count === 1 ? "review" : "reviews";
-
-  return `
-    <div class="flex items-center gap-2 text-sm">
-      <span style="color:#f59e0b">${stars}</span>
-      <span class="font-medium">${formatRating(avg)}</span>
-      <span class="text-slate-500">(${count} ${label})</span>
-      ${
-        verified
-          ? `<span class="ml-2 text-emerald-600 text-xs">✔ Geverifieerd</span>`
-          : ""
-      }
-    </div>
-  `;
-}
-
-/* =========================
-   DETAILS
-========================= */
-function renderDetails(c) {
-  const list = document.getElementById("companyDetails");
-  if (!list) return;
-
-  list.innerHTML = "";
-
-  addDetail(list, "Plaats", c.city);
-  addDetail(
-    list,
-    "Categorie",
-    Array.isArray(c.categories) ? c.categories.join(", ") : ""
-  );
-  addDetail(list, "Telefoon", c.phone);
-  addDetail(list, "Website", c.website, true);
-  addDetail(list, "Geverifieerd", c.isVerified ? "Ja" : "Nee");
-}
-
-function addDetail(list, label, value, isLink = false) {
-  if (!value) return;
-  const li = document.createElement("li");
-  li.innerHTML = isLink
-    ? `<strong>${label}:</strong> <a href="${value}" target="_blank" class="text-indigo-600">${value}</a>`
-    : `<strong>${label}:</strong> ${escapeHtml(String(value))}`;
-  list.appendChild(li);
-}
-
-/* =========================
-   REVIEWS
-========================= */
-async function loadReviews(companyId) {
-  if (!companyId) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/reviews/company/${companyId}`);
-    if (!res.ok) return;
-
-    const data = await res.json();
-
-    // ✅ NIEUW: juiste veldnaam
-    const reviews = Array.isArray(data?.reviews)
-      ? data.reviews
-      : Array.isArray(data?.items)
-      ? data.items
-      : [];
-
-    const container = document.getElementById("reviewsContainer");
-    const empty = document.getElementById("noReviews");
-
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    if (!reviews.length) {
-      if (empty) empty.classList.remove("hidden");
+      renderCompany(data.company);
       return;
     }
 
-    reviews.forEach(r => {
-      const div = document.createElement("div");
-      div.className = "border-b border-slate-100 pb-3";
+    if (slug) {
+      // Bestaand pad: ophalen op slug
+      data = await safeJsonFetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
+      // Sommige endpoints geven { company }, andere { item }
+      const company = data.company || data.item;
+      if (!company) {
+        throw new Error("Bedrijf niet gevonden (slug)");
+      }
+      renderCompany(company);
+      return;
+    }
 
-      div.innerHTML = `
-        <div class="flex items-center gap-2 text-sm mb-1">
-          <span style="color:#f59e0b">${"★".repeat(
-            Math.round(r.rating || 0)
-          )}</span>
-          <span class="text-slate-500">${formatRating(r.rating)}</span>
-        </div>
-        <div class="text-sm text-slate-700">${escapeHtml(
-          r.comment || ""
-        )}</div>
-      `;
-      container.appendChild(div);
-    });
+    throw new Error("Geen company-id of slug in de URL");
   } catch (err) {
-    console.error("❌ Reviews load error:", err);
+    console.error("❌ Company laden mislukt:", err);
+    showError("Het bedrijf kon niet worden geladen.");
   }
 }
 
-/* =========================
-   HELPERS
-========================= */
-function formatRating(n) {
-  return (Math.round(n * 10) / 10).toString().replace(".", ",");
+async function safeJsonFetch(url, options = {}) {
+  const res = await fetch(url, options);
+  const text = await res.text();
+  let json;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(`Geen geldige JSON (${res.status})`);
+  }
+  if (!res.ok) {
+    const msg = (json && json.error) ? json.error : `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  return json;
 }
 
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+function renderCompany(c) {
+  // Verwachte elementen in company.html (ongewijzigd gebruikt):
+  // #companyName, #companyTagline, #companyDescription,
+  // #companyCity, #companyPhone, #companyEmail, #companyWebsite,
+  // #companyCategories, #companyRating
+
+  setText("companyName", c.name);
+  setText("companyTagline", c.tagline || "");
+  setText("companyDescription", c.description || "");
+  setText("companyCity", c.city || "");
+  setText("companyPhone", c.phone || "");
+  setText("companyEmail", c.email || "");
+  setLink("companyWebsite", c.website || "");
+  setList("companyCategories", c.categories || []);
+  setRating("companyRating", c.avgRating, c.reviewCount);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || "";
+}
+
+function setLink(id, href) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (href) {
+    el.href = href;
+    el.textContent = href;
+    el.style.display = "";
+  } else {
+    el.style.display = "none";
+  }
+}
+
+function setList(id, items) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = "";
+  if (!Array.isArray(items) || items.length === 0) {
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "";
+  items.forEach(v => {
+    const li = document.createElement("li");
+    li.textContent = v;
+    el.appendChild(li);
+  });
+}
+
+function setRating(id, avg, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (typeof avg === "number" && typeof count === "number") {
+    el.textContent = `${avg.toFixed(1)} (${count})`;
+  } else {
+    el.textContent = "";
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById("companyError");
+  if (el) {
+    el.textContent = msg;
+    el.style.display = "";
+  } else {
+    alert(msg);
+  }
 }
