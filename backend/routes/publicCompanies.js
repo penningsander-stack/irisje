@@ -1,65 +1,95 @@
 // backend/routes/publicCompanies.js
-const express = require("express");
-const router = express.Router();
-const Company = require("../models/company");
+import express from "express";
+import Company from "../models/company.js";
 
-// GET /api/publicCompanies
+const router = express.Router();
+
+/**
+ * GET /api/publicCompanies
+ *
+ * Query (allemaal optioneel):
+ * - category
+ * - specialty
+ * - region
+ * - minRating
+ * - verified
+ * - sort
+ *
+ * Gedrag:
+ * - Geen filters → fallback = populaire bedrijven
+ * - Nooit HTTP 400
+ */
 router.get("/", async (req, res) => {
   try {
     const {
       category,
       specialty,
       region,
-      verified,
       minRating,
-      sort = "relevance",
-      limit = 30,
+      verified,
+      sort,
     } = req.query;
 
-    const query = {};
-
-    // 🔹 FILTERS — ALLEMAAL OPTIONEEL EN VEILIG
+    const filter = {};
 
     if (category) {
-      query.categories = category;
+      filter.categories = { $in: [category] };
     }
 
     if (specialty) {
-      query.specialties = specialty;
+      filter.specialties = { $in: [specialty] };
     }
 
     if (region) {
-      query.regions = region;
+      filter.regions = { $in: [region] };
     }
 
     if (verified === "yes") {
-      query.isVerified = true;
+      filter.isVerified = true;
     }
 
     if (minRating) {
-      query.avgRating = { $gte: Number(minRating) };
+      filter.avgRating = { $gte: Number(minRating) };
     }
 
-    // 🔹 SORTEREN
-    let sortQuery = { createdAt: -1 }; // default: nieuwste eerst
+    let query = Company.find(filter);
 
-    if (sort === "rating") {
-      sortQuery = { avgRating: -1 };
-    } else if (sort === "reviews") {
-      sortQuery = { reviewCount: -1 };
-    } else if (sort === "verified") {
-      sortQuery = { isVerified: -1 };
-    } else if (sort === "az") {
-      sortQuery = { name: 1 };
+    // Sortering
+    switch (sort) {
+      case "rating":
+        query = query.sort({ avgRating: -1 });
+        break;
+      case "reviews":
+        query = query.sort({ reviewCount: -1 });
+        break;
+      case "verified":
+        query = query.sort({ isVerified: -1 });
+        break;
+      case "az":
+        query = query.sort({ name: 1 });
+        break;
+      default:
+        // relevance / default
+        query = query.sort({ isVerified: -1, avgRating: -1 });
     }
 
-    const companies = await Company.find(query)
-      .sort(sortQuery)
-      .limit(Number(limit));
+    let companies = await query.limit(50).lean();
+
+    // 🔁 FALLBACK: geen filters of geen resultaat
+    let fallbackUsed = false;
+
+    if (companies.length === 0) {
+      fallbackUsed = true;
+
+      companies = await Company.find({})
+        .sort({ isVerified: -1, avgRating: -1, reviewCount: -1 })
+        .limit(50)
+        .lean();
+    }
 
     return res.json({
       ok: true,
-      count: companies.length,
+      fallbackUsed,
       companies,
     });
   } catch (err) {
@@ -71,4 +101,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
