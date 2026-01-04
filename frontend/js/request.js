@@ -1,83 +1,62 @@
 // frontend/js/request.js
-<<<<<<< HEAD
-// v2026-01-06 FIX-WIZARD-NAVIGATION
+// v2026-01-06 FIX-NEXT-BUTTON
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-let currentStep = 0;
-const steps = Array.from(document.querySelectorAll(".wizard-step"));
-
-function showStep(index) {
-  steps.forEach((step, i) => {
-    step.style.display = i === index ? "block" : "none";
-  });
-}
-
-function nextStep() {
-  if (currentStep < steps.length - 1) {
-    currentStep++;
-    showStep(currentStep);
-  }
-}
-
-function prevStep() {
-  if (currentStep > 0) {
-    currentStep--;
-    showStep(currentStep);
-  }
-}
+let step = 1;
+const total = 5;
 
 document.addEventListener("DOMContentLoaded", () => {
-  showStep(currentStep);
+  render();
 
-  document.querySelectorAll("[data-next]").forEach(btn => {
-    btn.addEventListener("click", nextStep);
+  document.getElementById("requestWizard").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+
+    if (btn.dataset.action === "next") {
+      if (!validate()) return;
+      step++;
+      render();
+    }
+
+    if (btn.dataset.action === "prev") {
+      step--;
+      render();
+    }
   });
 
-  document.querySelectorAll("[data-prev]").forEach(btn => {
-    btn.addEventListener("click", prevStep);
-  });
+  document.getElementById("requestWizard").addEventListener("submit", submitForm);
 });
 
-// =======================
-// SUBMIT (laatste stap)
-// =======================
-=======
-// v2026-01-06 FIX-POST-PUBLICREQUESTS
-
-const API_BASE = "https://irisje-backend.onrender.com/api";
-
-async function submitRequest(payload) {
-  const res = await fetch(`${API_BASE}/publicRequests`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+function render() {
+  document.querySelectorAll(".wizard-step").forEach(el => {
+    el.classList.toggle("hidden", Number(el.dataset.step) !== step);
   });
-
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch {}
-
-  if (!res.ok || !data || data.ok !== true) {
-    throw new Error((data && data.error) || "Not Found");
-  }
-  return data;
+  document.getElementById("wizardStepNow").textContent = step;
+  document.getElementById("wizardStepTotal").textContent = total;
 }
 
-// Voorbeeld aanroep (laat jouw bestaande UI dit gebruiken)
->>>>>>> parent of de64fcc (Diversen)
-document.addEventListener("submit", async (e) => {
-  if (!e.target.matches("#requestForm")) return;
+function validate() {
+  if (step === 1 && !document.getElementById("categorySelect").value) {
+    alert("Kies een categorie");
+    return false;
+  }
+  if (step === 3 && !document.getElementById("messageInput").value.trim()) {
+    alert("Vul een bericht in");
+    return false;
+  }
+  return true;
+}
+
+async function submitForm(e) {
   e.preventDefault();
 
   const payload = {
-<<<<<<< HEAD
-    name: document.querySelector("#name")?.value || "",
-    email: document.querySelector("#email")?.value || "",
-    message: document.querySelector("#message")?.value || "",
-    category: document.querySelector("#category")?.value || "",
-    specialty: document.querySelector("#specialty")?.value || "",
-    context: document.querySelector("#context")?.value || "",
+    category: document.getElementById("categorySelect").value,
+    specialty: document.getElementById("specialtyInput").value,
+    message: document.getElementById("messageInput").value,
+    name: document.getElementById("nameInput").value,
+    email: document.getElementById("emailInput").value,
   };
 
   try {
@@ -88,26 +67,12 @@ document.addEventListener("submit", async (e) => {
     });
 
     const data = await res.json();
-    if (!data.ok) throw new Error(data.error || "Server error");
+    if (!data.ok) throw new Error();
 
     window.location.href = `/results.html?requestId=${data.requestId}`;
-  } catch (err) {
-    alert("Aanvraag mislukt. Probeer opnieuw.");
-    console.error(err);
-=======
-    name: document.querySelector("[name='name']")?.value || "",
-    email: document.querySelector("[name='email']")?.value || "",
-    message: document.querySelector("[name='message']")?.value || "",
-    category: document.querySelector("[name='category']")?.value || "",
-    specialty: document.querySelector("[name='specialty']")?.value || "",
-  };
-
-  try {
-    const out = await submitRequest(payload);
-    console.log("OK", out);
-  } catch (err) {
-    console.error("❌ Submit error:", err.message);
-    alert("Aanvraag mislukt.");
->>>>>>> parent of de64fcc (Diversen)
+  } catch {
+    const el = document.getElementById("submitError");
+    el.textContent = "Versturen mislukt";
+    el.classList.remove("hidden");
   }
-});
+}
