@@ -1,59 +1,50 @@
 // frontend/js/request.js
-// v2026-01-06 FIX-TRIM-CRASH-DEFINITIVE
+// v2026-01-07 FIX-WIZARD-SUBMIT
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
+
+const form = document.getElementById("requestWizard");
+const btnNext = document.getElementById("btnNext");
+const btnPrev = document.getElementById("btnPrev");
+const btnSubmit = document.getElementById("btnSubmit");
 
 let currentStep = 1;
 const steps = Array.from(document.querySelectorAll(".wizard-step"));
 
-const btnPrev = document.getElementById("btnPrev");
-const btnNext = document.getElementById("btnNext");
-const btnSubmit = document.getElementById("btnSubmit");
-const errorBox = document.getElementById("wizardError");
-
-function safeValue(id) {
-  const el = document.getElementById(id);
-  if (!el) return "";
-  if (typeof el.value !== "string") return "";
-  return el.value.trim();
-}
-
-function showStep(n) {
+function showStep(step) {
   steps.forEach(s => {
-    s.classList.toggle("hidden", Number(s.dataset.step) !== n);
+    s.classList.toggle("hidden", Number(s.dataset.step) !== step);
   });
 
-  btnPrev.disabled = n === 1;
-  btnNext.classList.toggle("hidden", n === steps.length);
-  btnSubmit.classList.toggle("hidden", n !== steps.length);
-
-  errorBox.classList.add("hidden");
+  btnPrev.style.display = step === 1 ? "none" : "inline-flex";
+  btnNext.classList.toggle("hidden", step === steps.length);
+  btnSubmit.classList.toggle("hidden", step !== steps.length);
 }
 
-btnPrev.onclick = () => {
-  if (currentStep > 1) {
-    currentStep--;
-    showStep(currentStep);
-  }
-};
-
-btnNext.onclick = () => {
+btnNext.addEventListener("click", () => {
   if (currentStep < steps.length) {
     currentStep++;
     showStep(currentStep);
   }
-};
+});
 
-document.getElementById("requestWizard").addEventListener("submit", async (e) => {
+btnPrev.addEventListener("click", () => {
+  if (currentStep > 1) {
+    currentStep--;
+    showStep(currentStep);
+  }
+});
+
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const payload = {
-    category: safeValue("category"),
-    specialty: safeValue("specialty"),
-    context: safeValue("context"),
-    message: safeValue("message"),
-    name: safeValue("name"),
-    email: safeValue("email"),
+    category: form.category.value,              // ✅ altijd "Advocaat"
+    specialty: form.specialty?.value || "",
+    context: form.context?.value || "",
+    message: form.message.value.trim(),
+    name: form.name.value.trim(),
+    email: form.email.value.trim(),
   };
 
   try {
@@ -64,14 +55,16 @@ document.getElementById("requestWizard").addEventListener("submit", async (e) =>
     });
 
     const data = await res.json();
-    if (!res.ok || !data.ok) {
-      throw new Error(data?.error || "Aanvraag mislukt");
+
+    if (!res.ok || data.ok !== true) {
+      alert(data.error || "Versturen mislukt");
+      return;
     }
 
-    window.location.href = `results.html?requestId=${data.requestId}`;
+    window.location.href = `/results.html?requestId=${data.requestId}`;
   } catch (err) {
-    errorBox.textContent = err.message;
-    errorBox.classList.remove("hidden");
+    console.error("❌ Submit error:", err);
+    alert("Er ging iets mis bij het versturen.");
   }
 });
 
