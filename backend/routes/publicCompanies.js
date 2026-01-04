@@ -1,125 +1,73 @@
 // backend/routes/publicCompanies.js
-
 const express = require("express");
 const router = express.Router();
-
 const Company = require("../models/company");
-const Request = require("../models/request");
 
-/**
- * =========================================================
- * POST /api/publicCompanies
- * Publiek: bedrijf aanmelden
- * =========================================================
- */
-router.post("/", async (req, res) => {
-  try {
-    const data = req.body;
-
-    const company = new Company({
-      name: data.name,
-      slug: data.slug,
-      description: data.description || "",
-      city: data.city || "",
-      categories: Array.isArray(data.categories) ? data.categories : [],
-      specialties: Array.isArray(data.specialties) ? data.specialties : [],
-      regions: Array.isArray(data.regions) ? data.regions : [],
-      verified: false,
-      source: "public",
-    });
-
-    await company.save();
-    res.json({ ok: true, company });
-  } catch (err) {
-    console.warn("❌ publicCompanies POST:", err);
-    res.status(500).json({ ok: false, error: "Server error" });
-  }
-});
-
-/**
- * =========================================================
- * GET /api/publicCompanies/:id
- * Publiek: één bedrijf ophalen
- * =========================================================
- */
-router.get("/:id", async (req, res) => {
-  try {
-    const company = await Company.findById(req.params.id).lean();
-
-    if (!company) {
-      return res.status(404).json({ ok: false, error: "Not found" });
-    }
-
-    res.json({ ok: true, company });
-  } catch (err) {
-    console.warn("❌ publicCompanies GET :id:", err);
-    res.status(500).json({ ok: false, error: "Server error" });
-  }
-});
-
-/**
- * =========================================================
- * GET /api/publicCompanies
- * - zonder requestId → ALLE publieke bedrijven
- * - met requestId → matchen bij aanvraag
- * =========================================================
- */
+// GET /api/publicCompanies
 router.get("/", async (req, res) => {
   try {
-    const { requestId } = req.query;
+    const {
+      category,
+      specialty,
+      region,
+      verified,
+      minRating,
+      sort = "relevance",
+      limit = 30,
+    } = req.query;
 
-    // 🔁 GEEN requestId → algemene lijst
-    if (!requestId) {
-      const companies = await Company.find({ source: "public" })
-        .limit(50)
-        .lean();
+    const query = {};
 
-      return res.json({
-        ok: true,
-        companies,
-      });
+    // 🔹 FILTERS — ALLEMAAL OPTIONEEL EN VEILIG
+
+    if (category) {
+      query.categories = category;
     }
 
-    // 🎯 MET requestId → selectie bij aanvraag
-    const request = await Request.findById(requestId).lean();
-
-    if (!request) {
-      return res.status(404).json({ ok: false, error: "Request not found" });
+    if (specialty) {
+      query.specialties = specialty;
     }
 
-    const categories =
-      request.categories?.length
-        ? request.categories
-        : request.category
-        ? [request.category]
-        : [];
+    if (region) {
+      query.regions = region;
+    }
 
-    const specialties =
-      request.specialties?.length
-        ? request.specialties
-        : request.specialty
-        ? [request.specialty]
-        : [];
+    if (verified === "yes") {
+      query.isVerified = true;
+    }
 
-    const query = {
-      $or: [
-        { categories: { $in: categories } },
-        { specialties: { $in: specialties } },
-      ],
-    };
+    if (minRating) {
+      query.avgRating = { $gte: Number(minRating) };
+    }
+
+    // 🔹 SORTEREN
+    let sortQuery = { createdAt: -1 }; // default: nieuwste eerst
+
+    if (sort === "rating") {
+      sortQuery = { avgRating: -1 };
+    } else if (sort === "reviews") {
+      sortQuery = { reviewCount: -1 };
+    } else if (sort === "verified") {
+      sortQuery = { isVerified: -1 };
+    } else if (sort === "az") {
+      sortQuery = { name: 1 };
+    }
 
     const companies = await Company.find(query)
-      .limit(20)
-      .lean();
+      .sort(sortQuery)
+      .limit(Number(limit));
 
-    res.json({
+    return res.json({
       ok: true,
-      request,
+      count: companies.length,
       companies,
     });
   } catch (err) {
-    console.warn("❌ publicCompanies GET:", err);
-    res.status(500).json({ ok: false, error: "Server error" });
+    console.error("❌ publicCompanies error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Server error",
+    });
   }
 });
 
