@@ -36,7 +36,7 @@ function normalizeStr(s) {
 
 function normalizeArray(arr) {
   if (!Array.isArray(arr)) return [];
-  return arr.map(normalizeStr).filter(Boolean);
+  return arr.map(s => String(s).trim().toLowerCase()).filter(Boolean);
 }
 
 function overlapCount(a = [], b = []) {
@@ -79,20 +79,26 @@ function normalizeRequestLegacy(request) {
 function computeScore(company, request, options = {}) {
   const { useSpecialties = true, useRegions = true } = options;
 
-  const catOverlap = overlapCount(company.categories, request.categories);
+  const companyCategories = normalizeArray(company.categories);
+const companySpecialties = normalizeArray(company.specialties);
+const companyRegions = normalizeArray(company.regions);
+
+const catOverlap = overlapCount(companyCategories, request.categories);
+
   if (catOverlap === 0) return null;
 
   let score = catOverlap * MATCHING_CONFIG.WEIGHTS.category;
 
   if (useSpecialties && request.specialties.length) {
-    const s = overlapCount(company.specialties, request.specialties);
-    score += s * MATCHING_CONFIG.WEIGHTS.specialty;
-  }
+  const s = overlapCount(companySpecialties, request.specialties);
+  score += s * MATCHING_CONFIG.WEIGHTS.specialty;
+}
 
-  if (useRegions && request.regions.length) {
-    const r = overlapCount(company.regions, request.regions);
-    score += r * MATCHING_CONFIG.WEIGHTS.region;
-  }
+if (useRegions && request.regions.length) {
+  const r = overlapCount(companyRegions, request.regions);
+  score += r * MATCHING_CONFIG.WEIGHTS.region;
+}
+
 
   return { score };
 }
