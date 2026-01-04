@@ -1,5 +1,6 @@
 <!-- frontend/select-companies.html -->
-<!-- v20260103-FIX-SELECT-COMPANIES -->
+<!-- v20260104-MATCH-SCORE -->
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -7,8 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kies bedrijven – Irisje.nl</title>
 
-  <!-- Belangrijk: deze pagina gebruikt /css/style.css -->
-  <link rel="stylesheet" href="/css/style.css?v=20260103" />
+  <link rel="stylesheet" href="/css/style.css?v=20260104" />
 </head>
 
 <body class="irisje-body min-h-screen">
@@ -21,12 +21,6 @@
           <span class="text-xs text-slate-500">Aanvraag versturen</span>
         </div>
       </a>
-
-      <nav class="hidden sm:flex items-center space-x-6 text-sm text-slate-600">
-        <a class="nav-link" href="/index.html">Home</a>
-        <a class="nav-link" href="/ad-company.html">Bedrijf aanmelden</a>
-        <a class="nav-link" href="/login.html">Inloggen</a>
-      </nav>
     </div>
   </header>
 
@@ -34,7 +28,7 @@
     <div class="results-header-bar">
       <div class="results-title-block">
         <h1 id="pageTitle">Kies bedrijven voor je aanvraag</h1>
-        <p>Selecteer maximaal 5 bedrijven</p>
+        <p>Resultaten zijn gesorteerd op beste match.</p>
       </div>
       <div class="results-meta">
         <span class="badge-soft" id="requestBadge">Aanvraag</span>
@@ -74,11 +68,9 @@
           <button class="btn-primary primary-cta" id="sendBtn" type="button">Verstuur aanvragen</button>
         </div>
       </div>
-
-      <div class="request-note">Tip: begin met 1 bedrijf, en voeg er later eventueel nog meer toe (max 5).</div>
     </section>
   </main>
 
-  <script src="/js/select-companies.js?v=20260103" defer></script>
+  <script src="/js/select-companies.js?v=20260104" defer></script>
 </body>
 </html>
