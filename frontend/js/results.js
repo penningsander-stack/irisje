@@ -101,7 +101,10 @@ function applyAndRenderResults(hasRequestContext) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> parent of de64fcc (Diversen)
 =======
 >>>>>>> parent of de64fcc (Diversen)
 function renderCompanyCard(company) {
@@ -165,6 +168,9 @@ function escapeHtml(str) {
   }
 });
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> parent of de64fcc (Diversen)
+=======
 >>>>>>> parent of de64fcc (Diversen)
 =======
 >>>>>>> parent of de64fcc (Diversen)
