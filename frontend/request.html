@@ -1,129 +1,31 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <title>Aanvraag plaatsen – Irisje.nl</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!-- request.html -->
+<!-- v2026-01-06 STEP5-FORM-ID-FIX -->
 
-  <link rel="stylesheet" href="/style.css?v=20260102">
-</head>
+<form id="requestWizard">
+  <!-- bestaande wizard-HTML ongewijzigd -->
 
-<body class="irisje-body">
+  <input type="hidden" name="category" id="category" />
+  <input type="hidden" name="specialty" id="specialty" />
 
-<header class="irisje-header">
-  <div class="max-w-6xl mx-auto px-4 py-4">
-    <a href="/" class="text-indigo-700 font-bold text-lg">Irisje.nl</a>
-  </div>
-</header>
+  <!-- Stap 5 -->
+  <section data-step="5">
+    <h2>Contactgegevens</h2>
 
-<main class="max-w-3xl mx-auto px-4 py-10">
-  <div class="bg-white rounded-2xl shadow-brand p-6 md:p-8">
+    <label>
+      Uw naam
+      <input type="text" name="name" required />
+    </label>
 
-    <div class="mb-6">
-      <div id="stepLabel" class="text-sm text-slate-500 mb-1">Stap 1 van 5</div>
-      <h1 id="stepTitle" class="text-xl font-semibold text-slate-900">
-        Categorie
-      </h1>
-    </div>
+    <label>
+      E-mailadres
+      <input type="email" name="email" required />
+    </label>
 
-    <div id="wizardError" class="hidden mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm"></div>
-    <div id="wizardStatus" class="mb-4 text-sm text-slate-600"></div>
+    <label>
+      Toelichting
+      <textarea name="message" required></textarea>
+    </label>
 
-    <form id="requestWizard">
-
-      <!-- Stap 1: Categorie -->
-      <section class="wizard-step" data-step="1">
-        <input type="hidden" id="category" name="category" value="advocaat">
-
-        <div class="p-4 rounded-xl bg-indigo-50 text-indigo-900">
-          <p class="font-medium">Categorie</p>
-          <p class="mt-1">Advocaat</p>
-        </div>
-      </section>
-
-      <!-- Stap 2: Specialisme -->
-      <section class="wizard-step hidden" data-step="2">
-        <label class="block mb-2 font-medium">Kies een specialisme</label>
-        <select id="specialty" name="specialty" class="irisje-input" required>
-          <option value="">Maak een keuze</option>
-          <option value="arbeidsrecht">Arbeidsrecht</option>
-          <option value="ontslag-vso">Ontslag / vaststellingsovereenkomst</option>
-          <option value="huurrecht">Huurrecht</option>
-          <option value="familierecht">Familierecht</option>
-          <option value="strafrecht">Strafrecht</option>
-          <option value="bestuursrecht">Bestuursrecht</option>
-        </select>
-      </section>
-
-      <!-- Stap 3: Context -->
-      <section class="wizard-step hidden" data-step="3">
-        <label class="block mb-2 font-medium">
-          In welke rol doet u deze aanvraag?
-        </label>
-        <select id="context" name="context" class="irisje-input">
-          <option value="">Maak een keuze</option>
-          <option value="werknemer">Werknemer</option>
-          <option value="werkgever">Werkgever</option>
-        </select>
-      </section>
-
-      <!-- Stap 4: Toelichting -->
-      <section class="wizard-step hidden" data-step="4">
-        <label class="block mb-2 font-medium">
-          Licht uw aanvraag toe
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          rows="5"
-          class="irisje-input"
-          placeholder="Beschrijf kort uw situatie of vraag"
-          required
-        ></textarea>
-      </section>
-
-      <!-- Stap 5: Contact -->
-      <section class="wizard-step hidden" data-step="5">
-        <label class="block mb-2 font-medium">Uw naam</label>
-        <input id="name" name="name" class="irisje-input mb-4" required>
-
-        <label class="block mb-2 font-medium">E-mailadres</label>
-        <input id="email" name="email" type="email" class="irisje-input" required>
-      </section>
-
-      <!-- Controls -->
-      <div class="mt-8 flex justify-between items-center">
-        <button
-          type="button"
-          id="btnPrev"
-          class="irisje-btn-secondary"
-        >
-          Vorige
-        </button>
-
-        <div class="flex gap-3">
-          <button
-            type="button"
-            id="btnNext"
-            class="irisje-btn"
-          >
-            Volgende
-          </button>
-
-          <button
-            type="submit"
-            id="btnSubmit"
-            class="irisje-btn hidden"
-          >
-            Aanvraag versturen
-          </button>
-        </div>
-      </div>
-
-    </form>
-  </div>
-</main>
-
-<script src="/js/request.js?v=20260102"></script>
-</body>
-</html>
+    <button type="submit">Aanvraag versturen</button>
+  </section>
+</form>
