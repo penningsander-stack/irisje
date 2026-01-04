@@ -1,23 +1,13 @@
 // backend/routes/publicCompanies.js
-import express from "express";
-import Company from "../models/company.js";
+const express = require("express");
+const Company = require("../models/company");
 
 const router = express.Router();
 
 /**
  * GET /api/publicCompanies
- *
- * Query (allemaal optioneel):
- * - category
- * - specialty
- * - region
- * - minRating
- * - verified
- * - sort
- *
- * Gedrag:
- * - Geen filters → fallback = populaire bedrijven
- * - Nooit HTTP 400
+ * - NOOIT 400
+ * - Altijd fallback
  */
 router.get("/", async (req, res) => {
   try {
@@ -32,29 +22,14 @@ router.get("/", async (req, res) => {
 
     const filter = {};
 
-    if (category) {
-      filter.categories = { $in: [category] };
-    }
-
-    if (specialty) {
-      filter.specialties = { $in: [specialty] };
-    }
-
-    if (region) {
-      filter.regions = { $in: [region] };
-    }
-
-    if (verified === "yes") {
-      filter.isVerified = true;
-    }
-
-    if (minRating) {
-      filter.avgRating = { $gte: Number(minRating) };
-    }
+    if (category) filter.categories = { $in: [category] };
+    if (specialty) filter.specialties = { $in: [specialty] };
+    if (region) filter.regions = { $in: [region] };
+    if (verified === "yes") filter.isVerified = true;
+    if (minRating) filter.avgRating = { $gte: Number(minRating) };
 
     let query = Company.find(filter);
 
-    // Sortering
     switch (sort) {
       case "rating":
         query = query.sort({ avgRating: -1 });
@@ -69,18 +44,15 @@ router.get("/", async (req, res) => {
         query = query.sort({ name: 1 });
         break;
       default:
-        // relevance / default
         query = query.sort({ isVerified: -1, avgRating: -1 });
     }
 
     let companies = await query.limit(50).lean();
 
-    // 🔁 FALLBACK: geen filters of geen resultaat
     let fallbackUsed = false;
 
-    if (companies.length === 0) {
+    if (!companies || companies.length === 0) {
       fallbackUsed = true;
-
       companies = await Company.find({})
         .sort({ isVerified: -1, avgRating: -1, reviewCount: -1 })
         .limit(50)
@@ -101,4 +73,4 @@ router.get("/", async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
