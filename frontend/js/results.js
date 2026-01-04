@@ -1,44 +1,37 @@
 // frontend/js/results.js
-// v20260104-results-fallback-publicCompanies
+// v20260104-results-fallback-safe
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-let allResults = [];
-
-document.addEventListener("DOMContentLoaded", () => {
-  initResults();
-});
+document.addEventListener("DOMContentLoaded", initResults);
 
 async function initResults() {
   const params = new URLSearchParams(window.location.search);
 
   const q = params.get("q") || "";
   const category = params.get("category") || "";
-  const city = params.get("city") || "";
   const requestId = params.get("requestId") || "";
 
+  // ⚠️ city telt NIET mee als zoektrigger
   const hasSearchContext = q || category || requestId;
-
 
   let url;
 
   if (!hasSearchContext) {
-    // 🔁 FALLBACK: toon alle publieke bedrijven
+    // fallback → alle publieke bedrijven
     url = `${API_BASE}/publicCompanies`;
-    setResultsHeader(
+    setHeader(
       "Populaire bedrijven",
       "Selecteer filters of kies een bedrijf om verder te gaan."
     );
   } else {
-    // 🔍 Normale zoekflow
     const searchParams = new URLSearchParams();
     if (q) searchParams.set("q", q);
     if (category) searchParams.set("category", category);
-    if (city) searchParams.set("city", city);
     if (requestId) searchParams.set("requestId", requestId);
 
     url = `${API_BASE}/companies/search?${searchParams.toString()}`;
-    setResultsHeader(
+    setHeader(
       "Bedrijven in jouw regio",
       "Vergelijk bedrijven, lees reviews en vraag in één keer een offerte aan."
     );
@@ -46,32 +39,29 @@ async function initResults() {
 
   try {
     const data = await safeJsonFetch(url);
+    const companies = Array.isArray(data?.companies)
+      ? data.companies
+      : Array.isArray(data)
+      ? data
+      : [];
 
-    if (!data || !Array.isArray(data.companies || data)) {
-      renderEmpty();
-      return;
-    }
-
-    allResults = data.companies || data;
-    renderResults(allResults);
+    renderResults(companies);
   } catch (err) {
     console.error("❌ Resultaten fout:", err);
     renderEmpty();
   }
 }
 
-function setResultsHeader(title, subtitle) {
-  const titleEl = document.getElementById("resultsTitle");
-  const subtitleEl = document.getElementById("resultsSubtitle");
-
-  if (titleEl) titleEl.textContent = title;
-  if (subtitleEl) subtitleEl.textContent = subtitle;
+function setHeader(title, subtitle) {
+  const t = document.getElementById("resultsTitle");
+  const s = document.getElementById("resultsSubtitle");
+  if (t) t.textContent = title;
+  if (s) s.textContent = subtitle;
 }
 
 function renderResults(companies) {
   const grid = document.getElementById("resultsGrid");
-if (!grid) return;
-grid.innerHTML = `<p>Geen bedrijven gevonden.</p>`;
+  if (!grid) return;
 
   grid.innerHTML = "";
 
@@ -80,28 +70,27 @@ grid.innerHTML = `<p>Geen bedrijven gevonden.</p>`;
     return;
   }
 
-  companies.forEach((company) => {
-    const card = document.createElement("div");
-    card.className = "company-card";
-    card.innerHTML = `
-      <h3>${company.name}</h3>
-      ${company.avgRating ? `<div>⭐ ${company.avgRating} (${company.reviewCount || 0})</div>` : ""}
-      ${company.city ? `<div>${company.city}</div>` : ""}
-      <a href="/company.html?company=${company._id}" class="btn">Bekijk bedrijf</a>
+  companies.forEach((c) => {
+    const el = document.createElement("div");
+    el.className = "company-card";
+    el.innerHTML = `
+      <h3>${c.name}</h3>
+      ${c.avgRating ? `<div>⭐ ${c.avgRating} (${c.reviewCount || 0})</div>` : ""}
+      ${c.city ? `<div>${c.city}</div>` : ""}
+      <a href="/company.html?company=${c._id}" class="btn">Bekijk bedrijf</a>
     `;
-    grid.appendChild(card);
+    grid.appendChild(el);
   });
 }
 
 function renderEmpty() {
   const grid = document.getElementById("resultsGrid");
-  grid.innerHTML = `<p>Geen bedrijven gevonden.</p>`;
+  if (!grid) return;
+  grid.innerHTML = "<p>Geen bedrijven gevonden.</p>";
 }
 
 async function safeJsonFetch(url) {
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-  return await res.json();
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
