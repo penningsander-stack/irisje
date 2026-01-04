@@ -13,7 +13,10 @@ async function initResults() {
   const requestId = params.get("requestId") || "";
 
   // ⚠️ city telt NIET mee als zoektrigger
-  const hasSearchContext = q || category || requestId;
+  const hasSearchContext =
+  (q && q.trim().length > 0) ||
+  (requestId && requestId.trim().length > 0);
+
 
   let url;
 
@@ -27,7 +30,10 @@ async function initResults() {
   } else {
     const searchParams = new URLSearchParams();
     if (q) searchParams.set("q", q);
-    if (category) searchParams.set("category", category);
+    if (category && category.trim().length > 0) {
+  searchParams.set("category", category);
+}
+
     if (requestId) searchParams.set("requestId", requestId);
 
     url = `${API_BASE}/companies/search?${searchParams.toString()}`;
