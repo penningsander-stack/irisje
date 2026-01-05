@@ -1,19 +1,10 @@
 /**
  * backend/seed/seed-arbeidsrecht-advocaten.js
  *
- * DOEL
- * - Voegt automatisch 5 testbedrijven toe voor:
- *   categorie: "advocaat"
- *   specialisme: "arbeidsrecht"
- *
- * VEREENVOUDIGD (optie 1)
- * - Zoekt ZELF een bestaande user als owner
- * - Geen handmatige stappen
- * - Geen MongoDB Atlas nodig
- *
- * VEILIG
- * - Past geen bestaande bedrijven aan
- * - Slaat over als slug al bestaat
+ * FIX:
+ * - Unieke email per seedbedrijf (vereist door unique index email_1)
+ * - Geen handmatige OWNER_ID nodig
+ * - Veilig: overslaat bestaande slugs
  */
 
 require("dotenv").config();
@@ -76,14 +67,16 @@ async function run() {
   await mongoose.connect(MONGO_URI);
   console.log("✅ Verbonden met MongoDB");
 
-  // 👉 AUTOMATISCH owner bepalen
+  // Automatisch een bestaande user als owner kiezen
   const owner = await User.findOne().lean();
   if (!owner) {
-    console.error("❌ Geen user gevonden. Er moet minimaal één gebruiker bestaan.");
+    console.error("❌ Geen user gevonden (er moet minimaal één gebruiker bestaan)");
     process.exit(1);
   }
 
   console.log(`👤 Owner automatisch gekozen: ${owner.email || owner._id}`);
+
+  let counter = 1;
 
   for (const data of COMPANIES) {
     const exists = await Company.findOne({ slug: data.slug });
@@ -92,14 +85,18 @@ async function run() {
       continue;
     }
 
+    const uniqueEmail = `arbeidsrecht-${counter}@test.irisje.nl`;
+    counter++;
+
     await Company.create({
       ...data,
       categories: ["advocaat"],
       specialties: ["arbeidsrecht"],
+      email: uniqueEmail,           // 🔑 FIX: uniek emailadres
       owner: owner._id,
     });
 
-    console.log(`➕ Toegevoegd: ${data.name}`);
+    console.log(`➕ Toegevoegd: ${data.name} (${uniqueEmail})`);
   }
 
   await mongoose.disconnect();
