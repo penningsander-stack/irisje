@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-09 RESULTS-SELECTION-B1
+// v2026-01-10 RESULTS-B2-SUBMIT
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const MAX_SELECTION = 5;
@@ -22,7 +22,7 @@ async function initResults() {
     if (requestId) {
       const res = await fetch(`${API_BASE}/publicRequests/${requestId}`);
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error("Request niet gevonden");
+      if (!res.ok || !data.ok) throw new Error("Aanvraag niet gevonden");
       companies = data.companies || [];
     } else {
       const res = await fetch(`${API_BASE}/publicCompanies`);
@@ -34,10 +34,15 @@ async function initResults() {
     allCompanies = companies;
     skeleton.style.display = "none";
     applyAndRender();
-
   } catch (e) {
     skeleton.style.display = "none";
     container.innerHTML = `<p class="text-slate-500">Fout bij laden.</p>`;
+  }
+
+  // submit
+  const sendBtn = document.getElementById("sendRequestBtn");
+  if (sendBtn) {
+    sendBtn.addEventListener("click", submitSelection);
   }
 }
 
@@ -45,34 +50,24 @@ function applyAndRender() {
   const container = document.getElementById("resultsContainer");
 
   let results = [...allCompanies];
+  const minRating = document.getElementById("filterMinRating")?.value || "";
+  const verifiedOnly = document.getElementById("filterVerified")?.value || "";
+  const sort = document.getElementById("sortResults")?.value || "relevance";
 
-  const minRating = document.getElementById("filterMinRating").value;
-  const verifiedOnly = document.getElementById("filterVerified").value;
-  const sort = document.getElementById("sortResults").value;
-
-  if (minRating) {
-    results = results.filter(c => (c.avgRating || 0) >= Number(minRating));
-  }
-  if (verifiedOnly === "yes") {
-    results = results.filter(c => c.isVerified === true);
-  }
+  if (minRating) results = results.filter(c => (c.avgRating || 0) >= Number(minRating));
+  if (verifiedOnly === "yes") results = results.filter(c => c.isVerified === true);
 
   switch (sort) {
     case "rating":
-      results.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
-      break;
+      results.sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0)); break;
     case "reviews":
-      results.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
-      break;
+      results.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)); break;
     case "az":
-      results.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-      break;
+      results.sort((a, b) => (a.name || "").localeCompare(b.name || "")); break;
   }
 
   if (!results.length) {
-    container.innerHTML = `<div class="col-span-full text-center text-slate-500 py-12">
-      Geen bedrijven gevonden.
-    </div>`;
+    container.innerHTML = `<div class="col-span-full text-center text-slate-500 py-12">Geen bedrijven gevonden.</div>`;
     return;
   }
 
@@ -109,12 +104,8 @@ function renderCard(company) {
 }
 
 window.toggleSelect = function (id) {
-  if (selectedIds.has(id)) {
-    selectedIds.delete(id);
-  } else {
-    if (selectedIds.size >= MAX_SELECTION) return;
-    selectedIds.add(id);
-  }
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else if (selectedIds.size < MAX_SELECTION) selectedIds.add(id);
   updateSelectionBar();
   applyAndRender();
 };
@@ -126,21 +117,36 @@ function updateSelectionBar() {
 
   countEl.textContent = selectedIds.size;
   btn.disabled = selectedIds.size === 0;
-
   bar.classList.toggle("hidden", selectedIds.size === 0);
+}
+
+async function submitSelection() {
+  const params = new URLSearchParams(window.location.search);
+  const requestId = params.get("requestId");
+  if (!requestId) return;
+
+  const res = await fetch(`${API_BASE}/publicRequests/${requestId}/submit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ companyIds: Array.from(selectedIds) })
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    alert(data.error || "Versturen mislukt");
+    return;
+  }
+
+  window.location.href = `/request-confirmation.html`;
 }
 
 function escapeHtml(str) {
   return String(str || "").replace(/[&<>"']/g, s => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
   }[s]));
 }
 
-// filters
 ["filterMinRating", "filterVerified", "sortResults"].forEach(id => {
-  document.getElementById(id).addEventListener("change", applyAndRender);
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("change", applyAndRender);
 });
