@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Aanvraag plaatsen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260102">
+  <link rel="stylesheet" href="/style.css?v=20260107">
 </head>
 
 <body class="irisje-body">
@@ -18,23 +18,21 @@
 <main class="max-w-3xl mx-auto px-4 py-10">
   <div class="bg-white rounded-2xl shadow-brand p-6 md:p-8">
 
-    <form id="requestWizard">
+    <!-- Progress -->
+    <div class="mb-6 text-sm text-slate-600">
+      <span id="progressText">Stap 1/5</span>
+    </div>
 
-      <!-- CATEGORIE – altijd gevuld -->
+    <form id="requestWizard" novalidate>
+
+      <!-- CATEGORIE – vast -->
       <input type="hidden" name="category" value="Advocaat">
 
-      <!-- Stap 1 -->
+      <!-- Stap 1: Wat zoek je -->
       <section class="wizard-step" data-step="1">
-        <h1 class="text-xl font-semibold mb-4">Categorie</h1>
-        <div class="p-4 rounded-xl bg-indigo-50 text-indigo-900">
-          Advocaat
-        </div>
-      </section>
-
-      <!-- Stap 2 -->
-      <section class="wizard-step hidden" data-step="2">
+        <h1 class="text-xl font-semibold mb-4">Wat zoek je?</h1>
         <label class="block mb-2 font-medium">Specialisme</label>
-        <select name="specialty" class="irisje-input">
+        <select name="specialty" class="irisje-input" required>
           <option value="">Maak een keuze</option>
           <option value="arbeidsrecht">Arbeidsrecht</option>
           <option value="ontslag-vso">Ontslag / VSO</option>
@@ -43,36 +41,56 @@
           <option value="strafrecht">Strafrecht</option>
           <option value="bestuursrecht">Bestuursrecht</option>
         </select>
+        <p class="mt-2 text-sm text-slate-500">Kies het rechtsgebied dat het beste past.</p>
       </section>
 
-      <!-- Stap 3 -->
-      <section class="wizard-step hidden" data-step="3">
+      <!-- Stap 2: Context -->
+      <section class="wizard-step hidden" data-step="2">
+        <h2 class="text-xl font-semibold mb-4">Uw situatie</h2>
         <label class="block mb-2 font-medium">Uw rol</label>
-        <select name="context" class="irisje-input">
+        <select name="context" class="irisje-input" required>
           <option value="">Maak een keuze</option>
           <option value="werknemer">Werknemer</option>
           <option value="werkgever">Werkgever</option>
         </select>
       </section>
 
-      <!-- Stap 4 -->
-      <section class="wizard-step hidden" data-step="4">
-        <label class="block mb-2 font-medium">Toelichting</label>
+      <!-- Stap 3: Toelichting -->
+      <section class="wizard-step hidden" data-step="3">
+        <h2 class="text-xl font-semibold mb-4">Korte toelichting</h2>
+        <label class="block mb-2 font-medium">Beschrijf uw vraag</label>
         <textarea
           name="message"
           rows="5"
           class="irisje-input"
+          placeholder="Beschrijf in het kort uw situatie of vraag"
           required
         ></textarea>
+        <p class="mt-2 text-sm text-slate-500">
+          Hoe duidelijker uw toelichting, hoe beter de match.
+        </p>
       </section>
 
-      <!-- Stap 5 -->
-      <section class="wizard-step hidden" data-step="5">
+      <!-- Stap 4: Contact -->
+      <section class="wizard-step hidden" data-step="4">
+        <h2 class="text-xl font-semibold mb-4">Uw contactgegevens</h2>
         <label class="block mb-2 font-medium">Uw naam</label>
         <input name="name" class="irisje-input mb-4" required>
 
         <label class="block mb-2 font-medium">E-mailadres</label>
         <input name="email" type="email" class="irisje-input" required>
+      </section>
+
+      <!-- Stap 5: Controle -->
+      <section class="wizard-step hidden" data-step="5">
+        <h2 class="text-xl font-semibold mb-4">Controleer uw aanvraag</h2>
+        <div class="text-sm text-slate-700 space-y-2">
+          <div><strong>Specialisme:</strong> <span data-review="specialty"></span></div>
+          <div><strong>Rol:</strong> <span data-review="context"></span></div>
+          <div><strong>Toelichting:</strong><br><span data-review="message"></span></div>
+          <div><strong>Naam:</strong> <span data-review="name"></span></div>
+          <div><strong>E-mail:</strong> <span data-review="email"></span></div>
+        </div>
       </section>
 
       <!-- Controls -->
@@ -97,4 +115,3 @@
 <script src="/js/request.js?v=20260107"></script>
 </body>
 </html>
-
