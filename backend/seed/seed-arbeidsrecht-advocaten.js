@@ -1,34 +1,30 @@
 /**
  * backend/seed/seed-arbeidsrecht-advocaten.js
  *
- * Doel:
- * - Zorgen dat er minimaal 5 bedrijven bestaan met:
- *   categories: ["advocaat"]
- *   specialties: ["arbeidsrecht"]
+ * DOEL
+ * - Voegt automatisch 5 testbedrijven toe voor:
+ *   categorie: "advocaat"
+ *   specialisme: "arbeidsrecht"
  *
- * Veilig:
- * - Maakt GEEN wijzigingen aan bestaande bedrijven
- * - Voegt alleen toe als slug nog niet bestaat
+ * VEREENVOUDIGD (optie 1)
+ * - Zoekt ZELF een bestaande user als owner
+ * - Geen handmatige stappen
+ * - Geen MongoDB Atlas nodig
  *
- * Vereist:
- * - Geldige MongoDB connectie
- * - Bestaande User _id als OWNER_ID
+ * VEILIG
+ * - Past geen bestaande bedrijven aan
+ * - Slaat over als slug al bestaat
  */
 
 require("dotenv").config();
 const mongoose = require("mongoose");
 
 const Company = require("../models/company");
+const User = require("../models/user");
 
 const MONGO_URI = process.env.MONGO_URI;
 
-/**
- * ⚠️ VERVANG DIT
- * Gebruik een bestaande User _id uit je database
- */
-const OWNER_ID = "VUL_HIER_EEN_BESTAANDE_USER_ID_IN";
-
-const companies = [
+const COMPANIES = [
   {
     name: "Arbeidsrecht Advocaten Nederland",
     slug: "arbeidsrecht-advocaten-nederland",
@@ -73,19 +69,23 @@ const companies = [
 
 async function run() {
   if (!MONGO_URI) {
-    console.error("❌ MONGO_URI ontbreekt in .env");
-    process.exit(1);
-  }
-
-  if (!OWNER_ID || OWNER_ID.includes("VUL_HIER")) {
-    console.error("❌ OWNER_ID is niet ingevuld");
+    console.error("❌ MONGO_URI ontbreekt");
     process.exit(1);
   }
 
   await mongoose.connect(MONGO_URI);
   console.log("✅ Verbonden met MongoDB");
 
-  for (const data of companies) {
+  // 👉 AUTOMATISCH owner bepalen
+  const owner = await User.findOne().lean();
+  if (!owner) {
+    console.error("❌ Geen user gevonden. Er moet minimaal één gebruiker bestaan.");
+    process.exit(1);
+  }
+
+  console.log(`👤 Owner automatisch gekozen: ${owner.email || owner._id}`);
+
+  for (const data of COMPANIES) {
     const exists = await Company.findOne({ slug: data.slug });
     if (exists) {
       console.log(`↪️  Bestaat al, overslaan: ${data.slug}`);
@@ -96,7 +96,7 @@ async function run() {
       ...data,
       categories: ["advocaat"],
       specialties: ["arbeidsrecht"],
-      owner: OWNER_ID,
+      owner: owner._id,
     });
 
     console.log(`➕ Toegevoegd: ${data.name}`);
