@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-07 A2-WIZARD-VALIDATION-PROGRESS
+// v2026-01-08 WIZARD-CATEGORY-FIRST
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -32,13 +32,9 @@ function isStepValid(step) {
   const section = steps.find(s => Number(s.dataset.step) === step);
   if (!section) return false;
 
-  const requiredFields = section.querySelectorAll("[required]");
-  for (const field of requiredFields) {
-    if (field.type === "email") {
-      if (!field.value || !field.checkValidity()) return false;
-    } else {
-      if (!field.value || !field.value.trim()) return false;
-    }
+  const required = section.querySelectorAll("[required]");
+  for (const field of required) {
+    if (!field.value || !field.checkValidity()) return false;
   }
   return true;
 }
@@ -51,13 +47,27 @@ function updateNextState() {
   }
 }
 
+/* Filter specialismen op categorie */
+const categorySelect = form.querySelector('[name="category"]');
+const specialtySelect = form.querySelector('[name="specialty"]');
+
+function filterSpecialties() {
+  const category = categorySelect.value;
+  const groups = specialtySelect.querySelectorAll("optgroup");
+
+  specialtySelect.value = "";
+  groups.forEach(g => {
+    g.disabled = g.dataset.category !== category;
+  });
+}
+
+categorySelect.addEventListener("change", filterSpecialties);
+
 function fillReview() {
-  const map = ["specialty", "context", "message", "name", "email"];
-  map.forEach(name => {
+  ["category", "specialty", "context", "message", "name", "email"].forEach(name => {
     const el = document.querySelector(`[data-review="${name}"]`);
-    if (!el) return;
     const field = form.querySelector(`[name="${name}"]`);
-    el.textContent = field ? field.value : "";
+    if (el && field) el.textContent = field.value;
   });
 }
 
@@ -75,19 +85,15 @@ btnPrev.addEventListener("click", () => {
   }
 });
 
-form.addEventListener("input", () => {
-  updateNextState();
-});
+form.addEventListener("input", updateNextState);
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  if (!isStepValid(totalSteps - 1)) return;
-
   const payload = {
     category: form.category.value,
-    specialty: form.specialty.value || "",
-    context: form.context.value || "",
+    specialty: form.specialty.value,
+    context: form.context.value,
     message: form.message.value.trim(),
     name: form.name.value.trim(),
     email: form.email.value.trim(),
@@ -101,7 +107,6 @@ form.addEventListener("submit", async (e) => {
     });
 
     const data = await res.json();
-
     if (!res.ok || data.ok !== true) {
       alert(data.error || "Versturen mislukt");
       return;
@@ -109,7 +114,7 @@ form.addEventListener("submit", async (e) => {
 
     window.location.href = `/results.html?requestId=${data.requestId}`;
   } catch (err) {
-    console.error("❌ Submit error:", err);
+    console.error("❌ submit error:", err);
     alert("Er ging iets mis bij het versturen.");
   }
 });

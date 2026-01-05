@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Aanvraag plaatsen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260107">
+  <link rel="stylesheet" href="/style.css?v=20260108">
 </head>
 
 <body class="irisje-body">
@@ -20,73 +20,91 @@
 
     <!-- Progress -->
     <div class="mb-6 text-sm text-slate-600">
-      <span id="progressText">Stap 1/5</span>
+      <span id="progressText">Stap 1/6</span>
     </div>
 
     <form id="requestWizard" novalidate>
 
-      <!-- CATEGORIE – vast -->
-      <input type="hidden" name="category" value="Advocaat">
-
-      <!-- Stap 1: Wat zoek je -->
+      <!-- Stap 1: Categorie -->
       <section class="wizard-step" data-step="1">
-        <h1 class="text-xl font-semibold mb-4">Wat zoek je?</h1>
-        <label class="block mb-2 font-medium">Specialisme</label>
-        <select name="specialty" class="irisje-input" required>
+        <h1 class="text-xl font-semibold mb-4">Wat voor bedrijf zoekt u?</h1>
+        <select name="category" class="irisje-input" required>
           <option value="">Maak een keuze</option>
-          <option value="arbeidsrecht">Arbeidsrecht</option>
-          <option value="ontslag-vso">Ontslag / VSO</option>
-          <option value="huurrecht">Huurrecht</option>
-          <option value="familierecht">Familierecht</option>
-          <option value="strafrecht">Strafrecht</option>
-          <option value="bestuursrecht">Bestuursrecht</option>
+          <option value="advocaat">Advocaat</option>
+          <option value="mediator">Mediator</option>
+          <option value="juridisch-adviseur">Juridisch adviseur</option>
         </select>
-        <p class="mt-2 text-sm text-slate-500">Kies het rechtsgebied dat het beste past.</p>
       </section>
 
-      <!-- Stap 2: Context -->
+      <!-- Stap 2: Specialisme -->
       <section class="wizard-step hidden" data-step="2">
+        <h2 class="text-xl font-semibold mb-4">Welk specialisme?</h2>
+        <select name="specialty" class="irisje-input" required>
+          <option value="">Maak een keuze</option>
+
+          <!-- Advocaat -->
+          <optgroup label="Advocaat" data-category="advocaat">
+            <option value="arbeidsrecht">Arbeidsrecht</option>
+            <option value="ontslag-vso">Ontslag / VSO</option>
+            <option value="huurrecht">Huurrecht</option>
+            <option value="familierecht">Familierecht</option>
+            <option value="strafrecht">Strafrecht</option>
+            <option value="bestuursrecht">Bestuursrecht</option>
+          </optgroup>
+
+          <!-- Mediator -->
+          <optgroup label="Mediator" data-category="mediator">
+            <option value="arbeidsconflict">Arbeidsconflict</option>
+            <option value="echtscheiding">Echtscheiding</option>
+            <option value="zakelijk-conflict">Zakelijk conflict</option>
+          </optgroup>
+
+          <!-- Juridisch adviseur -->
+          <optgroup label="Juridisch adviseur" data-category="juridisch-adviseur">
+            <option value="arbeidsadvies">Arbeidsadvies</option>
+            <option value="contracten">Contracten</option>
+            <option value="bestuursrecht-advies">Bestuursrecht</option>
+          </optgroup>
+        </select>
+      </section>
+
+      <!-- Stap 3: Context -->
+      <section class="wizard-step hidden" data-step="3">
         <h2 class="text-xl font-semibold mb-4">Uw situatie</h2>
-        <label class="block mb-2 font-medium">Uw rol</label>
         <select name="context" class="irisje-input" required>
           <option value="">Maak een keuze</option>
-          <option value="werknemer">Werknemer</option>
+          <option value="particulier">Particulier</option>
+          <option value="ondernemer">Ondernemer</option>
           <option value="werkgever">Werkgever</option>
         </select>
       </section>
 
-      <!-- Stap 3: Toelichting -->
-      <section class="wizard-step hidden" data-step="3">
-        <h2 class="text-xl font-semibold mb-4">Korte toelichting</h2>
-        <label class="block mb-2 font-medium">Beschrijf uw vraag</label>
+      <!-- Stap 4: Toelichting -->
+      <section class="wizard-step hidden" data-step="4">
+        <h2 class="text-xl font-semibold mb-4">Toelichting</h2>
         <textarea
           name="message"
           rows="5"
           class="irisje-input"
-          placeholder="Beschrijf in het kort uw situatie of vraag"
+          placeholder="Beschrijf kort uw vraag of situatie"
           required
         ></textarea>
-        <p class="mt-2 text-sm text-slate-500">
-          Hoe duidelijker uw toelichting, hoe beter de match.
-        </p>
       </section>
 
-      <!-- Stap 4: Contact -->
-      <section class="wizard-step hidden" data-step="4">
-        <h2 class="text-xl font-semibold mb-4">Uw contactgegevens</h2>
-        <label class="block mb-2 font-medium">Uw naam</label>
-        <input name="name" class="irisje-input mb-4" required>
-
-        <label class="block mb-2 font-medium">E-mailadres</label>
-        <input name="email" type="email" class="irisje-input" required>
-      </section>
-
-      <!-- Stap 5: Controle -->
+      <!-- Stap 5: Contact -->
       <section class="wizard-step hidden" data-step="5">
-        <h2 class="text-xl font-semibold mb-4">Controleer uw aanvraag</h2>
-        <div class="text-sm text-slate-700 space-y-2">
+        <h2 class="text-xl font-semibold mb-4">Uw contactgegevens</h2>
+        <input name="name" class="irisje-input mb-4" placeholder="Uw naam" required>
+        <input name="email" type="email" class="irisje-input" placeholder="E-mailadres" required>
+      </section>
+
+      <!-- Stap 6: Controle -->
+      <section class="wizard-step hidden" data-step="6">
+        <h2 class="text-xl font-semibold mb-4">Controle</h2>
+        <div class="text-sm space-y-2">
+          <div><strong>Categorie:</strong> <span data-review="category"></span></div>
           <div><strong>Specialisme:</strong> <span data-review="specialty"></span></div>
-          <div><strong>Rol:</strong> <span data-review="context"></span></div>
+          <div><strong>Context:</strong> <span data-review="context"></span></div>
           <div><strong>Toelichting:</strong><br><span data-review="message"></span></div>
           <div><strong>Naam:</strong> <span data-review="name"></span></div>
           <div><strong>E-mail:</strong> <span data-review="email"></span></div>
@@ -95,16 +113,10 @@
 
       <!-- Controls -->
       <div class="mt-8 flex justify-between items-center">
-        <button type="button" id="btnPrev" class="irisje-btn-secondary">
-          Vorige
-        </button>
+        <button type="button" id="btnPrev" class="irisje-btn-secondary">Vorige</button>
         <div class="flex gap-3">
-          <button type="button" id="btnNext" class="irisje-btn">
-            Volgende
-          </button>
-          <button type="submit" id="btnSubmit" class="irisje-btn hidden">
-            Aanvraag versturen
-          </button>
+          <button type="button" id="btnNext" class="irisje-btn">Volgende</button>
+          <button type="submit" id="btnSubmit" class="irisje-btn hidden">Aanvraag versturen</button>
         </div>
       </div>
 
@@ -112,6 +124,6 @@
   </div>
 </main>
 
-<script src="/js/request.js?v=20260107"></script>
+<script src="/js/request.js?v=20260108"></script>
 </body>
 </html>
