@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-15 UX-BADGES-RATING-SELECTION
+// v2026-01-16 UX-TOP3-EXPLAIN-VERIFIED
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -48,23 +48,52 @@ function renderCompanies(companies, request) {
 
   companies.forEach((c, index) => {
     const badges = [];
+    const reasons = [];
 
-    if (index === 0) badges.push(badge("Beste match", "indigo"));
-    if (c.verified) badges.push(badge("Geverifieerd", "green"));
+    // --- Top 3 logica ---
+    const isTop1 = index === 0;
+    const isTop23 = index === 1 || index === 2;
+
+    if (isTop1) badges.push(badge("Beste match", "indigo"));
+    if (isTop23) badges.push(badge("Goede match", "slate"));
+
+    // --- Verificatie prominenter ---
+    const verifiedLabel = c.verified
+      ? `<span class="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Geverifieerd</span>`
+      : "";
+
+    // --- Redenen samenstellen (max 1 zin tonen) ---
     if (request.issueType && c.issueTypes?.includes(request.issueType)) {
-      badges.push(badge("Ervaring met jouw vraag", "blue"));
+      reasons.push("ervaring met jouw vraag");
     }
     if (request.urgency === "direct" && c.canHandleUrgent) {
-      badges.push(badge("Snel beschikbaar", "purple"));
+      reasons.push("snel beschikbaar");
+    }
+    if (request.budgetRange && c.budgetRanges?.includes(request.budgetRange)) {
+      reasons.push("passend bij je budget");
     }
 
-    const rating = typeof c.rating === "number" ? c.rating.toFixed(1) : "-";
+    let reasonText = "";
+    if (reasons.length > 0) {
+      reasonText = `Past goed bij jouw situatie (${reasons.slice(0, 2).join(" en ")}).`;
+    } else if (isTop1) {
+      reasonText = "Beste combinatie van specialisme en beoordelingen.";
+    }
+
+    const rating =
+      typeof c.rating === "number" ? c.rating.toFixed(1) : "-";
     const reviews = c.reviewCount || 0;
+
+    const borderClass = isTop1
+      ? "border-2 border-indigo-200"
+      : isTop23
+      ? "border border-slate-200"
+      : "border border-transparent";
 
     grid.insertAdjacentHTML(
       "beforeend",
       `
-      <label class="bg-white rounded-2xl p-4 shadow-soft cursor-pointer">
+      <label class="bg-white rounded-2xl p-4 shadow-soft cursor-pointer ${borderClass}">
         <div class="flex items-start justify-between gap-2 mb-2">
           <div class="flex flex-wrap gap-2">
             ${badges.join("")}
@@ -72,18 +101,28 @@ function renderCompanies(companies, request) {
           <input type="checkbox" class="companyCheck" value="${c._id}">
         </div>
 
-        <h3 class="font-semibold text-lg mb-1">${c.name}</h3>
-        <p class="text-sm text-slate-600 mb-2">${c.city || ""}</p>
+        <h3 class="font-semibold text-lg mb-1">
+          ${c.name}
+          ${verifiedLabel}
+        </h3>
+
+        <p class="text-sm text-slate-600 mb-1">${c.city || ""}</p>
 
         <div class="text-sm mb-2">
           ⭐ ${rating} (${reviews} reviews)
         </div>
+
+        ${
+          reasonText
+            ? `<p class="text-sm text-slate-700 mb-2">${reasonText}</p>`
+            : ""
+        }
       </label>
       `
     );
   });
 
-  document.querySelectorAll(".companyCheck").forEach(cb => {
+  document.querySelectorAll(".companyCheck").forEach((cb) => {
     cb.addEventListener("change", onToggle);
   });
 }
@@ -119,7 +158,7 @@ submitBtn.addEventListener("click", async () => {
   const res = await fetch(`${API_BASE}/publicRequests/${requestId}/submit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ companyIds: Array.from(selected) })
+    body: JSON.stringify({ companyIds: Array.from(selected) }),
   });
 
   const data = await res.json();
@@ -134,9 +173,7 @@ submitBtn.addEventListener("click", async () => {
 function badge(text, color) {
   const map = {
     indigo: "bg-indigo-100 text-indigo-800",
-    green: "bg-green-100 text-green-800",
-    blue: "bg-blue-100 text-blue-800",
-    purple: "bg-purple-100 text-purple-800",
+    slate: "bg-slate-100 text-slate-800",
   };
   return `<span class="text-xs px-2 py-1 rounded-full ${map[color]}">${text}</span>`;
 }
