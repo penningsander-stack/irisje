@@ -1,19 +1,7 @@
 // frontend/js/request.js
-// v2026-01-12 TRUSTOO-STYLE-2STEP-WIZARD
+// v2026-01-13 C2-DYNAMIC-CATEGORIES
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
-
-// vaste lijsten
-const CATEGORIES = {
-  advocaat: {
-    label: "Advocaat",
-    specialties: [
-      { value: "arbeidsrecht", label: "Arbeidsrecht" },
-      { value: "bestuursrecht", label: "Bestuursrecht" },
-      { value: "familierecht", label: "Familierecht" }
-    ]
-  }
-};
 
 const step1 = document.getElementById("step1");
 const step2 = document.getElementById("step2");
@@ -23,7 +11,36 @@ const categorySelect = document.getElementById("categorySelect");
 const specialtySelect = document.getElementById("specialtySelect");
 const summaryText = document.getElementById("summaryText");
 
+let CATEGORIES = {};
 let step1Data = {};
+
+document.addEventListener("DOMContentLoaded", init);
+
+async function init() {
+  await loadCategories();
+}
+
+async function loadCategories() {
+  const res = await fetch(`${API_BASE}/publicCategories`);
+  const data = await res.json();
+  if (!res.ok || !data.ok) {
+    alert("Categorieën laden mislukt");
+    return;
+  }
+
+  CATEGORIES = {};
+  categorySelect.innerHTML = `<option value="">Kies een categorie</option>`;
+  specialtySelect.innerHTML = `<option value="">Kies eerst een categorie</option>`;
+  specialtySelect.disabled = true;
+
+  data.categories.forEach(c => {
+    CATEGORIES[c.value] = c;
+    categorySelect.insertAdjacentHTML(
+      "beforeend",
+      `<option value="${c.value}">${c.label}</option>`
+    );
+  });
+}
 
 categorySelect.addEventListener("change", () => {
   const key = categorySelect.value;
@@ -48,12 +65,11 @@ step1Form.addEventListener("submit", (e) => {
   const fd = new FormData(step1Form);
   step1Data = Object.fromEntries(fd.entries());
 
-  const catLabel = CATEGORIES[step1Data.category].label;
-  const specLabel =
-    CATEGORIES[step1Data.category].specialties.find(s => s.value === step1Data.specialty)?.label || "";
+  const cat = CATEGORIES[step1Data.category];
+  const spec = cat.specialties.find(s => s.value === step1Data.specialty);
 
   summaryText.textContent =
-    `Je zoekt een ${catLabel.toLowerCase()} gespecialiseerd in ${specLabel.toLowerCase()}. ` +
+    `Je zoekt een ${cat.label.toLowerCase()} gespecialiseerd in ${spec.label.toLowerCase()}. ` +
     `Met de vragen hieronder vinden we sneller de juiste match.`;
 
   step1.classList.add("hidden");
