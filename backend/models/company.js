@@ -13,6 +13,12 @@ const companySchema = new mongoose.Schema(
     specialties: [{ type: String, trim: true }],
     specializations: [{ type: String, trim: true }],
 
+// Voeg deze velden toe aan het Company schema
+issueTypes: [{ type: String, lowercase: true, trim: true }], // bijv. ["ontslag","loon"]
+canHandleUrgent: { type: Boolean, default: false },
+budgetRanges: [{ type: String, lowercase: true, trim: true }], // bijv. ["tot-500","500-1500"]
+
+
     regions: {
       type: [String],
       default: [],
