@@ -4,54 +4,136 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aanvraag – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260111">
+  <title>Aanvraag starten – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260112">
 </head>
 <body class="irisje-body">
+
   <main class="max-w-3xl mx-auto px-4 py-10">
-    <h1 class="text-2xl font-semibold mb-6">Start je aanvraag</h1>
 
-    <form id="requestForm" class="space-y-4">
-      <div>
-        <label class="block text-sm mb-1">Naam</label>
-        <input name="name" required class="w-full border rounded-xl px-4 py-2" />
+    <!-- STAP 1 -->
+    <section id="step1" class="space-y-5">
+      <h1 class="text-2xl font-semibold">Start je aanvraag</h1>
+
+      <form id="step1Form" class="space-y-4">
+        <div>
+          <label class="block text-sm mb-1">Naam</label>
+          <input name="name" required class="w-full border rounded-xl px-4 py-2" />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">E-mail</label>
+          <input type="email" name="email" required class="w-full border rounded-xl px-4 py-2" />
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Waar kunnen we mee helpen?</label>
+          <textarea name="message" required
+            class="w-full border rounded-xl px-4 py-2"
+            placeholder="Bijvoorbeeld: ik heb een conflict met mijn werkgever"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Wat voor bedrijf zoek je?</label>
+          <select id="categorySelect" name="category" required
+                  class="w-full border rounded-xl px-4 py-2">
+            <option value="">Kies een categorie</option>
+            <option value="advocaat">Advocaat</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm mb-1">Specialisme</label>
+          <select id="specialtySelect" name="specialty" required disabled
+                  class="w-full border rounded-xl px-4 py-2">
+            <option value="">Kies eerst een categorie</option>
+          </select>
+        </div>
+
+        <button type="submit" class="irisje-btn mt-4">
+          Volgende stap
+        </button>
+      </form>
+    </section>
+
+    <!-- STAP 2 -->
+    <section id="step2" class="space-y-6 hidden">
+      <div class="bg-white rounded-2xl shadow-soft p-6">
+        <h2 class="text-xl font-semibold mb-1">Bijna klaar</h2>
+        <p id="summaryText" class="text-slate-600 text-sm"></p>
       </div>
 
-      <div>
-        <label class="block text-sm mb-1">E-mail</label>
-        <input type="email" name="email" required class="w-full border rounded-xl px-4 py-2" />
-      </div>
+      <form id="step2Form" class="space-y-6">
 
-      <div>
-        <label class="block text-sm mb-1">Waar kunnen we mee helpen?</label>
-        <textarea name="message" required class="w-full border rounded-xl px-4 py-2"></textarea>
-      </div>
+        <div>
+          <p class="font-medium mb-2">Waar gaat je vraag vooral over?</p>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2">
+              <input type="radio" name="issueType" value="ontslag" required> Ontslag / VSO
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="issueType" value="loon"> Loon of arbeidsvoorwaarden
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="issueType" value="conflict"> Conflict met werkgever
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="issueType" value="ziekte"> Ziekte / re-integratie
+            </label>
+            <label class="flex items-center gap-2">
+              <input type="radio" name="issueType" value="anders"> Anders
+            </label>
+          </div>
+        </div>
 
-      <!-- CATEGORIE -->
-      <div>
-        <label class="block text-sm mb-1">Wat voor bedrijf zoek je?</label>
-        <select id="categorySelect" name="category" required
-                class="w-full border rounded-xl px-4 py-2">
-          <option value="">Kies een categorie</option>
-          <option value="advocaat">Advocaat</option>
-        </select>
-      </div>
+        <div>
+          <p class="font-medium mb-2">Hoe dringend is je vraag?</p>
+          <select name="urgency" required class="w-full border rounded-xl px-4 py-2">
+            <option value="">Kies een optie</option>
+            <option value="direct">Zo snel mogelijk</option>
+            <option value="binnenkort">Binnen enkele dagen</option>
+            <option value="geen-haast">Geen haast</option>
+          </select>
+        </div>
 
-      <!-- SPECIALISME -->
-      <div>
-        <label class="block text-sm mb-1">Specialisme</label>
-        <select id="specialtySelect" name="specialty" required
-                class="w-full border rounded-xl px-4 py-2" disabled>
-          <option value="">Kies eerst een categorie</option>
-        </select>
-      </div>
+        <div>
+          <p class="font-medium mb-2">In welke fase zit je?</p>
+          <select name="stage" required class="w-full border rounded-xl px-4 py-2">
+            <option value="">Kies een optie</option>
+            <option value="orientatie">Oriënterend</option>
+            <option value="documenten">Ik heb al documenten</option>
+            <option value="procedure">Er loopt al een procedure</option>
+          </select>
+        </div>
 
-      <button type="submit" class="irisje-btn mt-4">
-        Ga verder
-      </button>
-    </form>
+        <div>
+          <p class="font-medium mb-2">Budgetindicatie (optioneel)</p>
+          <select name="budgetRange" class="w-full border rounded-xl px-4 py-2">
+            <option value="">Weet ik nog niet</option>
+            <option value="tot-500">Tot €500</option>
+            <option value="500-1500">€500 – €1.500</option>
+            <option value="1500-plus">Hoger</option>
+          </select>
+        </div>
+
+        <div>
+          <p class="font-medium mb-2">Hoe wil je benaderd worden?</p>
+          <select name="contactPreference" required class="w-full border rounded-xl px-4 py-2">
+            <option value="">Kies een optie</option>
+            <option value="email">E-mail</option>
+            <option value="telefoon">Telefoon</option>
+            <option value="geen-voorkeur">Maakt niet uit</option>
+          </select>
+        </div>
+
+        <button type="submit" class="irisje-btn w-full">
+          Toon geschikte bedrijven
+        </button>
+      </form>
+    </section>
+
   </main>
 
-  <script src="/js/request.js?v=20260111"></script>
+  <script src="/js/request.js?v=20260112"></script>
 </body>
 </html>
