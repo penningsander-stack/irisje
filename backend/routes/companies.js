@@ -1,11 +1,13 @@
 // backend/routes/companies.js
-// v20260102-14D-STABLE
+// v20260102-14D-STABLE + DASHBOARD-OWNER-GUARD
 
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const Company = require("../models/company");
 const Request = require("../models/request");
+const auth = require("../middleware/auth");
 
 // -----------------------------------------------------------------------------
 // Helpers
@@ -38,7 +40,6 @@ router.get("/lists", async (req, res) => {
 
 // -----------------------------------------------------------------------------
 // ZOEKEN OP CATEGORY + SPECIALTY (STAP 14D)
-// GEEN CITY / POSTCODE
 // GET /api/companies/search
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
@@ -67,7 +68,7 @@ router.get("/search", async (req, res) => {
 
     const results = await Company.find(query)
       .limit(20)
-      .select("_id name city rating premium")
+      .select("_id name city avgRating reviewCount isVerified")
       .lean();
 
     res.json({
@@ -83,7 +84,7 @@ router.get("/search", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY VIA SLUG
+// COMPANY VIA SLUG (publiek)
 // GET /api/companies/slug/:slug
 // -----------------------------------------------------------------------------
 router.get("/slug/:slug", async (req, res) => {
@@ -102,21 +103,53 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY VIA ID (LAATSTE ROUTE!)
+// COMPANY VIA ID (DASHBOARD – AUTH + OWNER)
+// LET OP: MOET LAATSTE ROUTE BLIJVEN
 // GET /api/companies/:id
 // -----------------------------------------------------------------------------
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
-    const item = await Company.findById(req.params.id).lean();
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Ongeldig company-id.",
+      });
+    }
+
+    const item = await Company.findById(id).lean();
     if (!item) {
       return res.status(404).json({
         ok: false,
         error: "Company niet gevonden.",
       });
     }
-    res.json({ ok: true, item });
+
+    // Security: alleen owner mag dashboard-profiel zien
+    if (String(item.owner) !== String(req.user.id)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Geen toegang tot dit bedrijf.",
+      });
+    }
+
+    // Beperkt profiel voor dashboard
+    res.json({
+      ok: true,
+      item: {
+        _id: item._id,
+        name: item.name,
+        city: item.city,
+        isVerified: item.isVerified,
+        avgRating: item.avgRating,
+        reviewCount: item.reviewCount,
+        categories: item.categories || [],
+        specialties: item.specialties || [],
+      },
+    });
   } catch (err) {
-    res.status(400).json({ ok: false, error: err.message });
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
