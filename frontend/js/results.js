@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-16 UX-TOP3-EXPLAIN-VERIFIED
+// v2026-01-16 UX-TOP3-EXPLAIN-VERIFIED-STARS
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -47,42 +47,23 @@ function renderCompanies(companies, request) {
   grid.innerHTML = "";
 
   companies.forEach((c, index) => {
-    const badges = [];
-    const reasons = [];
-
-    // --- Top 3 logica ---
     const isTop1 = index === 0;
     const isTop23 = index === 1 || index === 2;
 
+    const badges = [];
     if (isTop1) badges.push(badge("Beste match", "indigo"));
     if (isTop23) badges.push(badge("Goede match", "slate"));
 
-    // --- Verificatie prominenter ---
-    const verifiedLabel = c.verified
+    const verifiedLabel = c.isVerified
       ? `<span class="ml-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">Geverifieerd</span>`
       : "";
 
-    // --- Redenen samenstellen (max 1 zin tonen) ---
-    if (request.issueType && c.issueTypes?.includes(request.issueType)) {
-      reasons.push("ervaring met jouw vraag");
-    }
-    if (request.urgency === "direct" && c.canHandleUrgent) {
-      reasons.push("snel beschikbaar");
-    }
-    if (request.budgetRange && c.budgetRanges?.includes(request.budgetRange)) {
-      reasons.push("passend bij je budget");
-    }
-
-    let reasonText = "";
-    if (reasons.length > 0) {
-      reasonText = `Past goed bij jouw situatie (${reasons.slice(0, 2).join(" en ")}).`;
-    } else if (isTop1) {
-      reasonText = "Beste combinatie van specialisme en beoordelingen.";
-    }
-
-    const rating =
-      typeof c.rating === "number" ? c.rating.toFixed(1) : "-";
+    const rating = typeof c.avgRating === "number" ? c.avgRating : 0;
     const reviews = c.reviewCount || 0;
+
+    const reasonText = isTop1
+      ? "Beste combinatie van specialisme en beoordelingen."
+      : "";
 
     const borderClass = isTop1
       ? "border-2 border-indigo-200"
@@ -106,10 +87,13 @@ function renderCompanies(companies, request) {
           ${verifiedLabel}
         </h3>
 
-        <p class="text-sm text-slate-600 mb-1">${c.city || ""}</p>
+        <p class="text-sm text-slate-600 mb-2">${c.city || ""}</p>
 
-        <div class="text-sm mb-2">
-          ⭐ ${rating} (${reviews} reviews)
+        <div class="flex items-center gap-2 mb-2">
+          ${renderStars(rating)}
+          <span class="text-sm text-slate-600">
+            ${rating.toFixed(1)} (${reviews} reviews)
+          </span>
         </div>
 
         ${
@@ -125,6 +109,30 @@ function renderCompanies(companies, request) {
   document.querySelectorAll(".companyCheck").forEach((cb) => {
     cb.addEventListener("change", onToggle);
   });
+}
+
+/**
+ * ⭐⭐⭐⭐☆ met gedeeltelijke vulling
+ */
+function renderStars(score) {
+  const stars = [];
+
+  for (let i = 1; i <= 5; i++) {
+    const fill = Math.max(0, Math.min(1, score - (i - 1)));
+    const percent = Math.round(fill * 100);
+
+    stars.push(`
+      <span class="relative inline-block w-4 h-4 text-slate-300">
+        ★
+        <span class="absolute left-0 top-0 overflow-hidden text-yellow-400"
+              style="width:${percent}%">
+          ★
+        </span>
+      </span>
+    `);
+  }
+
+  return `<div class="flex gap-0.5">${stars.join("")}</div>`;
 }
 
 function onToggle(e) {
