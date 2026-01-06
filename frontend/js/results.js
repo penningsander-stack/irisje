@@ -122,18 +122,29 @@ function renderStars(score) {
     const percent = Math.round(fill * 100);
 
     stars.push(`
-      <span class="relative inline-block w-4 h-4 text-slate-300">
-        ★
-        <span class="absolute left-0 top-0 overflow-hidden text-yellow-400"
-              style="width:${percent}%">
-          ★
-        </span>
+      <span style="position:relative; display:inline-block; width:16px; height:16px; font-size:16px; line-height:16px;">
+        <!-- achtergrondster (grijs) -->
+        <span style="color:#CBD5E1;">★</span>
+
+        <!-- gevulde ster (geel, deels) -->
+        <span
+          style="
+            color:#FACC15;
+            position:absolute;
+            left:0;
+            top:0;
+            width:${percent}%;
+            overflow:hidden;
+            white-space:nowrap;
+          "
+        >★</span>
       </span>
     `);
   }
 
-  return `<div class="flex gap-0.5">${stars.join("")}</div>`;
+  return `<div style="display:flex; gap:2px;">${stars.join("")}</div>`;
 }
+
 
 function onToggle(e) {
   const id = e.target.value;
