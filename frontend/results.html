@@ -4,101 +4,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Resultaten – Irisje.nl</title>
-
-  <link rel="stylesheet" href="/style.css?v=20260109">
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
+  <title>Bedrijven voor jouw aanvraag – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260114">
 </head>
+<body class="irisje-body">
 
-<body class="irisje-body pb-28">
-
-  <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+      <a href="/" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
                      text-indigo-700 text-sm font-bold shadow-brand">I</span>
-        <div class="flex flex-col leading-tight">
-          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">
-            Vergelijk en kies tot 5 bedrijven
-          </span>
-        </div>
+        <span class="font-semibold text-slate-900">Irisje.nl</span>
       </a>
     </div>
   </header>
 
-  <!-- PAGINA HEADER -->
-  <section class="section-shell card-fade-in mt-4">
-    <h1 id="resultsTitle" class="text-xl font-semibold text-slate-900">
-      Bedrijven voor jouw aanvraag
-    </h1>
-    <p class="text-sm text-slate-500">
-      Selecteer maximaal vijf bedrijven. Je aanvraag wordt in één keer verstuurd.
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-2">Vergelijk en kies tot 5 bedrijven</h1>
+    <p id="resultsIntro" class="text-slate-600 mb-6">
+      We tonen bedrijven die het beste passen bij jouw aanvraag.
     </p>
-  </section>
 
-  <!-- RESULTATEN -->
-  <section class="section-shell">
-
-    <!-- Skeleton -->
-    <div id="resultsSkeleton" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-      <div class="surface-card p-5 rounded-2xl shadow-soft animate-pulse h-40"></div>
-      <div class="surface-card p-5 rounded-2xl shadow-soft animate-pulse h-40"></div>
-      <div class="surface-card p-5 rounded-2xl shadow-soft animate-pulse h-40"></div>
-    </div>
-
-    <!-- Filters -->
-    <div id="resultsControls"
-         class="surface-card p-4 rounded-2xl shadow-soft mb-5 flex flex-wrap gap-3 items-center">
-      <div>
-        <label class="text-xs text-slate-600 block mb-1">Minimale score</label>
-        <select id="filterMinRating" class="px-2 py-1 border rounded-lg text-sm">
-          <option value="">Alles</option>
-          <option value="4">Minimaal 4.0</option>
-          <option value="3">Minimaal 3.0</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="text-xs text-slate-600 block mb-1">Verificatie</label>
-        <select id="filterVerified" class="px-2 py-1 border rounded-lg text-sm">
-          <option value="">Alles</option>
-          <option value="yes">Alleen geverifieerd</option>
-        </select>
-      </div>
-
-      <div class="ml-auto">
-        <label class="text-xs text-slate-600 block mb-1">Sorteren</label>
-        <select id="sortResults" class="px-2 py-1 border rounded-lg text-sm">
-          <option value="relevance">Relevantie</option>
-          <option value="rating">Beoordeling</option>
-          <option value="reviews">Aantal reviews</option>
-          <option value="az">A–Z</option>
-        </select>
-      </div>
+    <!-- Uitleg -->
+    <div id="explainBox" class="hidden mb-6 p-4 rounded-2xl bg-indigo-50 text-indigo-900 text-sm">
+      <strong>Waarom deze volgorde?</strong>
+      <span id="explainText"></span>
     </div>
 
     <!-- Resultaten -->
-    <div id="resultsContainer"
-         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"></div>
-  </section>
+    <div id="resultsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-  <!-- STICKY SELECTIE BAR -->
-  <div id="selectionBar"
-       class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-soft hidden">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-      <div class="text-sm text-slate-700">
-        <strong><span id="selectedCount">0</span>/5</strong> bedrijven geselecteerd
-      </div>
-      <button id="sendRequestBtn"
-              class="irisje-btn"
-              disabled>
-        Verstuur aanvraag
-      </button>
+    <!-- Lege staat -->
+    <div id="emptyState" class="hidden mt-10 text-center text-slate-600">
+      <p class="mb-2 font-medium">Geen bedrijven gevonden.</p>
+      <p>Probeer je aanvraag aan te passen of later opnieuw.</p>
     </div>
-  </div>
+  </main>
 
-  <script src="js/results.js?v=20260109"></script>
+  <script src="/js/results.js?v=20260114"></script>
 </body>
 </html>
