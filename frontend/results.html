@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijven voor jouw aanvraag – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260114">
+  <link rel="stylesheet" href="/style.css?v=20260115">
 </head>
 <body class="irisje-body">
 
@@ -16,14 +16,16 @@
                      text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <span class="font-semibold text-slate-900">Irisje.nl</span>
       </a>
+
+      <div class="text-sm text-slate-700">
+        <span id="selectedCount">0</span> van 5 geselecteerd
+      </div>
     </div>
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-8">
     <h1 class="text-2xl font-semibold mb-2">Vergelijk en kies tot 5 bedrijven</h1>
-    <p id="resultsIntro" class="text-slate-600 mb-6">
-      We tonen bedrijven die het beste passen bij jouw aanvraag.
-    </p>
+    <p id="resultsIntro" class="text-slate-600 mb-4"></p>
 
     <!-- Uitleg -->
     <div id="explainBox" class="hidden mb-6 p-4 rounded-2xl bg-indigo-50 text-indigo-900 text-sm">
@@ -41,6 +43,18 @@
     </div>
   </main>
 
-  <script src="/js/results.js?v=20260114"></script>
+  <!-- Sticky submit -->
+  <div class="fixed bottom-0 inset-x-0 bg-white border-t shadow-soft">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="text-sm text-slate-600">
+        Je selectie wordt in één keer verstuurd.
+      </div>
+      <button id="submitBtn" class="irisje-btn opacity-50 pointer-events-none">
+        Verstuur aanvraag
+      </button>
+    </div>
+  </div>
+
+  <script src="js/results.js?v=20260115"></script>
 </body>
 </html>
