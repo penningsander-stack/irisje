@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260107-DEFAULT-COMPANY
+// v20260107-DEFAULT-COMPANY-FIXED
 
 const express = require("express");
 const router = express.Router();
@@ -39,7 +39,7 @@ router.get("/lists", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// MIJN BEDRIJVEN (NIEUW)
+// MIJN BEDRIJVEN
 // GET /api/companies/my
 // -----------------------------------------------------------------------------
 router.get("/my", auth, async (req, res) => {
@@ -119,15 +119,10 @@ router.get("/slug/:slug", async (req, res) => {
   }
 });
 
-
-
-
 // -----------------------------------------------------------------------------
 // BEDRIJF REGISTREREN (owner = ingelogde user)
 // POST /api/companies
 // -----------------------------------------------------------------------------
-const auth = require("../middleware/auth");
-
 router.post("/", auth, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -160,28 +155,6 @@ router.post("/", auth, async (req, res) => {
     res.status(500).json({ ok: false, error: "Serverfout." });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // -----------------------------------------------------------------------------
 // COMPANY VIA ID (dashboard)
