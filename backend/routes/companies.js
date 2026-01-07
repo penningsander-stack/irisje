@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260102-14D-STABLE + DASHBOARD-OWNER-GUARD
+// v20260107-DEFAULT-COMPANY
 
 const express = require("express");
 const router = express.Router();
@@ -39,7 +39,24 @@ router.get("/lists", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// ZOEKEN OP CATEGORY + SPECIALTY (STAP 14D)
+// MIJN BEDRIJVEN (NIEUW)
+// GET /api/companies/my
+// -----------------------------------------------------------------------------
+router.get("/my", auth, async (req, res) => {
+  try {
+    const companies = await Company.find({ owner: req.user.id })
+      .select("_id name city")
+      .lean();
+
+    res.json({ ok: true, companies });
+  } catch (err) {
+    console.error("❌ companies/my error:", err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// ZOEKEN OP CATEGORY + SPECIALTY
 // GET /api/companies/search
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
@@ -103,8 +120,7 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY VIA ID (DASHBOARD – AUTH + OWNER)
-// LET OP: MOET LAATSTE ROUTE BLIJVEN
+// COMPANY VIA ID (dashboard)
 // GET /api/companies/:id
 // -----------------------------------------------------------------------------
 router.get("/:id", auth, async (req, res) => {
@@ -112,29 +128,18 @@ router.get("/:id", auth, async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        ok: false,
-        error: "Ongeldig company-id.",
-      });
+      return res.status(400).json({ ok: false, error: "Ongeldig company-id." });
     }
 
     const item = await Company.findById(id).lean();
     if (!item) {
-      return res.status(404).json({
-        ok: false,
-        error: "Company niet gevonden.",
-      });
+      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
     }
 
-    // Security: alleen owner mag dashboard-profiel zien
     if (String(item.owner) !== String(req.user.id)) {
-      return res.status(403).json({
-        ok: false,
-        error: "Geen toegang tot dit bedrijf.",
-      });
+      return res.status(403).json({ ok: false, error: "Geen toegang tot dit bedrijf." });
     }
 
-    // Beperkt profiel voor dashboard
     res.json({
       ok: true,
       item: {
@@ -148,40 +153,6 @@ router.get("/:id", auth, async (req, res) => {
         specialties: item.specialties || [],
       },
     });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-// -----------------------------------------------------------------------------
-// SEND REQUESTS NAAR GESELECTEERDE BEDRIJVEN
-// POST /api/companies/send-requests
-// -----------------------------------------------------------------------------
-router.post("/send-requests", async (req, res) => {
-  try {
-    const { requestId, companyIds } = req.body;
-
-    if (!requestId || !Array.isArray(companyIds) || !companyIds.length) {
-      return res.status(400).json({
-        ok: false,
-        error: "Ongeldige invoer.",
-      });
-    }
-
-    const request = await Request.findById(requestId);
-    if (!request) {
-      return res.status(404).json({
-        ok: false,
-        error: "Aanvraag niet gevonden.",
-      });
-    }
-
-    await Company.updateMany(
-      { _id: { $in: companyIds } },
-      { $addToSet: { receivedRequests: requestId } }
-    );
-
-    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

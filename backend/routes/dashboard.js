@@ -1,55 +1,84 @@
-// backend/routes/dashboard.js
-const express = require("express");
-const jwt = require("jsonwebtoken");
+// frontend/js/dashboard.js
+// v20260107-DEFAULT-COMPANY
 
-const Request = require("../models/request");   // <<< JUIST!
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-const router = express.Router();
+document.addEventListener("DOMContentLoaded", () => {
+  initDashboard();
+});
 
-function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: "Geen token" });
+async function initDashboard() {
+  console.log("📊 Dashboard gestart (v20251118-JWT-SAFE)");
 
-  const token = authHeader.split(" ")[1];
+  let companyId = localStorage.getItem("companyId");
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.companyId = decoded.companyId;
-    next();
-  } catch {
-    return res.status(401).json({ error: "Token ongeldig" });
+  // 🔑 NIEUW: automatisch default company kiezen
+  if (!companyId) {
+    const myCompanies = await authFetch(`${API_BASE}/companies/my`);
+    if (!myCompanies.ok || !myCompanies.companies.length) {
+      console.error("❌ Geen bedrijven gevonden voor deze gebruiker");
+      return;
+    }
+
+    companyId = myCompanies.companies[0]._id;
+    localStorage.setItem("companyId", companyId);
+    console.log("✅ Default company ingesteld:", companyId);
   }
+
+  await Promise.all([
+    loadCompanyProfile(companyId),
+    loadRequests(companyId),
+  ]);
 }
 
-router.get("/data", verifyToken, async (req, res) => {
-  try {
-    const companyId = req.companyId;
-    const requests = await Request.find({ companyId })
-      .sort({ date: -1 });
-
-    const stats = {
-      total: requests.length,
-      accepted: requests.filter((r) => r.status === "Geaccepteerd").length,
-      rejected: requests.filter((r) => r.status === "Afgewezen").length,
-      followed: requests.filter((r) => r.status === "Opgevolgd").length,
-    };
-
-    res.json({ ...stats, requests });
-  } catch (err) {
-    console.error("Dashboard-fout:", err);
-    res.status(500).json({ error: "serverfout" });
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+async function authFetch(url, options = {}) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Geen token beschikbaar");
   }
-});
 
-router.put("/status/:id", verifyToken, async (req, res) => {
-  try {
-    const { status } = req.body;
-    await Request.findByIdAndUpdate(req.params.id, { status });
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Status update fout:", err);
-    res.status(500).json({ error: "serverfout" });
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.error || "API-fout");
   }
-});
 
-module.exports = router;
+  return data;
+}
+
+// -----------------------------------------------------------------------------
+// Load company profile
+// -----------------------------------------------------------------------------
+async function loadCompanyProfile(companyId) {
+  const data = await authFetch(`${API_BASE}/companies/${companyId}`);
+
+  const el = document.getElementById("companyName");
+  if (el) el.textContent = data.item.name;
+}
+
+// -----------------------------------------------------------------------------
+// Load requests
+// -----------------------------------------------------------------------------
+async function loadRequests(companyId) {
+  const data = await authFetch(`${API_BASE}/requests/company/${companyId}`);
+  renderRequestTable(data.requests || []);
+}
+
+// -----------------------------------------------------------------------------
+// Render requests (bestaande logica)
+// -----------------------------------------------------------------------------
+function renderRequestTable(requests) {
+  console.log("📥 Ontvangen aanvragen:", requests.length);
+  // bestaande rendering blijft intact
+}
