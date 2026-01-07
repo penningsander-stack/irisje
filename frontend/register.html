@@ -1,115 +1,97 @@
-<!-- frontend/register.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Account aanmaken – Irisje.nl</title>
-  <meta name="description" content="Meld jouw bedrijf gratis aan bij Irisje.nl en ontvang aanvragen van klanten in jouw regio." />
-  <meta name="theme-color" content="#4F46E5" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
- <link rel="stylesheet" href="/style.css?v=20251208">
-<link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
-
+  <title>Registreren – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260107">
 </head>
-<body class="irisje-body flex flex-col min-h-screen fade-seq">
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
-        <div class="flex flex-col leading-tight">
-          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Voor bedrijven</span>
-        </div>
-      </a>
-      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <a href="results.html" class="nav-link">Bedrijven</a>
-        <a href="login.html" class="nav-link">Inloggen</a>
-      </nav>
-      <div class="flex items-center space-x-2">
-        <a href="login.html" class="hidden sm:inline-flex btn-ghost btn-xs">Inloggen</a>
-        <a href="register.html" class="inline-flex btn-primary btn-xs">Gratis aanmelden</a>
-      </div>
-    </div>
-  </header>
 
-  <main class="page-shell">
-    <section class="page-header-bar">
-      <div class="page-title-block">
-        <h1>🏷️ Account aanmaken</h1>
-        <p>Meld je bedrijf gratis aan en ontvang aanvragen van klanten in jouw regio.</p>
-      </div>
-      <div class="page-meta">
-        Heb je al een account?
-        <a href="login.html" class="link-inline">Log hier in</a>.
-      </div>
-    </section>
+<body class="irisje-body">
 
-    <section>
-      <div class="flex flex-col md:flex-row gap-6">
-        <div class="surface-card flex-1">
-          <h2 class="text-lg font-semibold text-gray-800 mb-2">Waarom aanmelden?</h2>
-          <p class="text-sm text-gray-600 mb-4 leading-relaxed">
-            Met een gratis bedrijfsaccount kun je jouw profiel beheren, aanvragen ontvangen
-            en reageren op reviews.
-          </p>
-          <ul class="hero-bullets space-y-2 mb-5">
-            <li>✓ Krijg aanvragen uit jouw regio.</li>
-            <li>✓ Beheer je diensten &amp; openingstijden.</li>
-            <li>✓ Bekijk &amp; reageer op klantreviews.</li>
-          </ul>
-          <p class="text-xs text-slate-500 leading-relaxed">
-            Na registratie kun je direct inloggen en jouw bedrijfsprofiel verder invullen.
-          </p>
-        </div>
+<header class="irisje-header">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+    <a href="/" class="flex items-center space-x-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
+                   text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <span class="font-semibold text-slate-900">Irisje.nl</span>
+    </a>
+  </div>
+</header>
 
-        <div class="surface-card flex-1">
-          <form id="registerForm" class="space-y-4" novalidate>
-            <div class="form-group">
-              <label for="companyName">Bedrijfsnaam</label>
-              <input id="companyName" type="text" class="form-input" required />
-            </div>
+<main class="max-w-md mx-auto px-4 py-10">
+  <h1 class="text-2xl font-semibold mb-6">Account aanmaken</h1>
 
-            <div class="form-group">
-              <label for="email">E-mailadres</label>
-              <input id="email" type="email" class="form-input" required />
-            </div>
+  <form id="registerForm" class="space-y-4">
+    <input
+      type="email"
+      name="email"
+      required
+      class="input"
+      placeholder="E-mailadres"
+    />
 
-            <div class="form-group">
-              <label for="password">Wachtwoord</label>
-              <input id="password" type="password" class="form-input" required />
-            </div>
+    <input
+      type="password"
+      name="password"
+      required
+      class="input"
+      placeholder="Wachtwoord"
+      minlength="8"
+    />
 
-            <div class="form-group">
-              <label for="confirmPassword">Herhaal wachtwoord</label>
-              <input id="confirmPassword" type="password" class="form-input" required />
-            </div>
+    <button type="submit" class="btn-primary w-full">
+      Registreren
+    </button>
+  </form>
 
-            <div class="flex items-start gap-2 text-xs text-gray-600">
-              <input id="terms" type="checkbox" class="w-4 h-4 mt-1" required />
-              <label for="terms">Ik ga akkoord met de voorwaarden.</label>
-            </div>
+  <p class="text-sm text-slate-600 mt-6">
+    Heb je al een account?
+    <a href="login.html" class="text-indigo-600 hover:underline">
+      Inloggen
+    </a>
+  </p>
+</main>
 
-            <p id="registerMessage" class="rq-status"></p>
+<script>
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-            <button type="submit" class="btn-primary w-full">Account aanmaken</button>
-          </form>
-        </div>
-      </div>
-    </section>
-  </main>
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  <footer class="footer-shell card-fade-in mt-auto">
-    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">© 2025 Irisje.nl – Alle rechten voorbehouden</p>
-      <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
-        <a href="results.html" class="link-inline">Bedrijven</a>
-        <a href="login.html" class="link-inline">Voor bedrijven</a>
-        <a href="error.html" class="link-inline">Contact</a>
-      </div>
-    </div>
-  </footer>
+  const fd = new FormData(e.target);
+  const email = fd.get("email");
+  const password = fd.get("password");
 
-  <script src="js/register.js?v=20251206"></script>
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Registratie mislukt");
+      return;
+    }
+
+    // 🔐 Opslaan auth-context
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userEmail", data.user.email);
+    localStorage.setItem("userRole", data.user.role || "user");
+
+    // 🧭 BELANGRIJK (B1):
+    // na account-registratie ALTIJD eerst bedrijf registreren
+    window.location.href = "register-company.html";
+
+  } catch (err) {
+    console.error("❌ Register fout:", err);
+    alert("Serverfout bij registreren");
+  }
+});
+</script>
+
 </body>
 </html>

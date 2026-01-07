@@ -119,6 +119,70 @@ router.get("/slug/:slug", async (req, res) => {
   }
 });
 
+
+
+
+// -----------------------------------------------------------------------------
+// BEDRIJF REGISTREREN (owner = ingelogde user)
+// POST /api/companies
+// -----------------------------------------------------------------------------
+const auth = require("../middleware/auth");
+
+router.post("/", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, city, categories = [], specialties = [] } = req.body;
+
+    if (!name || !city || !categories.length) {
+      return res.status(400).json({ ok: false, error: "Onvolledige invoer." });
+    }
+
+    const slug = name.toLowerCase().replace(/\s+/g, "-");
+
+    const exists = await Company.findOne({ slug });
+    if (exists) {
+      return res.status(400).json({ ok: false, error: "Bedrijf bestaat al." });
+    }
+
+    const company = await Company.create({
+      name,
+      slug,
+      city,
+      categories,
+      specialties,
+      owner: userId,
+      active: true,
+    });
+
+    res.json({ ok: true, companyId: company._id });
+  } catch (err) {
+    console.error("❌ companies POST error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout." });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // -----------------------------------------------------------------------------
 // COMPANY VIA ID (dashboard)
 // GET /api/companies/:id

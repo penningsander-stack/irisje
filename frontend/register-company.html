@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bedrijf registreren – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260107">
+</head>
+<body class="irisje-body">
+
+<header class="irisje-header">
+  <div class="max-w-6xl mx-auto px-4 py-3">
+    <span class="font-semibold">Irisje.nl</span>
+  </div>
+</header>
+
+<main class="max-w-xl mx-auto px-4 py-10">
+  <h1 class="text-2xl font-semibold mb-6">Registreer je bedrijf</h1>
+
+  <form id="companyForm" class="space-y-4">
+    <input required name="name" class="input" placeholder="Bedrijfsnaam" />
+    <input required name="city" class="input" placeholder="Plaats" />
+
+    <label class="block text-sm font-medium">Categorieën</label>
+    <select name="categories" multiple required class="input">
+      <option value="advocaat">Advocaat</option>
+      <option value="juridisch">Juridisch advies</option>
+    </select>
+
+    <label class="block text-sm font-medium">Specialismen</label>
+    <select name="specialties" multiple required class="input">
+      <option value="arbeidsrecht">Arbeidsrecht</option>
+      <option value="ontslagrecht">Ontslagrecht</option>
+    </select>
+
+    <button class="btn-primary w-full">Bedrijf registreren</button>
+  </form>
+</main>
+
+<script>
+const API = "https://irisje-backend.onrender.com/api";
+
+document.getElementById("companyForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem("token");
+  if (!token) return location.href = "login.html";
+
+  const fd = new FormData(e.target);
+  const body = {
+    name: fd.get("name"),
+    city: fd.get("city"),
+    categories: fd.getAll("categories"),
+    specialties: fd.getAll("specialties"),
+  };
+
+  const res = await fetch(`${API}/companies`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Fout bij registreren");
+
+  localStorage.setItem("companyId", data.companyId);
+  location.href = "dashboard.html";
+});
+</script>
+</body>
+</html>
