@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20251118-JWT-SAFE-DASHBOARD
+// v20260107-JWT-SAFE-DASHBOARD-DEFAULT-COMPANY-FIX
 
 (() => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -66,9 +66,68 @@
     }
 
     /* ============================================================
-       2. Bedrijf-validatie
+       2. Charts (MOET vóór updateCharts-calls staan)
+       - voorkomt "Cannot access 'statusChart' before initialization"
     ============================================================ */
-    if (!companyId) {
+    let allRequests = [];
+    let statusChart;
+
+    function updateCharts() {
+      const total = allRequests.length;
+      const accepted = allRequests.filter((r) => r.status === "Geaccepteerd").length;
+      const rejected = allRequests.filter((r) => r.status === "Afgewezen").length;
+      const followed = allRequests.filter((r) => r.status === "Opgevolgd").length;
+
+      setText("total", total);
+      setText("accepted", accepted);
+      setText("rejected", rejected);
+      setText("followed-up", followed);
+
+      const ctx = byId("statusChart");
+      if (!ctx || typeof Chart === "undefined") return;
+
+      const data = {
+        Nieuw: total - accepted - rejected - followed,
+        Geaccepteerd: accepted,
+        Afgewezen: rejected,
+        Opgevolgd: followed,
+      };
+
+      if (statusChart) statusChart.destroy();
+
+      statusChart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: Object.keys(data),
+          datasets: [{ data: Object.values(data) }],
+        },
+        options: { plugins: { legend: { position: "bottom" } } },
+      });
+    }
+
+    /* ============================================================
+       3. Default company instellen (NIEUW)
+       - als companyId ontbreekt: haal /companies/my op, pak eerste, zet localStorage
+    ============================================================ */
+    async function ensureCompanyId() {
+      if (companyId) return companyId;
+
+      // Probeer automatisch een default bedrijf te kiezen
+      try {
+        const res = await authFetch(`${API_BASE}/companies/my`);
+        const list = res?.companies;
+
+        if (Array.isArray(list) && list.length > 0) {
+          companyId = list[0]._id;
+          localStorage.setItem("companyId", companyId);
+          console.log("✅ Default company ingesteld:", companyId);
+          return companyId;
+        }
+      } catch (err) {
+        console.error("❌ Kon default company niet bepalen:", err);
+      }
+
+      // Geen bedrijf gevonden → toon nette melding en stop
       console.warn("❌ Geen companyId gevonden");
       if ($reqBody)
         $reqBody.innerHTML =
@@ -76,35 +135,47 @@
       if ($revBody)
         $revBody.innerHTML =
           "<tr><td colspan='5' class='text-center p-4'>Geen bedrijf gevonden</td></tr>";
-      return;
+      return null;
     }
 
+    const ensuredCompanyId = await ensureCompanyId();
+    if (!ensuredCompanyId) return;
+
     /* ============================================================
-       3. Company profile laden (met JWT)
+       4. Company profile laden (met JWT)
+       - FIX: response kan {ok:true,item:{...}} zijn
     ============================================================ */
     async function loadCompanyProfile() {
       try {
-        const company = await authFetch(
-          `${API_BASE}/companies/${companyId}`
-        );
+        const res = await authFetch(`${API_BASE}/companies/${companyId}`);
+        const company = res?.item || res; // compat: beide vormen accepteren
         if (!company) throw new Error("Bedrijf niet gevonden");
 
-        const lists = await authFetch(`${API_BASE}/companies/lists`);
+        // /companies/lists retourneert in jouw backend vooral categories (en mogelijk later meer)
+        // Daarom: tolerant maken (geen crash als specialties/certifications/languages ontbreken)
+        let lists = null;
+        try {
+          lists = await authFetch(`${API_BASE}/companies/lists`);
+        } catch (_) {
+          lists = null;
+        }
 
         fillCompanyForm(company);
+
+        // Alleen renderen als de arrays bestaan
         renderSelectOptions(
           byId("companySpecialties"),
-          lists?.specialties,
+          Array.isArray(lists?.specialties) ? lists.specialties : [],
           company.specialties
         );
         renderSelectOptions(
           byId("companyCertifications"),
-          lists?.certifications,
+          Array.isArray(lists?.certifications) ? lists.certifications : [],
           company.certifications
         );
         renderSelectOptions(
           byId("companyLanguages"),
-          lists?.languages,
+          Array.isArray(lists?.languages) ? lists.languages : [],
           company.languages
         );
       } catch (err) {
@@ -122,9 +193,7 @@
       form.companyPhone.value = c.phone || "";
       form.companyWebsite.value = c.website || "";
       form.companyAvailability.value = c.availability || "";
-      form.companyRegions.value = Array.isArray(c.regions)
-        ? c.regions.join(", ")
-        : "";
+      form.companyRegions.value = Array.isArray(c.regions) ? c.regions.join(", ") : "";
       form.companyWorksNationwide.checked = !!c.worksNationwide;
     }
 
@@ -143,20 +212,17 @@
     await loadCompanyProfile();
 
     /* ============================================================
-       4. Aanvragen (met JWT)
+       5. Aanvragen (met JWT)
     ============================================================ */
-    let allRequests = [];
-
     async function loadRequests() {
       try {
-        const data = await authFetch(
-          `${API_BASE}/requests/company/${companyId}`
-        );
+        const data = await authFetch(`${API_BASE}/requests/company/${companyId}`);
 
-        allRequests = Array.isArray(data)
-          ? data.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            )
+        // compat: sommige endpoints geven {ok:true,requests:[...]} terug, andere direct array
+        const list = Array.isArray(data) ? data : data?.requests;
+
+        allRequests = Array.isArray(list)
+          ? list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           : [];
 
         renderRequestTable();
@@ -190,13 +256,9 @@
             <tr class="border-b hover:bg-gray-50">
               <td class="p-3">${esc(r.name)}</td>
               <td class="p-3">${esc(r.email)}</td>
-              <td class="p-3 max-w-xs truncate" title="${esc(
-                r.message
-              )}">${esc(r.message)}</td>
+              <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
               <td class="p-3">
-                <select data-id="${
-                  r._id
-                }" class="statusSelect border rounded px-2 py-1 text-sm">
+                <select data-id="${r._id}" class="statusSelect border rounded px-2 py-1 text-sm">
                   ${options
                     .map(
                       (o) =>
@@ -241,20 +303,18 @@
     }
 
     /* ============================================================
-       5. Reviews (met JWT)
+       6. Reviews (met JWT)
     ============================================================ */
     let allReviews = [];
 
     async function loadReviews() {
       try {
-        const data = await authFetch(
-          `${API_BASE}/reviews/company/${companyId}`
-        );
+        const data = await authFetch(`${API_BASE}/reviews/company/${companyId}`);
 
-        allReviews = Array.isArray(data)
-          ? data.sort(
-              (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-            )
+        const list = Array.isArray(data) ? data : data?.reviews;
+
+        allReviews = Array.isArray(list)
+          ? list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
           : [];
 
         renderReviewsTable();
@@ -284,20 +344,14 @@
           return `
             <tr class="border-b hover:bg-gray-50">
               <td class="p-3">${esc(r.reviewerName || "Onbekend")}</td>
-              <td class="p-3">${
-                r.rating ? "⭐".repeat(r.rating) : "-"
-              }</td>
-              <td class="p-3 max-w-xs truncate" title="${esc(
-                r.message
-              )}">${esc(r.message)}</td>
+              <td class="p-3">${r.rating ? "⭐".repeat(r.rating) : "-"}</td>
+              <td class="p-3 max-w-xs truncate" title="${esc(r.message)}">${esc(r.message)}</td>
               <td class="p-3">${date}</td>
               <td class="p-3">
                 ${
                   r.reported
                     ? `<span class="text-xs text-gray-500 italic">Gemeld</span>`
-                    : `<button class="reportBtn bg-red-600 text-white px-2 py-1 rounded text-xs" data-id="${
-                        r._id
-                      }">Melden</button>`
+                    : `<button class="reportBtn bg-red-600 text-white px-2 py-1 rounded text-xs" data-id="${r._id}">Melden</button>`
                 }
               </td>
             </tr>
@@ -306,9 +360,7 @@
         .join("");
 
       document.querySelectorAll(".reportBtn").forEach((btn) =>
-        btn.addEventListener("click", () =>
-          reportReview(btn.dataset.id)
-        )
+        btn.addEventListener("click", () => reportReview(btn.dataset.id))
       );
     }
 
@@ -317,9 +369,7 @@
       if (!confirm("Weet je zeker dat je deze review wilt melden?")) return;
 
       try {
-        await authFetch(`${API_BASE}/reviews/report/${reviewId}`, {
-          method: "POST",
-        });
+        await authFetch(`${API_BASE}/reviews/report/${reviewId}`, { method: "POST" });
         showNotif("Review gemeld");
         await loadReviews();
       } catch (err) {
@@ -329,50 +379,6 @@
     }
 
     await Promise.all([loadRequests(), loadReviews()]);
-
-    /* ============================================================
-       6. Charts
-    ============================================================ */
-    let statusChart;
-
-    function updateCharts() {
-      const total = allRequests.length;
-      const accepted = allRequests.filter(
-        (r) => r.status === "Geaccepteerd"
-      ).length;
-      const rejected = allRequests.filter(
-        (r) => r.status === "Afgewezen"
-      ).length;
-      const followed = allRequests.filter(
-        (r) => r.status === "Opgevolgd"
-      ).length;
-
-      setText("total", total);
-      setText("accepted", accepted);
-      setText("rejected", rejected);
-      setText("followed-up", followed);
-
-      const ctx = byId("statusChart");
-      if (!ctx || typeof Chart === "undefined") return;
-
-      const data = {
-        Nieuw: total - accepted - rejected - followed,
-        Geaccepteerd: accepted,
-        Afgewezen: rejected,
-        Opgevolgd: followed,
-      };
-
-      if (statusChart) statusChart.destroy();
-
-      statusChart = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: Object.keys(data),
-          datasets: [{ data: Object.values(data) }],
-        },
-        options: { plugins: { legend: { position: "bottom" } } },
-      });
-    }
   }
 
   /* ============================================================
@@ -385,9 +391,7 @@
   };
   const esc = (v) =>
     String(v ?? "").replace(/[&<>"']/g, (s) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
-        s
-      ])
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[s])
     );
 
   function showNotif(msg, success = true) {
@@ -425,8 +429,7 @@
     const data = isJson ? await res.json().catch(() => null) : null;
 
     if (!res.ok) {
-      const msg =
-        data?.error || data?.message || `Fout ${res.status} bij ${url}`;
+      const msg = data?.error || data?.message || `Fout ${res.status} bij ${url}`;
       throw new Error(msg);
     }
 
