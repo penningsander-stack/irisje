@@ -4,70 +4,87 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijf registreren – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260107">
+
+  <!-- Irisje core styling -->
+  <link rel="stylesheet" href="/style.css?v=20260108">
 </head>
+
 <body class="irisje-body">
 
-<header class="irisje-header">
-  <div class="max-w-6xl mx-auto px-4 py-3">
-    <span class="font-semibold">Irisje.nl</span>
+<header class="irisje-header sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+    <a href="index.html" class="font-semibold tracking-tight">Irisje.nl</a>
   </div>
 </header>
 
 <main class="max-w-xl mx-auto px-4 py-10">
-  <h1 class="text-2xl font-semibold mb-6">Registreer je bedrijf</h1>
+  <h1 class="text-2xl font-semibold mb-2">Registreer je bedrijf</h1>
+  <p class="text-sm text-slate-600 mb-6">
+    In enkele minuten zichtbaar voor klanten. Kies zorgvuldig je categorieën en specialismen
+    — deze bepalen hoe je wordt gematcht.
+  </p>
 
-  <form id="companyForm" class="space-y-4">
-    <input required name="name" class="input" placeholder="Bedrijfsnaam" />
-    <input required name="city" class="input" placeholder="Plaats" />
+  <form id="companyForm" class="space-y-5" novalidate>
+    <div>
+      <input
+        required
+        name="name"
+        class="input w-full"
+        placeholder="Bedrijfsnaam"
+        autocomplete="organization"
+      />
+    </div>
 
-    <label class="block text-sm font-medium">Categorieën</label>
-    <select name="categories" multiple required class="input">
-      <option value="advocaat">Advocaat</option>
-      <option value="juridisch">Juridisch advies</option>
-    </select>
+    <div>
+      <input
+        required
+        name="city"
+        class="input w-full"
+        placeholder="Plaats"
+        autocomplete="address-level2"
+      />
+    </div>
 
-    <label class="block text-sm font-medium">Specialismen</label>
-    <select name="specialties" multiple required class="input">
-      <option value="arbeidsrecht">Arbeidsrecht</option>
-      <option value="ontslagrecht">Ontslagrecht</option>
-    </select>
+    <div>
+      <label class="block text-sm font-medium mb-1">
+        Categorieën <span class="text-slate-400">(meerdere mogelijk)</span>
+      </label>
+      <select
+        name="categories"
+        id="categoriesSelect"
+        multiple
+        class="input w-full min-h-[96px]"
+      ></select>
+      <p class="text-xs text-slate-500 mt-1">
+        Kies alle categorieën waarop je gevonden wilt worden.
+      </p>
+    </div>
 
-    <button class="btn-primary w-full">Bedrijf registreren</button>
+    <div>
+      <label class="block text-sm font-medium mb-1">
+        Specialismen <span class="text-slate-400">(optioneel, maar aanbevolen)</span>
+      </label>
+      <select
+        name="specialties"
+        id="specialtiesSelect"
+        multiple
+        class="input w-full min-h-[96px]"
+      ></select>
+    </div>
+
+    <div id="formError" class="hidden text-sm text-red-600"></div>
+
+    <button
+      id="submitBtn"
+      class="btn-primary w-full flex items-center justify-center gap-2"
+      type="submit"
+    >
+      <span id="submitText">Bedrijf registreren</span>
+      <span id="submitSpinner" class="hidden animate-spin">⏳</span>
+    </button>
   </form>
 </main>
 
-<script>
-const API = "https://irisje-backend.onrender.com/api";
-
-document.getElementById("companyForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const token = localStorage.getItem("token");
-  if (!token) return location.href = "login.html";
-
-  const fd = new FormData(e.target);
-  const body = {
-    name: fd.get("name"),
-    city: fd.get("city"),
-    categories: fd.getAll("categories"),
-    specialties: fd.getAll("specialties"),
-  };
-
-  const res = await fetch(`${API}/companies`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer " + token
-    },
-    body: JSON.stringify(body)
-  });
-
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || "Fout bij registreren");
-
-  localStorage.setItem("companyId", data.companyId);
-  location.href = "dashboard.html";
-});
-</script>
+<script src="/js/register-company.js?v=20260108"></script>
 </body>
 </html>

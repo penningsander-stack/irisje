@@ -1,4 +1,11 @@
 // backend/models/company.js
+// v20260108-COMPANY-NO-EMAIL-ACTIVE
+//
+// Wijzigingen:
+// - email veld VERWIJDERD (Company heeft geen eigen email)
+// - active veld TOEGEVOEGD
+// - overige structuur ongewijzigd
+// - bestaande indexen behouden (geen email-index meer)
 
 const mongoose = require("mongoose");
 
@@ -6,6 +13,7 @@ const companySchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true, trim: true },
+
     tagline: { type: String, default: "" },
     description: { type: String, default: "" },
 
@@ -13,11 +21,10 @@ const companySchema = new mongoose.Schema(
     specialties: [{ type: String, trim: true }],
     specializations: [{ type: String, trim: true }],
 
-// Voeg deze velden toe aan het Company schema
-issueTypes: [{ type: String, lowercase: true, trim: true }], // bijv. ["ontslag","loon"]
-canHandleUrgent: { type: Boolean, default: false },
-budgetRanges: [{ type: String, lowercase: true, trim: true }], // bijv. ["tot-500","500-1500"]
-
+    // Matching / intake
+    issueTypes: [{ type: String, lowercase: true, trim: true }],
+    canHandleUrgent: { type: Boolean, default: false },
+    budgetRanges: [{ type: String, lowercase: true, trim: true }],
 
     regions: {
       type: [String],
@@ -79,13 +86,17 @@ budgetRanges: [{ type: String, lowercase: true, trim: true }], // bijv. ["tot-50
 
     city: { type: String, default: "" },
     phone: { type: String, default: "" },
-    email: { type: String, default: "" },
     website: { type: String, default: "" },
 
+    // Status & reviews
     avgRating: { type: Number, default: 0 },
     reviewCount: { type: Number, default: 0 },
     isVerified: { type: Boolean, default: false },
 
+    // Actief/vindbaar
+    active: { type: Boolean, default: true },
+
+    // Koppeling met User
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -95,12 +106,7 @@ budgetRanges: [{ type: String, lowercase: true, trim: true }], // bijv. ["tot-50
   { timestamps: true }
 );
 
-/*
- ❗ MongoDB kan geen parallelle arrays indexeren
- ❗ Daarom GEEN samengestelde index meer
-*/
-
-// Losse indexen (veilig)
+// Indexen (veilig)
 companySchema.index({ categories: 1 });
 companySchema.index({ specialties: 1 });
 companySchema.index({ regions: 1 });
