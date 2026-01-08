@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260107-DEFAULT-COMPANY-FIXED
+// v20260108-DEFAULT-COMPANY-AUTO-OWNER-FIXED
 
 const express = require("express");
 const router = express.Router();
@@ -44,11 +44,45 @@ router.get("/lists", async (req, res) => {
 // -----------------------------------------------------------------------------
 router.get("/my", auth, async (req, res) => {
   try {
-    const companies = await Company.find({ owner: req.user.id })
+    // 1. Normale situatie: bedrijven met owner = user
+    let companies = await Company.find({ owner: req.user.id })
       .select("_id name city")
       .lean();
 
-    res.json({ ok: true, companies });
+    if (companies.length > 0) {
+      return res.json({ ok: true, companies });
+    }
+
+    // 2. Herstelpad: exact één bedrijf zonder owner
+    const orphanCompanies = await Company.find({
+      $or: [{ owner: { $exists: false } }, { owner: null }],
+    })
+      .select("_id name city")
+      .lean();
+
+    if (orphanCompanies.length === 1) {
+      const orphan = orphanCompanies[0];
+
+      await Company.updateOne(
+        { _id: orphan._id },
+        { $set: { owner: req.user.id } }
+      );
+
+      return res.json({
+        ok: true,
+        companies: [
+          {
+            _id: orphan._id,
+            name: orphan.name,
+            city: orphan.city,
+          },
+        ],
+        repaired: true,
+      });
+    }
+
+    // 3. Geen bedrijven (of te ambigu om veilig te koppelen)
+    return res.json({ ok: true, companies: [] });
   } catch (err) {
     console.error("❌ companies/my error:", err);
     res.status(500).json({ ok: false, error: err.message });
@@ -174,7 +208,9 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     if (String(item.owner) !== String(req.user.id)) {
-      return res.status(403).json({ ok: false, error: "Geen toegang tot dit bedrijf." });
+      return res
+        .status(403)
+        .json({ ok: false, error: "Geen toegang tot dit bedrijf." });
     }
 
     res.json({
