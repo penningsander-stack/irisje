@@ -42,8 +42,15 @@
   }
 
   async function init() {
-    const my = await authFetch(`${API}/companies/my`);
-    const companyId = my.companies[0]._id;
+   const my = await authFetch(`${API}/companies/my`);
+
+if (!my.companies || my.companies.length === 0) {
+  window.location.href = "register-company.html";
+  return;
+}
+
+const companyId = my.companies[0]._id;
+
     const { item } = await authFetch(`${API}/companies/${companyId}`);
 
     byId("companyName").value = item.name;
