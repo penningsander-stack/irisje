@@ -92,4 +92,26 @@ const companyId = my.companies[0]._id;
     console.error(e);
     alert("Dashboard kon niet worden geladen.");
   });
+
+
+
+// ------------------------------------------------------------
+// Logout (altijd laten werken, ook bij errors elders)
+// ------------------------------------------------------------
+const logoutBtn = document.getElementById("logoutBtn");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    try {
+      localStorage.clear();
+    } catch (e) {
+      console.warn("Kon localStorage niet legen:", e);
+    }
+    window.location.href = "login.html";
+  });
+}
+
+
+
+
+
 })();
