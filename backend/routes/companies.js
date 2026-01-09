@@ -1,12 +1,11 @@
 // backend/routes/companies.js
-// v20260108-DEFAULT-COMPANY-PUT-ENABLED
+// v20260108-PUT-WORKFORMS-TARGETGROUPS-FIX
 
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
 const Company = require("../models/company");
-const Request = require("../models/request");
 const auth = require("../middleware/auth");
 
 // -----------------------------------------------------------------------------
@@ -44,42 +43,11 @@ router.get("/lists", async (req, res) => {
 // -----------------------------------------------------------------------------
 router.get("/my", auth, async (req, res) => {
   try {
-    let companies = await Company.find({ owner: req.user.id })
+    const companies = await Company.find({ owner: req.user.id })
       .select("_id name city")
       .lean();
 
-    if (companies.length > 0) {
-      return res.json({ ok: true, companies });
-    }
-
-    const orphanCompanies = await Company.find({
-      $or: [{ owner: { $exists: false } }, { owner: null }],
-    })
-      .select("_id name city")
-      .lean();
-
-    if (orphanCompanies.length === 1) {
-      const orphan = orphanCompanies[0];
-
-      await Company.updateOne(
-        { _id: orphan._id },
-        { $set: { owner: req.user.id } }
-      );
-
-      return res.json({
-        ok: true,
-        companies: [
-          {
-            _id: orphan._id,
-            name: orphan.name,
-            city: orphan.city,
-          },
-        ],
-        repaired: true,
-      });
-    }
-
-    return res.json({ ok: true, companies: [] });
+    res.json({ ok: true, companies });
   } catch (err) {
     console.error("❌ companies/my error:", err);
     res.status(500).json({ ok: false, error: err.message });
@@ -87,7 +55,7 @@ router.get("/my", auth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// ZOEKEN OP CATEGORY + SPECIALTY
+// ZOEKEN
 // GET /api/companies/search
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
@@ -139,10 +107,7 @@ router.get("/slug/:slug", async (req, res) => {
   try {
     const item = await Company.findOne({ slug: req.params.slug }).lean();
     if (!item) {
-      return res.status(404).json({
-        ok: false,
-        error: "Company niet gevonden.",
-      });
+      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
     }
     res.json({ ok: true, item });
   } catch (err) {
@@ -188,7 +153,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY DETAILS (dashboard)
+// COMPANY VIA ID (dashboard ophalen)
 // GET /api/companies/:id
 // -----------------------------------------------------------------------------
 router.get("/:id", auth, async (req, res) => {
@@ -205,9 +170,7 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     if (String(item.owner) !== String(req.user.id)) {
-      return res
-        .status(403)
-        .json({ ok: false, error: "Geen toegang tot dit bedrijf." });
+      return res.status(403).json({ ok: false, error: "Geen toegang tot dit bedrijf." });
     }
 
     res.json({ ok: true, item });
@@ -217,7 +180,7 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY BIJWERKEN (dashboard)
+// COMPANY BIJWERKEN (dashboard opslaan)
 // PUT /api/companies/:id
 // -----------------------------------------------------------------------------
 router.put("/:id", auth, async (req, res) => {
@@ -234,16 +197,16 @@ router.put("/:id", auth, async (req, res) => {
     }
 
     if (String(company.owner) !== String(req.user.id)) {
-      return res
-        .status(403)
-        .json({ ok: false, error: "Geen toegang tot dit bedrijf." });
+      return res.status(403).json({ ok: false, error: "Geen toegang." });
     }
 
-    // Alleen velden die via dashboard aangepast mogen worden
-    const allowedFields = [
+    // ✅ Whitelist van toegestane velden
+    const allowed = [
       "city",
       "regions",
       "specialties",
+      "workforms",
+      "targetGroups",
       "certifications",
       "languages",
       "memberships",
@@ -251,8 +214,8 @@ router.put("/:id", auth, async (req, res) => {
       "worksNationwide",
     ];
 
-    allowedFields.forEach((field) => {
-      if (field in req.body) {
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
         company[field] = req.body[field];
       }
     });
