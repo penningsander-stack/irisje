@@ -50,21 +50,32 @@
       <p class="hint mb-6">Deze informatie bepaalt hoe klanten jouw bedrijf zien en kiezen.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
-          <input id="companyName" class="input" disabled />
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Vestigingsplaats</label>
-          <input id="companyCity" class="input" />
-        </div>
-      </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
+    <input id="companyName" class="input" disabled />
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">Vestigingsplaats</label>
+    <input id="companyCity" class="input bg-gray-50 text-gray-600" disabled />
+    <p class="hint mt-1">Dit is je officiële vestigingsplaats.</p>
+  </div>
+</div>
 
-      <div class="mb-6">
-        <label class="block text-sm font-medium mb-1">Korte introductie</label>
-        <textarea id="companyIntroduction" maxlength="500" class="textarea"></textarea>
-        <div class="hint mt-1"><span id="introCount">0</span>/500</div>
-      </div>
+<div class="mb-6">
+  <label class="block text-sm font-medium mb-1">Korte introductie</label>
+  <textarea
+    id="companyIntroduction"
+    maxlength="500"
+    class="textarea bg-indigo-50/40 focus:bg-white focus:ring-2 focus:ring-indigo-400 transition"
+    rows="5"
+    placeholder="Omschrijf kort wie je bent, wat je doet en voor wie je werkt. Bijvoorbeeld: ‘Ik help werknemers en werkgevers bij arbeidsconflicten, VSO’s en ontslagzaken. Persoonlijk, snel en helder advies.’"
+  ></textarea>
+  <div class="flex justify-between mt-1">
+    <p class="hint">Dit is de eerste tekst die klanten lezen.</p>
+    <span class="hint"><span id="introCount">0</span>/500</span>
+  </div>
+</div>
+
 
       <div class="mb-6">
         <div class="flex items-center justify-between mb-2">

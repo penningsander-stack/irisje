@@ -65,12 +65,12 @@ function fillProfile() {
 
 $("#saveProfileBtn").onclick = async () => {
   await apiPut(`/companies/${companyId}`, {
-    city: $("#companyCity").value,
     introduction: $("#companyIntroduction").value,
     reasons: getActive("reasonsCards"),
   });
   alert("Bedrijfsprofiel opgeslagen");
 };
+
 
 // Services
 function fillServices() {
