@@ -11,14 +11,22 @@
     .tab { padding:.75rem 1rem; border-bottom:2px solid transparent; color:#475569; }
     .tab.active { border-color:#6366f1; color:#111827; }
     .hint { color:#6b7280; font-size:.875rem; }
-    .pill { border:1px solid #e5e7eb; border-radius:999px; padding:.45rem .7rem; }
-    .pill.badge { background:#eef2ff; border-color:#6366f1; color:#3730a3; }
+    .pill { border:1px solid #e5e7eb; border-radius:999px; padding:.45rem .7rem; cursor:pointer; user-select:none; }
+    .pill.active { background:#111827; color:#fff; border-color:#111827; }
+    .pill.badge { background:#eef2ff; border-color:#6366f1; color:#3730a3; cursor:default; }
     .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; }
     .btn { border-radius:10px; padding:.7rem 1.1rem; }
     .btn-primary { background:#4f46e5; color:#fff; }
-    .textarea-premium { background:#eef2ff; border-radius:12px; padding:12px; min-height:140px; }
+    .textarea-premium { background:#eef2ff; border-radius:12px; padding:12px; min-height:140px; border:1px solid rgba(99,102,241,.25); }
+    .textarea-premium:focus { outline:none; box-shadow:0 0 0 4px rgba(99,102,241,.18); }
     .progress { width:100%; height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden; }
     #profileBar { height:100%; width:0%; background:linear-gradient(90deg,#4f46e5,#6366f1); border-radius:999px; transition:width .4s ease; }
+
+    /* Onboarding */
+    .onb { display:flex; gap:12px; align-items:flex-start; }
+    .onb-dot { width:10px; height:10px; border-radius:999px; background:#4f46e5; margin-top:6px; }
+    .onb-title { font-weight:700; color:#0f172a; }
+    .onb-text { color:#475569; }
 
     /* Preview */
     .pv-wrap { display:grid; gap:14px; }
@@ -41,6 +49,20 @@
 </header>
 
 <main class="max-w-6xl mx-auto px-4 py-8">
+
+  <!-- ONBOARDING (na registratie) -->
+  <div id="onboardingBanner" class="card p-5 mb-6 hidden">
+    <div class="onb">
+      <div class="onb-dot"></div>
+      <div>
+        <div class="onb-title">Welkom! Je bedrijfsprofiel is nog niet compleet.</div>
+        <div class="onb-text mt-1">
+          Vul je profiel aan om zichtbaar te worden voor klanten. Begin met <strong>Korte introductie</strong> en
+          <strong>Waarom kiezen</strong>, daarna <strong>Diensten & expertise</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- PROFIEL COMPLEETHEID -->
   <div class="card p-6 mb-6">

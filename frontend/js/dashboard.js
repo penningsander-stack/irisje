@@ -1,17 +1,20 @@
 // frontend/js/dashboard.js
-// v20260109-PREVIEW-COMPLETE-SAFE-SAVE
+// v20260109-DASHBOARD-ONBOARDING-ROBUST
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
 if (!token) location.href = "/login.html";
 
+const params = new URLSearchParams(window.location.search);
+const isOnboarding = params.get("onboarding") === "1";
+
 // Tabs
-document.querySelectorAll(".tab").forEach(btn => {
+document.querySelectorAll(".tab").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-section").forEach(s => s.classList.add("hidden"));
+    document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+    document.querySelectorAll(".tab-section").forEach((s) => s.classList.add("hidden"));
     btn.classList.add("active");
-    document.getElementById(`tab-${btn.dataset.tab}`).classList.remove("hidden");
+    document.getElementById(`tab-${btn.dataset.tab}`)?.classList.remove("hidden");
   });
 });
 
@@ -37,19 +40,47 @@ let company = {};
 init();
 
 async function init() {
+  // 1) Mijn bedrijven ophalen
   const my = await apiGet("/companies/my");
-  if (!my?.companies?.length) return;
+  if (!my?.ok) {
+    // token kan verlopen zijn
+    safeLogoutToLogin();
+    return;
+  }
+
+  if (!Array.isArray(my.companies) || my.companies.length === 0) {
+    // Geen bedrijf → eerst registreren
+    location.href = "/register-company.html";
+    return;
+  }
 
   companyId = my.companies[0]._id;
 
+  // 2) Bedrijf ophalen
   const data = await apiGet(`/companies/${companyId}`);
-  company = data?.item || {};
+  if (!data?.ok || !data?.item) {
+    location.href = "/register-company.html";
+    return;
+  }
+
+  company = data.item;
 
   fillProfile();
   fillServices();
 
   updateCompleteness();
   renderPreview();
+
+  // 3) Onboarding banner + starttab + URL opschonen
+  if (isOnboarding) {
+    const banner = document.getElementById("onboardingBanner");
+    banner?.classList.remove("hidden");
+
+    openTab("profile");
+
+    // URL opschonen (zodat refresh niet opnieuw onboarding triggert)
+    history.replaceState({}, "", "/dashboard.html");
+  }
 }
 
 // -------- Profile --------
@@ -72,13 +103,20 @@ function fillProfile() {
 }
 
 $("#saveProfileBtn").onclick = async () => {
-  company.introduction = $("#companyIntroduction").value;
+  if (!companyId) return;
+
+  company.introduction = ($("#companyIntroduction").value || "").trim();
   company.reasons = getActive("reasonsCards");
 
-  await apiPut(`/companies/${companyId}`, {
+  const res = await apiPut(`/companies/${companyId}`, {
     introduction: company.introduction,
     reasons: company.reasons,
   });
+
+  if (!res?.ok) {
+    alert(res?.error || "Opslaan mislukt.");
+    return;
+  }
 
   updateCompleteness();
   renderPreview();
@@ -92,23 +130,35 @@ function fillServices() {
   renderCards("specialtiesCards", SPECIALTIES, company.specialties || []);
   renderCards("regionsCards", REGIONS, company.regions || []);
   $("#worksNationwide").checked = !!company.worksNationwide;
+
+  $("#worksNationwide").addEventListener("change", () => {
+    company.worksNationwide = $("#worksNationwide").checked;
+    updateCompleteness();
+    renderPreview();
+  });
 }
 
 $("#saveServicesBtn").onclick = async () => {
+  if (!companyId) return;
+
   company.workforms = getActive("workformsCards");
   company.targetGroups = getActive("targetGroupsCards");
   company.specialties = getActive("specialtiesCards");
   company.regions = getActive("regionsCards");
   company.worksNationwide = $("#worksNationwide").checked;
 
-  // Veilig: alleen velden die dit scherm beheert
-  await apiPut(`/companies/${companyId}`, {
+  const res = await apiPut(`/companies/${companyId}`, {
     workforms: company.workforms,
     targetGroups: company.targetGroups,
     specialties: company.specialties,
     regions: company.regions,
     worksNationwide: company.worksNationwide,
   });
+
+  if (!res?.ok) {
+    alert(res?.error || "Opslaan mislukt.");
+    return;
+  }
 
   updateCompleteness();
   renderPreview();
@@ -118,7 +168,7 @@ $("#saveServicesBtn").onclick = async () => {
 // -------- Completeness --------
 function updateCompleteness() {
   let score = 0;
-  if ((company.introduction || "").length >= 80) score++;
+  if ((company.introduction || "").trim().length >= 80) score++;
   if ((company.reasons || []).length >= 3) score++;
   if ((company.workforms || []).length >= 1) score++;
   if ((company.targetGroups || []).length >= 1) score++;
@@ -162,13 +212,14 @@ function renderPreview() {
   if ((company.reasons || []).length >= 3) badges.appendChild(makeBadge("Sterk profiel"));
 
   // Intro
-  setText("#pv-intro", (company.introduction || "").trim() || "Nog geen introductie ingevuld.");
+  const intro = (company.introduction || "").trim();
+  setText("#pv-intro", intro || "Nog geen introductie ingevuld.");
 
-  // Reasons list + empty state
+  // Reasons
   const reasons = company.reasons || [];
   const ul = $("#pv-reasons");
   ul.innerHTML = "";
-  reasons.forEach(r => {
+  reasons.forEach((r) => {
     const li = document.createElement("li");
     li.innerText = r;
     ul.appendChild(li);
@@ -219,9 +270,10 @@ function toggleEmpty(sel, show) {
 // -------- Cards --------
 function renderCards(containerId, options, selected = [], max = null) {
   const el = document.getElementById(containerId);
+  if (!el) return;
   el.innerHTML = "";
 
-  options.forEach(opt => {
+  options.forEach((opt) => {
     const card = document.createElement("div");
     card.className = "pill" + (selected.includes(opt) ? " active" : "");
     card.innerText = opt;
@@ -234,7 +286,7 @@ function renderCards(containerId, options, selected = [], max = null) {
         if (actives.length > max) card.classList.remove("active");
       }
 
-      // Sync naar company-state voor live preview/compleetheid
+      // Sync state
       if (containerId === "reasonsCards") company.reasons = getActive("reasonsCards");
       if (containerId === "workformsCards") company.workforms = getActive("workformsCards");
       if (containerId === "targetGroupsCards") company.targetGroups = getActive("targetGroupsCards");
@@ -250,26 +302,80 @@ function renderCards(containerId, options, selected = [], max = null) {
 }
 
 function getActive(containerId) {
-  return [...document.querySelectorAll(`#${containerId} .pill.active`)].map(p => p.innerText);
+  return [...document.querySelectorAll(`#${containerId} .pill.active`)].map((p) => p.innerText);
 }
 
 // -------- Helpers --------
-function $(q) { return document.querySelector(q); }
+function $(q) {
+  return document.querySelector(q);
+}
+
+function openTab(tabName) {
+  document.querySelectorAll(".tab").forEach((b) => b.classList.remove("active"));
+  document.querySelectorAll(".tab-section").forEach((s) => s.classList.add("hidden"));
+
+  document.querySelector(`[data-tab="${tabName}"]`)?.classList.add("active");
+  document.getElementById(`tab-${tabName}`)?.classList.remove("hidden");
+}
 
 async function apiGet(url) {
-  const r = await fetch(API_BASE + url, { headers: { Authorization: `Bearer ${token}` } });
-  return r.json();
-}
-async function apiPut(url, body) {
-  const r = await fetch(API_BASE + url, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
-  });
-  return r.json();
+  try {
+    const r = await fetch(API_BASE + url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const text = await r.text();
+    const data = safeJson(text);
+
+    if (!r.ok) {
+      // jwt expired of 401 → terug naar login
+      if (r.status === 401) return { ok: false, error: "Niet ingelogd." };
+      return { ok: false, error: data?.error || "Serverfout." };
+    }
+
+    return data || { ok: false, error: "Onverwachte respons." };
+  } catch (e) {
+    return { ok: false, error: "Netwerkfout." };
+  }
 }
 
-$("#logoutBtn").onclick = () => {
+async function apiPut(url, body) {
+  try {
+    const r = await fetch(API_BASE + url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    const text = await r.text();
+    const data = safeJson(text);
+
+    if (!r.ok) {
+      if (r.status === 401) return { ok: false, error: "Niet ingelogd." };
+      return { ok: false, error: data?.error || "Opslaan mislukt." };
+    }
+
+    return data || { ok: true };
+  } catch (e) {
+    return { ok: false, error: "Netwerkfout." };
+  }
+}
+
+function safeJson(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+function safeLogoutToLogin() {
   localStorage.removeItem("token");
+  localStorage.removeItem("companyId");
   location.href = "/login.html";
-};
+}
+
+$("#logoutBtn").onclick = () => safeLogoutToLogin();
