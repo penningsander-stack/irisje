@@ -115,9 +115,22 @@ function updateCompleteness() {
   if ((company.regions || []).length >= 1 || company.worksNationwide) score++;
 
   const percent = Math.round((score / 6) * 100);
-  $("#profilePercent").innerText = percent;
-  $("#profileBar").style.width = percent + "%";
+
+  const percentEl = document.getElementById("profilePercent");
+  const bar = document.getElementById("profileBar");
+
+  if (percentEl) percentEl.innerText = percent;
+
+  if (bar) {
+    bar.style.display = "block";
+    bar.style.height = "10px";
+    bar.style.width = percent + "%";
+    bar.style.background = "linear-gradient(90deg,#4f46e5,#6366f1)";
+    bar.style.borderRadius = "999px";
+    bar.style.transition = "width 0.4s ease";
+  }
 }
+
 
 // -------- Cards --------
 function renderCards(containerId, options, selected = [], max = null) {
