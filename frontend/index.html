@@ -14,7 +14,6 @@
   <meta name="googlebot" content="index, follow" />
   <link rel="canonical" href="https://irisje.nl/" />
   <link rel="sitemap" type="application/xml" title="Sitemap" href="https://irisje-backend.onrender.com/sitemap.xml" />
-  <link rel="robots" type="text/plain" href="https://irisje.nl/robots.txt" />
 
   <!-- 🪩 Open Graph / Social -->
   <meta property="og:title" content="Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt" />
@@ -40,7 +39,7 @@
     "description": "Vergelijk bedrijven, lees reviews en vraag gratis offertes aan via Irisje.nl.",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://irisje.nl/results.html?q={search_term_string}",
+      "target": "https://irisje.nl/search.html?q={search_term_string}",
       "query-input": "required name=search_term_string"
     },
     "publisher": {
@@ -64,8 +63,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css?v=20251208">
-<link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
-
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
@@ -91,12 +89,14 @@
       </a>
 
       <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <a href="results.html" class="nav-link">Bedrijven</a>
+        <!-- ✅ Search is nu apart van de offerte-wizard -->
+        <a href="search.html" class="nav-link">Bedrijven</a>
         <a href="login.html" class="nav-link">Voor bedrijven</a>
       </nav>
 
       <div class="flex items-center space-x-2">
-        <a href="results.html" class="hidden sm:inline-flex btn-ghost btn-xs">
+        <!-- ✅ Search is nu apart van de offerte-wizard -->
+        <a href="search.html" class="hidden sm:inline-flex btn-ghost btn-xs">
           Zoeken
         </a>
         <a href="login.html" class="inline-flex btn-primary btn-xs">
@@ -139,7 +139,8 @@
             <a href="#zoek-een-bedrijf" class="btn-primary primary-cta">
               Vraag gratis een offerte aan
             </a>
-            <a href="results.html" class="btn-ghost text-xs sm:text-sm">
+            <!-- ✅ Search is nu apart van de offerte-wizard -->
+            <a href="search.html" class="btn-ghost text-xs sm:text-sm">
               Bekijk bedrijven en reviews
             </a>
           </div>
@@ -197,7 +198,8 @@
 
             <p class="text-center text-[11px] text-slate-400 mt-5">
               Liever eerst rondkijken?
-              <a href="results.html" class="link-inline">Bekijk alle bedrijven →</a>
+              <!-- ✅ Search is nu apart van de offerte-wizard -->
+              <a href="search.html" class="link-inline">Bekijk alle bedrijven →</a>
             </p>
           </div>
         </div>
@@ -281,10 +283,11 @@
   <footer class="footer-shell card-fade-in">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p class="text-[11px] text-slate-400">
-        © 2025 Irisje.nl – Alle rechten voorbehouden
+        © 2026 Irisje.nl – Alle rechten voorbehouden
       </p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
-        <a href="results.html" class="link-inline">Bedrijven</a>
+        <!-- ✅ Search is nu apart van de offerte-wizard -->
+        <a href="search.html" class="link-inline">Bedrijven</a>
         <a href="login.html" class="link-inline">Voor bedrijven</a>
         <a href="error.html" class="link-inline">Contact</a>
       </div>
@@ -316,12 +319,8 @@
   </script>
 
   <!-- ✅ FUNCTIONAL SCRIPT -->
-
-
-<script src="js/index_search.js?v=1"></script>
-<script src="js/index.js?v=20251212"></script>
-
-
+  <script src="js/index_search.js?v=1"></script>
+  <script src="js/index.js?v=20251212"></script>
 
 </body>
 </html>

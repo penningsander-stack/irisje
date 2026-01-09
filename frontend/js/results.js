@@ -201,3 +201,40 @@ function label(v) {
   if (!v) return "";
   return v.replace("-", " ");
 }
+
+
+
+
+let activeSubcategory = null;
+
+function renderSubcategories(allCategories, activeCategory) {
+  const subcats = allCategories.filter(
+    c => c.parentCategory === activeCategory
+  );
+
+  if (!subcats.length) return;
+
+  const section = document.getElementById("subcategories");
+  const container = document.getElementById("subcategoryChips");
+
+  section.classList.remove("hidden");
+  container.innerHTML = "";
+
+  subcats.forEach(sub => {
+    const btn = document.createElement("button");
+    btn.className = "subcat-chip";
+    btn.textContent = sub.name;
+
+    if (sub.name === activeSubcategory) {
+      btn.classList.add("active");
+    }
+
+    btn.onclick = () => {
+      activeSubcategory =
+        activeSubcategory === sub.name ? null : sub.name;
+      applyFilters();
+    };
+
+    container.appendChild(btn);
+  });
+}
