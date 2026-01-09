@@ -7,50 +7,7 @@
   <title>Inloggen – Irisje.nl</title>
   <meta name="description" content="Log in om jouw bedrijfsprofiel te beheren en aanvragen te bekijken." />
   <meta name="theme-color" content="#4F46E5" />
-
-  <link rel="stylesheet" href="/style.css?v=20260112">
-
-  <style>
-    /* === Premium input styling (identiek aan register/reset) === */
-    .field { position: relative; }
-    .field-msg { min-height: 1rem; }
-
-    .field input {
-      width: 100%;
-      padding: 1.15rem 1rem 0.9rem;
-      border-radius: 1rem;
-      border: 1px solid rgb(226 232 240);
-      background: rgba(255,255,255,0.9);
-      font-size: 0.95rem;
-      line-height: 1.4;
-      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
-    }
-
-    .field input:focus {
-      outline: none;
-      border-color: rgb(99 102 241);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-      background: #fff;
-    }
-
-    .field label {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.9rem;
-      color: rgb(100 116 139);
-      pointer-events: none;
-      transition: all .18s ease;
-    }
-
-    .field input:focus + label,
-    .field input:not(:placeholder-shown) + label {
-      top: 0.45rem;
-      font-size: 0.7rem;
-      color: rgb(79 70 229);
-    }
-  </style>
+  <link rel="stylesheet" href="/style.css?v=20260113">
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen">
@@ -67,7 +24,7 @@
   </div>
 </header>
 
-<main class="flex-1 flex items-center justify-center px-4 py-12">
+<main class="onboarding flex-1 flex items-center justify-center px-4 py-12">
   <section class="max-w-md w-full">
 
     <div class="mb-8 text-center">
@@ -75,7 +32,7 @@
       <p class="mt-2 text-sm text-slate-600">Beheer je bedrijfsprofiel en aanvragen.</p>
     </div>
 
-    <div class="rounded-3xl bg-white/85 backdrop-blur border border-white/60 shadow-brand p-8">
+    <div class="card rounded-3xl bg-white/85 backdrop-blur border border-white/60 shadow-brand">
       <form id="loginForm" class="space-y-7" novalidate>
 
         <div class="field">
@@ -119,27 +76,27 @@
 
 <script src="js/login.js?v=20251206"></script>
 <script>
-  function setHint(el, msg){ el.textContent = msg; el.className = "text-xs text-slate-400 mt-1"; }
-  function setError(el, msg){ el.textContent = msg; el.className = "text-xs text-red-600 mt-1"; }
-  function clearMsg(el){ el.textContent = ""; el.className = "text-xs mt-1"; }
+function setHint(el, msg) { el.textContent = msg; el.className = "text-xs text-slate-400 mt-1"; }
+function setError(el, msg) { el.textContent = msg; el.className = "text-xs text-red-600 mt-1"; }
+function clearMsg(el) { el.textContent = ""; el.className = "text-xs mt-1"; }
 
-  const email = document.getElementById("email");
-  const emailMsg = email.parentElement.querySelector(".field-msg");
-  email.addEventListener("focus", () => setHint(emailMsg, "Gebruik je geregistreerde e-mailadres."));
-  email.addEventListener("blur", () => {
-    if (!email.value) return clearMsg(emailMsg);
-    if (!email.checkValidity()) setError(emailMsg, "Ongeldig e-mailadres.");
-    else clearMsg(emailMsg);
-  });
+const email = document.getElementById("email");
+const emailMsg = email.parentElement.querySelector(".field-msg");
+email.addEventListener("focus", () => setHint(emailMsg, "Gebruik je geregistreerde e-mailadres."));
+email.addEventListener("blur", () => {
+  if (!email.value) return clearMsg(emailMsg);
+  if (!email.checkValidity()) setError(emailMsg, "Dit lijkt geen geldig e-mailadres.");
+  else clearMsg(emailMsg);
+});
 
-  const pass = document.getElementById("password");
-  const passMsg = pass.parentElement.querySelector(".field-msg");
-  pass.addEventListener("focus", () => setHint(passMsg, "Minimaal 8 tekens."));
-  pass.addEventListener("blur", () => {
-    if (!pass.value) return clearMsg(passMsg);
-    if (pass.value.length < 8) setError(passMsg, "Minimaal 8 tekens.");
-    else clearMsg(passMsg);
-  });
+const pass = document.getElementById("password");
+const passMsg = pass.parentElement.querySelector(".field-msg");
+pass.addEventListener("focus", () => setHint(passMsg, "Minimaal 8 tekens."));
+pass.addEventListener("blur", () => {
+  if (!pass.value) return clearMsg(passMsg);
+  if (pass.value.length < 8) setError(passMsg, "Wachtwoord moet minimaal 8 tekens zijn.");
+  else clearMsg(passMsg);
+});
 </script>
 
 </body>

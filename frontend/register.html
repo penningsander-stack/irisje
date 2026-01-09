@@ -5,50 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Account aanmaken – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260109">
-
-  <style>
-    /* Floating label – premium, subtiel */
-    .field {
-      position: relative;
-    }
-
-    .field input {
-      width: 100%;
-      padding: 1.15rem 1rem 0.9rem;
-      border-radius: 1rem;
-      border: 1px solid rgb(226 232 240);
-      background: rgba(255,255,255,0.9);
-      font-size: 0.95rem;
-      transition: border-color .2s ease, box-shadow .2s ease;
-    }
-
-    .field input:focus {
-      outline: none;
-      border-color: rgb(99 102 241);
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-      background: #fff;
-    }
-
-    .field label {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.9rem;
-      color: rgb(100 116 139);
-      pointer-events: none;
-      background: transparent;
-      transition: all .18s ease;
-    }
-
-    .field input:focus + label,
-    .field input:not(:placeholder-shown) + label {
-      top: 0.45rem;
-      font-size: 0.7rem;
-      color: rgb(79 70 229);
-    }
-  </style>
+  <link rel="stylesheet" href="/style.css?v=20260113">
 </head>
 
 <body class="irisje-body">
@@ -70,7 +27,7 @@
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+<main class="onboarding max-w-6xl mx-auto px-4 py-12 lg:py-16">
   <div class="grid lg:grid-cols-2 gap-12 items-start">
 
     <!-- Left -->
@@ -98,25 +55,30 @@
           </h2>
         </div>
 
-        <div class="rounded-3xl bg-white/85 backdrop-blur border border-white/60 shadow-brand p-8">
+        <div class="card rounded-3xl bg-white/85 backdrop-blur border border-white/60 shadow-brand">
           <form id="registerForm" class="space-y-7" novalidate>
 
             <div class="field">
-              <input type="text" name="name" required placeholder=" " autocomplete="name">
-              <label>Naam (persoon of bedrijf)</label>
+              <input id="regName" type="text" name="name" required placeholder=" " autocomplete="name">
+              <label for="regName">Naam (persoon of bedrijf)</label>
+              <p class="field-msg"></p>
             </div>
 
             <div class="field">
-              <input type="email" name="email" required placeholder=" " autocomplete="email">
-              <label>E-mailadres</label>
+              <input id="regEmail" type="email" name="email" required placeholder=" " autocomplete="email">
+              <label for="regEmail">E-mailadres</label>
+              <p class="field-msg"></p>
             </div>
 
             <div class="field">
-              <input type="password" name="password" required minlength="8" placeholder=" " autocomplete="new-password">
-              <label>Wachtwoord (min. 8 tekens)</label>
+              <input id="regPassword" type="password" name="password" required minlength="8" placeholder=" " autocomplete="new-password">
+              <label for="regPassword">Wachtwoord (min. 8 tekens)</label>
+              <p class="field-msg"></p>
             </div>
 
-            <div class="pt-4">
+            <p id="registerStatus" class="rq-status min-h-[1.25rem]"></p>
+
+            <div class="pt-2">
               <button type="submit" class="btn-primary w-full py-3">
                 Account aanmaken
               </button>
@@ -145,34 +107,102 @@
 <script>
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
+function setHint(el, msg) { el.textContent = msg; el.className = "text-xs text-slate-400 mt-1"; }
+function setError(el, msg) { el.textContent = msg; el.className = "text-xs text-red-600 mt-1"; }
+function clearMsg(el) { el.textContent = ""; el.className = "text-xs mt-1"; }
+
+function wireEmail(input) {
+  const msg = input.parentElement.querySelector(".field-msg");
+  input.addEventListener("focus", () => setHint(msg, "Gebruik het e-mailadres waarmee je je registreert."));
+  input.addEventListener("blur", () => {
+    if (!input.value) return clearMsg(msg);
+    if (!input.checkValidity()) setError(msg, "Dit lijkt geen geldig e-mailadres.");
+    else clearMsg(msg);
+  });
+}
+
+function wirePassword(input) {
+  const msg = input.parentElement.querySelector(".field-msg");
+  input.addEventListener("focus", () => setHint(msg, "Minimaal 8 tekens."));
+  input.addEventListener("blur", () => {
+    if (!input.value) return clearMsg(msg);
+    if (input.value.length < 8) setError(msg, "Wachtwoord moet minimaal 8 tekens zijn.");
+    else clearMsg(msg);
+  });
+}
+
+function wireName(input) {
+  const msg = input.parentElement.querySelector(".field-msg");
+  input.addEventListener("focus", () => setHint(msg, "Bijv. je bedrijfsnaam of je eigen naam."));
+  input.addEventListener("blur", () => {
+    if (!input.value) return clearMsg(msg);
+    if (input.value.trim().length < 2) setError(msg, "Vul minimaal 2 tekens in.");
+    else clearMsg(msg);
+  });
+}
+
+const nameEl = document.getElementById("regName");
+const emailEl = document.getElementById("regEmail");
+const passEl  = document.getElementById("regPassword");
+
+wireName(nameEl);
+wireEmail(emailEl);
+wirePassword(passEl);
+
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const fd = new FormData(e.target);
+
+  const status = document.getElementById("registerStatus");
+  status.textContent = "";
 
   const payload = {
-    name: fd.get("name").trim(),
-    email: fd.get("email").trim(),
-    password: fd.get("password")
+    name: (nameEl.value || "").trim(),
+    email: (emailEl.value || "").trim(),
+    password: passEl.value || ""
   };
 
-  if (!payload.name || !payload.email || payload.password.length < 8) {
-    alert("Vul alle velden correct in.");
+  // Frontend checks (inline, geen alerts)
+  let ok = true;
+
+  if (!payload.name || payload.name.length < 2) {
+    setError(nameEl.parentElement.querySelector(".field-msg"), "Vul minimaal 2 tekens in.");
+    ok = false;
+  }
+
+  if (!emailEl.checkValidity()) {
+    setError(emailEl.parentElement.querySelector(".field-msg"), "Dit lijkt geen geldig e-mailadres.");
+    ok = false;
+  }
+
+  if (!payload.password || payload.password.length < 8) {
+    setError(passEl.parentElement.querySelector(".field-msg"), "Wachtwoord moet minimaal 8 tekens zijn.");
+    ok = false;
+  }
+
+  if (!ok) {
+    status.textContent = "Controleer de velden hierboven.";
     return;
   }
 
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
+  status.textContent = "Account aanmaken…";
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    alert(data.message || "Registratie mislukt");
-    return;
+  try {
+    const res = await fetch(`${API_BASE}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      status.textContent = data.message || "Registratie mislukt.";
+      return;
+    }
+
+    window.location.href = "register-company.html";
+  } catch (err) {
+    status.textContent = "Er ging iets mis. Probeer later opnieuw.";
   }
-
-  window.location.href = "register-company.html";
 });
 </script>
 
