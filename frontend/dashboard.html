@@ -4,75 +4,37 @@
   <meta charset="UTF-8" />
   <title>Dashboard – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260113">
+  <link rel="stylesheet" href="/style.css?v=20260112">
   <style>
     .bg-soft { background:#f6f7fb; }
     .card { background:#fff; border-radius:14px; box-shadow:0 10px 25px rgba(15,23,42,.06); }
     .tab { padding:.75rem 1rem; border-bottom:2px solid transparent; color:#475569; }
     .tab.active { border-color:#6366f1; color:#111827; }
     .hint { color:#6b7280; font-size:.875rem; }
-    .pill { border:1px solid #e5e7eb; border-radius:12px; padding:.45rem .7rem; }
-    .pill.active { border-color:#6366f1; background:#eef2ff; }
-    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.6rem; }
+    .pill { border:1px solid #e5e7eb; border-radius:12px; padding:.6rem .75rem; }
+    .pill.badge { background:#eef2ff; border-color:#6366f1; }
+    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; }
     .btn { border-radius:10px; padding:.7rem 1.1rem; }
     .btn-primary { background:#4f46e5; color:#fff; }
-    .btn-secondary { background:#eef2ff; color:#3730a3; }
     .textarea-premium {
-      background:#eef2ff;
-      border-radius:12px;
-      padding:12px;
-      min-height:140px;
+      background:#eef2ff; border-radius:12px; padding:12px; min-height:140px;
     }
-    /* Modal */
-    .modal-bg {
-      position:fixed; inset:0;
-      background:rgba(15,23,42,.45);
-      display:none; align-items:center; justify-content:center;
-      z-index:50;
+    .progress {
+      width:100%; height:10px; background:#e5e7eb; border-radius:999px; overflow:hidden;
     }
-    .modal {
-      background:#fff;
-      border-radius:16px;
-      max-width:720px;
-      width:95%;
-      max-height:85vh;
-      overflow:auto;
-      padding:24px;
-
-
-.progress {
-  width: 100%;
-  height: 10px;
-  background: #e5e7eb; /* lichtgrijs */
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-#profileBar {
-  height: 100%;
-  background: linear-gradient(90deg, #4f46e5, #6366f1);
-  width: 0%;
-  transition: width 0.4s ease;
-  border-radius: 999px;
-}
-
-
-
-
-
+    #profileBar {
+      height:100%; width:0%;
+      background:linear-gradient(90deg,#4f46e5,#6366f1);
+      border-radius:999px; transition:width .4s ease;
     }
   </style>
 </head>
 
 <body class="bg-soft irisje-body">
-
 <header class="irisje-header sticky top-0 z-10">
   <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
     <h1 class="font-semibold">Bedrijvendashboard</h1>
-    <div class="flex gap-2">
-      <button id="previewBtn" class="btn btn-secondary text-sm">Bekijk voorbeeld</button>
-      <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
-    </div>
+    <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
   </div>
 </header>
 
@@ -84,12 +46,8 @@
       <h2 class="font-semibold">Profiel-compleetheid</h2>
       <span class="text-sm font-medium"><span id="profilePercent">0</span>%</span>
     </div>
-    <div class="progress mb-3">
-      <div id="profileBar" style="width:0%"></div>
-    </div>
-<p id="profileHint" class="hint mt-2"></p>
-
-    <p class="hint">Een completer profiel wordt vaker gekozen.</p>
+    <div class="progress mb-2"><div id="profileBar"></div></div>
+    <p id="profileHint" class="hint mt-2"></p>
   </div>
 
   <!-- Tabs -->
@@ -97,6 +55,7 @@
     <div class="flex gap-6 px-4 pt-4">
       <button class="tab active" data-tab="profile">Bedrijfsprofiel</button>
       <button class="tab" data-tab="services">Diensten & expertise</button>
+      <button class="tab" data-tab="preview">Voorbeeld voor klanten</button>
     </div>
   </div>
 
@@ -104,7 +63,7 @@
   <section id="tab-profile" class="tab-section">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
-      <p class="hint mb-6">Zo zien klanten jouw bedrijf.</p>
+      <p class="hint mb-6">Deze informatie bepaalt hoe klanten jouw bedrijf zien.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
@@ -119,7 +78,8 @@
 
       <div class="mb-6">
         <label class="block text-sm font-medium mb-1">Korte introductie</label>
-        <textarea id="companyIntroduction" maxlength="500" class="textarea-premium w-full"></textarea>
+        <textarea id="companyIntroduction" maxlength="500" class="textarea-premium w-full"
+          placeholder="Omschrijf kort wie je bent, wat je doet en voor wie je werkt."></textarea>
         <div class="flex justify-between mt-2">
           <p class="hint">Minimaal 80 tekens aanbevolen.</p>
           <span class="hint"><span id="introCount">0</span>/500</span>
@@ -127,7 +87,10 @@
       </div>
 
       <div class="mb-6">
-        <label class="block text-sm font-medium mb-2">Waarom kiezen voor jouw bedrijf?</label>
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-medium">Waarom kiezen voor jouw bedrijf?</label>
+          <span class="hint">Min. 3 / Max. 5</span>
+        </div>
         <div id="reasonsCards" class="grid-cards"></div>
       </div>
 
@@ -141,7 +104,7 @@
   <section id="tab-services" class="tab-section hidden">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Diensten & expertise</h2>
-      <p class="hint mb-6">Wat klanten van je mogen verwachten.</p>
+      <p class="hint mb-6">Kies wat van toepassing is.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -160,8 +123,7 @@
           <h3 class="font-medium mb-2">Werkgebied</h3>
           <div id="regionsCards" class="grid-cards mb-2"></div>
           <label class="inline-flex items-center gap-2 mt-2">
-            <input type="checkbox" id="worksNationwide">
-            Landelijk actief
+            <input type="checkbox" id="worksNationwide"> Landelijk actief
           </label>
         </div>
       </div>
@@ -172,30 +134,39 @@
     </div>
   </section>
 
+  <!-- TAB: PREVIEW -->
+  <section id="tab-preview" class="tab-section hidden">
+    <div class="card p-6">
+      <h2 class="text-lg font-semibold mb-4">Zo zien klanten jouw profiel</h2>
+
+      <div class="mb-2">
+        <h3 id="pv-name" class="text-xl font-semibold"></h3>
+        <p id="pv-city" class="hint"></p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 mb-4" id="pv-badges"></div>
+
+      <p id="pv-intro" class="mb-4"></p>
+
+      <div class="mb-4">
+        <h4 class="font-medium mb-2">Waarom kiezen voor dit bedrijf?</h4>
+        <ul id="pv-reasons" class="list-disc pl-6"></ul>
+      </div>
+
+      <div class="mb-4">
+        <h4 class="font-medium mb-2">Diensten & expertise</h4>
+        <p id="pv-specialties" class="hint"></p>
+      </div>
+
+      <div class="mb-4">
+        <h4 class="font-medium mb-2">Werkvormen</h4>
+        <p id="pv-workforms" class="hint"></p>
+      </div>
+    </div>
+  </section>
+
 </main>
 
-<!-- PREVIEW MODAL -->
-<div id="previewModal" class="modal-bg">
-  <div class="modal">
-    <div class="flex justify-between items-start mb-4">
-      <h2 class="text-lg font-semibold">Voorbeeld: zo zien klanten jouw profiel</h2>
-      <button id="closePreview" class="text-gray-500">✕</button>
-    </div>
-
-    <h3 id="previewName" class="text-xl font-semibold mb-1"></h3>
-    <p id="previewCity" class="hint mb-4"></p>
-
-    <p id="previewIntro" class="mb-4"></p>
-
-    <div id="previewReasons" class="flex flex-wrap gap-2 mb-4"></div>
-
-    <div class="hint text-sm">
-      <strong>Diensten & expertise:</strong>
-      <span id="previewServices"></span>
-    </div>
-  </div>
-</div>
-
-<script src="/js/dashboard.js?v=20260113"></script>
+<script src="/js/dashboard.js?v=20260112"></script>
 </body>
 </html>

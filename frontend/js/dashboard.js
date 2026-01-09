@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260113-PROFILE-PREVIEW
+// v20260112-PREVIEW
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
@@ -15,7 +15,7 @@ document.querySelectorAll(".tab").forEach(btn => {
   });
 });
 
-// Options
+// Opties
 const REASONS = [
   "Gratis eerste advies",
   "Ook ’s avonds en in het weekend bereikbaar",
@@ -47,6 +47,7 @@ async function init() {
   fillProfile();
   fillServices();
   updateCompleteness();
+  renderPreview();
 }
 
 // -------- Profile --------
@@ -57,23 +58,24 @@ function fillProfile() {
   const introEl = $("#companyIntroduction");
   introEl.value = company.introduction || "";
   $("#introCount").innerText = introEl.value.length;
-  introEl.addEventListener("input", () => {
+  introEl.oninput = () => {
     $("#introCount").innerText = introEl.value.length;
+    company.introduction = introEl.value;
     updateCompleteness();
-  });
+    renderPreview();
+  };
 
   renderCards("reasonsCards", REASONS, company.reasons || [], 5);
 }
 
 $("#saveProfileBtn").onclick = async () => {
-  company.introduction = $("#companyIntroduction").value;
   company.reasons = getActive("reasonsCards");
-
   await apiPut(`/companies/${companyId}`, {
-    introduction: company.introduction,
+    introduction: $("#companyIntroduction").value,
     reasons: company.reasons,
   });
   updateCompleteness();
+  renderPreview();
   alert("Bedrijfsprofiel opgeslagen");
 };
 
@@ -93,16 +95,38 @@ $("#saveServicesBtn").onclick = async () => {
   company.regions = getActive("regionsCards");
   company.worksNationwide = $("#worksNationwide").checked;
 
-  await apiPut(`/companies/${companyId}`, {
-    workforms: company.workforms,
-    targetGroups: company.targetGroups,
-    specialties: company.specialties,
-    regions: company.regions,
-    worksNationwide: company.worksNationwide,
-  });
+  await apiPut(`/companies/${companyId}`, company);
   updateCompleteness();
+  renderPreview();
   alert("Diensten & expertise opgeslagen");
 };
+
+// -------- Preview --------
+function renderPreview() {
+  $("#pv-name").innerText = company.name || "";
+  $("#pv-city").innerText = company.worksNationwide ? "Landelijk actief" : (company.city || "");
+  $("#pv-intro").innerText = company.introduction || "";
+
+  const badges = $("#pv-badges");
+  badges.innerHTML = "";
+  if (company.worksNationwide) {
+    const b = document.createElement("span");
+    b.className = "pill badge";
+    b.innerText = "Landelijk actief";
+    badges.appendChild(b);
+  }
+
+  const reasonsEl = $("#pv-reasons");
+  reasonsEl.innerHTML = "";
+  (company.reasons || []).forEach(r => {
+    const li = document.createElement("li");
+    li.innerText = r;
+    reasonsEl.appendChild(li);
+  });
+
+  $("#pv-specialties").innerText = (company.specialties || []).join(" · ");
+  $("#pv-workforms").innerText = (company.workforms || []).join(" · ");
+}
 
 // -------- Completeness --------
 function updateCompleteness() {
@@ -115,34 +139,17 @@ function updateCompleteness() {
   if ((company.regions || []).length >= 1 || company.worksNationwide) score++;
 
   const percent = Math.round((score / 6) * 100);
+  $("#profilePercent").innerText = percent;
+  $("#profileBar").style.width = percent + "%";
 
-  const percentEl = document.getElementById("profilePercent");
-  const bar = document.getElementById("profileBar");
-  const hint = document.getElementById("profileHint");
-
-  if (percentEl) percentEl.innerText = percent;
-
-  if (bar) {
-    bar.style.display = "block";
-    bar.style.height = "10px";
-    bar.style.width = percent + "%";
-    bar.style.background = "linear-gradient(90deg,#4f46e5,#6366f1)";
-    bar.style.borderRadius = "999px";
-    bar.style.transition = "width 0.4s ease";
-  }
-
-  if (hint) {
-    if (percent < 60) {
-      hint.innerText = `Nog ${6 - score} stap(pen) om zichtbaar te worden voor klanten.`;
-    } else if (percent < 80) {
-      hint.innerText = "Bijna klaar – je profiel wordt beter zichtbaar.";
-    } else {
-      hint.innerText = "Je profiel is volledig zichtbaar voor klanten.";
-    }
+  if (percent < 60) {
+    $("#profileHint").innerText = `Nog ${6 - score} stap(pen) om zichtbaar te worden voor klanten.`;
+  } else if (percent < 80) {
+    $("#profileHint").innerText = "Bijna klaar – je profiel wordt beter zichtbaar.";
+  } else {
+    $("#profileHint").innerText = "Je profiel is volledig zichtbaar voor klanten.";
   }
 }
-
-
 
 // -------- Cards --------
 function renderCards(containerId, options, selected = [], max = null) {
@@ -151,54 +158,26 @@ function renderCards(containerId, options, selected = [], max = null) {
   options.forEach(opt => {
     const card = document.createElement("div");
     card.className = "pill" + (selected.includes(opt) ? " active" : "");
-    card.textContent = opt;
+    card.innerText = opt;
     card.onclick = () => {
-      const isActive = card.classList.toggle("active");
-      if (max && isActive) {
+      card.classList.toggle("active");
+      if (max) {
         const actives = el.querySelectorAll(".pill.active");
         if (actives.length > max) card.classList.remove("active");
       }
       updateCompleteness();
+      renderPreview();
     };
     el.appendChild(card);
   });
 }
 
 function getActive(containerId) {
-  return [...document.querySelectorAll(`#${containerId} .pill.active`)].map(p => p.textContent);
+  return [...document.querySelectorAll(`#${containerId} .pill.active`)].map(p => p.innerText);
 }
 
-// -------- Preview --------
-$("#previewBtn").onclick = () => {
-  $("#previewName").innerText = company.name || "";
-  $("#previewCity").innerText = company.city || "";
-  $("#previewIntro").innerText = $("#companyIntroduction").value || "";
-
-  $("#previewReasons").innerHTML = "";
-  getActive("reasonsCards").forEach(r => {
-    const span = document.createElement("span");
-    span.className = "pill active";
-    span.textContent = r;
-    $("#previewReasons").appendChild(span);
-  });
-
-  const services = [
-    ...getActive("workformsCards"),
-    ...getActive("targetGroupsCards"),
-    ...getActive("specialtiesCards"),
-  ];
-  $("#previewServices").innerText = services.join(" • ");
-
-  $("#previewModal").style.display = "flex";
-};
-
-$("#closePreview").onclick = () => {
-  $("#previewModal").style.display = "none";
-};
-
 // -------- Helpers --------
-function $(sel) { return document.querySelector(sel); }
-
+function $(q) { return document.querySelector(q); }
 async function apiGet(url) {
   const r = await fetch(API_BASE + url, { headers: { Authorization: `Bearer ${token}` } });
   return r.json();
@@ -211,8 +190,4 @@ async function apiPut(url, body) {
   });
   return r.json();
 }
-
-$("#logoutBtn").onclick = () => {
-  localStorage.removeItem("token");
-  location.href = "/login.html";
-};
+$("#logoutBtn").onclick = () => { localStorage.removeItem("token"); location.href="/login.html"; };
