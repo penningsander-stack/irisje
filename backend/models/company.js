@@ -1,114 +1,102 @@
 // backend/models/company.js
-// v20260108-COMPANY-NO-EMAIL-ACTIVE
-//
-// Wijzigingen:
-// - email veld VERWIJDERD (Company heeft geen eigen email)
-// - active veld TOEGEVOEGD
-// - overige structuur ongewijzigd
-// - bestaande indexen behouden (geen email-index meer)
+// v20260108-ADD-WORKFORMS-TARGETGROUPS
 
 const mongoose = require("mongoose");
 
-const companySchema = new mongoose.Schema(
+const CompanySchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, trim: true },
-
-    tagline: { type: String, default: "" },
-    description: { type: String, default: "" },
-
-    categories: [{ type: String, trim: true }],
-    specialties: [{ type: String, trim: true }],
-    specializations: [{ type: String, trim: true }],
-
-    // Matching / intake
-    issueTypes: [{ type: String, lowercase: true, trim: true }],
-    canHandleUrgent: { type: Boolean, default: false },
-    budgetRanges: [{ type: String, lowercase: true, trim: true }],
-
-    regions: {
-      type: [String],
-      default: [],
-      set: (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string"
-          ? v.split(",").map((s) => s.trim())
-          : [],
+    // Basis
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    worksNationwide: { type: Boolean, default: false },
-
-    certifications: {
-      type: [String],
-      default: [],
-      set: (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string"
-          ? v.split(",").map((s) => s.trim())
-          : [],
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+    },
+    city: {
+      type: String,
+      default: "",
     },
 
-    recognitions: {
-      type: [String],
-      default: [],
-      set: (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string"
-          ? v.split(",").map((s) => s.trim())
-          : [],
-    },
-
-    memberships: {
-      type: [String],
-      default: [],
-      set: (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string"
-          ? v.split(",").map((s) => s.trim())
-          : [],
-    },
-
-    languages: {
-      type: [String],
-      default: [],
-      set: (v) =>
-        Array.isArray(v)
-          ? v
-          : typeof v === "string"
-          ? v.split(",").map((s) => s.trim())
-          : [],
-    },
-
-    availability: { type: String, default: "" },
-
-    city: { type: String, default: "" },
-    phone: { type: String, default: "" },
-    website: { type: String, default: "" },
-
-    // Status & reviews
-    avgRating: { type: Number, default: 0 },
-    reviewCount: { type: Number, default: 0 },
-    isVerified: { type: Boolean, default: false },
-
-    // Actief/vindbaar
-    active: { type: Boolean, default: true },
-
-    // Koppeling met User
+    // Relaties
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
+    // Matching / profiel
+    categories: {
+      type: [String],
+      default: [],
+    },
+    regions: {
+      type: [String],
+      default: [],
+    },
+    specialties: {
+      type: [String],
+      default: [],
+    },
+
+    // ✅ NIEUW (dashboard)
+    workforms: {
+      type: [String],
+      default: [],
+    },
+    targetGroups: {
+      type: [String],
+      default: [],
+    },
+
+    certifications: {
+      type: [String],
+      default: [],
+    },
+    languages: {
+      type: [String],
+      default: [],
+    },
+    memberships: {
+      type: [String],
+      default: [],
+    },
+
+    availability: {
+      type: String,
+      default: "",
+    },
+
+    worksNationwide: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Reviews / status
+    avgRating: {
+      type: Number,
+      default: 0,
+    },
+    reviewCount: {
+      type: Number,
+      default: 0,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-// Indexen (veilig)
-companySchema.index({ categories: 1 });
-companySchema.index({ specialties: 1 });
-companySchema.index({ regions: 1 });
-
-module.exports = mongoose.model("Company", companySchema);
+module.exports = mongoose.model("Company", CompanySchema);
