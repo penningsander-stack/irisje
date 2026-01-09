@@ -1,8 +1,8 @@
 // frontend/js/index_search.js
-// v20251213-SEARCH-ADVANCED-TRUSTOO-STEP1
+// v20260114-SEARCH-ADVANCED-TRUSTOO-STEP1-FIX
 //
 // Uitgebreide zoeklogica voor de homepage:
-// - Stuurt categorie + plaats door naar results.html via querystring
+// - Stuurt categorie + plaats door naar search.html via querystring
 // - Toont eenvoudige autocomplete-suggesties voor categorie en plaats
 //   (zoals Trustoo-stijl, maar client-side zonder backendwijzigingen)
 
@@ -56,7 +56,7 @@
     // Als formulier niet bestaat, niets doen
     if (!form) return;
 
-    // ✅ Standaard submit: stuur door naar results.html met querystring
+    // ✅ Standaard submit: stuur door naar search.html met querystring
     form.addEventListener("submit", function (e) {
       e.preventDefault();
 
@@ -67,12 +67,13 @@
       if (category) params.set("category", category);
       if (city) params.set("city", city);
 
-      // Als gebruiker niets invult → toon gewoon alle bedrijven
       const qs = params.toString();
+
+      // 👉 Vrij zoeken gaat altijd via search.html
       if (qs) {
-        window.location.href = "results.html?" + qs;
+        window.location.href = "search.html?" + qs;
       } else {
-        window.location.href = "results.html";
+        window.location.href = "search.html";
       }
     });
 
@@ -86,7 +87,6 @@
   });
 
   function attachAutocomplete(inputEl, suggestions) {
-    // Maak een container voor de dropdown
     const container = document.createElement("div");
     container.style.position = "absolute";
     container.style.zIndex = "50";
@@ -102,10 +102,8 @@
     container.style.padding = "4px 0";
     container.style.display = "none";
 
-    // Wrapper voor positionering
     const wrapper = document.createElement("div");
     wrapper.style.position = "relative";
-    // Plaats wrapper rond het input element
     const parent = inputEl.parentNode;
     parent.insertBefore(wrapper, inputEl);
     wrapper.appendChild(inputEl);
