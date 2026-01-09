@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260111-LOCK-CITY-PREMIUM-INTRO
+// v20260112-PROFILE-COMPLETENESS
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
@@ -46,18 +46,21 @@ async function init() {
 
   fillProfile();
   fillServices();
+  updateCompleteness();
 }
 
-// Profile
+// -------- Profile --------
 function fillProfile() {
   $("#companyName").value = company.name || "";
   $("#companyCity").value = company.city || "";
 
-  const intro = company.introduction || "";
   const introEl = $("#companyIntroduction");
-  introEl.value = intro;
-  $("#introCount").innerText = intro.length;
-  introEl.addEventListener("input", () => $("#introCount").innerText = introEl.value.length);
+  introEl.value = company.introduction || "";
+  $("#introCount").innerText = introEl.value.length;
+  introEl.addEventListener("input", () => {
+    $("#introCount").innerText = introEl.value.length;
+    updateCompleteness();
+  });
 
   renderCards("reasonsCards", REASONS, company.reasons || [], 5);
 }
@@ -67,10 +70,13 @@ $("#saveProfileBtn").onclick = async () => {
     introduction: $("#companyIntroduction").value,
     reasons: getActive("reasonsCards"),
   });
+  company.introduction = $("#companyIntroduction").value;
+  company.reasons = getActive("reasonsCards");
+  updateCompleteness();
   alert("Bedrijfsprofiel opgeslagen");
 };
 
-// Services
+// -------- Services --------
 function fillServices() {
   renderCards("workformsCards", WORKFORMS, company.workforms || []);
   renderCards("targetGroupsCards", TARGET_GROUPS, company.targetGroups || []);
@@ -80,17 +86,39 @@ function fillServices() {
 }
 
 $("#saveServicesBtn").onclick = async () => {
+  company.workforms = getActive("workformsCards");
+  company.targetGroups = getActive("targetGroupsCards");
+  company.specialties = getActive("specialtiesCards");
+  company.regions = getActive("regionsCards");
+  company.worksNationwide = $("#worksNationwide").checked;
+
   await apiPut(`/companies/${companyId}`, {
-    workforms: getActive("workformsCards"),
-    targetGroups: getActive("targetGroupsCards"),
-    specialties: getActive("specialtiesCards"),
-    regions: getActive("regionsCards"),
-    worksNationwide: $("#worksNationwide").checked,
+    workforms: company.workforms,
+    targetGroups: company.targetGroups,
+    specialties: company.specialties,
+    regions: company.regions,
+    worksNationwide: company.worksNationwide,
   });
+  updateCompleteness();
   alert("Diensten & expertise opgeslagen");
 };
 
-// Cards
+// -------- Completeness --------
+function updateCompleteness() {
+  let score = 0;
+  if ((company.introduction || "").length >= 80) score++;
+  if ((company.reasons || []).length >= 3) score++;
+  if ((company.workforms || []).length >= 1) score++;
+  if ((company.targetGroups || []).length >= 1) score++;
+  if ((company.specialties || []).length >= 1) score++;
+  if ((company.regions || []).length >= 1 || company.worksNationwide) score++;
+
+  const percent = Math.round((score / 6) * 100);
+  $("#profilePercent").innerText = percent;
+  $("#profileBar").style.width = percent + "%";
+}
+
+// -------- Cards --------
 function renderCards(containerId, options, selected = [], max = null) {
   const el = document.getElementById(containerId);
   el.innerHTML = "";
@@ -104,6 +132,7 @@ function renderCards(containerId, options, selected = [], max = null) {
         const actives = el.querySelectorAll(".pill.active");
         if (actives.length > max) card.classList.remove("active");
       }
+      updateCompleteness();
     };
     el.appendChild(card);
   });
@@ -113,7 +142,7 @@ function getActive(containerId) {
   return [...document.querySelectorAll(`#${containerId} .pill.active`)].map(p => p.textContent);
 }
 
-// Helpers
+// -------- Helpers --------
 function $(sel) { return document.querySelector(sel); }
 
 async function apiGet(url) {
