@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260112-PREVIEW
+// v20260109-PREVIEW-COMPLETE-SAFE-SAVE
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
@@ -38,14 +38,16 @@ init();
 
 async function init() {
   const my = await apiGet("/companies/my");
-  if (!my.companies?.length) return;
+  if (!my?.companies?.length) return;
+
   companyId = my.companies[0]._id;
 
   const data = await apiGet(`/companies/${companyId}`);
-  company = data.item || {};
+  company = data?.item || {};
 
   fillProfile();
   fillServices();
+
   updateCompleteness();
   renderPreview();
 }
@@ -58,6 +60,7 @@ function fillProfile() {
   const introEl = $("#companyIntroduction");
   introEl.value = company.introduction || "";
   $("#introCount").innerText = introEl.value.length;
+
   introEl.oninput = () => {
     $("#introCount").innerText = introEl.value.length;
     company.introduction = introEl.value;
@@ -69,11 +72,14 @@ function fillProfile() {
 }
 
 $("#saveProfileBtn").onclick = async () => {
+  company.introduction = $("#companyIntroduction").value;
   company.reasons = getActive("reasonsCards");
+
   await apiPut(`/companies/${companyId}`, {
-    introduction: $("#companyIntroduction").value,
+    introduction: company.introduction,
     reasons: company.reasons,
   });
+
   updateCompleteness();
   renderPreview();
   alert("Bedrijfsprofiel opgeslagen");
@@ -95,38 +101,19 @@ $("#saveServicesBtn").onclick = async () => {
   company.regions = getActive("regionsCards");
   company.worksNationwide = $("#worksNationwide").checked;
 
-  await apiPut(`/companies/${companyId}`, company);
+  // Veilig: alleen velden die dit scherm beheert
+  await apiPut(`/companies/${companyId}`, {
+    workforms: company.workforms,
+    targetGroups: company.targetGroups,
+    specialties: company.specialties,
+    regions: company.regions,
+    worksNationwide: company.worksNationwide,
+  });
+
   updateCompleteness();
   renderPreview();
   alert("Diensten & expertise opgeslagen");
 };
-
-// -------- Preview --------
-function renderPreview() {
-  $("#pv-name").innerText = company.name || "";
-  $("#pv-city").innerText = company.worksNationwide ? "Landelijk actief" : (company.city || "");
-  $("#pv-intro").innerText = company.introduction || "";
-
-  const badges = $("#pv-badges");
-  badges.innerHTML = "";
-  if (company.worksNationwide) {
-    const b = document.createElement("span");
-    b.className = "pill badge";
-    b.innerText = "Landelijk actief";
-    badges.appendChild(b);
-  }
-
-  const reasonsEl = $("#pv-reasons");
-  reasonsEl.innerHTML = "";
-  (company.reasons || []).forEach(r => {
-    const li = document.createElement("li");
-    li.innerText = r;
-    reasonsEl.appendChild(li);
-  });
-
-  $("#pv-specialties").innerText = (company.specialties || []).join(" · ");
-  $("#pv-workforms").innerText = (company.workforms || []).join(" · ");
-}
 
 // -------- Completeness --------
 function updateCompleteness() {
@@ -139,35 +126,125 @@ function updateCompleteness() {
   if ((company.regions || []).length >= 1 || company.worksNationwide) score++;
 
   const percent = Math.round((score / 6) * 100);
-  $("#profilePercent").innerText = percent;
-  $("#profileBar").style.width = percent + "%";
 
-  if (percent < 60) {
-    $("#profileHint").innerText = `Nog ${6 - score} stap(pen) om zichtbaar te worden voor klanten.`;
-  } else if (percent < 80) {
-    $("#profileHint").innerText = "Bijna klaar – je profiel wordt beter zichtbaar.";
-  } else {
-    $("#profileHint").innerText = "Je profiel is volledig zichtbaar voor klanten.";
+  const percentEl = document.getElementById("profilePercent");
+  const bar = document.getElementById("profileBar");
+  const hint = document.getElementById("profileHint");
+
+  if (percentEl) percentEl.innerText = percent;
+
+  if (bar) {
+    bar.style.display = "block";
+    bar.style.height = "10px";
+    bar.style.width = percent + "%";
+    bar.style.background = "linear-gradient(90deg,#4f46e5,#6366f1)";
+    bar.style.borderRadius = "999px";
+    bar.style.transition = "width 0.4s ease";
   }
+
+  if (hint) {
+    if (percent < 60) hint.innerText = `Nog ${6 - score} stap(pen) om zichtbaar te worden voor klanten.`;
+    else if (percent < 80) hint.innerText = "Bijna klaar – je profiel wordt beter zichtbaar.";
+    else hint.innerText = "Je profiel is volledig zichtbaar voor klanten.";
+  }
+}
+
+// -------- Preview --------
+function renderPreview() {
+  setText("#pv-name", company.name || "");
+  setText("#pv-city", company.city || "");
+
+  // Badges
+  const badges = $("#pv-badges");
+  badges.innerHTML = "";
+  if (company.worksNationwide) badges.appendChild(makeBadge("Landelijk actief"));
+  if ((company.specialties || []).length >= 3) badges.appendChild(makeBadge("Breed gespecialiseerd"));
+  if ((company.reasons || []).length >= 3) badges.appendChild(makeBadge("Sterk profiel"));
+
+  // Intro
+  setText("#pv-intro", (company.introduction || "").trim() || "Nog geen introductie ingevuld.");
+
+  // Reasons list + empty state
+  const reasons = company.reasons || [];
+  const ul = $("#pv-reasons");
+  ul.innerHTML = "";
+  reasons.forEach(r => {
+    const li = document.createElement("li");
+    li.innerText = r;
+    ul.appendChild(li);
+  });
+  toggleEmpty("#pv-reasons-empty", reasons.length === 0);
+
+  // Specialties
+  const specialties = company.specialties || [];
+  setText("#pv-specialties", specialties.join(" · "));
+  toggleEmpty("#pv-specialties-empty", specialties.length === 0);
+
+  // Target groups
+  const tg = company.targetGroups || [];
+  setText("#pv-targetGroups", tg.join(" · "));
+  toggleEmpty("#pv-targetGroups-empty", tg.length === 0);
+
+  // Workforms
+  const wf = company.workforms || [];
+  setText("#pv-workforms", wf.join(" · "));
+  toggleEmpty("#pv-workforms-empty", wf.length === 0);
+
+  // Regions
+  const reg = company.regions || [];
+  const regionText = company.worksNationwide ? "Heel Nederland" : reg.join(" · ");
+  setText("#pv-regions", regionText);
+  toggleEmpty("#pv-regions-empty", !company.worksNationwide && reg.length === 0);
+}
+
+function makeBadge(text) {
+  const s = document.createElement("span");
+  s.className = "pill badge";
+  s.innerText = text;
+  return s;
+}
+
+function setText(sel, value) {
+  const el = document.querySelector(sel);
+  if (el) el.innerText = value || "";
+}
+
+function toggleEmpty(sel, show) {
+  const el = document.querySelector(sel);
+  if (!el) return;
+  if (show) el.classList.remove("hidden");
+  else el.classList.add("hidden");
 }
 
 // -------- Cards --------
 function renderCards(containerId, options, selected = [], max = null) {
   const el = document.getElementById(containerId);
   el.innerHTML = "";
+
   options.forEach(opt => {
     const card = document.createElement("div");
     card.className = "pill" + (selected.includes(opt) ? " active" : "");
     card.innerText = opt;
+
     card.onclick = () => {
-      card.classList.toggle("active");
-      if (max) {
+      const nowActive = card.classList.toggle("active");
+
+      if (max && nowActive) {
         const actives = el.querySelectorAll(".pill.active");
         if (actives.length > max) card.classList.remove("active");
       }
+
+      // Sync naar company-state voor live preview/compleetheid
+      if (containerId === "reasonsCards") company.reasons = getActive("reasonsCards");
+      if (containerId === "workformsCards") company.workforms = getActive("workformsCards");
+      if (containerId === "targetGroupsCards") company.targetGroups = getActive("targetGroupsCards");
+      if (containerId === "specialtiesCards") company.specialties = getActive("specialtiesCards");
+      if (containerId === "regionsCards") company.regions = getActive("regionsCards");
+
       updateCompleteness();
       renderPreview();
     };
+
     el.appendChild(card);
   });
 }
@@ -178,6 +255,7 @@ function getActive(containerId) {
 
 // -------- Helpers --------
 function $(q) { return document.querySelector(q); }
+
 async function apiGet(url) {
   const r = await fetch(API_BASE + url, { headers: { Authorization: `Bearer ${token}` } });
   return r.json();
@@ -190,4 +268,8 @@ async function apiPut(url, body) {
   });
   return r.json();
 }
-$("#logoutBtn").onclick = () => { localStorage.removeItem("token"); location.href="/login.html"; };
+
+$("#logoutBtn").onclick = () => {
+  localStorage.removeItem("token");
+  location.href = "/login.html";
+};
