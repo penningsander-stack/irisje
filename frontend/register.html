@@ -5,7 +5,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Account aanmaken – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260107">
+  <link rel="stylesheet" href="/style.css?v=20260109">
+
+  <style>
+    /* Floating label – premium, subtiel */
+    .field {
+      position: relative;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 1.15rem 1rem 0.9rem;
+      border-radius: 1rem;
+      border: 1px solid rgb(226 232 240);
+      background: rgba(255,255,255,0.9);
+      font-size: 0.95rem;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .field input:focus {
+      outline: none;
+      border-color: rgb(99 102 241);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+      background: #fff;
+    }
+
+    .field label {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: rgb(100 116 139);
+      pointer-events: none;
+      background: transparent;
+      transition: all .18s ease;
+    }
+
+    .field input:focus + label,
+    .field input:not(:placeholder-shown) + label {
+      top: 0.45rem;
+      font-size: 0.7rem;
+      color: rgb(79 70 229);
+    }
+  </style>
 </head>
 
 <body class="irisje-body">
@@ -27,151 +70,71 @@
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-10 lg:py-14">
-  <div class="grid lg:grid-cols-2 gap-10 items-start">
+<main class="max-w-6xl mx-auto px-4 py-12 lg:py-16">
+  <div class="grid lg:grid-cols-2 gap-12 items-start">
 
-    <!-- Left: Premium intro -->
+    <!-- Left -->
     <section class="hidden lg:block">
-      <div class="rounded-3xl p-8 bg-white/70 backdrop-blur border border-white/60 shadow-brand">
-        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-600/10 text-indigo-700 text-xs font-semibold">
-          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-          Bedrijvenregistratie
-        </div>
-
-        <h1 class="mt-4 text-3xl font-semibold tracking-tight text-slate-900">
-          Maak een account aan en zet je bedrijf live.
+      <div class="rounded-3xl p-9 bg-white/70 backdrop-blur border border-white/60 shadow-brand">
+        <h1 class="text-3xl font-semibold tracking-tight text-slate-900">
+          Zet je bedrijf professioneel online
         </h1>
-
-        <p class="mt-3 text-slate-600">
-          Je bent zo klaar. Dit is stap <span class="font-semibold text-slate-900">1 van 2</span>.
-          Daarna vul je je bedrijfsprofiel in.
+        <p class="mt-4 text-slate-600 leading-relaxed">
+          Maak eerst een account aan. Daarna vul je je bedrijfsprofiel in en
+          ontvang je aanvragen van klanten.
         </p>
-
-        <div class="mt-6 space-y-3">
-          <div class="flex gap-3">
-            <span class="mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white shadow-brand text-indigo-700 font-semibold">✓</span>
-            <div>
-              <div class="font-semibold text-slate-900">Professionele uitstraling</div>
-              <div class="text-sm text-slate-600">Een strak profiel dat vertrouwen wekt bij klanten.</div>
-            </div>
-          </div>
-
-          <div class="flex gap-3">
-            <span class="mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white shadow-brand text-indigo-700 font-semibold">✓</span>
-            <div>
-              <div class="font-semibold text-slate-900">Aanvragen direct in je dashboard</div>
-              <div class="text-sm text-slate-600">Beheer aanvragen, status en reviews op één plek.</div>
-            </div>
-          </div>
-
-          <div class="flex gap-3">
-            <span class="mt-0.5 inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white shadow-brand text-indigo-700 font-semibold">✓</span>
-            <div>
-              <div class="font-semibold text-slate-900">Binnen 2 minuten klaar</div>
-              <div class="text-sm text-slate-600">Eerst je account, daarna je bedrijfsgegevens.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
-          <div class="text-sm font-semibold text-slate-900">Wat je nu nodig hebt</div>
-          <ul class="mt-2 text-sm text-slate-600 list-disc pl-5 space-y-1">
-            <li>Naam (persoon of bedrijf)</li>
-            <li>E-mailadres</li>
-            <li>Wachtwoord (minimaal 8 tekens)</li>
-          </ul>
-        </div>
       </div>
     </section>
 
-    <!-- Right: Form card -->
+    <!-- Right -->
     <section>
       <div class="max-w-md mx-auto">
-        <div class="flex items-center justify-between mb-5">
-          <div>
-            <div class="text-xs font-semibold text-slate-500 tracking-wide uppercase">Stap 1 van 2</div>
-            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Account aanmaken</h2>
+        <div class="mb-8">
+          <div class="text-xs font-semibold text-slate-500 tracking-wide uppercase mb-2">
+            Stap 1 van 2
           </div>
-
-          <div class="flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl bg-indigo-600 text-white text-sm font-semibold shadow-brand">1</span>
-            <span class="w-6 h-[2px] bg-slate-200 rounded-full"></span>
-            <span class="inline-flex items-center justify-center w-8 h-8 rounded-2xl bg-slate-100 text-slate-500 text-sm font-semibold">2</span>
-          </div>
+          <h2 class="text-2xl font-semibold tracking-tight text-slate-900">
+            Account aanmaken
+          </h2>
         </div>
 
-        <div class="rounded-3xl bg-white/80 backdrop-blur border border-white/60 shadow-brand p-6 lg:p-7">
-          <p class="text-sm text-slate-600 mb-6">
-            Maak eerst je account aan. Daarna ga je door naar het registreren van jouw bedrijf.
-          </p>
+        <div class="rounded-3xl bg-white/85 backdrop-blur border border-white/60 shadow-brand p-8">
+          <form id="registerForm" class="space-y-7" novalidate>
 
-          <form id="registerForm" class="space-y-4" novalidate>
+            <div class="field">
+              <input type="text" name="name" required placeholder=" " autocomplete="name">
+              <label>Naam (persoon of bedrijf)</label>
+            </div>
 
-            <label class="block">
-              <span class="block text-sm font-medium text-slate-900 mb-1.5">Naam</span>
-              <input
-                type="text"
-                name="name"
-                required
-                class="input"
-                placeholder="Naam (persoon of bedrijf)"
-                autocomplete="name"
-              />
-            </label>
+            <div class="field">
+              <input type="email" name="email" required placeholder=" " autocomplete="email">
+              <label>E-mailadres</label>
+            </div>
 
-            <label class="block">
-              <span class="block text-sm font-medium text-slate-900 mb-1.5">E-mailadres</span>
-              <input
-                type="email"
-                name="email"
-                required
-                class="input"
-                placeholder="E-mailadres"
-                autocomplete="email"
-              />
-            </label>
+            <div class="field">
+              <input type="password" name="password" required minlength="8" placeholder=" " autocomplete="new-password">
+              <label>Wachtwoord (min. 8 tekens)</label>
+            </div>
 
-            <label class="block">
-              <div class="flex items-center justify-between mb-1.5">
-                <span class="block text-sm font-medium text-slate-900">Wachtwoord</span>
-                <span class="text-xs text-slate-500">Minimaal 8 tekens</span>
-              </div>
-              <input
-                type="password"
-                name="password"
-                required
-                class="input"
-                placeholder="Kies een wachtwoord"
-                minlength="8"
-                autocomplete="new-password"
-              />
-            </label>
+            <div class="pt-4">
+              <button type="submit" class="btn-primary w-full py-3">
+                Account aanmaken
+              </button>
+            </div>
 
-            <button type="submit" class="btn-primary w-full">
-              Account aanmaken
-            </button>
-
-            <div class="text-xs text-slate-500 leading-relaxed">
+            <p class="text-xs text-slate-500 leading-relaxed pt-2">
               Door een account aan te maken ga je akkoord met onze
               <a href="terms.html" class="text-indigo-600 hover:underline">voorwaarden</a>
               en
               <a href="privacy.html" class="text-indigo-600 hover:underline">privacyverklaring</a>.
-            </div>
+            </p>
+
           </form>
 
-          <div class="mt-6 pt-5 border-t border-slate-200 flex items-center justify-between gap-3">
-            <p class="text-sm text-slate-600">
-              Heb je al een account?
-            </p>
-            <a href="login.html" class="text-sm font-semibold text-indigo-600 hover:underline">
-              Inloggen
-            </a>
+          <div class="mt-8 pt-6 border-t border-slate-200 flex items-center justify-between">
+            <span class="text-sm text-slate-600">Heb je al een account?</span>
+            <a href="login.html" class="text-sm font-semibold text-indigo-600 hover:underline">Inloggen</a>
           </div>
-        </div>
-
-        <div class="mt-5 text-center text-xs text-slate-500">
-          Problemen met registreren? Probeer een ander e-mailadres of
-          <a class="text-indigo-600 hover:underline" href="mailto:info@irisje.nl">mail info@irisje.nl</a>.
         </div>
       </div>
     </section>
@@ -184,47 +147,32 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const fd = new FormData(e.target);
 
-  const form = e.target;
-
-  // Basic front-end check (extra netjes, zonder breaking changes)
-  const fd = new FormData(form);
   const payload = {
-    name: (fd.get("name") || "").toString().trim(),
-    email: (fd.get("email") || "").toString().trim(),
-    password: (fd.get("password") || "").toString()
+    name: fd.get("name").trim(),
+    email: fd.get("email").trim(),
+    password: fd.get("password")
   };
 
-  if (!payload.name || !payload.email || !payload.password) {
-    alert("Vul alle velden in.");
-    return;
-  }
-  if (payload.password.length < 8) {
-    alert("Wachtwoord moet minimaal 8 tekens zijn.");
+  if (!payload.name || !payload.email || payload.password.length < 8) {
+    alert("Vul alle velden correct in.");
     return;
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
 
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      alert(data.error || data.message || "Registratie mislukt");
-      return;
-    }
-
-    // Registratie geslaagd → eerst bedrijf registreren
-    window.location.href = "register-company.html";
-
-  } catch (err) {
-    console.error("❌ Register fout:", err);
-    alert("Serverfout bij registreren");
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    alert(data.message || "Registratie mislukt");
+    return;
   }
+
+  window.location.href = "register-company.html";
 });
 </script>
 
