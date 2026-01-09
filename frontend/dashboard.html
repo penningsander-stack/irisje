@@ -4,97 +4,119 @@
   <meta charset="UTF-8" />
   <title>Dashboard – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260109">
+  <link rel="stylesheet" href="/style.css?v=20260110">
+  <style>
+    /* Premium helpers (lichtgewicht) */
+    .bg-soft { background: #f6f7fb; }
+    .card { background:#fff; border-radius:14px; box-shadow:0 10px 25px rgba(15,23,42,.06); }
+    .tab { padding:.75rem 1rem; border-bottom:2px solid transparent; color:#475569; }
+    .tab.active { border-color:#6366f1; color:#111827; }
+    .hint { color:#6b7280; font-size:.875rem; }
+    .pill { border:1px solid #e5e7eb; border-radius:12px; padding:.6rem .75rem; cursor:pointer; }
+    .pill.active { border-color:#6366f1; background:#eef2ff; }
+    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; }
+    .btn { border-radius:10px; padding:.7rem 1.1rem; }
+    .btn-primary { background:#4f46e5; color:#fff; }
+  </style>
 </head>
 
-<body class="irisje-body">
+<body class="bg-soft irisje-body">
 
-<header class="irisje-header">
+<header class="irisje-header sticky top-0 z-10">
   <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-    <h1 class="text-lg font-semibold">Bedrijvendashboard</h1>
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
+                   text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <h1 class="font-semibold">Bedrijvendashboard</h1>
+    </div>
     <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-6">
+<main class="max-w-6xl mx-auto px-4 py-8">
 
-  <!-- TABS -->
-  <div class="border-b mb-6 flex gap-6 text-sm font-medium">
-    <button class="tab-btn active" data-tab="profile">Bedrijfsprofiel</button>
-    <button class="tab-btn" data-tab="services">Diensten & expertise</button>
+  <!-- Tabs -->
+  <div class="card mb-6">
+    <div class="flex gap-6 px-4 pt-4">
+      <button class="tab active" data-tab="profile">Bedrijfsprofiel</button>
+      <button class="tab" data-tab="services">Diensten & expertise</button>
+    </div>
   </div>
 
-  <!-- TAB 1: BEDRIJFSPROFIEL -->
+  <!-- Tab: Bedrijfsprofiel -->
   <section id="tab-profile" class="tab-section">
+    <div class="card p-6">
+      <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
+      <p class="hint mb-6">Deze informatie bepaalt hoe klanten jouw bedrijf zien en kiezen.</p>
 
-    <h2 class="text-lg font-semibold mb-4">Bedrijfsprofiel</h2>
-
-    <div class="space-y-4 max-w-xl">
-
-      <div>
-        <label class="block text-sm font-medium">Bedrijfsnaam</label>
-        <input id="companyName" class="input" disabled />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Vestigingsplaats</label>
-        <input id="companyCity" class="input" />
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium">Korte introductie</label>
-        <textarea id="companyIntroduction" maxlength="500" class="textarea"></textarea>
-        <div class="text-xs text-gray-500 mt-1">
-          <span id="introCount">0</span>/500
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
+          <input id="companyName" class="input" disabled />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Vestigingsplaats</label>
+          <input id="companyCity" class="input" />
         </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium mb-2">Waarom kiezen voor jouw bedrijf? (max. 5)</label>
-        <div id="reasonsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      <div class="mb-6">
+        <label class="block text-sm font-medium mb-1">Korte introductie</label>
+        <textarea id="companyIntroduction" maxlength="500" class="textarea"></textarea>
+        <div class="hint mt-1"><span id="introCount">0</span>/500</div>
       </div>
 
-      <button id="saveProfileBtn" class="btn-primary mt-4">Opslaan</button>
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <label class="block text-sm font-medium">Waarom kiezen voor jouw bedrijf?</label>
+          <span class="hint">Max. 5</span>
+        </div>
+        <div id="reasonsCards" class="grid-cards"></div>
+      </div>
+
+      <div class="flex justify-end">
+        <button id="saveProfileBtn" class="btn btn-primary">Opslaan</button>
+      </div>
     </div>
   </section>
 
-  <!-- TAB 2: DIENSTEN & EXPERTISE -->
+  <!-- Tab: Diensten & expertise -->
   <section id="tab-services" class="tab-section hidden">
+    <div class="card p-6">
+      <h2 class="text-lg font-semibold mb-1">Diensten & expertise</h2>
+      <p class="hint mb-6">Kies wat van toepassing is. Alleen vinkjes, geen vrije invoer.</p>
 
-    <h2 class="text-lg font-semibold mb-4">Diensten & expertise</h2>
-
-    <div class="space-y-6 max-w-2xl">
-
-      <div>
-        <label class="block text-sm font-medium mb-2">Werkvormen</label>
-        <div id="workformsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h3 class="font-medium mb-2">Werkvormen</h3>
+          <div id="workformsCards" class="grid-cards"></div>
+        </div>
+        <div>
+          <h3 class="font-medium mb-2">Doelgroepen</h3>
+          <div id="targetGroupsCards" class="grid-cards"></div>
+        </div>
+        <div>
+          <h3 class="font-medium mb-2">Specialismen</h3>
+          <div id="specialtiesCards" class="grid-cards"></div>
+        </div>
+        <div>
+          <h3 class="font-medium mb-2">Werkgebied</h3>
+          <div id="regionsCards" class="grid-cards mb-2"></div>
+          <label class="inline-flex items-center gap-2 mt-2">
+            <input type="checkbox" id="worksNationwide">
+            Landelijk actief
+          </label>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-sm font-medium mb-2">Doelgroepen</label>
-        <div id="targetGroupsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      <div class="flex justify-end mt-6">
+        <button id="saveServicesBtn" class="btn btn-primary">Opslaan</button>
       </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-2">Specialismen</label>
-        <div id="specialtiesCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-2">Werkgebied</label>
-        <div id="regionsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-        <label class="inline-flex items-center mt-2">
-          <input type="checkbox" id="worksNationwide" class="mr-2" />
-          Landelijk actief
-        </label>
-      </div>
-
-      <button id="saveServicesBtn" class="btn-primary">Opslaan</button>
     </div>
   </section>
 
 </main>
 
-<script src="/js/dashboard.js?v=20260109"></script>
+<script src="/js/dashboard.js?v=20260110"></script>
 </body>
 </html>
