@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260108-DASHBOARD-ADD-TARGETGROUPS-WORKFORMS
+// v20260109-DASHBOARD-INTRO-REASONS
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api";
@@ -7,17 +7,25 @@
   if (!token) return (location.href = "login.html");
 
   /* =========================
-     VASTE OPSOMMINGEN
+     OPSOMMINGEN
   ========================= */
-  const CITIES = ["Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven","Groningen","Middelburg","Zierikzee","Burgh-Haamstede"];
-  const REGIONS = ["Zeeland","Zuid-Holland","Noord-Holland","Utrecht","Brabant","Gelderland","Overijssel","Drenthe","Groningen","Friesland","Limburg","Flevoland"];
-  const SPECIALTIES = ["Arbeidsrecht","Ontslagrecht","Huurrecht","Familierecht","Bestuursrecht","Letselschade"];
-  const WORKFORMS = ["Advies","Procedure","Mediation","Bemiddeling","Coaching"];
-  const TARGET_GROUPS = ["Particulieren","ZZP’ers","MKB","Grote ondernemingen","Overheid"];
-  const CERTIFICATIONS = ["MfN-register","NOvA","ADR","SKJ"];
-  const LANGUAGES = ["Nederlands","Engels","Duits","Frans","Spaans"];
-  const MEMBERSHIPS = ["MfN","NOvA","BOVAG","Techniek Nederland"];
-  const AVAILABILITY = ["Kantoortijden","Avonden","Weekenden","24/7"];
+  const CITIES = [
+    "Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven",
+    "Groningen","Middelburg","Zierikzee","Burgh-Haamstede"
+  ];
+
+  const REASONS = [
+    "Gratis eerste advies",
+    "Ook ’s avonds en in het weekend bereikbaar",
+    "Specialist in spoedzaken",
+    "Landelijk actief",
+    "Persoonlijke begeleiding",
+    "No cure no pay mogelijk",
+    "Ruime ervaring in complexe zaken",
+    "Snelle reactie en duidelijke communicatie"
+  ];
+
+  const MAX_REASONS = 5;
 
   const byId = (id) => document.getElementById(id);
 
@@ -47,27 +55,34 @@
     });
   }
 
-  function renderCheckboxGroup(containerId, values, selected = []) {
-    const box = byId(containerId);
+  function renderReasons(selected = []) {
+    const box = byId("companyReasons");
     box.innerHTML = "";
-    values.forEach((v) => {
-      const label = document.createElement("label");
-      label.className = "flex items-center gap-2";
+    REASONS.forEach((label) => {
+      const wrap = document.createElement("label");
+      wrap.className = "flex items-center gap-2";
 
       const input = document.createElement("input");
       input.type = "checkbox";
-      input.value = v;
-      input.checked = selected.includes(v);
+      input.value = label;
+      input.checked = selected.includes(label);
 
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(v));
-      box.appendChild(label);
+      input.addEventListener("change", () => {
+        const checked = box.querySelectorAll("input:checked").length;
+        if (checked > MAX_REASONS) {
+          input.checked = false;
+          alert(`Je kunt maximaal ${MAX_REASONS} redenen selecteren.`);
+        }
+      });
+
+      wrap.appendChild(input);
+      wrap.appendChild(document.createTextNode(label));
+      box.appendChild(wrap);
     });
   }
 
-  function readCheckboxGroup(containerId) {
-    return [...byId(containerId).querySelectorAll("input[type=checkbox]")]
-      .filter((i) => i.checked)
+  function readReasons() {
+    return [...byId("companyReasons").querySelectorAll("input:checked")]
       .map((i) => i.value);
   }
 
@@ -83,32 +98,24 @@
     const { item } = await authFetch(`${API}/companies/${companyId}`);
 
     byId("companyName").value = item.name;
-
     fillSelect("companyCity", CITIES, item.city || "");
-    fillSelect("companyAvailability", AVAILABILITY, item.availability || "");
 
-    renderCheckboxGroup("companyRegions", REGIONS, item.regions || []);
-    renderCheckboxGroup("companySpecialties", SPECIALTIES, item.specialties || []);
-    renderCheckboxGroup("companyWorkforms", WORKFORMS, item.workforms || []);
-    renderCheckboxGroup("companyTargetGroups", TARGET_GROUPS, item.targetGroups || []);
-    renderCheckboxGroup("companyCertifications", CERTIFICATIONS, item.certifications || []);
-    renderCheckboxGroup("companyLanguages", LANGUAGES, item.languages || []);
-    renderCheckboxGroup("companyMemberships", MEMBERSHIPS, item.memberships || []);
+    // Introductie
+    byId("companyIntroduction").value = item.introduction || "";
+    byId("introCount").textContent = (item.introduction || "").length;
 
-    byId("companyWorksNationwide").checked = !!item.worksNationwide;
+    byId("companyIntroduction").addEventListener("input", (e) => {
+      byId("introCount").textContent = e.target.value.length;
+    });
+
+    // Redenen
+    renderReasons(item.reasons || []);
 
     byId("saveCompanyBtn").onclick = async () => {
       const body = {
         city: byId("companyCity").value,
-        availability: byId("companyAvailability").value,
-        worksNationwide: byId("companyWorksNationwide").checked,
-        regions: readCheckboxGroup("companyRegions"),
-        specialties: readCheckboxGroup("companySpecialties"),
-        workforms: readCheckboxGroup("companyWorkforms"),
-        targetGroups: readCheckboxGroup("companyTargetGroups"),
-        certifications: readCheckboxGroup("companyCertifications"),
-        languages: readCheckboxGroup("companyLanguages"),
-        memberships: readCheckboxGroup("companyMemberships"),
+        introduction: byId("companyIntroduction").value.trim(),
+        reasons: readReasons(),
       };
 
       await authFetch(`${API}/companies/${companyId}`, {

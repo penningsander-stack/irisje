@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260108-PUT-WORKFORMS-TARGETGROUPS-FIX
+// v20260109-PUT-INTRODUCTION-REASONS
 
 const express = require("express");
 const router = express.Router();
@@ -22,7 +22,6 @@ function escapeRegex(value = "") {
 router.get("/lists", async (req, res) => {
   try {
     const categories = await Company.distinct("categories");
-
     const cleaned = categories
       .flat()
       .filter(Boolean)
@@ -46,7 +45,6 @@ router.get("/my", auth, async (req, res) => {
     const companies = await Company.find({ owner: req.user.id })
       .select("_id name city")
       .lean();
-
     res.json({ ok: true, companies });
   } catch (err) {
     console.error("❌ companies/my error:", err);
@@ -63,12 +61,7 @@ router.get("/search", async (req, res) => {
     const { category, specialty } = req.query;
 
     if (!category) {
-      return res.json({
-        ok: true,
-        results: [],
-        fallbackUsed: false,
-        message: null,
-      });
+      return res.json({ ok: true, results: [], fallbackUsed: false, message: null });
     }
 
     const query = {
@@ -77,9 +70,7 @@ router.get("/search", async (req, res) => {
     };
 
     if (specialty) {
-      query.specialties = {
-        $in: [new RegExp(escapeRegex(specialty), "i")],
-      };
+      query.specialties = { $in: [new RegExp(escapeRegex(specialty), "i")] };
     }
 
     const results = await Company.find(query)
@@ -87,12 +78,7 @@ router.get("/search", async (req, res) => {
       .select("_id name city avgRating reviewCount isVerified")
       .lean();
 
-    res.json({
-      ok: true,
-      results,
-      fallbackUsed: false,
-      message: null,
-    });
+    res.json({ ok: true, results, fallbackUsed: false, message: null });
   } catch (err) {
     console.error("❌ companies/search error:", err);
     res.status(500).json({ ok: false, error: err.message });
@@ -106,9 +92,7 @@ router.get("/search", async (req, res) => {
 router.get("/slug/:slug", async (req, res) => {
   try {
     const item = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!item) {
-      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
-    }
+    if (!item) return res.status(404).json({ ok: false, error: "Company niet gevonden." });
     res.json({ ok: true, item });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -129,11 +113,8 @@ router.post("/", auth, async (req, res) => {
     }
 
     const slug = name.toLowerCase().replace(/\s+/g, "-");
-
     const exists = await Company.findOne({ slug });
-    if (exists) {
-      return res.status(400).json({ ok: false, error: "Bedrijf bestaat al." });
-    }
+    if (exists) return res.status(400).json({ ok: false, error: "Bedrijf bestaat al." });
 
     const company = await Company.create({
       name,
@@ -159,18 +140,15 @@ router.post("/", auth, async (req, res) => {
 router.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ ok: false, error: "Ongeldig company-id." });
     }
 
     const item = await Company.findById(id).lean();
-    if (!item) {
-      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
-    }
+    if (!item) return res.status(404).json({ ok: false, error: "Company niet gevonden." });
 
     if (String(item.owner) !== String(req.user.id)) {
-      return res.status(403).json({ ok: false, error: "Geen toegang tot dit bedrijf." });
+      return res.status(403).json({ ok: false, error: "Geen toegang." });
     }
 
     res.json({ ok: true, item });
@@ -186,21 +164,18 @@ router.get("/:id", auth, async (req, res) => {
 router.put("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ ok: false, error: "Ongeldig company-id." });
     }
 
     const company = await Company.findById(id);
-    if (!company) {
-      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
-    }
+    if (!company) return res.status(404).json({ ok: false, error: "Company niet gevonden." });
 
     if (String(company.owner) !== String(req.user.id)) {
       return res.status(403).json({ ok: false, error: "Geen toegang." });
     }
 
-    // ✅ Whitelist van toegestane velden
+    // ✅ Whitelist (uitgebreid)
     const allowed = [
       "city",
       "regions",
@@ -212,6 +187,9 @@ router.put("/:id", auth, async (req, res) => {
       "memberships",
       "availability",
       "worksNationwide",
+      // ✨ nieuw
+      "introduction",
+      "reasons",
     ];
 
     allowed.forEach((field) => {
@@ -221,7 +199,6 @@ router.put("/:id", auth, async (req, res) => {
     });
 
     await company.save();
-
     res.json({ ok: true });
   } catch (err) {
     console.error("❌ companies PUT error:", err);

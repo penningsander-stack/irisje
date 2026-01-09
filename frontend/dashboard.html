@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bedrijfsdashboard – Irisje.nl</title>
 
-  <link rel="stylesheet" href="/style.css?v=20260108">
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260108">
+  <link rel="stylesheet" href="/style.css?v=20260109">
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260109">
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen">
@@ -24,7 +24,7 @@
 <section class="surface-card">
   <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
   <p class="text-sm text-slate-600 mb-6">
-    Vink aan wat van toepassing is. Deze gegevens bepalen hoe en wanneer je wordt gematcht.
+    Deze informatie bepaalt hoe klanten jouw bedrijf zien en kiezen.
   </p>
 
   <form id="companyForm" class="space-y-8">
@@ -34,7 +34,6 @@
       <div>
         <label class="form-label">Bedrijfsnaam</label>
         <input id="companyName" class="form-input" disabled />
-        <p class="form-hint">Dit veld kan niet worden aangepast.</p>
       </div>
       <div>
         <label class="form-label">Vestigingsplaats</label>
@@ -42,78 +41,28 @@
       </div>
     </div>
 
-    <!-- Werkgebied -->
-    <div class="surface-soft p-4 rounded-xl space-y-4">
-      <h3 class="font-semibold">Werkgebied</h3>
-
-      <div class="flex items-center gap-2">
-        <input type="checkbox" id="companyWorksNationwide" />
-        <label for="companyWorksNationwide">Landelijk actief (heel Nederland)</label>
-      </div>
-
-      <div>
-        <label class="form-label">Regio’s</label>
-        <p class="form-hint mb-2">Selecteer regio’s waar je actief bent.</p>
-        <div id="companyRegions" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
-    </div>
-
-    <!-- Expertise -->
-    <div class="surface-soft p-4 rounded-xl space-y-6">
-      <h3 class="font-semibold">Expertise</h3>
-
-      <div>
-        <label class="form-label">Specialisaties</label>
-        <p class="form-hint mb-2">Vink alle specialisaties aan die je aanbiedt.</p>
-        <div id="companySpecialties" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
-
-      <div>
-        <label class="form-label">Werkvorm</label>
-        <p class="form-hint mb-2">Hoe help je klanten doorgaans?</p>
-        <div id="companyWorkforms" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
-
-      <div>
-        <label class="form-label">Certificeringen</label>
-        <p class="form-hint mb-2">Officiële registraties of keurmerken.</p>
-        <div id="companyCertifications" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
+    <!-- Introductie -->
+    <div class="surface-soft p-4 rounded-xl space-y-2">
+      <h3 class="font-semibold">Korte introductie</h3>
+      <p class="form-hint">
+        Omschrijf kort wie je bent, wat je doet en voor wie je werkt (max. 500 tekens).
+      </p>
+      <textarea id="companyIntroduction"
+        class="form-input min-h-[120px]"
+        maxlength="500"
+        placeholder="Bijvoorbeeld: Wij zijn gespecialiseerd in…"></textarea>
+      <div class="text-xs text-slate-500 text-right">
+        <span id="introCount">0</span>/500
       </div>
     </div>
 
-    <!-- Doelgroepen -->
-    <div class="surface-soft p-4 rounded-xl space-y-4">
-      <h3 class="font-semibold">Doelgroepen</h3>
-      <p class="form-hint mb-2">Voor welke klanten werk je?</p>
-      <div id="companyTargetGroups" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-    </div>
-
-    <!-- Communicatie -->
-    <div class="surface-soft p-4 rounded-xl space-y-6">
-      <h3 class="font-semibold">Communicatie</h3>
-
-      <div>
-        <label class="form-label">Talen</label>
-        <p class="form-hint mb-2">Talen waarin je klanten kunt helpen.</p>
-        <div id="companyLanguages" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
-
-      <div>
-        <label class="form-label">Beschikbaarheid</label>
-        <p class="form-hint mb-2">Wanneer ben je bereikbaar of inzetbaar?</p>
-        <select id="companyAvailability" class="form-input"></select>
-      </div>
-    </div>
-
-    <!-- Netwerk -->
-    <div class="surface-soft p-4 rounded-xl space-y-4">
-      <h3 class="font-semibold">Netwerk & lidmaatschappen</h3>
-
-      <div>
-        <label class="form-label">Lidmaatschappen</label>
-        <p class="form-hint mb-2">Beroeps- of brancheverenigingen.</p>
-        <div id="companyMemberships" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
+    <!-- Redenen -->
+    <div class="surface-soft p-4 rounded-xl space-y-3">
+      <h3 class="font-semibold">Waarom kiezen voor jouw bedrijf?</h3>
+      <p class="form-hint">
+        Kies maximaal 5 redenen die het beste bij jouw dienstverlening passen.
+      </p>
+      <div id="companyReasons" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
     </div>
 
     <!-- Acties -->
@@ -127,6 +76,6 @@
 
 </main>
 
-<script src="/js/dashboard.js?v=20260108"></script>
+<script src="/js/dashboard.js?v=20260109"></script>
 </body>
 </html>
