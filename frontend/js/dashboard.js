@@ -1,142 +1,153 @@
 // frontend/js/dashboard.js
-// v20260109-DASHBOARD-INTRO-REASONS
+// v20260109-TABS-SERVICES
 
-(() => {
-  const API = "https://irisje-backend.onrender.com/api";
-  const token = localStorage.getItem("token");
-  if (!token) return (location.href = "login.html");
+const API_BASE = "https://irisje-backend.onrender.com/api";
+const token = localStorage.getItem("token");
 
-  /* =========================
-     OPSOMMINGEN
-  ========================= */
-  const CITIES = [
-    "Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven",
-    "Groningen","Middelburg","Zierikzee","Burgh-Haamstede"
-  ];
+if (!token) location.href = "/login.html";
 
-  const REASONS = [
-    "Gratis eerste advies",
-    "Ook ’s avonds en in het weekend bereikbaar",
-    "Specialist in spoedzaken",
-    "Landelijk actief",
-    "Persoonlijke begeleiding",
-    "No cure no pay mogelijk",
-    "Ruime ervaring in complexe zaken",
-    "Snelle reactie en duidelijke communicatie"
-  ];
+// ---------------- TAB LOGICA ----------------
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-section").forEach(s => s.classList.add("hidden"));
 
-  const MAX_REASONS = 5;
+    btn.classList.add("active");
+    document.getElementById(`tab-${btn.dataset.tab}`).classList.remove("hidden");
+  });
+});
 
-  const byId = (id) => document.getElementById(id);
+// ---------------- VASTE OPTIES ----------------
+const REASONS = [
+  "Gratis eerste advies",
+  "Ook ’s avonds en in het weekend bereikbaar",
+  "Specialist in spoedzaken",
+  "Landelijk actief",
+  "Persoonlijke begeleiding",
+  "No cure no pay mogelijk",
+  "Ruime ervaring in complexe zaken",
+  "Snelle reactie en duidelijke communicatie"
+];
 
-  function authFetch(url, options = {}) {
-    return fetch(url, {
-      ...options,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(options.headers || {}),
-      },
-    }).then(async (r) => {
-      if (!r.ok) throw new Error("API fout");
-      return r.json();
+const WORKFORMS = ["Telefonisch", "Online", "Op locatie"];
+const TARGET_GROUPS = ["Particulier", "ZZP", "MKB", "Werkgever", "Werknemer"];
+const SPECIALTIES = ["Arbeidsrecht", "Bestuursrecht", "Mediation", "Ontslag", "Boetes"];
+const REGIONS = ["Zeeland", "Zuid-Holland", "Noord-Holland", "Brabant"];
+
+// ---------------- INIT ----------------
+let companyId = null;
+let companyData = {};
+
+init();
+
+async function init() {
+  const my = await apiGet("/companies/my");
+  if (!my.companies.length) return;
+
+  companyId = my.companies[0]._id;
+  const data = await apiGet(`/companies/${companyId}`);
+  companyData = data.item;
+
+  fillProfile();
+  fillServices();
+}
+
+// ---------------- PROFIEL ----------------
+function fillProfile() {
+  document.getElementById("companyName").value = companyData.name || "";
+  document.getElementById("companyCity").value = companyData.city || "";
+
+  const intro = companyData.introduction || "";
+  const introEl = document.getElementById("companyIntroduction");
+  introEl.value = intro;
+  document.getElementById("introCount").innerText = intro.length;
+
+  introEl.addEventListener("input", () => {
+    document.getElementById("introCount").innerText = introEl.value.length;
+  });
+
+  renderCheckboxes("reasonsCheckboxes", REASONS, companyData.reasons || [], 5);
+}
+
+document.getElementById("saveProfileBtn").onclick = async () => {
+  await apiPut(`/companies/${companyId}`, {
+    city: document.getElementById("companyCity").value,
+    introduction: document.getElementById("companyIntroduction").value,
+    reasons: getChecked("reasonsCheckboxes")
+  });
+  alert("Bedrijfsprofiel opgeslagen");
+};
+
+// ---------------- DIENSTEN ----------------
+function fillServices() {
+  renderCheckboxes("workformsCheckboxes", WORKFORMS, companyData.workforms || []);
+  renderCheckboxes("targetGroupsCheckboxes", TARGET_GROUPS, companyData.targetGroups || []);
+  renderCheckboxes("specialtiesCheckboxes", SPECIALTIES, companyData.specialties || []);
+  renderCheckboxes("regionsCheckboxes", REGIONS, companyData.regions || []);
+
+  document.getElementById("worksNationwide").checked = !!companyData.worksNationwide;
+}
+
+document.getElementById("saveServicesBtn").onclick = async () => {
+  await apiPut(`/companies/${companyId}`, {
+    workforms: getChecked("workformsCheckboxes"),
+    targetGroups: getChecked("targetGroupsCheckboxes"),
+    specialties: getChecked("specialtiesCheckboxes"),
+    regions: getChecked("regionsCheckboxes"),
+    worksNationwide: document.getElementById("worksNationwide").checked
+  });
+  alert("Diensten & expertise opgeslagen");
+};
+
+// ---------------- HELPERS ----------------
+function renderCheckboxes(containerId, options, selected = [], max = null) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = "";
+
+  options.forEach(opt => {
+    const id = `${containerId}-${opt}`;
+    const checked = selected.includes(opt);
+
+    el.insertAdjacentHTML("beforeend", `
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" value="${opt}" ${checked ? "checked" : ""}>
+        ${opt}
+      </label>
+    `);
+  });
+
+  if (max) {
+    el.addEventListener("change", () => {
+      const checked = el.querySelectorAll("input:checked");
+      if (checked.length > max) checked[checked.length - 1].checked = false;
     });
   }
+}
 
-  /* ---------- UI helpers ---------- */
-  function fillSelect(id, values, selected) {
-    const el = byId(id);
-    el.innerHTML = `<option value="">— kies —</option>`;
-    values.forEach((v) => {
-      const o = document.createElement("option");
-      o.value = v;
-      o.textContent = v;
-      if (selected === v) o.selected = true;
-      el.appendChild(o);
-    });
-  }
+function getChecked(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input:checked`)].map(i => i.value);
+}
 
-  function renderReasons(selected = []) {
-    const box = byId("companyReasons");
-    box.innerHTML = "";
-    REASONS.forEach((label) => {
-      const wrap = document.createElement("label");
-      wrap.className = "flex items-center gap-2";
+async function apiGet(url) {
+  const r = await fetch(API_BASE + url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return r.json();
+}
 
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.value = label;
-      input.checked = selected.includes(label);
+async function apiPut(url, body) {
+  const r = await fetch(API_BASE + url, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
 
-      input.addEventListener("change", () => {
-        const checked = box.querySelectorAll("input:checked").length;
-        if (checked > MAX_REASONS) {
-          input.checked = false;
-          alert(`Je kunt maximaal ${MAX_REASONS} redenen selecteren.`);
-        }
-      });
-
-      wrap.appendChild(input);
-      wrap.appendChild(document.createTextNode(label));
-      box.appendChild(wrap);
-    });
-  }
-
-  function readReasons() {
-    return [...byId("companyReasons").querySelectorAll("input:checked")]
-      .map((i) => i.value);
-  }
-
-  /* ---------- Init ---------- */
-  async function init() {
-    const my = await authFetch(`${API}/companies/my`);
-    if (!my.companies || my.companies.length === 0) {
-      location.href = "register-company.html";
-      return;
-    }
-
-    const companyId = my.companies[0]._id;
-    const { item } = await authFetch(`${API}/companies/${companyId}`);
-
-    byId("companyName").value = item.name;
-    fillSelect("companyCity", CITIES, item.city || "");
-
-    // Introductie
-    byId("companyIntroduction").value = item.introduction || "";
-    byId("introCount").textContent = (item.introduction || "").length;
-
-    byId("companyIntroduction").addEventListener("input", (e) => {
-      byId("introCount").textContent = e.target.value.length;
-    });
-
-    // Redenen
-    renderReasons(item.reasons || []);
-
-    byId("saveCompanyBtn").onclick = async () => {
-      const body = {
-        city: byId("companyCity").value,
-        introduction: byId("companyIntroduction").value.trim(),
-        reasons: readReasons(),
-      };
-
-      await authFetch(`${API}/companies/${companyId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      byId("saveMessage").classList.remove("hidden");
-      setTimeout(() => byId("saveMessage").classList.add("hidden"), 1500);
-    };
-  }
-
-  /* ---------- Logout ---------- */
-  const logoutBtn = byId("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      localStorage.clear();
-      location.href = "login.html";
-    });
-  }
-
-  init().catch(() => alert("Dashboard kon niet worden geladen."));
-})();
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("token");
+  location.href = "/login.html";
+};

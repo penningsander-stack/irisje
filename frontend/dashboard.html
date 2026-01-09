@@ -1,78 +1,97 @@
-<!-- frontend/dashboard.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <title>Dashboard – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedrijfsdashboard – Irisje.nl</title>
-
   <link rel="stylesheet" href="/style.css?v=20260109">
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260109">
 </head>
 
-<body class="irisje-body flex flex-col min-h-screen">
+<body class="irisje-body">
 
-<header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <a href="index.html" class="font-semibold">Irisje.nl</a>
-    <button id="logoutBtn" class="btn-primary btn-xs">Uitloggen</button>
+<header class="irisje-header">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+    <h1 class="text-lg font-semibold">Bedrijvendashboard</h1>
+    <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
   </div>
 </header>
 
-<main class="page-shell max-w-6xl mx-auto px-4 py-6">
+<main class="max-w-6xl mx-auto px-4 py-6">
 
-<section class="surface-card">
-  <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
-  <p class="text-sm text-slate-600 mb-6">
-    Deze informatie bepaalt hoe klanten jouw bedrijf zien en kiezen.
-  </p>
+  <!-- TABS -->
+  <div class="border-b mb-6 flex gap-6 text-sm font-medium">
+    <button class="tab-btn active" data-tab="profile">Bedrijfsprofiel</button>
+    <button class="tab-btn" data-tab="services">Diensten & expertise</button>
+  </div>
 
-  <form id="companyForm" class="space-y-8">
+  <!-- TAB 1: BEDRIJFSPROFIEL -->
+  <section id="tab-profile" class="tab-section">
 
-    <!-- Basis -->
-    <div class="grid md:grid-cols-2 gap-4">
+    <h2 class="text-lg font-semibold mb-4">Bedrijfsprofiel</h2>
+
+    <div class="space-y-4 max-w-xl">
+
       <div>
-        <label class="form-label">Bedrijfsnaam</label>
-        <input id="companyName" class="form-input" disabled />
+        <label class="block text-sm font-medium">Bedrijfsnaam</label>
+        <input id="companyName" class="input" disabled />
       </div>
+
       <div>
-        <label class="form-label">Vestigingsplaats</label>
-        <select id="companyCity" class="form-input"></select>
+        <label class="block text-sm font-medium">Vestigingsplaats</label>
+        <input id="companyCity" class="input" />
       </div>
-    </div>
 
-    <!-- Introductie -->
-    <div class="surface-soft p-4 rounded-xl space-y-2">
-      <h3 class="font-semibold">Korte introductie</h3>
-      <p class="form-hint">
-        Omschrijf kort wie je bent, wat je doet en voor wie je werkt (max. 500 tekens).
-      </p>
-      <textarea id="companyIntroduction"
-        class="form-input min-h-[120px]"
-        maxlength="500"
-        placeholder="Bijvoorbeeld: Wij zijn gespecialiseerd in…"></textarea>
-      <div class="text-xs text-slate-500 text-right">
-        <span id="introCount">0</span>/500
+      <div>
+        <label class="block text-sm font-medium">Korte introductie</label>
+        <textarea id="companyIntroduction" maxlength="500" class="textarea"></textarea>
+        <div class="text-xs text-gray-500 mt-1">
+          <span id="introCount">0</span>/500
+        </div>
       </div>
-    </div>
 
-    <!-- Redenen -->
-    <div class="surface-soft p-4 rounded-xl space-y-3">
-      <h3 class="font-semibold">Waarom kiezen voor jouw bedrijf?</h3>
-      <p class="form-hint">
-        Kies maximaal 5 redenen die het beste bij jouw dienstverlening passen.
-      </p>
-      <div id="companyReasons" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
-    </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Waarom kiezen voor jouw bedrijf? (max. 5)</label>
+        <div id="reasonsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
 
-    <!-- Acties -->
-    <div class="flex items-center gap-3 pt-2">
-      <button id="saveCompanyBtn" type="button" class="btn-primary btn-sm">Opslaan</button>
-      <span id="saveMessage" class="text-xs hidden text-emerald-700">Opgeslagen</span>
+      <button id="saveProfileBtn" class="btn-primary mt-4">Opslaan</button>
     </div>
+  </section>
 
-  </form>
-</section>
+  <!-- TAB 2: DIENSTEN & EXPERTISE -->
+  <section id="tab-services" class="tab-section hidden">
+
+    <h2 class="text-lg font-semibold mb-4">Diensten & expertise</h2>
+
+    <div class="space-y-6 max-w-2xl">
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Werkvormen</label>
+        <div id="workformsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Doelgroepen</label>
+        <div id="targetGroupsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Specialismen</label>
+        <div id="specialtiesCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-2">Werkgebied</label>
+        <div id="regionsCheckboxes" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        <label class="inline-flex items-center mt-2">
+          <input type="checkbox" id="worksNationwide" class="mr-2" />
+          Landelijk actief
+        </label>
+      </div>
+
+      <button id="saveServicesBtn" class="btn-primary">Opslaan</button>
+    </div>
+  </section>
 
 </main>
 
