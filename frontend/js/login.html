@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inloggen – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260114">
+</head>
+<body class="irisje-body">
+
+<header class="irisje-header sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto px-4 py-3 lg:py-4 flex justify-between items-center">
+    <a href="index.html" class="flex items-center space-x-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <span class="font-semibold text-slate-900">Irisje.nl</span>
+    </a>
+    <a href="register.html" class="text-sm text-indigo-600 hover:underline">Account aanmaken</a>
+  </div>
+</header>
+
+<main class="onboarding flex-1 flex items-center justify-center px-4 py-12">
+  <section class="max-w-md w-full">
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl font-semibold text-slate-900">Inloggen</h1>
+    </div>
+
+    <div class="card bg-white/85 backdrop-blur border border-white/60 shadow-brand">
+      <form id="loginForm" class="space-y-7" novalidate>
+        <div class="field">
+          <input id="email" type="email" required placeholder=" " data-validate="email">
+          <label for="email">E-mailadres</label>
+          <p class="field-msg"></p>
+        </div>
+
+        <div class="field">
+          <input id="password" type="password" required minlength="8" placeholder=" " data-validate="password">
+          <label for="password">Wachtwoord</label>
+          <p class="field-msg"></p>
+        </div>
+
+        <p id="loginStatus" class="rq-status min-h-[1.25rem]"></p>
+
+        <button class="btn-primary w-full py-3">Inloggen</button>
+
+        <div class="text-center text-sm">
+          <a href="password-forgot.html" class="text-indigo-600 hover:underline">Wachtwoord vergeten?</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<script src="js/onboarding-validation.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>
