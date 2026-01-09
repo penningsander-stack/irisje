@@ -118,6 +118,7 @@ function updateCompleteness() {
 
   const percentEl = document.getElementById("profilePercent");
   const bar = document.getElementById("profileBar");
+  const hint = document.getElementById("profileHint");
 
   if (percentEl) percentEl.innerText = percent;
 
@@ -129,7 +130,18 @@ function updateCompleteness() {
     bar.style.borderRadius = "999px";
     bar.style.transition = "width 0.4s ease";
   }
+
+  if (hint) {
+    if (percent < 60) {
+      hint.innerText = `Nog ${6 - score} stap(pen) om zichtbaar te worden voor klanten.`;
+    } else if (percent < 80) {
+      hint.innerText = "Bijna klaar – je profiel wordt beter zichtbaar.";
+    } else {
+      hint.innerText = "Je profiel is volledig zichtbaar voor klanten.";
+    }
+  }
 }
+
 
 
 // -------- Cards --------
