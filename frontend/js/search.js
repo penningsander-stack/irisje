@@ -1,5 +1,5 @@
 // frontend/js/search.js
-// v20260114-SEARCH-SAFE-NO-CATEGORIES-ENDPOINT
+// v20260114-SEARCH-CATEGORY-OR-SPECIALTY
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -23,11 +23,21 @@ async function initSearch() {
   titleEl.textContent = `Bedrijven binnen ${activeCategory}`;
 
   try {
-    const res = await fetch(
+    // 1️⃣ Eerst proberen als hoofdcategorie
+    let res = await fetch(
       `${API_BASE}/companies/search?category=${encodeURIComponent(activeCategory)}`
     );
+    let data = await res.json();
 
-    allCompanies = await res.json();
+    // 2️⃣ Geen resultaten? Dan behandelen als specialisme
+    if (Array.isArray(data) && data.length === 0) {
+      res = await fetch(
+        `${API_BASE}/companies/search?specialty=${encodeURIComponent(activeCategory)}`
+      );
+      data = await res.json();
+    }
+
+    allCompanies = Array.isArray(data) ? data : [];
 
     renderSubcategoriesFromCompanies(allCompanies);
     renderCompanies(allCompanies);
@@ -44,7 +54,7 @@ function renderSubcategoriesFromCompanies(companies) {
   const section = document.getElementById("subcategories");
   const container = document.getElementById("subcategoryChips");
 
-  if (!Array.isArray(companies)) return;
+  if (!Array.isArray(companies) || companies.length === 0) return;
 
   const specialties = new Set();
 
