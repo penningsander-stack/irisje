@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260108-DEFAULT-COMPANY-AUTO-OWNER-FIXED
+// v20260108-DEFAULT-COMPANY-PUT-ENABLED
 
 const express = require("express");
 const router = express.Router();
@@ -44,7 +44,6 @@ router.get("/lists", async (req, res) => {
 // -----------------------------------------------------------------------------
 router.get("/my", auth, async (req, res) => {
   try {
-    // 1. Normale situatie: bedrijven met owner = user
     let companies = await Company.find({ owner: req.user.id })
       .select("_id name city")
       .lean();
@@ -53,7 +52,6 @@ router.get("/my", auth, async (req, res) => {
       return res.json({ ok: true, companies });
     }
 
-    // 2. Herstelpad: exact één bedrijf zonder owner
     const orphanCompanies = await Company.find({
       $or: [{ owner: { $exists: false } }, { owner: null }],
     })
@@ -81,7 +79,6 @@ router.get("/my", auth, async (req, res) => {
       });
     }
 
-    // 3. Geen bedrijven (of te ambigu om veilig te koppelen)
     return res.json({ ok: true, companies: [] });
   } catch (err) {
     console.error("❌ companies/my error:", err);
@@ -154,7 +151,7 @@ router.get("/slug/:slug", async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// BEDRIJF REGISTREREN (owner = ingelogde user)
+// BEDRIJF REGISTREREN
 // POST /api/companies
 // -----------------------------------------------------------------------------
 router.post("/", auth, async (req, res) => {
@@ -191,7 +188,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY VIA ID (dashboard)
+// COMPANY DETAILS (dashboard)
 // GET /api/companies/:id
 // -----------------------------------------------------------------------------
 router.get("/:id", auth, async (req, res) => {
@@ -213,21 +210,59 @@ router.get("/:id", auth, async (req, res) => {
         .json({ ok: false, error: "Geen toegang tot dit bedrijf." });
     }
 
-    res.json({
-      ok: true,
-      item: {
-        _id: item._id,
-        name: item.name,
-        city: item.city,
-        isVerified: item.isVerified,
-        avgRating: item.avgRating,
-        reviewCount: item.reviewCount,
-        categories: item.categories || [],
-        specialties: item.specialties || [],
-      },
-    });
+    res.json({ ok: true, item });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// -----------------------------------------------------------------------------
+// COMPANY BIJWERKEN (dashboard)
+// PUT /api/companies/:id
+// -----------------------------------------------------------------------------
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok: false, error: "Ongeldig company-id." });
+    }
+
+    const company = await Company.findById(id);
+    if (!company) {
+      return res.status(404).json({ ok: false, error: "Company niet gevonden." });
+    }
+
+    if (String(company.owner) !== String(req.user.id)) {
+      return res
+        .status(403)
+        .json({ ok: false, error: "Geen toegang tot dit bedrijf." });
+    }
+
+    // Alleen velden die via dashboard aangepast mogen worden
+    const allowedFields = [
+      "city",
+      "regions",
+      "specialties",
+      "certifications",
+      "languages",
+      "memberships",
+      "availability",
+      "worksNationwide",
+    ];
+
+    allowedFields.forEach((field) => {
+      if (field in req.body) {
+        company[field] = req.body[field];
+      }
+    });
+
+    await company.save();
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("❌ companies PUT error:", err);
+    res.status(500).json({ ok: false, error: "Serverfout." });
   }
 });
 
