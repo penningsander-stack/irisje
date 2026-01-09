@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260108-DASHBOARD-UX-POLISH
+// v20260108-DASHBOARD-ADD-TARGETGROUPS-WORKFORMS
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api";
@@ -12,6 +12,8 @@
   const CITIES = ["Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven","Groningen","Middelburg","Zierikzee","Burgh-Haamstede"];
   const REGIONS = ["Zeeland","Zuid-Holland","Noord-Holland","Utrecht","Brabant","Gelderland","Overijssel","Drenthe","Groningen","Friesland","Limburg","Flevoland"];
   const SPECIALTIES = ["Arbeidsrecht","Ontslagrecht","Huurrecht","Familierecht","Bestuursrecht","Letselschade"];
+  const WORKFORMS = ["Advies","Procedure","Mediation","Bemiddeling","Coaching"];
+  const TARGET_GROUPS = ["Particulieren","ZZP’ers","MKB","Grote ondernemingen","Overheid"];
   const CERTIFICATIONS = ["MfN-register","NOvA","ADR","SKJ"];
   const LANGUAGES = ["Nederlands","Engels","Duits","Frans","Spaans"];
   const MEMBERSHIPS = ["MfN","NOvA","BOVAG","Techniek Nederland"];
@@ -48,7 +50,7 @@
   function renderCheckboxGroup(containerId, values, selected = []) {
     const box = byId(containerId);
     box.innerHTML = "";
-    values.forEach((v, i) => {
+    values.forEach((v) => {
       const label = document.createElement("label");
       label.className = "flex items-center gap-2";
 
@@ -87,6 +89,8 @@
 
     renderCheckboxGroup("companyRegions", REGIONS, item.regions || []);
     renderCheckboxGroup("companySpecialties", SPECIALTIES, item.specialties || []);
+    renderCheckboxGroup("companyWorkforms", WORKFORMS, item.workforms || []);
+    renderCheckboxGroup("companyTargetGroups", TARGET_GROUPS, item.targetGroups || []);
     renderCheckboxGroup("companyCertifications", CERTIFICATIONS, item.certifications || []);
     renderCheckboxGroup("companyLanguages", LANGUAGES, item.languages || []);
     renderCheckboxGroup("companyMemberships", MEMBERSHIPS, item.memberships || []);
@@ -100,6 +104,8 @@
         worksNationwide: byId("companyWorksNationwide").checked,
         regions: readCheckboxGroup("companyRegions"),
         specialties: readCheckboxGroup("companySpecialties"),
+        workforms: readCheckboxGroup("companyWorkforms"),
+        targetGroups: readCheckboxGroup("companyTargetGroups"),
         certifications: readCheckboxGroup("companyCertifications"),
         languages: readCheckboxGroup("companyLanguages"),
         memberships: readCheckboxGroup("companyMemberships"),
