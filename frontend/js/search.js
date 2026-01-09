@@ -1,8 +1,9 @@
 // frontend/js/search.js
+// v20260114-SEARCH-SAFE-NO-CATEGORIES-ENDPOINT
+
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 let allCompanies = [];
-let allCategories = [];
 let activeSubcategory = null;
 let activeCategory = null;
 
@@ -12,25 +13,23 @@ async function initSearch() {
   const params = new URLSearchParams(window.location.search);
   activeCategory = params.get("category");
 
+  const titleEl = document.getElementById("searchTitle");
+
   if (!activeCategory) {
-    document.getElementById("searchTitle").textContent =
-      "Geen categorie gekozen";
+    titleEl.textContent = "Geen categorie gekozen";
     return;
   }
 
-  document.getElementById("searchTitle").textContent =
-    `Bedrijven binnen ${activeCategory}`;
+  titleEl.textContent = `Bedrijven binnen ${activeCategory}`;
 
   try {
-    const [companiesRes, categoriesRes] = await Promise.all([
-      fetch(`${API_BASE}/companies/search?category=${encodeURIComponent(activeCategory)}`),
-      fetch(`${API_BASE}/categories`)
-    ]);
+    const res = await fetch(
+      `${API_BASE}/companies/search?category=${encodeURIComponent(activeCategory)}`
+    );
 
-    allCompanies = await companiesRes.json();
-    allCategories = await categoriesRes.json();
+    allCompanies = await res.json();
 
-    renderSubcategories();
+    renderSubcategoriesFromCompanies(allCompanies);
     renderCompanies(allCompanies);
     updateResultCount(allCompanies.length);
   } catch (err) {
@@ -38,31 +37,40 @@ async function initSearch() {
   }
 }
 
-function renderSubcategories() {
-  const subcats = allCategories.filter(
-    c => c.parentCategory === activeCategory
-  );
-
-  if (!subcats.length) return;
-
+/**
+ * Subcategorieën afleiden uit company.specialties[]
+ */
+function renderSubcategoriesFromCompanies(companies) {
   const section = document.getElementById("subcategories");
   const container = document.getElementById("subcategoryChips");
+
+  if (!Array.isArray(companies)) return;
+
+  const specialties = new Set();
+
+  companies.forEach(c => {
+    if (Array.isArray(c.specialties)) {
+      c.specialties.forEach(s => specialties.add(s));
+    }
+  });
+
+  if (specialties.size === 0) return;
 
   section.classList.remove("hidden");
   container.innerHTML = "";
 
-  subcats.forEach(sub => {
+  [...specialties].sort().forEach(name => {
     const btn = document.createElement("button");
     btn.className = "subcat-chip";
-    btn.textContent = sub.name;
+    btn.textContent = name;
 
-    if (sub.name === activeSubcategory) {
+    if (name === activeSubcategory) {
       btn.classList.add("active");
     }
 
     btn.onclick = () => {
       activeSubcategory =
-        activeSubcategory === sub.name ? null : sub.name;
+        activeSubcategory === name ? null : name;
       applyFilters();
     };
 
@@ -96,7 +104,7 @@ function renderCompanies(companies) {
   const grid = document.getElementById("resultsGrid");
   grid.innerHTML = "";
 
-  if (!companies.length) {
+  if (!companies || companies.length === 0) {
     grid.innerHTML =
       "<p class='text-slate-600'>Geen bedrijven gevonden.</p>";
     return;
@@ -114,10 +122,9 @@ function renderCompanies(companies) {
       <p class="text-sm text-slate-600 mb-2">
         ${c.city || ""}
       </p>
-      <a
-        href="company.html?id=${c._id}"
-        class="text-sm text-indigo-600 hover:underline">
-        Bekijk profiel
+      <a href="company.html?id=${c._id}"
+         class="text-sm text-indigo-600 hover:underline">
+         Bekijk profiel
       </a>
     `;
 
