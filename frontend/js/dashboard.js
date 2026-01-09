@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260112-PROFILE-COMPLETENESS
+// v20260113-PROFILE-PREVIEW
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
@@ -15,7 +15,7 @@ document.querySelectorAll(".tab").forEach(btn => {
   });
 });
 
-// Opties
+// Options
 const REASONS = [
   "Gratis eerste advies",
   "Ook ’s avonds en in het weekend bereikbaar",
@@ -66,12 +66,13 @@ function fillProfile() {
 }
 
 $("#saveProfileBtn").onclick = async () => {
-  await apiPut(`/companies/${companyId}`, {
-    introduction: $("#companyIntroduction").value,
-    reasons: getActive("reasonsCards"),
-  });
   company.introduction = $("#companyIntroduction").value;
   company.reasons = getActive("reasonsCards");
+
+  await apiPut(`/companies/${companyId}`, {
+    introduction: company.introduction,
+    reasons: company.reasons,
+  });
   updateCompleteness();
   alert("Bedrijfsprofiel opgeslagen");
 };
@@ -141,6 +142,34 @@ function renderCards(containerId, options, selected = [], max = null) {
 function getActive(containerId) {
   return [...document.querySelectorAll(`#${containerId} .pill.active`)].map(p => p.textContent);
 }
+
+// -------- Preview --------
+$("#previewBtn").onclick = () => {
+  $("#previewName").innerText = company.name || "";
+  $("#previewCity").innerText = company.city || "";
+  $("#previewIntro").innerText = $("#companyIntroduction").value || "";
+
+  $("#previewReasons").innerHTML = "";
+  getActive("reasonsCards").forEach(r => {
+    const span = document.createElement("span");
+    span.className = "pill active";
+    span.textContent = r;
+    $("#previewReasons").appendChild(span);
+  });
+
+  const services = [
+    ...getActive("workformsCards"),
+    ...getActive("targetGroupsCards"),
+    ...getActive("specialtiesCards"),
+  ];
+  $("#previewServices").innerText = services.join(" • ");
+
+  $("#previewModal").style.display = "flex";
+};
+
+$("#closePreview").onclick = () => {
+  $("#previewModal").style.display = "none";
+};
 
 // -------- Helpers --------
 function $(sel) { return document.querySelector(sel); }

@@ -4,40 +4,40 @@
   <meta charset="UTF-8" />
   <title>Dashboard – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260112">
+  <link rel="stylesheet" href="/style.css?v=20260113">
   <style>
     .bg-soft { background:#f6f7fb; }
     .card { background:#fff; border-radius:14px; box-shadow:0 10px 25px rgba(15,23,42,.06); }
     .tab { padding:.75rem 1rem; border-bottom:2px solid transparent; color:#475569; }
     .tab.active { border-color:#6366f1; color:#111827; }
     .hint { color:#6b7280; font-size:.875rem; }
-    .pill { border:1px solid #e5e7eb; border-radius:12px; padding:.6rem .75rem; cursor:pointer; }
+    .pill { border:1px solid #e5e7eb; border-radius:12px; padding:.45rem .7rem; }
     .pill.active { border-color:#6366f1; background:#eef2ff; }
-    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; }
+    .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:.6rem; }
     .btn { border-radius:10px; padding:.7rem 1.1rem; }
     .btn-primary { background:#4f46e5; color:#fff; }
+    .btn-secondary { background:#eef2ff; color:#3730a3; }
     .textarea-premium {
       background:#eef2ff;
       border-radius:12px;
       padding:12px;
       min-height:140px;
-      transition:.15s ease;
     }
-    .textarea-premium:focus {
+    /* Modal */
+    .modal-bg {
+      position:fixed; inset:0;
+      background:rgba(15,23,42,.45);
+      display:none; align-items:center; justify-content:center;
+      z-index:50;
+    }
+    .modal {
       background:#fff;
-      outline:none;
-      box-shadow:0 0 0 3px rgba(99,102,241,.35);
-    }
-    .progress {
-      height:10px;
-      background:#e5e7eb;
-      border-radius:999px;
-      overflow:hidden;
-    }
-    .progress > div {
-      height:100%;
-      background:#4f46e5;
-      transition:width .3s ease;
+      border-radius:16px;
+      max-width:720px;
+      width:95%;
+      max-height:85vh;
+      overflow:auto;
+      padding:24px;
     }
   </style>
 </head>
@@ -47,7 +47,10 @@
 <header class="irisje-header sticky top-0 z-10">
   <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
     <h1 class="font-semibold">Bedrijvendashboard</h1>
-    <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
+    <div class="flex gap-2">
+      <button id="previewBtn" class="btn btn-secondary text-sm">Bekijk voorbeeld</button>
+      <button id="logoutBtn" class="text-sm text-red-600">Uitloggen</button>
+    </div>
   </div>
 </header>
 
@@ -62,9 +65,7 @@
     <div class="progress mb-3">
       <div id="profileBar" style="width:0%"></div>
     </div>
-    <p class="hint">
-      Een completer profiel wordt vaker gekozen door klanten.
-    </p>
+    <p class="hint">Een completer profiel wordt vaker gekozen.</p>
   </div>
 
   <!-- Tabs -->
@@ -79,7 +80,7 @@
   <section id="tab-profile" class="tab-section">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
-      <p class="hint mb-6">Deze informatie bepaalt hoe klanten jouw bedrijf zien.</p>
+      <p class="hint mb-6">Zo zien klanten jouw bedrijf.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
@@ -94,8 +95,7 @@
 
       <div class="mb-6">
         <label class="block text-sm font-medium mb-1">Korte introductie</label>
-        <textarea id="companyIntroduction" maxlength="500" class="textarea-premium w-full"
-          placeholder="Omschrijf kort wie je bent, wat je doet en voor wie je werkt."></textarea>
+        <textarea id="companyIntroduction" maxlength="500" class="textarea-premium w-full"></textarea>
         <div class="flex justify-between mt-2">
           <p class="hint">Minimaal 80 tekens aanbevolen.</p>
           <span class="hint"><span id="introCount">0</span>/500</span>
@@ -103,10 +103,7 @@
       </div>
 
       <div class="mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <label class="block text-sm font-medium">Waarom kiezen voor jouw bedrijf?</label>
-          <span class="hint">Min. 3 / Max. 5</span>
-        </div>
+        <label class="block text-sm font-medium mb-2">Waarom kiezen voor jouw bedrijf?</label>
         <div id="reasonsCards" class="grid-cards"></div>
       </div>
 
@@ -120,7 +117,7 @@
   <section id="tab-services" class="tab-section hidden">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Diensten & expertise</h2>
-      <p class="hint mb-6">Kies wat van toepassing is.</p>
+      <p class="hint mb-6">Wat klanten van je mogen verwachten.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -153,6 +150,28 @@
 
 </main>
 
-<script src="/js/dashboard.js?v=20260112"></script>
+<!-- PREVIEW MODAL -->
+<div id="previewModal" class="modal-bg">
+  <div class="modal">
+    <div class="flex justify-between items-start mb-4">
+      <h2 class="text-lg font-semibold">Voorbeeld: zo zien klanten jouw profiel</h2>
+      <button id="closePreview" class="text-gray-500">✕</button>
+    </div>
+
+    <h3 id="previewName" class="text-xl font-semibold mb-1"></h3>
+    <p id="previewCity" class="hint mb-4"></p>
+
+    <p id="previewIntro" class="mb-4"></p>
+
+    <div id="previewReasons" class="flex flex-wrap gap-2 mb-4"></div>
+
+    <div class="hint text-sm">
+      <strong>Diensten & expertise:</strong>
+      <span id="previewServices"></span>
+    </div>
+  </div>
+</div>
+
+<script src="/js/dashboard.js?v=20260113"></script>
 </body>
 </html>
