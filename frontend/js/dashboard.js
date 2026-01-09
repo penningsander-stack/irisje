@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260108-DASHBOARD-CHECKBOX-GROUPS
+// v20260108-DASHBOARD-UX-POLISH
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api";
@@ -49,7 +49,6 @@
     const box = byId(containerId);
     box.innerHTML = "";
     values.forEach((v, i) => {
-      const id = `${containerId}_${i}`;
       const label = document.createElement("label");
       label.className = "flex items-center gap-2";
 
@@ -86,8 +85,8 @@
     fillSelect("companyCity", CITIES, item.city || "");
     fillSelect("companyAvailability", AVAILABILITY, item.availability || "");
 
-    renderCheckboxGroup("companySpecialties", SPECIALTIES, item.specialties || []);
     renderCheckboxGroup("companyRegions", REGIONS, item.regions || []);
+    renderCheckboxGroup("companySpecialties", SPECIALTIES, item.specialties || []);
     renderCheckboxGroup("companyCertifications", CERTIFICATIONS, item.certifications || []);
     renderCheckboxGroup("companyLanguages", LANGUAGES, item.languages || []);
     renderCheckboxGroup("companyMemberships", MEMBERSHIPS, item.memberships || []);
@@ -99,8 +98,8 @@
         city: byId("companyCity").value,
         availability: byId("companyAvailability").value,
         worksNationwide: byId("companyWorksNationwide").checked,
-        specialties: readCheckboxGroup("companySpecialties"),
         regions: readCheckboxGroup("companyRegions"),
+        specialties: readCheckboxGroup("companySpecialties"),
         certifications: readCheckboxGroup("companyCertifications"),
         languages: readCheckboxGroup("companyLanguages"),
         memberships: readCheckboxGroup("companyMemberships"),
