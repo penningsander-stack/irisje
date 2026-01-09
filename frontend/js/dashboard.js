@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v20260110-PREMIUM-CARDS-TABS
+// v20260111-LOCK-CITY-PREMIUM-INTRO
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 const token = localStorage.getItem("token");
@@ -26,7 +26,6 @@ const REASONS = [
   "Ruime ervaring in complexe zaken",
   "Snelle reactie en duidelijke communicatie",
 ];
-
 const WORKFORMS = ["Telefonisch", "Online", "Op locatie"];
 const TARGET_GROUPS = ["Particulier", "ZZP", "MKB", "Werkgever", "Werknemer"];
 const SPECIALTIES = ["Arbeidsrecht", "Bestuursrecht", "Mediation", "Ontslag", "Boetes"];
@@ -70,7 +69,6 @@ $("#saveProfileBtn").onclick = async () => {
   });
   alert("Bedrijfsprofiel opgeslagen");
 };
-
 
 // Services
 function fillServices() {
@@ -122,7 +120,6 @@ async function apiGet(url) {
   const r = await fetch(API_BASE + url, { headers: { Authorization: `Bearer ${token}` } });
   return r.json();
 }
-
 async function apiPut(url, body) {
   const r = await fetch(API_BASE + url, {
     method: "PUT",

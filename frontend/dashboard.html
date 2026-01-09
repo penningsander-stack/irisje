@@ -4,10 +4,9 @@
   <meta charset="UTF-8" />
   <title>Dashboard – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/style.css?v=20260110">
+  <link rel="stylesheet" href="/style.css?v=20260111">
   <style>
-    /* Premium helpers (lichtgewicht) */
-    .bg-soft { background: #f6f7fb; }
+    .bg-soft { background:#f6f7fb; }
     .card { background:#fff; border-radius:14px; box-shadow:0 10px 25px rgba(15,23,42,.06); }
     .tab { padding:.75rem 1rem; border-bottom:2px solid transparent; color:#475569; }
     .tab.active { border-color:#6366f1; color:#111827; }
@@ -17,6 +16,18 @@
     .grid-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:.75rem; }
     .btn { border-radius:10px; padding:.7rem 1.1rem; }
     .btn-primary { background:#4f46e5; color:#fff; }
+    .textarea-premium {
+      background: #eef2ff;
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 140px;
+      transition: all .15s ease;
+    }
+    .textarea-premium:focus {
+      background: #fff;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(99,102,241,.35);
+    }
   </style>
 </head>
 
@@ -43,39 +54,38 @@
     </div>
   </div>
 
-  <!-- Tab: Bedrijfsprofiel -->
+  <!-- TAB: BEDRIJFSPROFIEL -->
   <section id="tab-profile" class="tab-section">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Bedrijfsprofiel</h2>
       <p class="hint mb-6">Deze informatie bepaalt hoe klanten jouw bedrijf zien en kiezen.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  <div>
-    <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
-    <input id="companyName" class="input" disabled />
-  </div>
-  <div>
-    <label class="block text-sm font-medium mb-1">Vestigingsplaats</label>
-    <input id="companyCity" class="input bg-gray-50 text-gray-600" disabled />
-    <p class="hint mt-1">Dit is je officiële vestigingsplaats.</p>
-  </div>
-</div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Bedrijfsnaam</label>
+          <input id="companyName" class="input" disabled />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Vestigingsplaats</label>
+          <input id="companyCity" class="input bg-gray-50 text-gray-600" disabled />
+          <p class="hint mt-1">Dit is je officiële vestigingsplaats.</p>
+        </div>
+      </div>
 
-<div class="mb-6">
-  <label class="block text-sm font-medium mb-1">Korte introductie</label>
-  <textarea
-    id="companyIntroduction"
-    maxlength="500"
-    class="textarea bg-indigo-50/40 focus:bg-white focus:ring-2 focus:ring-indigo-400 transition"
-    rows="5"
-    placeholder="Omschrijf kort wie je bent, wat je doet en voor wie je werkt. Bijvoorbeeld: ‘Ik help werknemers en werkgevers bij arbeidsconflicten, VSO’s en ontslagzaken. Persoonlijk, snel en helder advies.’"
-  ></textarea>
-  <div class="flex justify-between mt-1">
-    <p class="hint">Dit is de eerste tekst die klanten lezen.</p>
-    <span class="hint"><span id="introCount">0</span>/500</span>
-  </div>
-</div>
-
+      <div class="mb-6">
+        <label class="block text-sm font-medium mb-1">Korte introductie</label>
+        <textarea
+          id="companyIntroduction"
+          maxlength="500"
+          class="textarea-premium w-full"
+          placeholder="Omschrijf kort wie je bent, wat je doet en voor wie je werkt. 
+Bijvoorbeeld: ‘Ik help werknemers en werkgevers bij arbeidsconflicten, VSO’s en ontslagzaken. Persoonlijk, snel en helder juridisch advies.’"
+        ></textarea>
+        <div class="flex justify-between mt-2">
+          <p class="hint">Dit is de eerste tekst die klanten lezen.</p>
+          <span class="hint"><span id="introCount">0</span>/500</span>
+        </div>
+      </div>
 
       <div class="mb-6">
         <div class="flex items-center justify-between mb-2">
@@ -91,11 +101,11 @@
     </div>
   </section>
 
-  <!-- Tab: Diensten & expertise -->
+  <!-- TAB: DIENSTEN -->
   <section id="tab-services" class="tab-section hidden">
     <div class="card p-6">
       <h2 class="text-lg font-semibold mb-1">Diensten & expertise</h2>
-      <p class="hint mb-6">Kies wat van toepassing is. Alleen vinkjes, geen vrije invoer.</p>
+      <p class="hint mb-6">Kies wat van toepassing is. Alleen vinkjes.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -128,6 +138,6 @@
 
 </main>
 
-<script src="/js/dashboard.js?v=20260110"></script>
+<script src="/js/dashboard.js?v=20260111"></script>
 </body>
 </html>
