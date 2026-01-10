@@ -2,7 +2,9 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const Company = require("../models/Company");
+
+// 🔴 FIX: juiste bestandsnaam (geen hoofdletter)
+const Company = require("../models/company");
 
 /**
  * Helpers
@@ -39,7 +41,7 @@ function withDefaults(company) {
 
 /**
  * =========================================================
- * 1) SEARCH – MOET BOVEN /:id STAAN
+ * SEARCH (moet boven /:id staan)
  * =========================================================
  */
 router.get("/search", async (req, res) => {
@@ -105,7 +107,7 @@ router.get("/search", async (req, res) => {
 
 /**
  * =========================================================
- * 2) GET BY ID  ← DIT WAS DE ONTBREKENDE SCHAKEL
+ * GET BY ID
  * =========================================================
  */
 router.get("/:id", async (req, res) => {
@@ -134,7 +136,7 @@ router.get("/:id", async (req, res) => {
 
 /**
  * =========================================================
- * 3) (OPTIONEEL) LIST – veilig laten bestaan
+ * LIST
  * =========================================================
  */
 router.get("/", async (_req, res) => {
