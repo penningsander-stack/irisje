@@ -1,5 +1,5 @@
 // frontend/js/search.js
-// v20260115-SEARCH-CATEGORIES-ARRAY-FIX
+// v20260115-SEARCH-CATEGORY-PARAM-FIX
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -21,19 +21,19 @@ async function initSearch() {
 
   titleEl.textContent = `Bedrijven binnen ${rawTerm}`;
 
-  // backend gebruikt lowercase categorieën in array `categories[]`
+  // normaliseren voor backend
   const normalized = rawTerm.toLowerCase();
 
   try {
-    // ✅ juiste backend-query
+    // ✅ JUISTE backend-parameter: category
     let res = await fetch(
-      `${API_BASE}/companies/search?categories=${encodeURIComponent(normalized)}`
+      `${API_BASE}/companies/search?category=${encodeURIComponent(normalized)}`
     );
     let json = await res.json();
 
     let results = Array.isArray(json.results) ? json.results : [];
 
-    // fallback: specialisme
+    // fallback: zoeken op specialisme
     if (results.length === 0) {
       res = await fetch(
         `${API_BASE}/companies/search?specialty=${encodeURIComponent(normalized)}`
