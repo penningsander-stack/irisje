@@ -1,9 +1,9 @@
 // frontend/js/register-company.js
-// v2026-01-17 — Stap 4A: afdwingen categorie-slugs bij registratie (frontend-only)
+// v2026-01-17 — FIX: IDs afgestemd op register-company.html + slug-afdwinging
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-// Canonieke categorieën (labels = UI, slug = opslag)
+// Canonieke categorieën
 const CATEGORIES = [
   { slug: "elektricien", label: "Elektricien" },
   { slug: "loodgieter", label: "Loodgieter" },
@@ -17,6 +17,15 @@ const CATEGORIES = [
   { slug: "juridisch", label: "Juridisch advies" },
 ];
 
+// (Frontend-only) vaste specialismen
+const SPECIALTIES = [
+  { slug: "spoedservice", label: "Spoedservice" },
+  { slug: "24-7-bereikbaar", label: "24/7 bereikbaar" },
+  { slug: "duurzaam", label: "Duurzaam werken" },
+  { slug: "particulier", label: "Particulieren" },
+  { slug: "zakelijk", label: "Zakelijk" },
+];
+
 document.addEventListener("DOMContentLoaded", init);
 
 function normalize(val) {
@@ -27,14 +36,14 @@ function normalize(val) {
 }
 
 function init() {
-  const form = document.getElementById("registerCompanyForm");
+  const form = document.getElementById("companyForm");
   if (!form) return;
 
-  // Verwacht een <select multiple id="categories">
-  const categoriesSelect = document.getElementById("categories");
-  if (categoriesSelect) {
-    fillCategories(categoriesSelect);
-  }
+  const categoriesSelect = document.getElementById("categoriesSelect");
+  const specialtiesSelect = document.getElementById("specialtiesSelect");
+
+  if (categoriesSelect) fillSelect(categoriesSelect, CATEGORIES);
+  if (specialtiesSelect) fillSelect(specialtiesSelect, SPECIALTIES);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -45,26 +54,26 @@ function init() {
       return;
     }
 
-    // Verzamel velden (pas namen aan indien jouw HTML afwijkt)
+    hideError();
+
     const payload = {
       name: form.name?.value?.trim(),
       city: form.city?.value?.trim(),
-      description: form.description?.value?.trim() || "",
-      // 🔒 afdwingen: alleen slugs opslaan
-      categories: getSelectedSlugs(categoriesSelect),
+      categories: getSelected(categoriesSelect),
+      specialties: getSelected(specialtiesSelect),
     };
 
     if (!payload.name || !payload.city) {
-      showError("Vul bedrijfsnaam en plaats in.");
-      return;
+      return showError("Vul bedrijfsnaam en plaats in.");
     }
 
     if (!payload.categories.length) {
-      showError("Selecteer minimaal één categorie.");
-      return;
+      return showError("Selecteer minimaal één categorie.");
     }
 
     try {
+      setLoading(true);
+
       const res = await fetch(`${API_BASE}/companies`, {
         method: "POST",
         headers: {
@@ -75,7 +84,6 @@ function init() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data?.message || "Registratie mislukt.");
       }
@@ -83,21 +91,22 @@ function init() {
       location.href = "/dashboard.html";
     } catch (err) {
       showError(err.message || "Netwerkfout.");
+      setLoading(false);
     }
   });
 }
 
-function fillCategories(selectEl) {
+function fillSelect(selectEl, items) {
   selectEl.innerHTML = "";
-  for (const c of CATEGORIES) {
+  for (const item of items) {
     const opt = document.createElement("option");
-    opt.value = c.slug;       // 🔒 slug als value
-    opt.textContent = c.label; // label alleen voor UI
+    opt.value = item.slug;        // 🔒 slug als value
+    opt.textContent = item.label; // label voor UI
     selectEl.appendChild(opt);
   }
 }
 
-function getSelectedSlugs(selectEl) {
+function getSelected(selectEl) {
   if (!selectEl) return [];
   return Array.from(selectEl.selectedOptions)
     .map(o => normalize(o.value))
@@ -109,4 +118,18 @@ function showError(msg) {
   if (!box) return;
   box.textContent = msg;
   box.classList.remove("hidden");
+}
+
+function hideError() {
+  const box = document.getElementById("formError");
+  if (!box) return;
+  box.textContent = "";
+  box.classList.add("hidden");
+}
+
+function setLoading(state) {
+  const btn = document.getElementById("submitBtn");
+  const spinner = document.getElementById("submitSpinner");
+  if (btn) btn.disabled = state;
+  if (spinner) spinner.classList.toggle("hidden", !state);
 }
