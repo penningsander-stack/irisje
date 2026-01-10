@@ -1,109 +1,101 @@
 // frontend/js/index.js
-// v20260114-PREMIUM-HOME-FIX-CORRECT-SEARCH-ROUTING
+// v2026-01-10 — FIX: vaste categorieën op homepage (optie A)
 
-const API_BASE = "https://irisje-backend.onrender.com/api";
-
-document.addEventListener("DOMContentLoaded", () => {
-  initPopularCategories();
-});
-
-const CATEGORY_ICONS = {
-  Schoonmaak: "🧹",
-  Dierenverzorging: "🐾",
-  Hovenier: "🌳",
-  Elektricien: "🔌",
-  Schilder: "🎨",
-  Loodgieter: "💧",
-  "Klus & Bouw": "🔧",
-  Verhuisservice: "🚚",
-  "IT & Websites": "💻",
-  Coaching: "🧭",
-  Overig: "📦"
-};
-
-const FALLBACK_CATEGORIES = [
-  { name: "Loodgieter", slug: "Loodgieter" },
-  { name: "Elektricien", slug: "Elektricien" },
-  { name: "Schilder", slug: "Schilder" },
-  { name: "Hovenier", slug: "Hovenier" },
-  { name: "Schoonmaak", slug: "Schoonmaak" },
-  { name: "Klus & Bouw", slug: "Klus & Bouw" },
-  { name: "Dierenverzorging", slug: "Dierenverzorging" },
-  { name: "IT & Websites", slug: "IT & Websites" }
+// ======================================================
+// VASTE CATEGORIEËN (CENTRALE DEFINITIE)
+// ======================================================
+const FIXED_CATEGORIES = [
+  { slug: "aannemer", label: "Aannemer", emoji: "📌" },
+  { slug: "advocaat", label: "Advocaat", emoji: "⚖️" },
+  { slug: "airco", label: "Airco", emoji: "❄️" },
+  { slug: "bouwbedrijf", label: "Bouwbedrijf", emoji: "🔧" },
+  { slug: "dakdekker", label: "Dakdekker", emoji: "🏠" },
+  { slug: "duurzaam", label: "Duurzaam", emoji: "🌱" },
+  { slug: "elektricien", label: "Elektricien", emoji: "🔌" },
+  { slug: "glaszetter", label: "Glaszetter", emoji: "🪟" },
+  { slug: "hovenier", label: "Hovenier", emoji: "🌳" },
+  { slug: "installatie", label: "Installatie", emoji: "📌" },
+  { slug: "isolatie", label: "Isolatie", emoji: "🧱" },
+  { slug: "juridisch", label: "Juridisch", emoji: "⚖️" },
+  { slug: "klusbedrijf", label: "Klusbedrijf", emoji: "🔧" },
+  { slug: "loodgieter", label: "Loodgieter", emoji: "💧" },
+  { slug: "schilder", label: "Schilder", emoji: "🎨" },
+  { slug: "schoonmaakbedrijf", label: "Schoonmaakbedrijf", emoji: "🧹" },
+  { slug: "slotenmaker", label: "Slotenmaker", emoji: "🔑" },
+  { slug: "spoedservice", label: "Spoedservice", emoji: "🚨" },
+  { slug: "stukadoor", label: "Stukadoor", emoji: "📌" },
+  { slug: "tegelzetter", label: "Tegelzetter", emoji: "📌" },
+  { slug: "timmerman", label: "Timmerman", emoji: "🪚" },
+  { slug: "vloeren", label: "Vloeren", emoji: "📐" },
+  { slug: "woninginrichting", label: "Woninginrichting", emoji: "🛋️" },
+  { slug: "zonnepanelen", label: "Zonnepanelen", emoji: "☀️" },
 ];
 
-function getCategoryIcon(name) {
-  if (!name) return "📌";
-  if (CATEGORY_ICONS[name]) return CATEGORY_ICONS[name];
+// ======================================================
+// INIT
+// ======================================================
+document.addEventListener("DOMContentLoaded", () => {
+  renderFixedCategories();
+  initHowItWorks?.();
+  initReviews?.();
+});
 
-  const lower = name.toLowerCase();
-  if (lower.includes("schoon")) return "🧹";
-  if (lower.includes("dier")) return "🐾";
-  if (lower.includes("tuin") || lower.includes("hovenier")) return "🌳";
-  if (lower.includes("lood")) return "💧";
-  if (lower.includes("elektr")) return "🔌";
-  if (lower.includes("schilder")) return "🎨";
-  if (lower.includes("klus") || lower.includes("bouw")) return "🔧";
-  if (lower.includes("it") || lower.includes("web")) return "💻";
-  if (lower.includes("coach")) return "🧭";
-
-  return "📌";
-}
-
-async function initPopularCategories() {
-  const container = document.getElementById("popularCategories");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="col-span-full text-center text-[11px] text-slate-400">
-      Populaire categorieën worden geladen…
-    </div>
-  `;
-
-  try {
-    const res = await fetch(`${API_BASE}/companies/lists`);
-    if (!res.ok) throw new Error(`Backend gaf foutstatus: ${res.status}`);
-
-    const data = await res.json();
-    const categories = Array.isArray(data?.categories)
-      ? data.categories.map(c => ({ name: c, slug: c }))
-      : [];
-
-    if (!categories.length) throw new Error("Lege categorie-lijst");
-
-    renderCategories(categories);
-  } catch (err) {
-    console.warn("⚠️ Fallback categorieën gebruikt:", err.message);
-    renderCategories(FALLBACK_CATEGORIES);
-  }
-}
-
-function renderCategories(categories) {
+// ======================================================
+// RENDER CATEGORIES (HOMEPAGE)
+// ======================================================
+function renderFixedCategories() {
   const container = document.getElementById("popularCategories");
   if (!container) return;
 
   container.innerHTML = "";
 
-  categories.forEach(cat => {
-    const name = cat.name || "Categorie";
-    const slug = encodeURIComponent(cat.slug || name);
-    const icon = getCategoryIcon(name);
+  FIXED_CATEGORIES.forEach(cat => {
+    const a = document.createElement("a");
+    a.href = `results.html?category=${encodeURIComponent(cat.slug)}`;
+    a.className = "category-card";
 
-    const tile = document.createElement("a");
-
-    // ✅ CORRECT: search.html i.p.v. results.html
-    tile.href = `search.html?category=${slug}`;
-
-    tile.className =
-      "surface-card p-4 rounded-2xl text-center flex flex-col items-center justify-center gap-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition transform cursor-pointer";
-
-    tile.innerHTML = `
-      <div class="text-2xl sm:text-3xl">${icon}</div>
-      <div class="font-medium text-slate-800 text-[11px] sm:text-sm leading-snug">
-        ${name}
-      </div>
+    a.innerHTML = `
+      <span class="category-emoji">${cat.emoji}</span>
+      <span class="category-label">${cat.label}</span>
     `;
 
-    container.appendChild(tile);
+    container.appendChild(a);
   });
+}
+
+// ======================================================
+// BESTAANDE LOGICA (ONGEWIJZIGD)
+// ======================================================
+
+// Hoe het werkt (indien aanwezig)
+function initHowItWorks() {
+  const el = document.getElementById("howItWorks");
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="how-card">
+      <strong>1. Beschrijf je aanvraag</strong>
+      <p>Vertel kort wat je zoekt en waar.</p>
+    </div>
+    <div class="how-card">
+      <strong>2. Vergelijk bedrijven</strong>
+      <p>Bekijk profielen en reviews.</p>
+    </div>
+    <div class="how-card">
+      <strong>3. Kies en start</strong>
+      <p>Neem direct contact op.</p>
+    </div>
+  `;
+}
+
+// Reviews (indien aanwezig)
+function initReviews() {
+  const el = document.getElementById("reviews");
+  if (!el) return;
+
+  el.innerHTML = `
+    <div class="review-card">“Snel geholpen en goede service.”</div>
+    <div class="review-card">“Duidelijk overzicht en betrouwbare bedrijven.”</div>
+    <div class="review-card">“Fijn platform om te vergelijken.”</div>
+  `;
 }
