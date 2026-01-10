@@ -1,47 +1,77 @@
 // backend/routes/seed.js
+// v20260115-SEED-PRODUCTION-SAFE
+
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const mongoose = require("mongoose");
-const Company = require("../models/company"); // ✅ correcte kleine letters
-
 const router = express.Router();
+const Company = require("../models/company");
 
-// Alleen gebruiken in development of test
+/**
+ * 🔐 Beveiliging:
+ * Seeden mag ALLEEN als:
+ * - x-seed-token header aanwezig is
+ * - en exact matcht met process.env.SEED_TOKEN
+ */
+function checkSeedToken(req, res) {
+  const token = req.headers["x-seed-token"];
+  if (!token || token !== process.env.SEED_TOKEN) {
+    res.status(403).json({ ok: false, error: "Seeden niet toegestaan" });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * GET /api/seed/seed-companies
+ * Seed voorbeeldbedrijven (eenmalig, idempotent)
+ */
 router.get("/seed-companies", async (req, res) => {
   try {
-    if (process.env.NODE_ENV === "production") {
-      return res.status(403).json({ error: "Seeden is uitgeschakeld in productieomgeving" });
+    if (!checkSeedToken(req, res)) return;
+
+    // Bestaat er al minimaal één advocatenbedrijf?
+    const exists = await Company.findOne({
+      categories: /advocaat/i
+    }).lean();
+
+    if (exists) {
+      return res.json({
+        ok: true,
+        message: "Seed is al uitgevoerd, geen actie nodig"
+      });
     }
 
-    const filePath = path.join(__dirname, "../seed/companies.json");
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: "companies.json niet gevonden" });
-    }
+    const companies = await Company.insertMany([
+      {
+        name: "Test Arbeidsrecht Advocaat",
+        slug: "test-arbeidsrecht-advocaat",
+        city: "Utrecht",
+        categories: ["advocaat"],
+        specialties: ["arbeidsrecht"],
+        active: true,
+        isVerified: true,
+        avgRating: 4.6,
+        reviewCount: 12
+      },
+      {
+        name: "Juridisch Adviesbureau Nederland",
+        slug: "juridisch-adviesbureau-nederland",
+        city: "Rotterdam",
+        categories: ["advocaat"],
+        specialties: ["arbeidsrecht", "ontslagrecht"],
+        active: true,
+        isVerified: false,
+        avgRating: 4.3,
+        reviewCount: 8
+      }
+    ]);
 
-    const companies = JSON.parse(fs.readFileSync(filePath, "utf8"));
-    const dummyOwnerId = new mongoose.Types.ObjectId();
-
-    const prepared = companies.map((c, i) => ({
-      ...c,
-      owner: c.owner || dummyOwnerId,
-      isVerified: true,
-      avgRating: c.avgRating || 0,
-      reviewCount: c.reviewCount || 0,
-      email:
-        c.email && c.email.trim() !== ""
-          ? c.email.trim()
-          : `noemail_${i}@irisje.nl`,
-    }));
-
-    await Company.deleteMany({});
-    await Company.insertMany(prepared);
-
-    console.log(`✅ ${prepared.length} bedrijven succesvol toegevoegd (met dummy-owner + unieke e-mails).`);
-    res.json({ ok: true, count: prepared.length });
+    res.json({
+      ok: true,
+      inserted: companies.length
+    });
   } catch (err) {
-    console.error("❌ Fout bij seeden:", err);
-    res.status(500).json({ error: err.message });
+    console.error("❌ seed error:", err);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
