@@ -1,7 +1,25 @@
 // frontend/js/results.js
-// v2026-01-16 — DEFINITIEVE FIX: sector-filter correct op echte data
+// v2026-01-16 — FRONTEND SECTOR-ALIAS NORMALISATIE (definitief)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
+
+/**
+ * Frontend-only sector normalisatie
+ * URL-sector -> toegestane waarden in backenddata
+ */
+const SECTOR_ALIASES = {
+  advocaat: ["advocaat", "juridisch"],
+  juridisch: ["juridisch", "advocaat"],
+
+  elektricien: ["elektricien", "elektriciens", "elektro", "installatie", "installatietechniek"],
+  loodgieter: ["loodgieter", "loodgieters", "installatie"],
+  schilder: ["schilder", "schilders"],
+  dakdekker: ["dakdekker", "dakdekkers"],
+  aannemer: ["aannemer", "bouw", "bouwbedrijf"],
+  klusbedrijf: ["klusbedrijf", "klusbedrijven"],
+  hovenier: ["hovenier", "tuin", "tuinonderhoud"],
+  stukadoor: ["stukadoor", "stuc", "stucwerk"],
+};
 
 let currentFilters = {
   sector: "",
@@ -15,7 +33,7 @@ document.addEventListener("DOMContentLoaded", initResults);
 function initResults() {
   const params = new URLSearchParams(window.location.search);
 
-  currentFilters.sector = (params.get("sector") || "").trim();
+  currentFilters.sector = (params.get("sector") || "").toLowerCase().trim();
   currentFilters.beroep = (params.get("beroep") || "").trim();
   currentFilters.city = (params.get("city") || "").trim();
   currentFilters.q = (params.get("q") || "").trim();
@@ -26,7 +44,7 @@ function initResults() {
 async function loadResults() {
   const qs = new URLSearchParams();
 
-  // backend blijft category verwachten
+  // backend blijft category gebruiken
   if (currentFilters.sector) qs.set("category", currentFilters.sector);
   if (currentFilters.city) qs.set("city", currentFilters.city);
   if (currentFilters.q) qs.set("q", currentFilters.q);
@@ -42,23 +60,22 @@ async function loadResults() {
 
     let results = json.results;
 
-    // ✅ FRONTEND SECTOR FILTER (ROBUST)
+    // ✅ ROBUUSTE SECTOR FILTER
     if (currentFilters.sector) {
+      const allowed = SECTOR_ALIASES[currentFilters.sector] || [currentFilters.sector];
+
       results = results.filter(c => {
-        if (typeof c.category === "string") {
-          return c.category === currentFilters.sector;
-        }
-        if (typeof c.categorySlug === "string") {
-          return c.categorySlug === currentFilters.sector;
-        }
-        if (Array.isArray(c.categories)) {
-          return c.categories.includes(currentFilters.sector);
-        }
-        return false;
+        const raw =
+          c.category ||
+          c.categorySlug ||
+          c.sector ||
+          "";
+
+        return allowed.includes(String(raw).toLowerCase());
       });
     }
 
-    // ✅ FRONTEND BEROEP FILTER
+    // ✅ BEROEP FILTER
     if (currentFilters.beroep) {
       results = results.filter(c =>
         Array.isArray(c.specialties) &&
