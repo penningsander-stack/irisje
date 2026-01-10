@@ -1,17 +1,13 @@
 // frontend/js/results.js
-// v2026-01-16 — FIX: sector-normalisatie + client-side fallback filtering
+// v2026-01-16 — DEFINITIEVE FIX: sector-filter correct op echte data
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-let allResults = [];
 let currentFilters = {
   sector: "",
   beroep: "",
   city: "",
   q: "",
-  verified: "",
-  minRating: "",
-  sort: "relevance",
 };
 
 document.addEventListener("DOMContentLoaded", initResults);
@@ -30,42 +26,49 @@ function initResults() {
 async function loadResults() {
   const qs = new URLSearchParams();
 
-  // Backend verwacht nog category
+  // backend blijft category verwachten
   if (currentFilters.sector) qs.set("category", currentFilters.sector);
   if (currentFilters.city) qs.set("city", currentFilters.city);
   if (currentFilters.q) qs.set("q", currentFilters.q);
 
   try {
     const res = await fetch(`${API_BASE}/companies/search?${qs.toString()}`);
-    const data = await res.json();
+    const json = await res.json();
 
-    if (!data.ok || !Array.isArray(data.results)) {
+    if (!json.ok || !Array.isArray(json.results)) {
       renderEmpty();
       return;
     }
 
-    allResults = data.results;
+    let results = json.results;
 
-    // ✅ FRONTEND FALLBACK FILTER (ESSENTIEEL)
-    let filtered = [...allResults];
-
+    // ✅ FRONTEND SECTOR FILTER (ROBUST)
     if (currentFilters.sector) {
-      filtered = filtered.filter(c =>
-        Array.isArray(c.categories) &&
-        c.categories.includes(currentFilters.sector)
-      );
+      results = results.filter(c => {
+        if (typeof c.category === "string") {
+          return c.category === currentFilters.sector;
+        }
+        if (typeof c.categorySlug === "string") {
+          return c.categorySlug === currentFilters.sector;
+        }
+        if (Array.isArray(c.categories)) {
+          return c.categories.includes(currentFilters.sector);
+        }
+        return false;
+      });
     }
 
+    // ✅ FRONTEND BEROEP FILTER
     if (currentFilters.beroep) {
-      filtered = filtered.filter(c =>
+      results = results.filter(c =>
         Array.isArray(c.specialties) &&
         c.specialties.includes(currentFilters.beroep)
       );
     }
 
-    renderResults(filtered);
-  } catch (err) {
-    console.error("❌ Results load error:", err);
+    renderResults(results);
+  } catch (e) {
+    console.error("❌ results load error", e);
     renderEmpty();
   }
 }
@@ -83,15 +86,15 @@ function renderResults(items) {
   }
 
   items.forEach(c => {
-    const a = document.createElement("a");
-    a.className = "company-card";
-    a.href = `company.html?slug=${encodeURIComponent(c.slug)}`;
+    const el = document.createElement("a");
+    el.className = "company-card";
+    el.href = `company.html?slug=${encodeURIComponent(c.slug)}`;
 
     const tags = (c.specialties || []).slice(0, 3).map(s =>
-      `<a class="tag" href="results.html?sector=${encodeURIComponent(currentFilters.sector)}&beroep=${encodeURIComponent(s)}">${s}</a>`
+      `<a class="tag" href="results.html?sector=${encodeURIComponent(currentFilters.sector)}&beroep=${encodeURIComponent(s)}">${escapeHtml(s)}</a>`
     ).join("");
 
-    a.innerHTML = `
+    el.innerHTML = `
       <div class="company-card__head">
         <strong>${escapeHtml(c.name)}</strong>
         ${c.isVerified ? `<span class="badge-verified">Geverifieerd</span>` : ""}
@@ -103,7 +106,7 @@ function renderResults(items) {
       <div class="company-card__tags">${tags}</div>
     `;
 
-    grid.appendChild(a);
+    grid.appendChild(el);
   });
 }
 
