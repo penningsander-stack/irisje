@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-17 — Stap 3: categorie-normalisatie (labels → slugs)
+// v2026-01-17 — FIX: gebruik data.results + categorie-normalisatie
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -19,23 +19,22 @@ function normalizeArray(arr) {
 
 async function init() {
   const params = new URLSearchParams(location.search);
-  const sectorParam = params.get("sector"); // slug uit URL
+  const sectorParam = params.get("sector");
   const activeSector = normalize(sectorParam);
 
   try {
-    // haal alle bedrijven op (server-side filters laten we los)
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    if (!res.ok || !Array.isArray(data.companies)) {
+    // ✅ JUISTE KEY: data.results
+    if (!res.ok || !Array.isArray(data.results)) {
       renderEmpty("Geen bedrijven gevonden.");
       return;
     }
 
-    // client-side filter met normalisatie
-    const filtered = data.companies.filter(c => {
-      const cats = normalizeArray(c.categories);
+    const filtered = data.results.filter(company => {
       if (!activeSector) return true;
+      const cats = normalizeArray(company.categories);
       return cats.includes(activeSector);
     });
 
@@ -68,6 +67,7 @@ function renderCompanies(companies) {
       <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
       <div class="text-xs text-slate-500 mt-1">${escapeHtml(cats)}</div>
     `;
+
     list.appendChild(li);
   }
 }
