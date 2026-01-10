@@ -61,61 +61,30 @@ router.get("/my", auth, async (req, res) => {
 // -----------------------------------------------------------------------------
 // ZOEKEN
 // GET /api/companies/search
-//
-// Ondersteunt:
-// - ?category=...        (string)
-// - ?categories=...      (alias van category)
-// - ?specialty=...       (string)
-// - ?q=...               (optioneel: zoekt in name/city)
-// - ?limit=...           (optioneel)
-//
-// Belangrijk: categories/specialties zijn array-velden. Regex matchen we via $elemMatch.
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
   try {
-    // Accept both "category" and "categories" as input (frontend kan beide gebruiken)
-    const categoryRaw =
-      toNonEmptyString(req.query.category) || toNonEmptyString(req.query.categories);
-    const specialtyRaw = toNonEmptyString(req.query.specialty);
-    const qRaw = toNonEmptyString(req.query.q);
+    const { category, specialty } = req.query;
 
-    // Als er echt niets is om op te zoeken, geef lege set terug
-    if (!categoryRaw && !specialtyRaw && !qRaw) {
+    if (!category && !specialty) {
       return res.json({ ok: true, results: [], fallbackUsed: false, message: null });
     }
 
-    // Bouw query op
-    const query = {};
+    const query = {
+      active: true
+    };
 
-    // Active filter: laat 'm staan, maar maak 'm tolerant:
-    // - active:true is gewenst
-    // - maar als 'active' ontbreekt in oudere/seed data, willen we die niet per ongeluk wegfilteren
-    //   Daarom: active != false
-    query.active = { $ne: false };
-
-    if (categoryRaw) {
-      const rx = new RegExp(escapeRegex(categoryRaw), "i");
-      query.categories = { $elemMatch: rx };
+    if (category) {
+      query.categories = new RegExp(escapeRegex(category), "i");
     }
 
-    if (specialtyRaw) {
-      const rx = new RegExp(escapeRegex(specialtyRaw), "i");
-      query.specialties = { $elemMatch: rx };
+    if (specialty) {
+      query.specialties = new RegExp(escapeRegex(specialty), "i");
     }
-
-    if (qRaw) {
-      const rx = new RegExp(escapeRegex(qRaw), "i");
-      query.$or = [{ name: rx }, { city: rx }];
-    }
-
-    const limit = Math.max(
-      1,
-      Math.min(50, Number.parseInt(req.query.limit, 10) || 20)
-    );
 
     const results = await Company.find(query)
-      .limit(limit)
-      .select("_id name city avgRating reviewCount isVerified categories specialties slug")
+      .limit(20)
+      .select("_id name city avgRating reviewCount isVerified categories specialties")
       .lean();
 
     res.json({ ok: true, results, fallbackUsed: false, message: null });
@@ -124,6 +93,9 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
+
+
+
 
 // -----------------------------------------------------------------------------
 // COMPANY VIA SLUG (publiek)
