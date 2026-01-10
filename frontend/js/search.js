@@ -1,17 +1,7 @@
 // frontend/js/search.js
-// v20260114-SEARCH-CATEGORY-SPECIALTY-SYNONYMS
+// v20260115-SEARCH-BACKEND-COMPATIBLE-FIX
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
-
-/**
- * Synoniemen / vertalingen van zoektermen naar echte categorieën
- */
-const CATEGORY_SYNONYMS = {
-  "Advocaat": "Juridisch",
-  "Advocaten": "Juridisch",
-  "Jurist": "Juridisch",
-  "Juridisch": "Juridisch"
-};
 
 let allCompanies = [];
 let activeSubcategory = null;
@@ -32,25 +22,27 @@ async function initSearch() {
 
   titleEl.textContent = `Bedrijven binnen ${searchTerm}`;
 
-  // 🔁 Vertaal synoniemen indien nodig
-  const mappedCategory = CATEGORY_SYNONYMS[searchTerm] || searchTerm;
+  // Backend verwacht lowercase categorieën
+  const normalized = searchTerm.toLowerCase();
 
   try {
-    // 1️⃣ Probeer als hoofdcategorie
+    // 1️⃣ Zoeken op categorie
     let res = await fetch(
-      `${API_BASE}/companies/search?category=${encodeURIComponent(mappedCategory)}`
+      `${API_BASE}/companies/search?category=${encodeURIComponent(normalized)}`
     );
-    let data = await res.json();
+    let json = await res.json();
+    let results = Array.isArray(json.results) ? json.results : [];
 
-    // 2️⃣ Geen resultaten? Dan als specialisme
-    if (Array.isArray(data) && data.length === 0) {
+    // 2️⃣ Geen resultaten? Dan zoeken op specialisme
+    if (results.length === 0) {
       res = await fetch(
-        `${API_BASE}/companies/search?specialty=${encodeURIComponent(searchTerm)}`
+        `${API_BASE}/companies/search?category=${encodeURIComponent(normalized)}&specialty=${encodeURIComponent(normalized)}`
       );
-      data = await res.json();
+      json = await res.json();
+      results = Array.isArray(json.results) ? json.results : [];
     }
 
-    allCompanies = Array.isArray(data) ? data : [];
+    allCompanies = results;
 
     renderSubcategoriesFromCompanies(allCompanies);
     renderCompanies(allCompanies);
