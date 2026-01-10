@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-17 — FIX: gebruik data.results + categorie-normalisatie
+// v2026-01-17 — FIX: juiste response-key + robuuste target-container
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -17,24 +17,32 @@ function normalizeArray(arr) {
   return arr.map(v => normalize(v));
 }
 
+function getListEl() {
+  // Probeer bekende varianten; pak de eerste die bestaat
+  return (
+    document.getElementById("resultsList") ||
+    document.getElementById("companiesList") ||
+    document.getElementById("companyList")
+  );
+}
+
 async function init() {
   const params = new URLSearchParams(location.search);
-  const sectorParam = params.get("sector");
-  const activeSector = normalize(sectorParam);
+  const activeSector = normalize(params.get("sector"));
 
   try {
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    // ✅ JUISTE KEY: data.results
+    // JUISTE KEY
     if (!res.ok || !Array.isArray(data.results)) {
       renderEmpty("Geen bedrijven gevonden.");
       return;
     }
 
-    const filtered = data.results.filter(company => {
+    const filtered = data.results.filter(c => {
       if (!activeSector) return true;
-      const cats = normalizeArray(company.categories);
+      const cats = normalizeArray(c.categories);
       return cats.includes(activeSector);
     });
 
@@ -44,15 +52,18 @@ async function init() {
     }
 
     renderCompanies(filtered);
-  } catch (err) {
-    console.error("Results fout:", err);
+  } catch (e) {
+    console.error("Results fout:", e);
     renderEmpty("Kon bedrijven niet laden.");
   }
 }
 
 function renderCompanies(companies) {
-  const list = document.getElementById("resultsList");
-  if (!list) return;
+  const list = getListEl();
+  if (!list) {
+    console.error("Geen results container gevonden in results.html");
+    return;
+  }
 
   list.innerHTML = "";
 
@@ -60,20 +71,19 @@ function renderCompanies(companies) {
     const li = document.createElement("li");
     li.className = "border rounded-lg p-4 mb-3";
 
-    const cats = Array.isArray(c.categories) ? c.categories.join(", ") : "";
-
     li.innerHTML = `
       <div class="font-semibold">${escapeHtml(c.name || "")}</div>
       <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
-      <div class="text-xs text-slate-500 mt-1">${escapeHtml(cats)}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml(
+        Array.isArray(c.categories) ? c.categories.join(", ") : ""
+      )}</div>
     `;
-
     list.appendChild(li);
   }
 }
 
 function renderEmpty(msg) {
-  const list = document.getElementById("resultsList");
+  const list = getListEl();
   if (!list) return;
   list.innerHTML = `<div class="text-slate-600">${escapeHtml(msg)}</div>`;
 }
