@@ -1,5 +1,5 @@
 // frontend/js/dashboard.js
-// v2026-01-17 — FIX: geen automatische logout bij ontbrekend bedrijf
+// v2026-01-17 — ADMIN-FIRST dashboard (frontend-only)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -13,40 +13,51 @@ async function init() {
   }
 
   try {
+    const me = await apiGet("/auth/me");
+
+    if (!me || me.ok === false || !me.user) {
+      safeLogoutToLogin();
+      return;
+    }
+
+    // 🔹 ADMIN-FIRST: admin ziet altijd alle bedrijven
+    if (me.user.role === "admin") {
+      const all = await apiGet("/companies");
+      if (!all || all.ok === false || !Array.isArray(all.companies)) {
+        showFatal("Kon bedrijven niet laden (admin).");
+        return;
+      }
+      renderDashboard(all.companies, { admin: true });
+      return;
+    }
+
+    // 🔹 NIET-admin: eigen bedrijven
     const my = await apiGet("/companies/my");
 
-    // 🔹 GEEN harde logout meer
     if (!my || my.ok === false) {
-      console.warn("companies/my gaf geen geldige response:", my);
-      // gebruiker is wel ingelogd, maar heeft (nog) geen bedrijf
+      // ingelogd, maar geen toegang of geen bedrijf → registratie
       location.href = "/register-company.html";
       return;
     }
 
     if (!Array.isArray(my.companies) || my.companies.length === 0) {
-      // ingelogd, maar nog geen bedrijf
       location.href = "/register-company.html";
       return;
     }
 
-    // normaal dashboard-pad
-    renderDashboard(my.companies);
+    renderDashboard(my.companies, { admin: false });
   } catch (err) {
     console.error("Dashboard init fout:", err);
-    // fallback: niet uitloggen, maar naar registratie
-    location.href = "/register-company.html";
+    showFatal("Dashboard kon niet starten.");
   }
 }
 
 async function apiGet(path) {
   const token = localStorage.getItem("token");
   const r = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      Authorization: "Bearer " + token,
-    },
+    headers: { Authorization: "Bearer " + token },
   });
 
-  // ❗ alleen bij expliciete 401 → logout
   if (r.status === 401) {
     safeLogoutToLogin();
     return null;
@@ -65,9 +76,14 @@ function safeLogoutToLogin() {
   location.href = "/login.html";
 }
 
-function renderDashboard(companies) {
-  // bestaande render-logica ongewijzigd
-  console.log("Dashboard bedrijven:", companies);
+function showFatal(msg) {
+  console.error(msg);
+  alert(msg);
+}
 
-  // als je hier al code had: die blijft gewoon werken
+// 👉 Gebruik je bestaande render-logica.
+// Deze stub laat zien dat we niets forceren.
+function renderDashboard(companies, opts = {}) {
+  console.log("Dashboard bedrijven:", companies, "admin:", opts.admin);
+  // Plaats hier je bestaande DOM-rendercode (ongewijzigd).
 }
