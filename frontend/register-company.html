@@ -1,90 +1,135 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedrijf registreren – Irisje.nl</title>
+// frontend/js/register-company.js
+// v2026-01-17 — FIX: IDs afgestemd op register-company.html + slug-afdwinging
 
-  <!-- Irisje core styling -->
-  <link rel="stylesheet" href="/style.css?v=20260108">
-</head>
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-<body class="irisje-body">
+// Canonieke categorieën
+const CATEGORIES = [
+  { slug: "elektricien", label: "Elektricien" },
+  { slug: "loodgieter", label: "Loodgieter" },
+  { slug: "schilder", label: "Schilder" },
+  { slug: "dakdekker", label: "Dakdekker" },
+  { slug: "aannemer", label: "Aannemer" },
+  { slug: "klusbedrijf", label: "Klusbedrijf" },
+  { slug: "hovenier", label: "Hovenier" },
+  { slug: "stukadoor", label: "Stukadoor" },
+  { slug: "advocaat", label: "Advocaat" },
+  { slug: "juridisch", label: "Juridisch advies" },
+];
 
-<header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <a href="index.html" class="font-semibold tracking-tight">Irisje.nl</a>
-  </div>
-</header>
+// (Frontend-only) vaste specialismen
+const SPECIALTIES = [
+  { slug: "spoedservice", label: "Spoedservice" },
+  { slug: "24-7-bereikbaar", label: "24/7 bereikbaar" },
+  { slug: "duurzaam", label: "Duurzaam werken" },
+  { slug: "particulier", label: "Particulieren" },
+  { slug: "zakelijk", label: "Zakelijk" },
+];
 
-<main class="max-w-xl mx-auto px-4 py-10">
-  <h1 class="text-2xl font-semibold mb-2">Registreer je bedrijf</h1>
-  <p class="text-sm text-slate-600 mb-6">
-    In enkele minuten zichtbaar voor klanten. Kies zorgvuldig je categorieën en specialismen
-    — deze bepalen hoe je wordt gematcht.
-  </p>
+document.addEventListener("DOMContentLoaded", init);
 
-  <form id="companyForm" class="space-y-5" novalidate>
-    <div>
-      <input
-        required
-        name="name"
-        class="input w-full"
-        placeholder="Bedrijfsnaam"
-        autocomplete="organization"
-      />
-    </div>
+function normalize(val) {
+  return String(val || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-");
+}
 
-    <div>
-      <input
-        required
-        name="city"
-        class="input w-full"
-        placeholder="Plaats"
-        autocomplete="address-level2"
-      />
-    </div>
+function init() {
+  const form = document.getElementById("companyForm");
+  if (!form) return;
 
-    <div>
-      <label class="block text-sm font-medium mb-1">
-        Categorieën <span class="text-slate-400">(meerdere mogelijk)</span>
-      </label>
-      <select
-        name="categories"
-        id="categoriesSelect"
-        multiple
-        class="input w-full min-h-[96px]"
-      ></select>
-      <p class="text-xs text-slate-500 mt-1">
-        Kies alle categorieën waarop je gevonden wilt worden.
-      </p>
-    </div>
+  const categoriesSelect = document.getElementById("categoriesSelect");
+  const specialtiesSelect = document.getElementById("specialtiesSelect");
 
-    <div>
-      <label class="block text-sm font-medium mb-1">
-        Specialismen <span class="text-slate-400">(optioneel, maar aanbevolen)</span>
-      </label>
-      <select
-        name="specialties"
-        id="specialtiesSelect"
-        multiple
-        class="input w-full min-h-[96px]"
-      ></select>
-    </div>
+  if (categoriesSelect) fillSelect(categoriesSelect, CATEGORIES);
+  if (specialtiesSelect) fillSelect(specialtiesSelect, SPECIALTIES);
 
-    <div id="formError" class="hidden text-sm text-red-600"></div>
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-    <button
-      id="submitBtn"
-      class="btn-primary w-full flex items-center justify-center gap-2"
-      type="submit"
-    >
-      <span id="submitText">Bedrijf registreren</span>
-      <span id="submitSpinner" class="hidden animate-spin">⏳</span>
-    </button>
-  </form>
-</main>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      location.href = "/login.html";
+      return;
+    }
 
-<script src="/js/register-company.js?v=20260108"></script>
-</body>
-</html>
+    hideError();
+
+    const payload = {
+      name: form.name?.value?.trim(),
+      city: form.city?.value?.trim(),
+      categories: getSelected(categoriesSelect),
+      specialties: getSelected(specialtiesSelect),
+    };
+
+    if (!payload.name || !payload.city) {
+      return showError("Vul bedrijfsnaam en plaats in.");
+    }
+
+    if (!payload.categories.length) {
+      return showError("Selecteer minimaal één categorie.");
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_BASE}/companies`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || "Registratie mislukt.");
+      }
+
+      location.href = "/dashboard.html";
+    } catch (err) {
+      showError(err.message || "Netwerkfout.");
+      setLoading(false);
+    }
+  });
+}
+
+function fillSelect(selectEl, items) {
+  selectEl.innerHTML = "";
+  for (const item of items) {
+    const opt = document.createElement("option");
+    opt.value = item.slug;        // 🔒 slug als value
+    opt.textContent = item.label; // label voor UI
+    selectEl.appendChild(opt);
+  }
+}
+
+function getSelected(selectEl) {
+  if (!selectEl) return [];
+  return Array.from(selectEl.selectedOptions)
+    .map(o => normalize(o.value))
+    .filter(Boolean);
+}
+
+function showError(msg) {
+  const box = document.getElementById("formError");
+  if (!box) return;
+  box.textContent = msg;
+  box.classList.remove("hidden");
+}
+
+function hideError() {
+  const box = document.getElementById("formError");
+  if (!box) return;
+  box.textContent = "";
+  box.classList.add("hidden");
+}
+
+function setLoading(state) {
+  const btn = document.getElementById("submitBtn");
+  const spinner = document.getElementById("submitSpinner");
+  if (btn) btn.disabled = state;
+  if (spinner) spinner.classList.toggle("hidden", !state);
+}
