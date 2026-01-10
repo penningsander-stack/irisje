@@ -1,87 +1,31 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 🧭 SEO & Metadata -->
   <title>Irisje.nl – Vergelijk bedrijven, lees reviews en vraag gratis offertes aan</title>
-  <meta name="description" content="Vind betrouwbare vakmensen bij jou in de buurt. Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl – snel geholpen, zonder gedoe." />
-  <meta name="keywords" content="offerte aanvragen, vakman, bedrijven vergelijken, Irisje.nl, loodgieter, schilder, elektricien, aannemer, betrouwbare bedrijven, reviews, vakmensen Nederland" />
-  <meta name="author" content="Irisje.nl" />
-  <meta name="robots" content="index, follow" />
-  <meta name="googlebot" content="index, follow" />
+  <meta name="description" content="Vind betrouwbare vakmensen bij jou in de buurt. Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl." />
   <link rel="canonical" href="https://irisje.nl/" />
-  <link rel="sitemap" type="application/xml" title="Sitemap" href="https://irisje-backend.onrender.com/sitemap.xml" />
-
-  <!-- 🪩 Open Graph / Social -->
-  <meta property="og:title" content="Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt" />
-  <meta property="og:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl." />
-  <meta property="og:url" content="https://irisje.nl/" />
-  <meta property="og:site_name" content="Irisje.nl" />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="https://irisje.nl/icons/icon-512.png" />
-
-  <!-- 🐦 Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Irisje.nl – Vind direct een betrouwbaar bedrijf bij jou in de buurt" />
-  <meta name="twitter:description" content="Vergelijk bedrijven, lees echte reviews en vraag gratis offertes aan via Irisje.nl." />
-  <meta name="twitter:image" content="https://irisje.nl/icons/icon-512.png" />
-
-  <!-- 🎯 Structured Data (JSON-LD) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "Irisje.nl",
-    "url": "https://irisje.nl/",
-    "description": "Vergelijk bedrijven, lees reviews en vraag gratis offertes aan via Irisje.nl.",
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://irisje.nl/search.html?q={search_term_string}",
-      "query-input": "required name=search_term_string"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "Irisje.nl",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://irisje.nl/icons/icon-512.png"
-      }
-    }
-  }
-  </script>
-
-  <!-- 🎨 Thema & favicon -->
   <meta name="theme-color" content="#4F46E5" />
+
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="manifest" href="/manifest.json" />
 
-  <!-- 🖋️ Fonts & styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
   <link rel="stylesheet" href="/style.css?v=20251208">
   <link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- PREMIUM BACKDROP -->
-  <div class="irisje-hero-backdrop pointer-events-none" aria-hidden="true">
-    <div class="irisje-orbit irisje-orbit--one"></div>
-    <div class="irisje-orbit irisje-orbit--two"></div>
-    <div class="irisje-orbit irisje-orbit--three"></div>
-  </div>
-
-  <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
       <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">
-          I
-        </span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <div class="flex flex-col leading-tight">
           <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
           <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
@@ -89,34 +33,23 @@
       </a>
 
       <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <!-- ✅ Search is nu apart van de offerte-wizard -->
         <a href="search.html" class="nav-link">Bedrijven</a>
         <a href="login.html" class="nav-link">Voor bedrijven</a>
       </nav>
 
       <div class="flex items-center space-x-2">
-        <!-- ✅ Search is nu apart van de offerte-wizard -->
-        <a href="search.html" class="hidden sm:inline-flex btn-ghost btn-xs">
-          Zoeken
-        </a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">
-          Inloggen
-        </a>
+        <a href="search.html" class="hidden sm:inline-flex btn-ghost btn-xs">Zoeken</a>
+        <a href="login.html" class="inline-flex btn-primary btn-xs">Inloggen</a>
       </div>
     </div>
   </header>
 
-  <!-- MAIN -->
   <main class="flex-1">
-    <!-- HERO -->
     <section class="relative overflow-hidden">
       <div class="max-w-6xl mx-auto px-4 pt-10 pb-16 lg:pt-16 lg:pb-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-        <!-- Hero tekst -->
         <div class="space-y-6 hero-copy">
           <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/80 border border-indigo-100 text-[11px] text-slate-600 shadow-soft">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-xs mr-2">
-              ✔
-            </span>
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-xs mr-2">✔</span>
             Binnen enkele minuten in contact met betrouwbare bedrijven
           </div>
 
@@ -136,57 +69,29 @@
           </ul>
 
           <div class="cta-group flex flex-wrap items-center gap-3">
-            <a href="#zoek-een-bedrijf" class="btn-primary primary-cta">
-              Vraag gratis een offerte aan
-            </a>
-            <!-- ✅ Search is nu apart van de offerte-wizard -->
-            <a href="search.html" class="btn-ghost text-xs sm:text-sm">
-              Bekijk bedrijven en reviews
-            </a>
-          </div>
-
-          <div class="flex items-center space-x-4 pt-2">
-            <div class="flex -space-x-2">
-              <span class="avatar-dot bg-emerald-400"></span>
-              <span class="avatar-dot bg-indigo-400"></span>
-              <span class="avatar-dot bg-sky-400"></span>
-            </div>
-            <p class="text-[11px] sm:text-xs text-slate-500">
-              Dagelijks nieuwe aanvragen en reviews door heel Nederland
-            </p>
+            <a href="#zoek-een-bedrijf" class="btn-primary primary-cta">Vraag gratis een offerte aan</a>
+            <a href="search.html" class="btn-ghost text-xs sm:text-sm">Bekijk bedrijven en reviews</a>
           </div>
         </div>
 
-        <!-- Zoeken / offerte card -->
         <div id="zoek-een-bedrijf" class="lg:ml-auto w-full max-w-md">
           <div class="glass-card card-fade-in">
             <h2 class="text-center text-xs font-semibold text-slate-700 mb-1 tracking-wide uppercase">
               Zoek een bedrijf
             </h2>
             <p class="text-[11px] text-slate-500 text-center mb-5">
-              Vul kort in wat je zoekt en waar. We laten je direct zien welke bedrijven
-              bij je in de buurt actief zijn.
+              Vul kort in wat je zoekt en waar.
             </p>
 
             <form id="searchForm" class="grid gap-3" novalidate>
               <div class="form-group">
-                <label for="searchCategory">Categorie</label>
-                <input
-                  id="searchCategory"
-                  type="text"
-                  placeholder="Bijv. loodgieter, schilder, elektricien…"
-                  class="form-input"
-                />
+                <label for="searchCategory">Sector</label>
+                <input id="searchCategory" type="text" class="form-input" />
               </div>
 
               <div class="form-group">
                 <label for="searchCity">Plaats</label>
-                <input
-                  id="searchCity"
-                  type="text"
-                  placeholder="Bijv. Amsterdam, Rotterdam…"
-                  class="form-input"
-                />
+                <input id="searchCity" type="text" class="form-input" />
               </div>
 
               <button type="submit" class="btn-primary w-full mt-1">
@@ -198,7 +103,6 @@
 
             <p class="text-center text-[11px] text-slate-400 mt-5">
               Liever eerst rondkijken?
-              <!-- ✅ Search is nu apart van de offerte-wizard -->
               <a href="search.html" class="link-inline">Bekijk alle bedrijven →</a>
             </p>
           </div>
@@ -206,87 +110,24 @@
       </div>
     </section>
 
-    <!-- POPULAIRE CATEGORIEËN -->
     <section class="section-shell card-fade-in">
       <div class="section-header">
         <div class="section-title">
           <span class="emoji">🔎</span>
           <div>
-            <h2>Populaire categorieën</h2>
-            <p>Kies een categorie en ontdek direct bedrijven bij jou in de buurt.</p>
+            <h2>Populaire sectoren</h2>
+            <p>Kies een sector en ontdek direct bedrijven bij jou in de buurt.</p>
           </div>
         </div>
       </div>
       <div id="popularCategories" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
     </section>
-
-    <!-- HOE HET WERKT -->
-    <section class="section-shell card-fade-in">
-      <div class="section-header">
-        <div class="section-title">
-          <span class="emoji">⚡</span>
-          <div>
-            <h2>Hoe het werkt</h2>
-            <p>In drie eenvoudige stappen van aanvraag naar afspraak.</p>
-          </div>
-        </div>
-      </div>
-
-      <div id="howItWorks" class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm"></div>
-
-      <div class="text-center mt-8">
-        <a href="request.html" class="btn-primary primary-cta">
-          Start gratis een aanvraag
-        </a>
-      </div>
-    </section>
-
-    <!-- ERVARINGEN -->
-    <section class="section-shell card-fade-in">
-      <div class="section-header">
-        <div class="section-title">
-          <span class="emoji">💬</span>
-          <div>
-            <h2>Ervaringen van anderen</h2>
-            <p>Lees hoe andere klanten Irisje.nl gebruiken om een vakman te vinden.</p>
-          </div>
-        </div>
-      </div>
-      <div id="reviews" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm"></div>
-    </section>
-
-    <!-- CTA VOOR BEDRIJVEN -->
-    <section class="section-business card-fade-in">
-      <div class="max-w-6xl mx-auto px-4 py-10 lg:py-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        <div class="space-y-3">
-          <h2 class="text-2xl lg:text-3xl font-semibold text-white leading-tight">
-            Ben je een bedrijf dat nieuwe klanten zoekt?
-          </h2>
-          <p class="text-sm text-indigo-100 max-w-md">
-            Sluit je aan bij Irisje.nl en ontvang aanvragen van klanten die nu hulp nodig hebben.
-            Geen vage abonnementen, maar transparante leads.
-          </p>
-        </div>
-        <div class="lg:text-right">
-          <a href="register.html" class="inline-flex btn-business">
-            Meld je bedrijf aan
-          </a>
-          <p class="text-[11px] text-indigo-100 mt-2 lg:mt-3">
-            Binnen enkele minuten aangemeld. Je bepaalt zelf welke aanvragen je accepteert.
-          </p>
-        </div>
-      </div>
-    </section>
   </main>
 
-  <!-- FOOTER -->
   <footer class="footer-shell card-fade-in">
     <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <p class="text-[11px] text-slate-400">
-        © 2026 Irisje.nl – Alle rechten voorbehouden
-      </p>
+      <p class="text-[11px] text-slate-400">© 2026 Irisje.nl – Alle rechten voorbehouden</p>
       <div class="flex flex-wrap gap-3 text-[11px] text-slate-400">
-        <!-- ✅ Search is nu apart van de offerte-wizard -->
         <a href="search.html" class="link-inline">Bedrijven</a>
         <a href="login.html" class="link-inline">Voor bedrijven</a>
         <a href="error.html" class="link-inline">Contact</a>
@@ -294,33 +135,6 @@
     </div>
   </footer>
 
-  <!-- ✅ SERVICE WORKER -->
-  <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js")
-      .then(reg => console.log("✅ Service worker geregistreerd:", reg.scope))
-      .catch(err => console.error("❌ Service worker fout:", err));
-
-    navigator.serviceWorker.addEventListener("message", event => {
-      if (event.data?.type === "NEW_VERSION") {
-        const banner = document.createElement("div");
-        banner.textContent = "💡 Nieuwe versie geladen – klik om te vernieuwen";
-        banner.style.cssText = `
-          position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
-          background: #4F46E5; color: white; padding: 10px 18px;
-          border-radius: 10px; font-size: 14px; cursor: pointer;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 9999;
-        `;
-        banner.onclick = () => location.reload();
-        document.body.appendChild(banner);
-      }
-    });
-  }
-  </script>
-
-  <!-- ✅ FUNCTIONAL SCRIPT -->
-  <script src="js/index_search.js?v=1"></script>
-  <script src="js/index.js?v=20251212"></script>
-
+  <script src="js/index.js?v=20260110"></script>
 </body>
 </html>

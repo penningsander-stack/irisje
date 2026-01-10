@@ -1,22 +1,20 @@
-<!-- frontend/results.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedrijven voor jouw aanvraag – Irisje.nl</title>
+  <title>Bedrijven – Irisje.nl</title>
   <link rel="stylesheet" href="/style.css?v=20260116">
 </head>
+
 <body class="irisje-body">
 
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-      <a href="/" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 
-                     text-indigo-700 text-sm font-bold shadow-brand">I</span>
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
         <span class="font-semibold text-slate-900">Irisje.nl</span>
       </a>
-
       <div class="text-sm text-slate-700">
         <span id="selectedCount">0</span> van 5 geselecteerd
       </div>
@@ -27,54 +25,28 @@
     <h1 class="text-2xl font-semibold mb-2">Vergelijk en kies tot 5 bedrijven</h1>
     <p id="resultsIntro" class="text-slate-600 mb-4"></p>
 
-    <!-- Uitleg -->
-    <div id="explainBox" class="hidden mb-6 p-4 rounded-2xl bg-indigo-50 text-indigo-900 text-sm">
-      <strong>Waarom deze volgorde?</strong>
-      <span id="explainText"></span>
-    </div>
+    <section id="subcategories" class="mb-6 hidden">
+      <h2 class="text-sm font-medium text-slate-600 mb-2">Verfijn op beroep</h2>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div id="subcategoryChips" class="flex flex-wrap gap-2"></div>
+        <button id="clearSubcat" class="text-sm text-slate-500 underline hidden">Wis filter</button>
+      </div>
+    </section>
 
+    <p id="resultCount" class="text-sm text-slate-600 mb-4"></p>
 
-
-<!-- Subcategorieën -->
-<section id="subcategories" class="mb-6 hidden">
-  <h2 class="text-sm font-medium text-slate-600 mb-2">
-    Verfijn op specialisme
-  </h2>
-  <div class="flex items-center gap-3 flex-wrap">
-    <div id="subcategoryChips" class="flex flex-wrap gap-2"></div>
-    <button id="clearSubcat"
-      class="text-sm text-slate-500 underline hidden">
-      Wis filter
-    </button>
-  </div>
-</section>
-
-<p id="resultCount" class="text-sm text-slate-600 mb-4"></p>
-
-
-
-
-
-
-    <!-- Resultaten -->
     <div id="resultsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-    <!-- Lege staat -->
     <div id="emptyState" class="hidden mt-10 text-center text-slate-600">
       <p class="mb-2 font-medium">Geen bedrijven gevonden.</p>
-      <p>Probeer je aanvraag aan te passen of later opnieuw.</p>
+      <p>Probeer je filters aan te passen.</p>
     </div>
   </main>
 
-  <!-- Sticky submit -->
   <div class="fixed bottom-0 inset-x-0 bg-white border-t shadow-soft">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="text-sm text-slate-600">
-        Je selectie wordt in één keer verstuurd.
-      </div>
-      <button id="submitBtn" class="irisje-btn opacity-50 pointer-events-none">
-        Verstuur aanvraag
-      </button>
+      <div class="text-sm text-slate-600">Je selectie wordt in één keer verstuurd.</div>
+      <button id="submitBtn" class="irisje-btn opacity-50 pointer-events-none">Verstuur aanvraag</button>
     </div>
   </div>
 

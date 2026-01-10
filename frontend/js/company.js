@@ -1,5 +1,5 @@
 // frontend/js/company.js
-// v20260115-COMPANY-SAFE-DOM-BINDING
+// v20260115-COMPANY-SAFE-DOM-BINDING (ongewijzigd functioneel)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -20,12 +20,10 @@ async function initCompany() {
 
     const json = await res.json();
     const company = json.item;
-
     if (!company) {
       console.error("❌ Company niet gevonden");
       return;
     }
-
     renderCompany(company);
   } catch (err) {
     console.error("❌ Company load error:", err);
@@ -36,7 +34,6 @@ function renderCompany(company) {
   setText("companyName", company.name);
   setText("companyCity", company.city);
 
-  // Over dit bedrijf → introduction
   if (company.introduction) {
     setHTMLIfExists("companyIntroduction", company.introduction);
     showIfExists("sectionAbout");
@@ -44,7 +41,6 @@ function renderCompany(company) {
     hideIfExists("sectionAbout");
   }
 
-  // Waarom kiezen → reasons[]
   if (Array.isArray(company.reasons) && company.reasons.length) {
     const ul = document.getElementById("companyReasons");
     if (ul) {
@@ -60,7 +56,6 @@ function renderCompany(company) {
     hideIfExists("sectionReasons");
   }
 
-  // Diensten & expertise → specialties[]
   if (Array.isArray(company.specialties) && company.specialties.length) {
     const ul = document.getElementById("companySpecialties");
     if (ul) {
@@ -77,23 +72,18 @@ function renderCompany(company) {
   }
 }
 
-/* ---------- helpers (NOOIT crashen) ---------- */
-
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value || "";
 }
-
 function setHTMLIfExists(id, html) {
   const el = document.getElementById(id);
   if (el) el.innerHTML = html;
 }
-
 function showIfExists(id) {
   const el = document.getElementById(id);
   if (el) el.classList.remove("hidden");
 }
-
 function hideIfExists(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add("hidden");
