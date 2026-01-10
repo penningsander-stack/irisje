@@ -1,78 +1,152 @@
 // backend/routes/companies.js
-
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/company");
+const mongoose = require("mongoose");
+const Company = require("../models/Company");
 
-// helpers
-function escapeRegex(value = "") {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * Helpers
+ */
+function normalizeString(value) {
+  if (!value) return "";
+  return String(value).trim().toLowerCase();
 }
 
-// alias mapping
-const CATEGORY_ALIASES = {
-  advocaat: ["juridisch"],
-  jurist: ["juridisch"],
-};
+function withDefaults(company) {
+  const obj = company.toObject ? company.toObject() : company;
 
-// LIJSTEN
-router.get("/lists", async (req, res) => {
-  try {
-    const categories = await Company.distinct("categories");
-    res.json({ ok: true, categories: categories.sort() });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
+  return {
+    _id: obj._id,
+    name: obj.name || "",
+    slug: obj.slug || "",
+    city: obj.city || "",
+    description: obj.description || "",
+    categories: Array.isArray(obj.categories) ? obj.categories : [],
+    specialties: Array.isArray(obj.specialties) ? obj.specialties : [],
+    reasons: Array.isArray(obj.reasons) ? obj.reasons : [],
+    services: Array.isArray(obj.services) ? obj.services : [],
+    approach: obj.approach || "",
+    experience: obj.experience || "",
+    involvement: obj.involvement || "",
+    avgRating: obj.avgRating ?? 0,
+    reviewCount: obj.reviewCount ?? 0,
+    isVerified: !!obj.isVerified,
+    logoUrl: obj.logoUrl || "",
+    createdAt: obj.createdAt,
+    updatedAt: obj.updatedAt,
+  };
+}
 
-// ZOEKEN (publiek)
+/**
+ * =========================================================
+ * 1) SEARCH – MOET BOVEN /:id STAAN
+ * =========================================================
+ */
 router.get("/search", async (req, res) => {
   try {
-    const { category, specialty } = req.query;
+    const {
+      category = "",
+      city = "",
+      q = "",
+      verified = "",
+      minRating = "",
+      sort = "relevance",
+    } = req.query;
 
-    if (!category && !specialty) {
-      return res.json({ ok: true, results: [], fallbackUsed: false, message: null });
-    }
-
-    const query = { active: true };
+    const filters = {};
 
     if (category) {
-      const key = String(category).toLowerCase();
-      const values = CATEGORY_ALIASES[key] || [category];
-      query.categories = {
-        $elemMatch: {
-          $regex: values.map(v => escapeRegex(v)).join("|"),
-          $options: "i",
-        },
-      };
+      const cat = normalizeString(category);
+      filters.categories = { $in: [cat] };
     }
 
-    if (specialty) {
-      query.specialties = {
-        $elemMatch: { $regex: escapeRegex(specialty), $options: "i" },
-      };
+    if (city) {
+      filters.city = new RegExp(`^${city}$`, "i");
     }
 
-    const results = await Company.find(query)
-      // 🔧 SLUG TOEGEVOEGD
-      .select("_id name slug city avgRating reviewCount isVerified categories specialties")
-      .limit(20)
-      .lean();
+    if (verified === "true") {
+      filters.isVerified = true;
+    }
 
-    res.json({ ok: true, results, fallbackUsed: false, message: null });
+    if (minRating) {
+      const rating = Number(minRating);
+      if (!Number.isNaN(rating)) {
+        filters.avgRating = { $gte: rating };
+      }
+    }
+
+    if (q) {
+      const regex = new RegExp(q, "i");
+      filters.$or = [
+        { name: regex },
+        { description: regex },
+        { specialties: regex },
+      ];
+    }
+
+    let query = Company.find(filters);
+
+    if (sort === "rating") query = query.sort({ avgRating: -1 });
+    if (sort === "newest") query = query.sort({ createdAt: -1 });
+
+    const companies = await query.lean();
+
+    res.json({
+      ok: true,
+      results: companies.map(c => withDefaults(c)),
+      fallbackUsed: false,
+      message: null,
+    });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    console.error("❌ companies/search error:", err);
+    res.status(500).json({ ok: false, error: "Search failed" });
   }
 });
 
-// PUBLIEK VIA SLUG
-router.get("/slug/:slug", async (req, res) => {
+/**
+ * =========================================================
+ * 2) GET BY ID  ← DIT WAS DE ONTBREKENDE SCHAKEL
+ * =========================================================
+ */
+router.get("/:id", async (req, res) => {
   try {
-    const item = await Company.findOne({ slug: req.params.slug }).lean();
-    if (!item) return res.status(404).json({ ok: false, error: "Niet gevonden" });
-    res.json({ ok: true, item });
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok: false, error: "Invalid id" });
+    }
+
+    const company = await Company.findById(id);
+
+    if (!company) {
+      return res.status(404).json({ ok: false, error: "Company not found" });
+    }
+
+    res.json({
+      ok: true,
+      company: withDefaults(company),
+    });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    console.error("❌ companies/:id error:", err);
+    res.status(500).json({ ok: false, error: "Failed to load company" });
+  }
+});
+
+/**
+ * =========================================================
+ * 3) (OPTIONEEL) LIST – veilig laten bestaan
+ * =========================================================
+ */
+router.get("/", async (_req, res) => {
+  try {
+    const companies = await Company.find().lean();
+    res.json({
+      ok: true,
+      results: companies.map(c => withDefaults(c)),
+    });
+  } catch (err) {
+    console.error("❌ companies list error:", err);
+    res.status(500).json({ ok: false, error: "Failed to load companies" });
   }
 });
 
