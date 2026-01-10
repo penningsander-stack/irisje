@@ -1,5 +1,5 @@
 // frontend/js/company.js
-// v20260115-COMPANY-ID-OR-SLUG
+// v20260115-COMPANY-SAFE-DOM-BINDING
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -7,111 +7,94 @@ document.addEventListener("DOMContentLoaded", initCompany);
 
 async function initCompany() {
   const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
   const slug = params.get("slug");
 
-  if (!id && !slug) {
-    console.error("❌ company id of slug ontbreekt in URL");
-    renderError("Bedrijf niet gevonden.");
+  if (!slug) {
+    console.error("❌ company slug ontbreekt in URL");
     return;
   }
 
   try {
-    let url;
-    if (id) {
-      // Publiek ophalen via ID
-      url = `${API_BASE}/companies/${encodeURIComponent(id)}`;
-    } else {
-      // Publiek ophalen via slug
-      url = `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`;
-    }
-
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
     if (!res.ok) throw new Error("Company load error");
 
     const json = await res.json();
-    const company = json.item || json.company || json;
+    const company = json.item;
 
-    if (!company || !company._id) {
-      renderError("Bedrijf niet gevonden.");
+    if (!company) {
+      console.error("❌ Company niet gevonden");
       return;
     }
 
     renderCompany(company);
   } catch (err) {
     console.error("❌ Company load error:", err);
-    renderError("Bedrijf kon niet worden geladen.");
   }
 }
 
 function renderCompany(company) {
-  // Titel
   setText("companyName", company.name);
-  setText("companyCity", company.city || "");
+  setText("companyCity", company.city);
 
   // Over dit bedrijf → introduction
   if (company.introduction) {
-    setText("companyIntroduction", company.introduction);
-    show("sectionAbout");
+    setHTMLIfExists("companyIntroduction", company.introduction);
+    showIfExists("sectionAbout");
   } else {
-    hide("sectionAbout");
+    hideIfExists("sectionAbout");
   }
 
   // Waarom kiezen → reasons[]
   if (Array.isArray(company.reasons) && company.reasons.length) {
     const ul = document.getElementById("companyReasons");
-    ul.innerHTML = "";
-    company.reasons.forEach(r => {
-      const li = document.createElement("li");
-      li.textContent = r;
-      ul.appendChild(li);
-    });
-    show("sectionReasons");
+    if (ul) {
+      ul.innerHTML = "";
+      company.reasons.forEach(r => {
+        const li = document.createElement("li");
+        li.textContent = r;
+        ul.appendChild(li);
+      });
+      showIfExists("sectionReasons");
+    }
   } else {
-    hide("sectionReasons");
+    hideIfExists("sectionReasons");
   }
 
   // Diensten & expertise → specialties[]
   if (Array.isArray(company.specialties) && company.specialties.length) {
     const ul = document.getElementById("companySpecialties");
-    ul.innerHTML = "";
-    company.specialties.forEach(s => {
-      const li = document.createElement("li");
-      li.textContent = s;
-      ul.appendChild(li);
-    });
-    show("sectionSpecialties");
+    if (ul) {
+      ul.innerHTML = "";
+      company.specialties.forEach(s => {
+        const li = document.createElement("li");
+        li.textContent = s;
+        ul.appendChild(li);
+      });
+      showIfExists("sectionSpecialties");
+    }
   } else {
-    hide("sectionSpecialties");
-  }
-
-  // Reviews
-  if (company.reviewCount > 0) {
-    show("sectionReviews");
-  } else {
-    hide("sectionReviews");
+    hideIfExists("sectionSpecialties");
   }
 }
+
+/* ---------- helpers (NOOIT crashen) ---------- */
 
 function setText(id, value) {
   const el = document.getElementById(id);
   if (el) el.textContent = value || "";
 }
 
-function show(id) {
+function setHTMLIfExists(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function showIfExists(id) {
   const el = document.getElementById(id);
   if (el) el.classList.remove("hidden");
 }
 
-function hide(id) {
+function hideIfExists(id) {
   const el = document.getElementById(id);
   if (el) el.classList.add("hidden");
-}
-
-function renderError(message) {
-  const el = document.getElementById("companyError");
-  if (el) {
-    el.textContent = message;
-    el.classList.remove("hidden");
-  }
 }
