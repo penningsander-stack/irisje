@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-17 — FIX: juiste response-key + robuuste target-container
+// v2026-01-17 — FIX: render naar resultsGrid + juiste response-key
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -17,26 +17,27 @@ function normalizeArray(arr) {
   return arr.map(v => normalize(v));
 }
 
-function getListEl() {
-  // Probeer bekende varianten; pak de eerste die bestaat
-  return (
-    document.getElementById("resultsList") ||
-    document.getElementById("companiesList") ||
-    document.getElementById("companyList")
-  );
+function qs(id) {
+  return document.getElementById(id);
 }
 
 async function init() {
   const params = new URLSearchParams(location.search);
   const activeSector = normalize(params.get("sector"));
 
+  const grid = qs("resultsGrid");
+  const emptyState = qs("emptyState");
+  const intro = qs("resultsIntro");
+  const count = qs("resultCount");
+
+  if (!grid) return;
+
   try {
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    // JUISTE KEY
     if (!res.ok || !Array.isArray(data.results)) {
-      renderEmpty("Geen bedrijven gevonden.");
+      showEmpty(grid, emptyState, count, "Geen bedrijven gevonden.");
       return;
     }
 
@@ -46,46 +47,60 @@ async function init() {
       return cats.includes(activeSector);
     });
 
+    if (intro) {
+      intro.textContent = activeSector
+        ? `Resultaten voor sector: ${activeSector.replace(/-/g, " ")}`
+        : "Alle bedrijven";
+    }
+
     if (filtered.length === 0) {
-      renderEmpty("Geen bedrijven gevonden voor deze sector.");
+      showEmpty(grid, emptyState, count, "Geen bedrijven gevonden voor deze sector.");
       return;
     }
 
-    renderCompanies(filtered);
+    hideEmpty(emptyState);
+    renderCards(grid, filtered);
+
+    if (count) {
+      count.textContent = `${filtered.length} bedrijven gevonden`;
+    }
   } catch (e) {
     console.error("Results fout:", e);
-    renderEmpty("Kon bedrijven niet laden.");
+    showEmpty(qs("resultsGrid"), qs("emptyState"), qs("resultCount"), "Kon bedrijven niet laden.");
   }
 }
 
-function renderCompanies(companies) {
-  const list = getListEl();
-  if (!list) {
-    console.error("Geen results container gevonden in results.html");
-    return;
-  }
-
-  list.innerHTML = "";
+function renderCards(grid, companies) {
+  grid.innerHTML = "";
 
   for (const c of companies) {
-    const li = document.createElement("li");
-    li.className = "border rounded-lg p-4 mb-3";
+    const card = document.createElement("div");
+    card.className = "border rounded-xl p-4 bg-white shadow-soft";
 
-    li.innerHTML = `
-      <div class="font-semibold">${escapeHtml(c.name || "")}</div>
-      <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
-      <div class="text-xs text-slate-500 mt-1">${escapeHtml(
-        Array.isArray(c.categories) ? c.categories.join(", ") : ""
-      )}</div>
+    card.innerHTML = `
+      <div class="font-semibold text-slate-900 mb-1">${escapeHtml(c.name || "")}</div>
+      <div class="text-sm text-slate-600 mb-2">${escapeHtml(c.city || "")}</div>
+      <div class="text-xs text-slate-500">
+        ${escapeHtml(Array.isArray(c.categories) ? c.categories.join(", ") : "")}
+      </div>
     `;
-    list.appendChild(li);
+
+    grid.appendChild(card);
   }
 }
 
-function renderEmpty(msg) {
-  const list = getListEl();
-  if (!list) return;
-  list.innerHTML = `<div class="text-slate-600">${escapeHtml(msg)}</div>`;
+function showEmpty(grid, emptyState, count, msg) {
+  if (grid) grid.innerHTML = "";
+  if (count) count.textContent = "";
+  if (emptyState) {
+    emptyState.classList.remove("hidden");
+    const p = emptyState.querySelector("p");
+    if (p) p.textContent = msg;
+  }
+}
+
+function hideEmpty(emptyState) {
+  if (emptyState) emptyState.classList.add("hidden");
 }
 
 function escapeHtml(str) {
