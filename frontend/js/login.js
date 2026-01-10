@@ -1,92 +1,66 @@
 // frontend/js/login.js
-// v20251206-PREMIUM
+// v2026-01-17 — FIX: null classList crash, stabiele login
 
-(function () {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-  const LOGIN_ENDPOINT = API_BASE + "/auth/login";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  function $(id) {
-    return document.getElementById(id);
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("loginForm");
+  if (!form) return;
 
-  function showMessage(msg, isError) {
-    const el = $("loginStatus");
-    if (!el) return;
-    el.textContent = msg || "";
-    el.className = "rq-status " + (isError ? "text-red-600" : "text-green-600");
-  }
+  const errorBox = document.getElementById("loginError");
+  const submitBtn = document.getElementById("submitBtn");
+  const spinner = document.getElementById("submitSpinner");
 
-  function addValidation(input, validator, errorEl) {
-    input.addEventListener("input", () => {
-      const valid = validator(input.value);
-      if (valid === true) {
-        input.classList.remove("error-border");
-        errorEl.classList.add("hidden");
-        errorEl.textContent = "";
-      } else {
-        input.classList.add("error-border");
-        errorEl.classList.remove("hidden");
-        errorEl.textContent = valid;
-      }
-    });
-  }
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = $("loginForm");
-    if (!form) return;
+    hide(errorBox);
+    setLoading(true);
 
-    const emailEl = $("email");
-    const passEl = $("password");
-    const errEmail = $("errEmail");
-    const errPass = $("errPassword");
+    const email = form.email?.value?.trim();
+    const password = form.password?.value;
 
-    const validators = {
-      email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || "Ongeldig e-mailadres.",
-      password: (v) => v.trim().length >= 4 || "Wachtwoord moet minimaal 4 tekens hebben."
-    };
+    if (!email || !password) {
+      show(errorBox, "Vul e-mail en wachtwoord in.");
+      setLoading(false);
+      return;
+    }
 
-    addValidation(emailEl, validators.email, errEmail);
-    addValidation(passEl, validators.password, errPass);
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      showMessage("");
+      const data = await res.json();
 
-      const vEmail = validators.email(emailEl.value);
-      const vPass = validators.password(passEl.value);
-
-      if (vEmail !== true || vPass !== true) {
-        if (vEmail !== true) errEmail.textContent = vEmail;
-        if (vPass !== true) errPass.textContent = vPass;
-        showMessage("❌ Controleer de invoer.", true);
-        return;
+      if (!res.ok || !data.token) {
+        throw new Error(data?.error || "Inloggen mislukt.");
       }
 
-      try {
-        showMessage("⏳ Inloggen...", false);
-
-        const res = await fetch(LOGIN_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: emailEl.value.trim(),
-            password: passEl.value.trim()
-          })
-        });
-
-        const json = await res.json();
-
-        if (!res.ok || !json.token) {
-          throw new Error(json.error || "Login mislukt");
-        }
-
-        localStorage.setItem("token", json.token);
-        window.location.href = "dashboard.html";
-
-      } catch (err) {
-        console.error("[login] fout:", err);
-        showMessage("❌ Ongeldige inloggegevens.", true);
-      }
-    });
+      localStorage.setItem("token", data.token);
+      location.href = "dashboard.html";
+    } catch (err) {
+      show(errorBox, err.message || "Netwerkfout.");
+      setLoading(false);
+    }
   });
-})();
+
+  function setLoading(state) {
+    if (submitBtn) submitBtn.disabled = state;
+    if (spinner) spinner.classList.toggle("hidden", !state);
+  }
+
+  function show(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove("hidden");
+  }
+
+  function hide(el) {
+    if (!el) return;
+    el.textContent = "";
+    el.classList.add("hidden");
+  }
+});
