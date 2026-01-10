@@ -1,42 +1,42 @@
 // frontend/js/search.js
-// v20260115-SEARCH-BACKEND-COMPATIBLE-FIX
+// v20260115-SEARCH-CATEGORIES-ARRAY-FIX
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 let allCompanies = [];
 let activeSubcategory = null;
-let searchTerm = null;
 
 document.addEventListener("DOMContentLoaded", initSearch);
 
 async function initSearch() {
   const params = new URLSearchParams(window.location.search);
-  searchTerm = params.get("category");
+  const rawTerm = params.get("category");
 
   const titleEl = document.getElementById("searchTitle");
 
-  if (!searchTerm) {
+  if (!rawTerm) {
     titleEl.textContent = "Geen categorie gekozen";
     return;
   }
 
-  titleEl.textContent = `Bedrijven binnen ${searchTerm}`;
+  titleEl.textContent = `Bedrijven binnen ${rawTerm}`;
 
-  // Backend verwacht lowercase categorieën
-  const normalized = searchTerm.toLowerCase();
+  // backend gebruikt lowercase categorieën in array `categories[]`
+  const normalized = rawTerm.toLowerCase();
 
   try {
-    // 1️⃣ Zoeken op categorie
+    // ✅ juiste backend-query
     let res = await fetch(
-      `${API_BASE}/companies/search?category=${encodeURIComponent(normalized)}`
+      `${API_BASE}/companies/search?categories=${encodeURIComponent(normalized)}`
     );
     let json = await res.json();
+
     let results = Array.isArray(json.results) ? json.results : [];
 
-    // 2️⃣ Geen resultaten? Dan zoeken op specialisme
+    // fallback: specialisme
     if (results.length === 0) {
       res = await fetch(
-        `${API_BASE}/companies/search?category=${encodeURIComponent(normalized)}&specialty=${encodeURIComponent(normalized)}`
+        `${API_BASE}/companies/search?specialty=${encodeURIComponent(normalized)}`
       );
       json = await res.json();
       results = Array.isArray(json.results) ? json.results : [];
@@ -52,9 +52,7 @@ async function initSearch() {
   }
 }
 
-/**
- * Subcategorieën afleiden uit company.specialties[]
- */
+/* subcategorieën = specialties[] */
 function renderSubcategoriesFromCompanies(companies) {
   const section = document.getElementById("subcategories");
   const container = document.getElementById("subcategoryChips");
@@ -79,10 +77,6 @@ function renderSubcategoriesFromCompanies(companies) {
     btn.className = "subcat-chip";
     btn.textContent = name;
 
-    if (name === activeSubcategory) {
-      btn.classList.add("active");
-    }
-
     btn.onclick = () => {
       activeSubcategory =
         activeSubcategory === name ? null : name;
@@ -101,19 +95,11 @@ function applyFilters() {
       Array.isArray(c.specialties) &&
       c.specialties.includes(activeSubcategory)
     );
-    document.getElementById("clearSubcat").classList.remove("hidden");
-  } else {
-    document.getElementById("clearSubcat").classList.add("hidden");
   }
 
   renderCompanies(filtered);
   updateResultCount(filtered.length);
 }
-
-document.getElementById("clearSubcat").onclick = () => {
-  activeSubcategory = null;
-  applyFilters();
-};
 
 function renderCompanies(companies) {
   const grid = document.getElementById("resultsGrid");
@@ -131,12 +117,8 @@ function renderCompanies(companies) {
       "rounded-2xl bg-white shadow-sm border border-slate-200 p-5";
 
     card.innerHTML = `
-      <h3 class="font-semibold text-slate-900 mb-1">
-        ${c.name}
-      </h3>
-      <p class="text-sm text-slate-600 mb-2">
-        ${c.city || ""}
-      </p>
+      <h3 class="font-semibold text-slate-900 mb-1">${c.name}</h3>
+      <p class="text-sm text-slate-600 mb-2">${c.city || ""}</p>
       <a href="company.html?id=${c._id}"
          class="text-sm text-indigo-600 hover:underline">
          Bekijk profiel
@@ -148,9 +130,6 @@ function renderCompanies(companies) {
 }
 
 function updateResultCount(count) {
-  const el = document.getElementById("resultCount");
-  el.textContent =
-    count === 1
-      ? "1 bedrijf gevonden"
-      : `${count} bedrijven gevonden`;
+  document.getElementById("resultCount").textContent =
+    count === 1 ? "1 bedrijf gevonden" : `${count} bedrijven gevonden`;
 }
