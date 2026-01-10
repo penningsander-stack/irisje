@@ -1,107 +1,81 @@
 // frontend/js/results.js
-// v2026-01-16 — STABIEL: sector-filtering uitsluitend via backend
+// v2026-01-17 — Stap 3: categorie-normalisatie (labels → slugs)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-let currentFilters = {
-  sector: "",
-  beroep: "",
-  city: "",
-  q: "",
-};
+document.addEventListener("DOMContentLoaded", init);
 
-document.addEventListener("DOMContentLoaded", initResults);
-
-function initResults() {
-  const params = new URLSearchParams(window.location.search);
-
-  currentFilters.sector = (params.get("sector") || "").trim();
-  currentFilters.beroep = (params.get("beroep") || "").trim();
-  currentFilters.city = (params.get("city") || "").trim();
-  currentFilters.q = (params.get("q") || "").trim();
-
-  loadResults();
+function normalize(val) {
+  return String(val || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
-async function loadResults() {
-  const qs = new URLSearchParams();
+function normalizeArray(arr) {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(v => normalize(v));
+}
 
-  // ⬇️ ENIGE sector-filter: backend
-  if (currentFilters.sector) qs.set("category", currentFilters.sector);
-  if (currentFilters.city) qs.set("city", currentFilters.city);
-  if (currentFilters.q) qs.set("q", currentFilters.q);
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const sectorParam = params.get("sector"); // slug uit URL
+  const activeSector = normalize(sectorParam);
 
   try {
-    const res = await fetch(`${API_BASE}/companies/search?${qs.toString()}`);
-    const json = await res.json();
+    // haal alle bedrijven op (server-side filters laten we los)
+    const res = await fetch(`${API_BASE}/companies`);
+    const data = await res.json();
 
-    if (!json.ok || !Array.isArray(json.results)) {
-      renderEmpty();
+    if (!res.ok || !Array.isArray(data.companies)) {
+      renderEmpty("Geen bedrijven gevonden.");
       return;
     }
 
-    let results = json.results;
+    // client-side filter met normalisatie
+    const filtered = data.companies.filter(c => {
+      const cats = normalizeArray(c.categories);
+      if (!activeSector) return true;
+      return cats.includes(activeSector);
+    });
 
-    // ✅ Alleen beroep client-side filteren (veilig)
-    if (currentFilters.beroep) {
-      results = results.filter(c =>
-        Array.isArray(c.specialties) &&
-        c.specialties.includes(currentFilters.beroep)
-      );
+    if (filtered.length === 0) {
+      renderEmpty("Geen bedrijven gevonden voor deze sector.");
+      return;
     }
 
-    renderResults(results);
-  } catch (e) {
-    console.error("❌ results load error", e);
-    renderEmpty();
+    renderCompanies(filtered);
+  } catch (err) {
+    console.error("Results fout:", err);
+    renderEmpty("Kon bedrijven niet laden.");
   }
 }
 
-function renderResults(items) {
-  const grid = document.getElementById("resultsGrid");
-  const empty = document.getElementById("emptyState");
+function renderCompanies(companies) {
+  const list = document.getElementById("resultsList");
+  if (!list) return;
 
-  grid.innerHTML = "";
-  empty.classList.add("hidden");
+  list.innerHTML = "";
 
-  if (!items.length) {
-    empty.classList.remove("hidden");
-    return;
-  }
+  for (const c of companies) {
+    const li = document.createElement("li");
+    li.className = "border rounded-lg p-4 mb-3";
 
-  items.forEach(c => {
-    const el = document.createElement("a");
-    el.className = "company-card";
-    el.href = `company.html?slug=${encodeURIComponent(c.slug)}`;
+    const cats = Array.isArray(c.categories) ? c.categories.join(", ") : "";
 
-    const tags = (c.specialties || []).slice(0, 3).map(s =>
-      `<a class="tag" href="results.html?sector=${encodeURIComponent(currentFilters.sector)}&beroep=${encodeURIComponent(s)}">${escapeHtml(s)}</a>`
-    ).join("");
-
-    el.innerHTML = `
-      <div class="company-card__head">
-        <strong>${escapeHtml(c.name)}</strong>
-        ${c.isVerified ? `<span class="badge-verified">Geverifieerd</span>` : ""}
-      </div>
-      <div class="company-card__meta">
-        <span>${escapeHtml(c.city || "")}</span>
-        <span>${renderStars(c.avgRating || 0)} (${c.reviewCount || 0})</span>
-      </div>
-      <div class="company-card__tags">${tags}</div>
+    li.innerHTML = `
+      <div class="font-semibold">${escapeHtml(c.name || "")}</div>
+      <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
+      <div class="text-xs text-slate-500 mt-1">${escapeHtml(cats)}</div>
     `;
-
-    grid.appendChild(el);
-  });
+    list.appendChild(li);
+  }
 }
 
-function renderEmpty() {
-  document.getElementById("resultsGrid").innerHTML = "";
-  document.getElementById("emptyState").classList.remove("hidden");
-}
-
-function renderStars(avg) {
-  const full = Math.round(avg);
-  return "★★★★★☆☆☆☆☆".slice(5 - full, 10 - full);
+function renderEmpty(msg) {
+  const list = document.getElementById("resultsList");
+  if (!list) return;
+  list.innerHTML = `<div class="text-slate-600">${escapeHtml(msg)}</div>`;
 }
 
 function escapeHtml(str) {
@@ -109,5 +83,6 @@ function escapeHtml(str) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
