@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260109-PUT-INTRODUCTION-REASONS
+// v20260110-SEARCH-ROBUST-CATEGORIES-REGEX
 
 const express = require("express");
 const router = express.Router();
@@ -15,6 +15,12 @@ function escapeRegex(value = "") {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function toNonEmptyString(value) {
+  if (typeof value !== "string") return "";
+  const v = value.trim();
+  return v.length ? v : "";
+}
+
 // -----------------------------------------------------------------------------
 // CATEGORIEËN VOOR HOMEPAGE
 // GET /api/companies/lists
@@ -25,7 +31,7 @@ router.get("/lists", async (req, res) => {
     const cleaned = categories
       .flat()
       .filter(Boolean)
-      .map((c) => c.trim())
+      .map((c) => String(c).trim())
       .filter((c, i, arr) => arr.indexOf(c) === i)
       .sort();
 
@@ -55,27 +61,61 @@ router.get("/my", auth, async (req, res) => {
 // -----------------------------------------------------------------------------
 // ZOEKEN
 // GET /api/companies/search
+//
+// Ondersteunt:
+// - ?category=...        (string)
+// - ?categories=...      (alias van category)
+// - ?specialty=...       (string)
+// - ?q=...               (optioneel: zoekt in name/city)
+// - ?limit=...           (optioneel)
+//
+// Belangrijk: categories/specialties zijn array-velden. Regex matchen we via $elemMatch.
 // -----------------------------------------------------------------------------
 router.get("/search", async (req, res) => {
   try {
-    const { category, specialty } = req.query;
+    // Accept both "category" and "categories" as input (frontend kan beide gebruiken)
+    const categoryRaw =
+      toNonEmptyString(req.query.category) || toNonEmptyString(req.query.categories);
+    const specialtyRaw = toNonEmptyString(req.query.specialty);
+    const qRaw = toNonEmptyString(req.query.q);
 
-    if (!category) {
+    // Als er echt niets is om op te zoeken, geef lege set terug
+    if (!categoryRaw && !specialtyRaw && !qRaw) {
       return res.json({ ok: true, results: [], fallbackUsed: false, message: null });
     }
 
-    const query = {
-      active: true,
-      categories: { $in: [new RegExp(escapeRegex(category), "i")] },
-    };
+    // Bouw query op
+    const query = {};
 
-    if (specialty) {
-      query.specialties = { $in: [new RegExp(escapeRegex(specialty), "i")] };
+    // Active filter: laat 'm staan, maar maak 'm tolerant:
+    // - active:true is gewenst
+    // - maar als 'active' ontbreekt in oudere/seed data, willen we die niet per ongeluk wegfilteren
+    //   Daarom: active != false
+    query.active = { $ne: false };
+
+    if (categoryRaw) {
+      const rx = new RegExp(escapeRegex(categoryRaw), "i");
+      query.categories = { $elemMatch: rx };
     }
 
+    if (specialtyRaw) {
+      const rx = new RegExp(escapeRegex(specialtyRaw), "i");
+      query.specialties = { $elemMatch: rx };
+    }
+
+    if (qRaw) {
+      const rx = new RegExp(escapeRegex(qRaw), "i");
+      query.$or = [{ name: rx }, { city: rx }];
+    }
+
+    const limit = Math.max(
+      1,
+      Math.min(50, Number.parseInt(req.query.limit, 10) || 20)
+    );
+
     const results = await Company.find(query)
-      .limit(20)
-      .select("_id name city avgRating reviewCount isVerified")
+      .limit(limit)
+      .select("_id name city avgRating reviewCount isVerified categories specialties slug")
       .lean();
 
     res.json({ ok: true, results, fallbackUsed: false, message: null });
@@ -175,7 +215,6 @@ router.put("/:id", auth, async (req, res) => {
       return res.status(403).json({ ok: false, error: "Geen toegang." });
     }
 
-    // ✅ Whitelist (uitgebreid)
     const allowed = [
       "city",
       "regions",
@@ -187,7 +226,6 @@ router.put("/:id", auth, async (req, res) => {
       "memberships",
       "availability",
       "worksNationwide",
-      // ✨ nieuw
       "introduction",
       "reasons",
     ];
