@@ -1,137 +1,112 @@
 // frontend/js/register-company.js
-// v2026-01-17 — CATEGORIES DEFINITIEF COMPLEET
+// v2026-01-17 — Stap 4A: afdwingen categorie-slugs bij registratie (frontend-only)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-const form = document.getElementById("companyForm");
-const categoriesSelect = document.getElementById("categoriesSelect");
-const specialtiesSelect = document.getElementById("specialtiesSelect");
-const errorBox = document.getElementById("formError");
-const submitBtn = document.getElementById("submitBtn");
-const submitText = document.getElementById("submitText");
-const submitSpinner = document.getElementById("submitSpinner");
+// Canonieke categorieën (labels = UI, slug = opslag)
+const CATEGORIES = [
+  { slug: "elektricien", label: "Elektricien" },
+  { slug: "loodgieter", label: "Loodgieter" },
+  { slug: "schilder", label: "Schilder" },
+  { slug: "dakdekker", label: "Dakdekker" },
+  { slug: "aannemer", label: "Aannemer" },
+  { slug: "klusbedrijf", label: "Klusbedrijf" },
+  { slug: "hovenier", label: "Hovenier" },
+  { slug: "stukadoor", label: "Stukadoor" },
+  { slug: "advocaat", label: "Advocaat" },
+  { slug: "juridisch", label: "Juridisch advies" },
+];
 
 document.addEventListener("DOMContentLoaded", init);
 
-async function init() {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    location.href = "login.html";
-    return;
-  }
-
-  await loadStaticOptions();
+function normalize(val) {
+  return String(val || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
-async function loadStaticOptions() {
-  // ✅ VOLLEDIGE sectorlijst (canoniek)
-  const categories = [
-    { value: "elektricien", label: "Elektricien" },
-    { value: "loodgieter", label: "Loodgieter" },
-    { value: "schilder", label: "Schilder" },
-    { value: "dakdekker", label: "Dakdekker" },
-    { value: "aannemer", label: "Aannemer" },
-    { value: "klusbedrijf", label: "Klusbedrijf" },
-    { value: "hovenier", label: "Hovenier" },
-    { value: "stukadoor", label: "Stukadoor" },
-    { value: "advocaat", label: "Advocaat" },
-    { value: "juridisch", label: "Juridisch advies" },
-  ];
+function init() {
+  const form = document.getElementById("registerCompanyForm");
+  if (!form) return;
 
-  const specialties = [
-    { value: "arbeidsrecht", label: "Arbeidsrecht" },
-    { value: "ontslagrecht", label: "Ontslagrecht" },
-    { value: "cv-installatie", label: "CV-installatie" },
-    { value: "groepenkast", label: "Groepenkast" },
-    { value: "schilderwerk", label: "Schilderwerk" },
-    { value: "stucwerk", label: "Stucwerk" },
-  ];
-
-  fillSelect(categoriesSelect, categories);
-  fillSelect(specialtiesSelect, specialties);
-}
-
-function fillSelect(select, items) {
-  if (!select) return;
-  select.innerHTML = "";
-  for (const item of items) {
-    const opt = document.createElement("option");
-    opt.value = item.value;
-    opt.textContent = item.label;
-    select.appendChild(opt);
-  }
-}
-
-form?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearError();
-
-  const token = localStorage.getItem("token");
-  if (!token) {
-    location.href = "login.html";
-    return;
+  // Verwacht een <select multiple id="categories">
+  const categoriesSelect = document.getElementById("categories");
+  if (categoriesSelect) {
+    fillCategories(categoriesSelect);
   }
 
-  const fd = new FormData(form);
-  const categories = fd.getAll("categories");
-  const specialties = fd.getAll("specialties");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const name = (fd.get("name") || "").toString().trim();
-  const city = (fd.get("city") || "").toString().trim();
-
-  if (!name || !city) {
-    showError("Vul alle verplichte velden in.");
-    return;
-  }
-
-  if (!categories.length) {
-    showError("Selecteer minimaal één sector.");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const res = await fetch(`${API_BASE}/companies`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
-      body: JSON.stringify({
-        name,
-        city,
-        categories,
-        specialties,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data?.error || "Registratie mislukt.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      location.href = "/login.html";
+      return;
     }
 
-    location.href = "dashboard.html?onboarding=1";
-  } catch (err) {
-    showError(err.message || "Netwerkfout.");
-  } finally {
-    setLoading(false);
-  }
-});
+    // Verzamel velden (pas namen aan indien jouw HTML afwijkt)
+    const payload = {
+      name: form.name?.value?.trim(),
+      city: form.city?.value?.trim(),
+      description: form.description?.value?.trim() || "",
+      // 🔒 afdwingen: alleen slugs opslaan
+      categories: getSelectedSlugs(categoriesSelect),
+    };
 
-function setLoading(state) {
-  submitBtn.disabled = state;
-  submitText.classList.toggle("hidden", state);
-  submitSpinner.classList.toggle("hidden", !state);
+    if (!payload.name || !payload.city) {
+      showError("Vul bedrijfsnaam en plaats in.");
+      return;
+    }
+
+    if (!payload.categories.length) {
+      showError("Selecteer minimaal één categorie.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/companies`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Registratie mislukt.");
+      }
+
+      location.href = "/dashboard.html";
+    } catch (err) {
+      showError(err.message || "Netwerkfout.");
+    }
+  });
+}
+
+function fillCategories(selectEl) {
+  selectEl.innerHTML = "";
+  for (const c of CATEGORIES) {
+    const opt = document.createElement("option");
+    opt.value = c.slug;       // 🔒 slug als value
+    opt.textContent = c.label; // label alleen voor UI
+    selectEl.appendChild(opt);
+  }
+}
+
+function getSelectedSlugs(selectEl) {
+  if (!selectEl) return [];
+  return Array.from(selectEl.selectedOptions)
+    .map(o => normalize(o.value))
+    .filter(Boolean);
 }
 
 function showError(msg) {
-  errorBox.textContent = msg;
-  errorBox.classList.remove("hidden");
-}
-
-function clearError() {
-  errorBox.textContent = "";
-  errorBox.classList.add("hidden");
+  const box = document.getElementById("formError");
+  if (!box) return;
+  box.textContent = msg;
+  box.classList.remove("hidden");
 }
