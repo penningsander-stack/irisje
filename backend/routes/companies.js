@@ -1,5 +1,5 @@
 // backend/routes/companies.js
-// v20260110-SEARCH-ROBUST-CATEGORIES-REGEX
+// v20260110-SEARCH-FIX-CATEGORIES-ARRAY
 
 const express = require("express");
 const router = express.Router();
@@ -13,12 +13,6 @@ const auth = require("../middleware/auth");
 // -----------------------------------------------------------------------------
 function escapeRegex(value = "") {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function toNonEmptyString(value) {
-  if (typeof value !== "string") return "";
-  const v = value.trim();
-  return v.length ? v : "";
 }
 
 // -----------------------------------------------------------------------------
@@ -75,11 +69,21 @@ router.get("/search", async (req, res) => {
     };
 
     if (category) {
-      query.categories = new RegExp(escapeRegex(category), "i");
+      query.categories = {
+        $elemMatch: {
+          $regex: escapeRegex(category),
+          $options: "i"
+        }
+      };
     }
 
     if (specialty) {
-      query.specialties = new RegExp(escapeRegex(specialty), "i");
+      query.specialties = {
+        $elemMatch: {
+          $regex: escapeRegex(specialty),
+          $options: "i"
+        }
+      };
     }
 
     const results = await Company.find(query)
@@ -93,9 +97,6 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 });
-
-
-
 
 // -----------------------------------------------------------------------------
 // COMPANY VIA SLUG (publiek)
@@ -170,7 +171,7 @@ router.get("/:id", auth, async (req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// COMPANY BIJWERKEN (dashboard opslaan)
+// COMPANY BIJWERKEN
 // PUT /api/companies/:id
 // -----------------------------------------------------------------------------
 router.put("/:id", auth, async (req, res) => {
