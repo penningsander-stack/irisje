@@ -1,12 +1,12 @@
 // frontend/js/results.js
-// v2026-01-10 — NORMALISATIE: sector + beroep
+// v2026-01-16 — FIX: sector-normalisatie + client-side fallback filtering
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 let allResults = [];
 let currentFilters = {
-  sector: "",     // ⬅️ was category
-  beroep: "",     // ⬅️ was specialty (frontend-only filter/links)
+  sector: "",
+  beroep: "",
   city: "",
   q: "",
   verified: "",
@@ -14,14 +14,11 @@ let currentFilters = {
   sort: "relevance",
 };
 
-document.addEventListener("DOMContentLoaded", () => {
-  initResults();
-});
+document.addEventListener("DOMContentLoaded", initResults);
 
 function initResults() {
   const params = new URLSearchParams(window.location.search);
 
-  // ⬇️ NORMALISATIE: sector / beroep
   currentFilters.sector = (params.get("sector") || "").trim();
   currentFilters.beroep = (params.get("beroep") || "").trim();
   currentFilters.city = (params.get("city") || "").trim();
@@ -33,51 +30,71 @@ function initResults() {
 async function loadResults() {
   const qs = new URLSearchParams();
 
-  // Backend verwacht nog category/specialties → NIET wijzigen (randvoorwaarde)
+  // Backend verwacht nog category
   if (currentFilters.sector) qs.set("category", currentFilters.sector);
   if (currentFilters.city) qs.set("city", currentFilters.city);
   if (currentFilters.q) qs.set("q", currentFilters.q);
-  if (currentFilters.verified) qs.set("verified", currentFilters.verified);
-  if (currentFilters.minRating) qs.set("minRating", currentFilters.minRating);
-  if (currentFilters.sort) qs.set("sort", currentFilters.sort);
-
-  const url = `${API_BASE}/companies/search?${qs.toString()}`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/companies/search?${qs.toString()}`);
     const data = await res.json();
-    if (!data.ok) return renderEmpty("Zoekresultaten laden mislukt.");
 
-    allResults = Array.isArray(data.results) ? data.results : [];
-    renderResults(allResults);
+    if (!data.ok || !Array.isArray(data.results)) {
+      renderEmpty();
+      return;
+    }
+
+    allResults = data.results;
+
+    // ✅ FRONTEND FALLBACK FILTER (ESSENTIEEL)
+    let filtered = [...allResults];
+
+    if (currentFilters.sector) {
+      filtered = filtered.filter(c =>
+        Array.isArray(c.categories) &&
+        c.categories.includes(currentFilters.sector)
+      );
+    }
+
+    if (currentFilters.beroep) {
+      filtered = filtered.filter(c =>
+        Array.isArray(c.specialties) &&
+        c.specialties.includes(currentFilters.beroep)
+      );
+    }
+
+    renderResults(filtered);
   } catch (err) {
     console.error("❌ Results load error:", err);
-    renderEmpty("Zoekresultaten laden mislukt.");
+    renderEmpty();
   }
 }
 
 function renderResults(items) {
   const grid = document.getElementById("resultsGrid");
-  if (!grid) return;
+  const empty = document.getElementById("emptyState");
 
   grid.innerHTML = "";
+  empty.classList.add("hidden");
 
-  if (!items.length) return renderEmpty("Geen bedrijven gevonden.");
+  if (!items.length) {
+    empty.classList.remove("hidden");
+    return;
+  }
 
   items.forEach(c => {
-    const card = document.createElement("a");
-    card.href = `company.html?slug=${encodeURIComponent(c.slug || c._id)}`;
-    card.className = "company-card";
+    const a = document.createElement("a");
+    a.className = "company-card";
+    a.href = `company.html?slug=${encodeURIComponent(c.slug)}`;
 
-    // ⬇️ Tags blijven inhoudelijk hetzelfde; linkjes worden beroep=...
-    const tags = (c.specialties || []).slice(0, 3).map(t =>
-      `<a class="tag" href="results.html?sector=${encodeURIComponent(currentFilters.sector)}&beroep=${encodeURIComponent(t)}">${escapeHtml(t)}</a>`
+    const tags = (c.specialties || []).slice(0, 3).map(s =>
+      `<a class="tag" href="results.html?sector=${encodeURIComponent(currentFilters.sector)}&beroep=${encodeURIComponent(s)}">${s}</a>`
     ).join("");
 
-    card.innerHTML = `
+    a.innerHTML = `
       <div class="company-card__head">
-        <strong>${escapeHtml(c.name || "")}</strong>
-        ${c.isVerified ? `<span class="badge-verified">Geverifieerd</span>` : ``}
+        <strong>${escapeHtml(c.name)}</strong>
+        ${c.isVerified ? `<span class="badge-verified">Geverifieerd</span>` : ""}
       </div>
       <div class="company-card__meta">
         <span>${escapeHtml(c.city || "")}</span>
@@ -85,20 +102,25 @@ function renderResults(items) {
       </div>
       <div class="company-card__tags">${tags}</div>
     `;
-    grid.appendChild(card);
+
+    grid.appendChild(a);
   });
 }
 
-function renderEmpty(message) {
-  const grid = document.getElementById("resultsGrid");
-  if (grid) grid.innerHTML = `<p class="empty">${message}</p>`;
+function renderEmpty() {
+  document.getElementById("resultsGrid").innerHTML = "";
+  document.getElementById("emptyState").classList.remove("hidden");
 }
 
-// helpers
 function renderStars(avg) {
   const full = Math.round(avg);
   return "★★★★★☆☆☆☆☆".slice(5 - full, 10 - full);
 }
+
 function escapeHtml(str) {
-  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
