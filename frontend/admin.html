@@ -28,32 +28,32 @@
         Bedrijf toevoegen
       </h2>
 
-      <form id="company-form" class="grid gap-3 max-w-xl">
+      <form id="company-form" class="grid gap-4 max-w-lg">
         <input type="hidden" id="company-id" />
 
         <div class="form-group">
           <label>Naam</label>
-          <input type="text" id="name" class="form-input text-sm py-2" required />
+          <input type="text" id="name" class="form-input" required />
         </div>
 
         <div class="form-group">
           <label>Plaats</label>
-          <input type="text" id="city" class="form-input text-sm py-2" />
+          <input type="text" id="city" class="form-input" />
         </div>
 
         <div class="form-group">
           <label>Omschrijving</label>
-          <textarea id="description" class="form-input text-sm py-2"></textarea>
+          <textarea id="description" class="form-input"></textarea>
         </div>
 
         <div class="form-group">
           <label>Sectoren</label>
-          <select id="categories" class="form-input text-sm py-2" multiple></select>
+          <select id="categories" class="form-input" multiple></select>
         </div>
 
         <div class="form-group">
           <label>Specialismen</label>
-          <select id="specialties" class="form-input text-sm py-2" multiple></select>
+          <select id="specialties" class="form-input" multiple></select>
         </div>
 
         <label class="checkbox-label mt-2">
@@ -65,7 +65,7 @@
           <button type="submit" class="btn-primary">
             Opslaan
           </button>
-          <button type="button" id="cancel-edit" class="btn-ghost">
+          <button type="button" id="cancel-edit" class="btn-ghost hidden">
             Annuleren
           </button>
         </div>

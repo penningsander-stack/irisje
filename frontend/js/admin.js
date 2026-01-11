@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v20260111-ADMIN-SECTORS-SPECIALTIES
+// v20260111-ADMIN-SECTORS-SPECIALTIES-FIX
 
 const API = "https://irisje-backend.onrender.com/api/admin";
 const token = localStorage.getItem("token");
@@ -32,6 +32,7 @@ const SECTORS = {
 // ELEMENTS
 // ================================
 const form = document.getElementById("company-form");
+const formCard = document.getElementById("company-form-card");
 const formTitle = document.getElementById("form-title");
 const companyIdInput = document.getElementById("company-id");
 
@@ -43,6 +44,7 @@ const specialtiesSelect = document.getElementById("specialties");
 const isVerifiedInput = document.getElementById("isVerified");
 const cancelEditBtn = document.getElementById("cancel-edit");
 
+const addCompanyBtn = document.getElementById("add-company-btn");
 const tableBody = document.getElementById("companies-table-body");
 
 // ================================
@@ -51,11 +53,17 @@ const tableBody = document.getElementById("companies-table-body");
 initSectorSelect();
 loadCompanies();
 
+addCompanyBtn.onclick = () => {
+  resetForm();
+  formCard.classList.remove("hidden");
+};
+
 // ================================
 // INIT SECTOR SELECT
 // ================================
 function initSectorSelect() {
   categoriesSelect.innerHTML = "";
+
   Object.keys(SECTORS).forEach((sector) => {
     const opt = document.createElement("option");
     opt.value = sector;
@@ -76,7 +84,7 @@ function updateSpecialties() {
 
   const allowed = new Set();
   selectedSectors.forEach((s) => {
-    SECTORS[s].forEach((sp) => allowed.add(sp));
+    (SECTORS[s] || []).forEach((sp) => allowed.add(sp));
   });
 
   specialtiesSelect.innerHTML = "";
@@ -95,10 +103,15 @@ async function loadCompanies() {
   const res = await fetch(`${API}/companies`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  if (!res.ok) {
+    alert("Kon bedrijven niet laden");
+    return;
+  }
+
   const data = await res.json();
   tableBody.innerHTML = "";
-
-  data.companies.forEach(renderCompanyRow);
+  (data.companies || []).forEach(renderCompanyRow);
 }
 
 // ================================
@@ -156,7 +169,10 @@ form.addEventListener("submit", async (e) => {
   });
 
   const data = await res.json();
-  if (!data.ok) return alert(data.error);
+  if (!data.ok) {
+    alert(data.error || "Opslaan mislukt");
+    return;
+  }
 
   resetForm();
   loadCompanies();
@@ -184,6 +200,7 @@ function editCompany(c) {
   );
 
   cancelEditBtn.hidden = false;
+  formCard.classList.remove("hidden");
 }
 
 // ================================
@@ -192,10 +209,15 @@ function editCompany(c) {
 async function deleteCompany(id) {
   if (!confirm("Bedrijf verwijderen?")) return;
 
-  await fetch(`${API}/companies/${id}`, {
+  const res = await fetch(`${API}/companies/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
+
+  if (!res.ok) {
+    alert("Verwijderen mislukt");
+    return;
+  }
 
   loadCompanies();
 }
@@ -211,4 +233,5 @@ function resetForm() {
   specialtiesSelect.innerHTML = "";
   formTitle.textContent = "Bedrijf toevoegen";
   cancelEditBtn.hidden = true;
+  formCard.classList.add("hidden");
 }
