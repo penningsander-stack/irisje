@@ -3,7 +3,6 @@
   "use strict";
 
   const API = "https://irisje-backend.onrender.com/api";
-
   const qs = (s) => document.querySelector(s);
 
   const authHeaders = () => {
@@ -14,6 +13,7 @@
   };
 
   let companies = new Map();
+  let mode = "edit"; // edit | create
 
   function showError(msg) {
     const el = qs("#errorBox");
@@ -71,7 +71,23 @@
     }
   }
 
-  function openModal(company) {
+  function openCreateModal() {
+    mode = "create";
+    qs("#modalTitle").textContent = "Bedrijf toevoegen";
+    qs("#editId").value = "";
+    qs("#editName").value = "";
+    qs("#editCity").value = "";
+    qs("#editDescription").value = "";
+    qs("#editCategories").value = "";
+    qs("#editSpecialties").value = "";
+    qs("#editVerified").checked = false;
+    qs("#deleteCompany").style.display = "none";
+    qs("#editModal").style.display = "flex";
+  }
+
+  function openEditModal(company) {
+    mode = "edit";
+    qs("#modalTitle").textContent = "Bedrijf bewerken";
     qs("#editId").value = company._id;
     qs("#editName").value = company.name || "";
     qs("#editCity").value = company.city || "";
@@ -79,28 +95,34 @@
     qs("#editCategories").value = (company.categories || []).join(", ");
     qs("#editSpecialties").value = (company.specialties || []).join(", ");
     qs("#editVerified").checked = !!company.isVerified;
-
+    qs("#deleteCompany").style.display = "inline-block";
     qs("#editModal").style.display = "flex";
   }
 
   function closeModal() {
     qs("#editModal").style.display = "none";
+    qs("#editError").classList.add("hidden");
   }
 
-  async function saveEdit() {
-    const id = qs("#editId").value;
-
+  async function saveCompany() {
     const payload = {
       name: qs("#editName").value.trim(),
       city: qs("#editCity").value.trim(),
-      description: qs("#editDescription").value,
-      categories: qs("#editCategories").value.split(",").map((s) => s.trim()).filter(Boolean),
-      specialties: qs("#editSpecialties").value.split(",").map((s) => s.trim()).filter(Boolean),
+      description: qs("#editDescription").value.trim(),
+      categories: qs("#editCategories").value.split(",").map(s => s.trim()).filter(Boolean),
+      specialties: qs("#editSpecialties").value.split(",").map(s => s.trim()).filter(Boolean),
       isVerified: qs("#editVerified").checked,
     };
 
-    const res = await fetch(`${API}/admin/companies/${id}`, {
-      method: "PATCH",
+    const url =
+      mode === "create"
+        ? `${API}/admin/companies`
+        : `${API}/admin/companies/${qs("#editId").value}`;
+
+    const method = mode === "create" ? "POST" : "PATCH";
+
+    const res = await fetch(url, {
+      method,
       headers: authHeaders(),
       body: JSON.stringify(payload),
     });
@@ -142,15 +164,17 @@
   document.addEventListener("DOMContentLoaded", () => {
     loadCompanies();
 
+    qs("#addCompany").onclick = openCreateModal;
+
     qs("#companiesTbody").addEventListener("click", (e) => {
       const btn = e.target.closest(".edit-btn");
       if (!btn) return;
       const company = companies.get(btn.dataset.id);
-      if (company) openModal(company);
+      if (company) openEditModal(company);
     });
 
     qs("#cancelEdit").onclick = closeModal;
-    qs("#saveEdit").onclick = saveEdit;
+    qs("#saveEdit").onclick = saveCompany;
     qs("#deleteCompany").onclick = deleteCompany;
   });
 })();
