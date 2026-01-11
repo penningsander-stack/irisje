@@ -1,160 +1,54 @@
 // frontend/js/request.js
-// v2026-01-11 — Stap P1.1 Optie B (Trustoo-stijl)
-// - Als companySlug aanwezig is: toon gekozen bedrijf + categorie/specialisme optioneel met uitleg
-// - Als companySlug ontbreekt: normale matching-wizard (categorie/specialisme verplicht)
+// Stap P1.4 – categorie automatisch invullen vanuit startbedrijf
 
-const API_BASE = "https://irisje-backend.onrender.com/api";
+(function () {
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-const step1 = document.getElementById("step1");
-const step2 = document.getElementById("step2");
+  const form = document.getElementById("requestForm");
+  if (!form) return;
 
-const step1Form = document.getElementById("step1Form");
-const step2Form = document.getElementById("step2Form");
+  const categorySelect = document.getElementById("category");
+  const messageInput = document.getElementById("message");
 
-const categorySelect = document.getElementById("categorySelect");
-const specialtySelect = document.getElementById("specialtySelect");
-const summaryText = document.getElementById("summaryText");
-
-const pageTitle = document.getElementById("pageTitle");
-
-const singleCompanyBox = document.getElementById("singleCompanyBox");
-const singleCompanyName = document.getElementById("singleCompanyName");
-const singleCompanyMeta = document.getElementById("singleCompanyMeta");
-
-const companySearchLabel = document.getElementById("companySearchLabel");
-const companySearchHelp = document.getElementById("companySearchHelp");
-
-let CATEGORIES = {};
-let step1Data = {};
-let selectedCompanySlug = null;
-let selectedCompany = null;
-
-document.addEventListener("DOMContentLoaded", init);
-
-async function init() {
   const params = new URLSearchParams(window.location.search);
-  selectedCompanySlug = params.get("companySlug");
+  const companySlug = params.get("companySlug");
 
-  await loadCategories();
+  let startCompany = null;
 
-  if (selectedCompanySlug) {
-    await enableSingleCompanyMode(selectedCompanySlug);
-  }
-}
+  document.addEventListener("DOMContentLoaded", init);
 
-/* =========================
-   Categories
-========================= */
+  async function init() {
+    if (!companySlug) return;
 
-async function loadCategories() {
-  if (!categorySelect || !specialtySelect) return;
+    try {
+      const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
+      const data = await res.json();
 
-  categorySelect.innerHTML = `<option value="">Kies een categorie</option>`;
-  specialtySelect.innerHTML = `<option value="">Kies eerst een categorie</option>`;
-  specialtySelect.disabled = true;
-
-  try {
-    const res = await fetch(`${API_BASE}/publicCategories`);
-    const data = await res.json();
-
-    if (!res.ok || !data.ok || !Array.isArray(data.categories)) {
-      throw new Error("Categorieën laden mislukt.");
+      if (res.ok && data.ok && data.company) {
+        startCompany = data.company;
+      }
+    } catch (e) {
+      console.error("Kon startbedrijf niet laden", e);
     }
-
-    CATEGORIES = {};
-    data.categories.forEach((c) => {
-      CATEGORIES[c.value] = c;
-      categorySelect.insertAdjacentHTML(
-        "beforeend",
-        `<option value="${escapeHtmlAttr(c.value)}">${escapeHtml(c.label)}</option>`
-      );
-    });
-  } catch (e) {
-    console.error(e);
-    alert("Categorieën laden mislukt");
   }
-}
 
-if (categorySelect) {
-  categorySelect.addEventListener("change", () => {
-    const key = categorySelect.value;
-
-    specialtySelect.innerHTML = "";
-    specialtySelect.disabled = true;
-
-    if (!key || !CATEGORIES[key]) {
-      specialtySelect.innerHTML = `<option value="">Kies eerst een categorie</option>`;
-      return;
-    }
-
-    const specs = Array.isArray(CATEGORIES[key].specialties)
-      ? CATEGORIES[key].specialties
-      : [];
-
-    const opts = specs
-      .map((s) => `<option value="${escapeHtmlAttr(s.value)}">${escapeHtml(s.label)}</option>`)
-      .join("");
-
-    specialtySelect.innerHTML = `<option value="">Kies een specialisme</option>${opts}`;
-    specialtySelect.disabled = false;
-  });
-}
-
-/* =========================
-   Step 1 -> Step 2
-========================= */
-
-if (step1Form) {
-  step1Form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const fd = new FormData(step1Form);
-    step1Data = Object.fromEntries(fd.entries());
+    let categoryValue = categorySelect?.value || "";
 
-    // Single-company: categorie/specialisme optioneel. Bij leeg: geen error.
-    // Multi-company: categorie/specialisme verplicht via HTML "required".
-    if (!selectedCompanySlug) {
-      const cat = CATEGORIES[step1Data.category];
-      const spec = cat?.specialties?.find((s) => s.value === step1Data.specialty);
-
-      if (summaryText) {
-        if (cat && spec) {
-          summaryText.textContent =
-            `Je zoekt een ${cat.label.toLowerCase()} gespecialiseerd in ${spec.label.toLowerCase()}. ` +
-            `Met de vragen hieronder vinden we sneller de juiste match.`;
-        } else {
-          summaryText.textContent =
-            "Met de vragen hieronder vinden we sneller de juiste match.";
-        }
-      }
-    } else {
-      if (summaryText) {
-        const name = selectedCompany?.name ? selectedCompany.name : "het geselecteerde bedrijf";
-        summaryText.textContent =
-          `Je aanvraag wordt verstuurd naar ${name}. Met de vragen hieronder kunnen zij je sneller helpen.`;
-      }
+    // ✅ AUTO-CATEGORIE
+    if (!categoryValue && startCompany?.categories?.length) {
+      categoryValue = startCompany.categories[0];
     }
-
-    if (step1) step1.classList.add("hidden");
-    if (step2) step2.classList.remove("hidden");
-  });
-}
-
-/* =========================
-   Submit
-========================= */
-
-if (step2Form) {
-  step2Form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const fd2 = new FormData(step2Form);
-    const step2Data = Object.fromEntries(fd2.entries());
 
     const payload = {
-      ...step1Data,
-      ...step2Data,
-      companySlug: selectedCompanySlug || null,
+      name: form.name.value.trim(),
+      email: form.email.value.trim(),
+      message: messageInput.value.trim(),
+      category: categoryValue,
+      categories: categoryValue ? [categoryValue] : [],
+      companySlug: companySlug || null,
     };
 
     try {
@@ -166,74 +60,15 @@ if (step2Form) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.ok) {
-        alert(data?.error || "Verzenden mislukt");
+      if (!res.ok || !data.ok || !data.requestId) {
+        alert("Aanvraag kon niet worden aangemaakt.");
         return;
       }
 
       window.location.href = `/results.html?requestId=${data.requestId}`;
-    } catch (err) {
-      console.error(err);
-      alert("Verzenden mislukt");
+    } catch (e) {
+      console.error(e);
+      alert("Aanvraag kon niet worden verzonden.");
     }
   });
-}
-
-/* =========================
-   Single company mode (optie B)
-========================= */
-
-async function enableSingleCompanyMode(slug) {
-  // 1) UI copy
-  if (pageTitle) pageTitle.textContent = "Vraag een offerte aan";
-  if (companySearchLabel) companySearchLabel.textContent = "Extra informatie (optioneel)";
-  if (companySearchHelp) {
-    companySearchHelp.textContent =
-      "Je aanvraag wordt rechtstreeks naar dit bedrijf gestuurd. " +
-      "Categorie en specialisme helpen het bedrijf je sneller te helpen (optioneel).";
-  }
-
-  // 2) required uitzetten voor single-company
-  if (categorySelect) categorySelect.required = false;
-  if (specialtySelect) specialtySelect.required = false;
-
-  // 3) Bedrijf ophalen en tonen
-  try {
-    const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
-    const data = await res.json();
-
-    if (res.ok && data.ok && data.company) {
-      selectedCompany = data.company;
-
-      if (singleCompanyBox) singleCompanyBox.classList.remove("hidden");
-      if (singleCompanyName) singleCompanyName.textContent = selectedCompany.name || "—";
-
-      const meta = [
-        selectedCompany.city || null,
-        selectedCompany.isVerified ? "Geverifieerd" : null,
-      ].filter(Boolean).join(" • ");
-
-      if (singleCompanyMeta) singleCompanyMeta.textContent = meta || "—";
-    }
-  } catch (e) {
-    console.warn("Kon geselecteerd bedrijf niet laden.");
-  }
-}
-
-/* =========================
-   Utils
-========================= */
-
-function escapeHtml(str) {
-  return String(str ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-function escapeHtmlAttr(str) {
-  // voor value="" attribuut
-  return escapeHtml(str).replace(/`/g, "&#096;");
-}
+})();

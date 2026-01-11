@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Optie B – UX-vriendelijke handling zonder requestId
+// Stap P1.4 – filter op categorie + teller fix
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -17,6 +17,7 @@
   let selected = new Set();
   let fixedCompanyId = null;
   let requestId = null;
+  let requestCategory = null;
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -26,7 +27,7 @@
 
     if (!requestId) {
       showEmpty(
-        "Deze pagina kun je alleen bereiken via een offerteaanvraag. Start hieronder een nieuwe aanvraag."
+        "Deze pagina kun je alleen bereiken via een offerteaanvraag."
       );
       return;
     }
@@ -36,13 +37,13 @@
       const reqData = await reqRes.json();
 
       if (!reqRes.ok || !reqData.ok || !reqData.request) {
-        showEmpty(
-          "Deze aanvraag is niet (meer) beschikbaar. Start gerust een nieuwe aanvraag."
-        );
+        showEmpty("Deze aanvraag is niet (meer) beschikbaar.");
         return;
       }
 
       const req = reqData.request;
+      requestCategory =
+        req.category || (req.categories && req.categories[0]) || null;
 
       intro.textContent =
         "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
@@ -54,28 +55,37 @@
         fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
       }
 
-      updateSelectedCount();
+      updateSelectedCount(); // ✅ teller start op 1
 
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
 
-      const companies = Array.isArray(data.results)
+      let companies = Array.isArray(data.results)
         ? data.results
         : Array.isArray(data.companies)
         ? data.companies
         : [];
 
+      // ✅ FILTER OP CATEGORIE
+      if (requestCategory) {
+        companies = companies.filter(
+          (c) =>
+            Array.isArray(c.categories) &&
+            c.categories.includes(requestCategory)
+        );
+      }
+
       if (!companies.length) {
-        showEmpty("Er zijn momenteel geen passende bedrijven beschikbaar.");
+        showEmpty(
+          "Er zijn geen extra bedrijven gevonden die passen bij deze aanvraag."
+        );
         return;
       }
 
       renderCompanies(companies);
     } catch (e) {
       console.error(e);
-      showEmpty(
-        "Er ging iets mis bij het laden van de resultaten. Probeer het later opnieuw."
-      );
+      showEmpty("Er ging iets mis bij het laden van de resultaten.");
     }
   }
 
