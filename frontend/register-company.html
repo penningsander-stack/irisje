@@ -10,75 +10,83 @@
   <link rel="stylesheet" href="/style.css?v=20260111" />
 </head>
 
-<body class="irisje-body">
+<body class="irisje-body min-h-screen">
 
 <header class="irisje-header sticky top-0 z-40">
   <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <a href="index.html" class="font-semibold tracking-tight">Irisje.nl</a>
+    <a href="/index.html" class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600 shadow-brand"></div>
+      <div class="flex flex-col leading-tight">
+        <span class="font-semibold text-indigo-900">Irisje.nl</span>
+        <span class="text-xs text-slate-500">Voor bedrijven</span>
+      </div>
+    </a>
+
+    <nav class="hidden sm:flex items-center space-x-6 text-sm text-slate-600">
+      <a class="nav-link" href="/index.html">Home</a>
+      <a class="nav-link" href="/bedrijven.html">Bedrijven</a>
+      <a class="nav-link" href="/dashboard.html">Dashboard</a>
+      <a class="nav-link" href="/login.html">Inloggen</a>
+    </nav>
   </div>
 </header>
 
-<main class="max-w-xl mx-auto px-4 py-10">
-  <h1 class="text-2xl font-semibold mb-2">Bedrijf registreren</h1>
-
-  <!-- READ-ONLY NOTICE -->
-  <div class="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-    Nieuwe bedrijven worden momenteel <strong>handmatig door Irisje gecontroleerd en toegevoegd</strong>.<br />
-    Wil je je aanmelden? Stuur dan een bericht naar
-    <strong>info@irisje.nl</strong> met je bedrijfsgegevens.
+<main class="page-shell">
+  <div class="page-header-bar">
+    <div class="page-title-block">
+      <h1>Bedrijf registreren</h1>
+      <p>Vul je bedrijfsprofiel in. Categorie en specialismen komen uit één centrale lijst.</p>
+    </div>
+    <div class="page-meta">
+      <span class="badge-soft">Categorieën: live via /api/meta/categories</span>
+    </div>
   </div>
 
-  <form id="companyForm" class="space-y-5" novalidate>
-    <div>
-      <input
-        disabled
-        name="name"
-        class="input w-full opacity-60 cursor-not-allowed"
-        placeholder="Bedrijfsnaam"
-      />
-    </div>
+  <section class="surface-card">
+    <form id="register-company-form" class="space-y-6" novalidate>
+      <div class="form-group">
+        <label for="companyName">Bedrijfsnaam</label>
+        <input id="companyName" class="form-input" placeholder=" " autocomplete="organization" required />
+        <small id="msg-companyName" class="error-text hidden"></small>
+      </div>
 
-    <div>
-      <input
-        disabled
-        name="city"
-        class="input w-full opacity-60 cursor-not-allowed"
-        placeholder="Plaats"
-      />
-    </div>
+      <div class="form-group">
+        <label for="companyCity">Vestigingsplaats</label>
+        <input id="companyCity" class="form-input" placeholder=" " autocomplete="address-level2" required />
+        <small id="msg-companyCity" class="error-text hidden"></small>
+      </div>
 
-    <div>
-      <label class="block text-sm font-medium mb-1">
-        Categorieën
-      </label>
-      <select
-        disabled
-        name="categories"
-        multiple
-        class="input w-full min-h-[96px] opacity-60 cursor-not-allowed"
-      ></select>
-    </div>
+      <div class="form-group">
+        <label for="companyDescription">Korte omschrijving</label>
+        <textarea id="companyDescription" class="form-input" rows="4" placeholder=" "></textarea>
+      </div>
 
-    <div>
-      <label class="block text-sm font-medium mb-1">
-        Specialismen
-      </label>
-      <select
-        disabled
-        name="specialties"
-        multiple
-        class="input w-full min-h-[96px] opacity-60 cursor-not-allowed"
-      ></select>
-    </div>
+      <div class="form-group">
+        <label for="companyCategory">Categorie</label>
+        <select id="companyCategory" class="form-input" required>
+          <option value="">Laden…</option>
+        </select>
+        <small id="msg-companyCategory" class="error-text hidden"></small>
+      </div>
 
-    <button
-      type="button"
-      disabled
-      class="btn-primary w-full opacity-50 cursor-not-allowed"
-    >
-      Registratie tijdelijk gesloten
-    </button>
-  </form>
+      <div class="form-group">
+        <label>Specialismen (kies één of meer)</label>
+        <div id="companySpecialties" class="flex flex-wrap gap-2"></div>
+        <small id="msg-companySpecialties" class="error-text hidden"></small>
+      </div>
+
+      <div class="flex gap-3 flex-wrap items-center">
+        <button type="submit" class="btn-primary">Opslaan</button>
+        <button type="button" id="btn-reset" class="btn-ghost">Leegmaken</button>
+        <span id="form-status" class="rq-status text-slate-600"></span>
+      </div>
+
+      <p class="text-xs text-slate-500">
+        Let op: dit scherm verwacht dat je ingelogd bent (token in <code>localStorage</code>).
+        Als je niet ingelogd bent, kan opslaan mislukken.
+      </p>
+    </form>
+  </section>
 </main>
 
 <script src="/js/register-company.js?v=20260111"></script>
