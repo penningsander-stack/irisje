@@ -1,3 +1,4 @@
+<!-- frontend/admin.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -79,9 +80,15 @@
 
     <div id="editError" class="hidden text-sm text-red-600 mb-3"></div>
 
-    <div class="flex justify-end gap-3">
-      <button id="cancelEdit" class="px-4 py-2 border rounded-lg">Annuleren</button>
-      <button id="saveEdit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Opslaan</button>
+    <div class="flex justify-between gap-3">
+      <button id="deleteCompany" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg">
+        Verwijderen
+      </button>
+
+      <div class="flex gap-3">
+        <button id="cancelEdit" class="px-4 py-2 border rounded-lg">Annuleren</button>
+        <button id="saveEdit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Opslaan</button>
+      </div>
     </div>
   </div>
 </div>

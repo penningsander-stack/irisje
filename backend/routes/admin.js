@@ -1,9 +1,9 @@
 // backend/routes/admin.js
-// v20260111-ADMIN-COMPANIES-EDIT
+// v20260111-ADMIN-COMPANIES-EDIT-DELETE
 //
 // Behoudt ALLE bestaande admin-functionaliteit
-// + Admin PATCH voor bedrijven (bewerken / verifiëren)
-// + PATCH accepteert nu ook `description` (contract-herstel)
+// + PATCH company (bewerken)
+// + DELETE company (verwijderen)
 
 const express = require("express");
 const router = express.Router();
@@ -99,6 +99,36 @@ router.patch("/companies/:id", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Kon bedrijf niet bijwerken",
+      details: err.message,
+    });
+  }
+});
+
+// ============================================================
+// DELETE company (admin verwijderen)
+// ============================================================
+router.delete("/companies/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await Company.findById(id).lean();
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Bedrijf niet gevonden",
+      });
+    }
+
+    await Company.findByIdAndDelete(id);
+
+    return res.json({
+      ok: true,
+      message: "Bedrijf verwijderd",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      error: "Kon bedrijf niet verwijderen",
       details: err.message,
     });
   }
