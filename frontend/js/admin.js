@@ -1,3 +1,4 @@
+// frontend/js/admin.js
 (() => {
   "use strict";
 
@@ -7,7 +8,9 @@
 
   const authHeaders = () => {
     const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : {};
+    return token
+      ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+      : {};
   };
 
   let companies = new Map();
@@ -23,8 +26,8 @@
   }
 
   function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, m =>
-      ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m])
+    return String(s ?? "").replace(/[&<>"']/g, (m) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])
     );
   }
 
@@ -39,7 +42,7 @@
     }
 
     companies.clear();
-    data.companies.forEach(c => companies.set(c._id, c));
+    data.companies.forEach((c) => companies.set(c._id, c));
     renderTable(data.companies);
   }
 
@@ -91,21 +94,44 @@
       name: qs("#editName").value.trim(),
       city: qs("#editCity").value.trim(),
       description: qs("#editDescription").value,
-      categories: qs("#editCategories").value.split(",").map(s => s.trim()).filter(Boolean),
-      specialties: qs("#editSpecialties").value.split(",").map(s => s.trim()).filter(Boolean),
-      isVerified: qs("#editVerified").checked
+      categories: qs("#editCategories").value.split(",").map((s) => s.trim()).filter(Boolean),
+      specialties: qs("#editSpecialties").value.split(",").map((s) => s.trim()).filter(Boolean),
+      isVerified: qs("#editVerified").checked,
     };
 
     const res = await fetch(`${API}/admin/companies/${id}`, {
       method: "PATCH",
       headers: authHeaders(),
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
     if (!data.ok) {
       qs("#editError").textContent = data.error || "Opslaan mislukt";
       qs("#editError").classList.remove("hidden");
+      return;
+    }
+
+    closeModal();
+    loadCompanies();
+  }
+
+  async function deleteCompany() {
+    const id = qs("#editId").value;
+    const company = companies.get(id);
+    if (!company) return;
+
+    const ok = confirm(`Weet je zeker dat je "${company.name}" wilt verwijderen?`);
+    if (!ok) return;
+
+    const res = await fetch(`${API}/admin/companies/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      alert(data.error || "Verwijderen mislukt");
       return;
     }
 
@@ -125,5 +151,6 @@
 
     qs("#cancelEdit").onclick = closeModal;
     qs("#saveEdit").onclick = saveEdit;
+    qs("#deleteCompany").onclick = deleteCompany;
   });
 })();
