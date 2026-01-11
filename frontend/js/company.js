@@ -1,5 +1,5 @@
 // frontend/js/company.js
-// v2026-01-11 — afgestemd op huidige company.html
+// v2026-01-11 — Stap F: robuust laden via slug óf id (compatibel met results.html links)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -7,9 +7,11 @@ document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
-  const slug = params.get("slug");
 
-  if (!slug) {
+  // Historisch heet de queryparam "slug". We ondersteunen nu ook id als fallback.
+  const slugOrId = params.get("slug") || params.get("id");
+
+  if (!slugOrId) {
     renderError("Geen bedrijf opgegeven.");
     return;
   }
@@ -18,11 +20,21 @@ async function init() {
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    if (!res.ok || !Array.isArray(data.results)) {
+    // ✅ accepteer meerdere response-vormen (results / companies)
+    const companies = Array.isArray(data.results)
+      ? data.results
+      : Array.isArray(data.companies)
+      ? data.companies
+      : null;
+
+    if (!res.ok || !Array.isArray(companies)) {
       throw new Error("Kon bedrijven niet laden.");
     }
 
-    const company = data.results.find(c => c.slug === slug);
+    const company =
+      companies.find(c => String(c.slug || "") === String(slugOrId)) ||
+      companies.find(c => String(c._id || c.id || "") === String(slugOrId));
+
     if (!company) {
       throw new Error("Bedrijf niet gevonden.");
     }
@@ -45,7 +57,7 @@ function renderCompany(company) {
   setText(
     "companyRating",
     company.reviewCount
-      ? `${company.avgRating.toFixed(1)} ★ (${company.reviewCount} reviews)`
+      ? `${Number(company.avgRating || 0).toFixed(1)} ★ (${company.reviewCount} reviews)`
       : "Nog geen reviews"
   );
 
@@ -62,11 +74,13 @@ function renderDetails(company) {
 
   ul.innerHTML = "";
 
-  addLi(ul, "Plaats", company.city);
+  addLi(ul, "Plaats", company.city || "—");
   addLi(
     ul,
     "Categorieën",
-    Array.isArray(company.categories) ? company.categories.join(", ") : "—"
+    Array.isArray(company.categories) && company.categories.length
+      ? company.categories.join(", ")
+      : "—"
   );
   addLi(
     ul,
@@ -126,6 +140,7 @@ function renderError(msg) {
 function getInitials(name) {
   return String(name || "")
     .split(" ")
+    .filter(Boolean)
     .slice(0, 2)
     .map(w => w[0])
     .join("")

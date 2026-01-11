@@ -1,5 +1,6 @@
 // frontend/js/results.js
-// v2026-01-18 — robuuste results weergave (geen stille leegfiltering)
+// v2026-01-11 — Stap F: bedrijf aanklikbaar maken (results → company)
+// Doel: klik op bedrijf → company.html?slug=...
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -69,7 +70,7 @@ async function init() {
     }
 
     hideEmpty(emptyState);
-    renderCards(grid, filtered);
+    renderCards(grid, filtered, params);
 
     if (count) {
       count.textContent = `${filtered.length} bedrijven gevonden`;
@@ -80,14 +81,28 @@ async function init() {
   }
 }
 
-function renderCards(grid, companies) {
+function renderCards(grid, companies, currentParams) {
   grid.innerHTML = "";
 
   for (const c of companies) {
-    const card = document.createElement("div");
-    card.className = "border rounded-xl p-4 bg-white shadow-soft";
+    // Belangrijk: backend hoort slug te leveren. Als die ontbreekt gebruiken we _id als fallback.
+    // company.js kan beide matchen (slug of id).
+    const ref = c.slug || c._id || c.id || "";
+    const safeRef = encodeURIComponent(String(ref));
 
-    card.innerHTML = `
+    // behoud context (optioneel)
+    const extra = new URLSearchParams();
+    if (currentParams && currentParams.get("sector")) {
+      extra.set("fromSector", currentParams.get("sector"));
+    }
+    const extraQs = extra.toString() ? `&${extra.toString()}` : "";
+
+    const a = document.createElement("a");
+    a.href = `company.html?slug=${safeRef}${extraQs}`;
+    a.className = "block border rounded-xl p-4 bg-white shadow-soft hover:shadow-md transition";
+    a.setAttribute("aria-label", `Bekijk bedrijf: ${c.name || ""}`);
+
+    a.innerHTML = `
       <div class="font-semibold text-slate-900 mb-1">${escapeHtml(c.name || "")}</div>
       <div class="text-sm text-slate-600 mb-2">${escapeHtml(c.city || "")}</div>
       <div class="text-xs text-slate-500">
@@ -95,7 +110,7 @@ function renderCards(grid, companies) {
       </div>
     `;
 
-    grid.appendChild(card);
+    grid.appendChild(a);
   }
 }
 
