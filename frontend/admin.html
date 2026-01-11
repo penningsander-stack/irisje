@@ -18,7 +18,17 @@
 
 <main class="max-w-6xl mx-auto px-4 py-6">
 
-  <h2 class="text-xl font-semibold mb-4">Bedrijven</h2>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-xl font-semibold">Bedrijven</h2>
+    <button
+      id="addCompany"
+      type="button"
+      class="px-4 py-2 bg-indigo-600 text-white rounded-lg"
+    >
+      Bedrijf toevoegen
+    </button>
+  </div>
+
   <div id="errorBox" class="hidden mb-4 text-red-600"></div>
 
   <div class="overflow-x-auto bg-white rounded-xl shadow-sm relative z-10">
@@ -44,7 +54,7 @@
   style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center;"
 >
   <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-lg">
-    <h3 class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
+    <h3 id="modalTitle" class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
 
     <input id="editId" type="hidden" />
 
@@ -81,13 +91,21 @@
     <div id="editError" class="hidden text-sm text-red-600 mb-3"></div>
 
     <div class="flex justify-between gap-3">
-      <button id="deleteCompany" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg">
+      <button
+        id="deleteCompany"
+        type="button"
+        class="px-4 py-2 border border-red-300 text-red-600 rounded-lg"
+      >
         Verwijderen
       </button>
 
       <div class="flex gap-3">
-        <button id="cancelEdit" class="px-4 py-2 border rounded-lg">Annuleren</button>
-        <button id="saveEdit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Opslaan</button>
+        <button id="cancelEdit" type="button" class="px-4 py-2 border rounded-lg">
+          Annuleren
+        </button>
+        <button id="saveEdit" type="button" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+          Opslaan
+        </button>
       </div>
     </div>
   </div>
