@@ -1,7 +1,7 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const Company = require("../models/Company");
+const Company = require("../models/company");
 const auth = require("../middleware/auth");
 
 /**
