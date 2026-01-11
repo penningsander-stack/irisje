@@ -6,68 +6,88 @@
   <title>Irisje – Admin</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
-  <main class="container">
-    <h1>Admin – Bedrijven</h1>
 
-    <section class="card">
-      <h2 id="form-title">Bedrijf toevoegen</h2>
+<body class="irisje-body">
+  <main class="page-shell">
 
-      <form id="company-form">
+    <!-- PAGINA HEADER -->
+    <div class="page-header-bar">
+      <div class="page-title-block">
+        <h1>Admin – Bedrijven</h1>
+        <p>Beheer bedrijven, sectoren en specialismen</p>
+      </div>
+    </div>
+
+    <!-- FORM CARD -->
+    <section class="surface-card">
+      <h2 class="text-lg font-semibold mb-4" id="form-title">
+        Bedrijf toevoegen
+      </h2>
+
+      <form id="company-form" class="grid gap-4">
         <input type="hidden" id="company-id" />
 
-        <div class="field">
+        <div class="form-group">
           <label>Naam</label>
-          <input type="text" id="name" required />
+          <input type="text" id="name" class="form-input" required />
         </div>
 
-        <div class="field">
+        <div class="form-group">
           <label>Plaats</label>
-          <input type="text" id="city" />
+          <input type="text" id="city" class="form-input" />
         </div>
 
-        <div class="field">
+        <div class="form-group">
           <label>Omschrijving</label>
-          <textarea id="description"></textarea>
+          <textarea id="description" class="form-input"></textarea>
         </div>
 
-        <div class="field">
+        <div class="form-group">
           <label>Sectoren</label>
-          <select id="categories" multiple></select>
+          <select id="categories" class="form-input" multiple></select>
         </div>
 
-        <div class="field">
+        <div class="form-group">
           <label>Specialismen</label>
-          <select id="specialties" multiple></select>
+          <select id="specialties" class="form-input" multiple></select>
         </div>
 
-        <div class="field">
-          <label>
-            <input type="checkbox" id="isVerified" />
-            Geverifieerd
-          </label>
-        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="isVerified" />
+          Geverifieerd
+        </label>
 
-        <button type="submit">Opslaan</button>
-        <button type="button" id="cancel-edit" hidden>Annuleren</button>
+        <div class="flex gap-2 mt-4">
+          <button type="submit" class="btn-primary">
+            Opslaan
+          </button>
+          <button type="button" id="cancel-edit" class="btn-ghost hidden">
+            Annuleren
+          </button>
+        </div>
       </form>
     </section>
 
-    <section class="card">
-      <h2>Bedrijven</h2>
-      <table id="companies-table">
-        <thead>
+    <!-- TABEL CARD -->
+    <section class="surface-card">
+      <h2 class="text-lg font-semibold mb-4">
+        Bedrijven
+      </h2>
+
+      <table class="w-full text-sm">
+        <thead class="text-slate-500">
           <tr>
-            <th>Naam</th>
-            <th>Plaats</th>
-            <th>Sectoren</th>
-            <th>Status</th>
-            <th>Acties</th>
+            <th class="text-left py-2">Naam</th>
+            <th class="text-left py-2">Plaats</th>
+            <th class="text-left py-2">Sectoren</th>
+            <th class="text-left py-2">Status</th>
+            <th class="text-left py-2">Acties</th>
           </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="companies-table-body"></tbody>
       </table>
     </section>
+
   </main>
 
   <script src="js/admin.js"></script>
