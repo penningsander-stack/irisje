@@ -1,154 +1,109 @@
 // backend/routes/companies.js
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
-
-// 🔴 FIX: juiste bestandsnaam (geen hoofdletter)
-const Company = require("../models/company");
+const Company = require("../models/Company");
+const auth = require("../middleware/auth");
 
 /**
- * Helpers
- */
-function normalizeString(value) {
-  if (!value) return "";
-  return String(value).trim().toLowerCase();
-}
-
-function withDefaults(company) {
-  const obj = company.toObject ? company.toObject() : company;
-
-  return {
-    _id: obj._id,
-    name: obj.name || "",
-    slug: obj.slug || "",
-    city: obj.city || "",
-    description: obj.description || "",
-    categories: Array.isArray(obj.categories) ? obj.categories : [],
-    specialties: Array.isArray(obj.specialties) ? obj.specialties : [],
-    reasons: Array.isArray(obj.reasons) ? obj.reasons : [],
-    services: Array.isArray(obj.services) ? obj.services : [],
-    approach: obj.approach || "",
-    experience: obj.experience || "",
-    involvement: obj.involvement || "",
-    avgRating: obj.avgRating ?? 0,
-    reviewCount: obj.reviewCount ?? 0,
-    isVerified: !!obj.isVerified,
-    logoUrl: obj.logoUrl || "",
-    createdAt: obj.createdAt,
-    updatedAt: obj.updatedAt,
-  };
-}
-
-/**
- * =========================================================
- * SEARCH (moet boven /:id staan)
- * =========================================================
+ * GET /api/companies/search
+ * Publieke zoekroute
  */
 router.get("/search", async (req, res) => {
   try {
-    const {
-      category = "",
-      city = "",
-      q = "",
-      verified = "",
-      minRating = "",
-      sort = "relevance",
-    } = req.query;
+    const { category, city, q } = req.query;
 
-    const filters = {};
+    const filter = {};
 
     if (category) {
-      const cat = normalizeString(category);
-      filters.categories = { $in: [cat] };
+      filter.categories = category;
     }
 
     if (city) {
-      filters.city = new RegExp(`^${city}$`, "i");
-    }
-
-    if (verified === "true") {
-      filters.isVerified = true;
-    }
-
-    if (minRating) {
-      const rating = Number(minRating);
-      if (!Number.isNaN(rating)) {
-        filters.avgRating = { $gte: rating };
-      }
+      filter.city = new RegExp(`^${city}$`, "i");
     }
 
     if (q) {
-      const regex = new RegExp(q, "i");
-      filters.$or = [
-        { name: regex },
-        { description: regex },
-        { specialties: regex },
+      filter.$or = [
+        { name: new RegExp(q, "i") },
+        { description: new RegExp(q, "i") },
       ];
     }
 
-    let query = Company.find(filters);
-
-    if (sort === "rating") query = query.sort({ avgRating: -1 });
-    if (sort === "newest") query = query.sort({ createdAt: -1 });
-
-    const companies = await query.lean();
-
-    res.json({
-      ok: true,
-      results: companies.map(c => withDefaults(c)),
-      fallbackUsed: false,
-      message: null,
-    });
+    const companies = await Company.find(filter).lean();
+    res.json({ ok: true, companies });
   } catch (err) {
-    console.error("❌ companies/search error:", err);
-    res.status(500).json({ ok: false, error: "Search failed" });
+    res.status(500).json({ ok: false, error: "Zoeken mislukt" });
   }
 });
 
 /**
- * =========================================================
- * GET BY ID
- * =========================================================
+ * GET /api/companies
+ * Publiek overzicht
+ */
+router.get("/", async (req, res) => {
+  try {
+    const companies = await Company.find().lean();
+    res.json({ ok: true, companies });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: "Kon bedrijven niet ophalen" });
+  }
+});
+
+/**
+ * GET /api/companies/:id
+ * Publiek detail
  */
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ ok: false, error: "Invalid id" });
-    }
-
-    const company = await Company.findById(id);
-
+    const company = await Company.findById(req.params.id).lean();
     if (!company) {
-      return res.status(404).json({ ok: false, error: "Company not found" });
+      return res.status(404).json({ ok: false, error: "Bedrijf niet gevonden" });
     }
-
-    res.json({
-      ok: true,
-      company: withDefaults(company),
-    });
+    res.json({ ok: true, company });
   } catch (err) {
-    console.error("❌ companies/:id error:", err);
-    res.status(500).json({ ok: false, error: "Failed to load company" });
+    res.status(500).json({ ok: false, error: "Kon bedrijf niet ophalen" });
   }
 });
 
 /**
- * =========================================================
- * LIST
- * =========================================================
+ * PATCH /api/companies/me
+ * Update eigen bedrijf (voor register-company)
  */
-router.get("/", async (_req, res) => {
+router.patch("/me", auth, async (req, res) => {
   try {
-    const companies = await Company.find().lean();
-    res.json({
-      ok: true,
-      results: companies.map(c => withDefaults(c)),
-    });
+    const userId = req.user.id;
+
+    const company = await Company.findOne({ owner: userId });
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Geen bedrijf gekoppeld aan dit account",
+      });
+    }
+
+    const {
+      name,
+      city,
+      description,
+      categories,
+      specialties,
+    } = req.body;
+
+    if (name !== undefined) company.name = name;
+    if (city !== undefined) company.city = city;
+    if (description !== undefined) company.description = description;
+    if (Array.isArray(categories)) company.categories = categories;
+    if (Array.isArray(specialties)) company.specialties = specialties;
+
+    await company.save();
+
+    res.json({ ok: true, company });
   } catch (err) {
-    console.error("❌ companies list error:", err);
-    res.status(500).json({ ok: false, error: "Failed to load companies" });
+    res.status(500).json({
+      ok: false,
+      error: "Bijwerken mislukt",
+      details: err.message,
+    });
   }
 });
 
