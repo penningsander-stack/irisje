@@ -41,6 +41,36 @@ router.get("/", async (req, res) => {
 });
 
 /**
+ * GET /api/companies/slug/:slug
+ * Publiek detail-endpoint voor company.html
+ */
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const company = await Company.findOne({ slug });
+
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Bedrijf niet gevonden",
+      });
+    }
+
+    res.json({
+      ok: true,
+      company,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      ok: false,
+      error: "Serverfout",
+    });
+  }
+});
+
+/**
  * GET /api/companies/me
  * Haal eigen bedrijf op
  */
@@ -67,8 +97,7 @@ router.get("/me", auth, async (req, res) => {
 
 /**
  * PATCH /api/companies/me
- * Maak bedrijf aan als het nog niet bestaat
- * Update bedrijf als het al bestaat
+ * Maak of update eigen bedrijf
  */
 router.patch("/me", auth, async (req, res) => {
   try {
