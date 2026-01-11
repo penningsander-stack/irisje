@@ -10,49 +10,53 @@
 <body class="irisje-body">
   <main class="page-shell">
 
-    <!-- PAGINA HEADER -->
+    <!-- HEADER -->
     <div class="page-header-bar">
       <div class="page-title-block">
         <h1>Admin – Bedrijven</h1>
         <p>Beheer bedrijven, sectoren en specialismen</p>
       </div>
+
+      <button id="add-company-btn" class="btn-primary">
+        + Bedrijf toevoegen
+      </button>
     </div>
 
-    <!-- FORM CARD -->
-    <section class="surface-card">
+    <!-- FORM (standaard verborgen) -->
+    <section class="surface-card hidden" id="company-form-card">
       <h2 class="text-lg font-semibold mb-4" id="form-title">
         Bedrijf toevoegen
       </h2>
 
-      <form id="company-form" class="grid gap-4">
+      <form id="company-form" class="grid gap-3 max-w-xl">
         <input type="hidden" id="company-id" />
 
         <div class="form-group">
           <label>Naam</label>
-          <input type="text" id="name" class="form-input" required />
+          <input type="text" id="name" class="form-input text-sm py-2" required />
         </div>
 
         <div class="form-group">
           <label>Plaats</label>
-          <input type="text" id="city" class="form-input" />
+          <input type="text" id="city" class="form-input text-sm py-2" />
         </div>
 
         <div class="form-group">
           <label>Omschrijving</label>
-          <textarea id="description" class="form-input"></textarea>
+          <textarea id="description" class="form-input text-sm py-2"></textarea>
         </div>
 
         <div class="form-group">
           <label>Sectoren</label>
-          <select id="categories" class="form-input" multiple></select>
+          <select id="categories" class="form-input text-sm py-2" multiple></select>
         </div>
 
         <div class="form-group">
           <label>Specialismen</label>
-          <select id="specialties" class="form-input" multiple></select>
+          <select id="specialties" class="form-input text-sm py-2" multiple></select>
         </div>
 
-        <label class="checkbox-label">
+        <label class="checkbox-label mt-2">
           <input type="checkbox" id="isVerified" />
           Geverifieerd
         </label>
@@ -61,18 +65,16 @@
           <button type="submit" class="btn-primary">
             Opslaan
           </button>
-          <button type="button" id="cancel-edit" class="btn-ghost hidden">
+          <button type="button" id="cancel-edit" class="btn-ghost">
             Annuleren
           </button>
         </div>
       </form>
     </section>
 
-    <!-- TABEL CARD -->
+    <!-- BEDRIJVENLIJST -->
     <section class="surface-card">
-      <h2 class="text-lg font-semibold mb-4">
-        Bedrijven
-      </h2>
+      <h2 class="text-lg font-semibold mb-4">Bedrijven</h2>
 
       <table class="w-full text-sm">
         <thead class="text-slate-500">
