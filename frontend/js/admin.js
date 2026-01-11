@@ -1,129 +1,121 @@
 // frontend/js/admin.js
-// v20260111-ADMIN-SECTORS-SPECIALTIES-FIX
+// v2026-01-11 A4.2 – admin aangesloten op /api/meta/categories
 
-const API = "https://irisje-backend.onrender.com/api/admin";
+const API_ADMIN = "https://irisje-backend.onrender.com/api/admin";
+const API_META = "https://irisje-backend.onrender.com/api/meta";
 const token = localStorage.getItem("token");
 
-// ================================
-// VASTE SECTOREN & SPECIALISMEN
-// ================================
-const SECTORS = {
-  juridisch: [
-    "arbeidsrecht",
-    "familierecht",
-    "bestuursrecht",
-    "huurrecht",
-    "ondernemingsrecht",
-  ],
-  bouw: [
-    "aannemer",
-    "installatie",
-    "elektra",
-    "loodgieter",
-  ],
-  zorg: [
-    "thuiszorg",
-    "jeugdzorg",
-    "ggz",
-  ],
-};
-
-// ================================
 // ELEMENTS
-// ================================
-const form = document.getElementById("company-form");
+const addCompanyBtn = document.getElementById("add-company-btn");
 const formCard = document.getElementById("company-form-card");
+const form = document.getElementById("company-form");
 const formTitle = document.getElementById("form-title");
-const companyIdInput = document.getElementById("company-id");
+const cancelEditBtn = document.getElementById("cancel-edit");
 
+const companyIdInput = document.getElementById("company-id");
 const nameInput = document.getElementById("name");
 const cityInput = document.getElementById("city");
 const descriptionInput = document.getElementById("description");
-const categoriesSelect = document.getElementById("categories");
-const specialtiesSelect = document.getElementById("specialties");
+const categorySelect = document.getElementById("category");
+const specialtiesWrap = document.getElementById("specialties");
 const isVerifiedInput = document.getElementById("isVerified");
-const cancelEditBtn = document.getElementById("cancel-edit");
 
-const addCompanyBtn = document.getElementById("add-company-btn");
 const tableBody = document.getElementById("companies-table-body");
 
-// ================================
+let CATEGORY_CONFIG = [];
+
 // INIT
-// ================================
-initSectorSelect();
-loadCompanies();
+init();
 
-addCompanyBtn.onclick = () => {
-  resetForm();
-  formCard.classList.remove("hidden");
-};
-
-// ================================
-// INIT SECTOR SELECT
-// ================================
-function initSectorSelect() {
-  categoriesSelect.innerHTML = "";
-
-  Object.keys(SECTORS).forEach((sector) => {
-    const opt = document.createElement("option");
-    opt.value = sector;
-    opt.textContent = sector;
-    categoriesSelect.appendChild(opt);
-  });
-
-  categoriesSelect.addEventListener("change", updateSpecialties);
+async function init() {
+  await loadCategories();
+  await loadCompanies();
+  bindUI();
 }
 
-// ================================
-// UPDATE SPECIALTIES
-// ================================
-function updateSpecialties() {
-  const selectedSectors = [...categoriesSelect.selectedOptions].map(
-    (o) => o.value
-  );
+// UI BINDINGS
+function bindUI() {
+  addCompanyBtn.onclick = () => {
+    resetForm();
+    showForm();
+  };
 
-  const allowed = new Set();
-  selectedSectors.forEach((s) => {
-    (SECTORS[s] || []).forEach((sp) => allowed.add(sp));
+  cancelEditBtn.onclick = () => {
+    hideForm();
+  };
+
+  form.onsubmit = submitForm;
+}
+
+// LOAD CATEGORY CONFIG
+async function loadCategories() {
+  const res = await fetch(`${API_META}/categories`);
+  const data = await res.json();
+  if (!data.ok) {
+    alert("Kon categorieën niet laden");
+    return;
+  }
+
+  CATEGORY_CONFIG = data.categories;
+  categorySelect.innerHTML = "";
+
+  CATEGORY_CONFIG.forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c.key;
+    opt.textContent = c.label;
+    categorySelect.appendChild(opt);
   });
 
-  specialtiesSelect.innerHTML = "";
-  [...allowed].forEach((sp) => {
-    const opt = document.createElement("option");
-    opt.value = sp;
-    opt.textContent = sp;
-    specialtiesSelect.appendChild(opt);
+  categorySelect.onchange = renderSpecialties;
+  renderSpecialties();
+}
+
+// RENDER SPECIALTIES
+function renderSpecialties(selected = []) {
+  const catKey = categorySelect.value;
+  const category = CATEGORY_CONFIG.find((c) => c.key === catKey);
+  specialtiesWrap.innerHTML = "";
+
+  if (!category) return;
+
+  category.specialties.forEach((s) => {
+    const label = document.createElement("label");
+    label.className = "checkbox-label";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = s.key;
+    if (selected.includes(s.key)) cb.checked = true;
+
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(" " + s.label));
+    specialtiesWrap.appendChild(label);
   });
 }
 
-// ================================
 // LOAD COMPANIES
-// ================================
 async function loadCompanies() {
-  const res = await fetch(`${API}/companies`, {
+  const res = await fetch(`${API_ADMIN}/companies`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
-  if (!res.ok) {
+  const data = await res.json();
+  if (!data.ok) {
     alert("Kon bedrijven niet laden");
     return;
   }
 
-  const data = await res.json();
   tableBody.innerHTML = "";
-  (data.companies || []).forEach(renderCompanyRow);
+  data.companies.forEach(renderRow);
 }
 
-// ================================
-// RENDER ROW
-// ================================
-function renderCompanyRow(c) {
+// RENDER TABLE ROW
+function renderRow(c) {
   const tr = document.createElement("tr");
 
   tr.innerHTML = `
     <td>${c.name}</td>
     <td>${c.city || ""}</td>
-    <td>${(c.categories || []).join(", ")}</td>
+    <td>${(c.categories && c.categories[0]) || ""}</td>
     <td>${c.isVerified ? "Geverifieerd" : "Niet geverifieerd"}</td>
     <td>
       <button data-edit="${c._id}">Bewerken</button>
@@ -137,27 +129,44 @@ function renderCompanyRow(c) {
   tableBody.appendChild(tr);
 }
 
-// ================================
-// FORM SUBMIT
-// ================================
-form.addEventListener("submit", async (e) => {
+// EDIT
+function editCompany(c) {
+  resetForm();
+  showForm();
+
+  formTitle.textContent = "Bedrijf bewerken";
+  companyIdInput.value = c._id;
+  nameInput.value = c.name;
+  cityInput.value = c.city || "";
+  descriptionInput.value = c.description || "";
+  isVerifiedInput.checked = !!c.isVerified;
+
+  if (c.categories && c.categories.length) {
+    categorySelect.value = c.categories[0];
+  }
+  renderSpecialties(c.specialties || []);
+}
+
+// SUBMIT
+async function submitForm(e) {
   e.preventDefault();
 
-  const categories = [...categoriesSelect.selectedOptions].map((o) => o.value);
-  const specialties = [...specialtiesSelect.selectedOptions].map((o) => o.value);
+  const specialties = [...specialtiesWrap.querySelectorAll("input:checked")].map(
+    (cb) => cb.value
+  );
 
   const payload = {
     name: nameInput.value,
     city: cityInput.value,
     description: descriptionInput.value,
-    categories,
+    categories: [categorySelect.value],
     specialties,
     isVerified: isVerifiedInput.checked,
   };
 
   const id = companyIdInput.value;
   const method = id ? "PATCH" : "POST";
-  const url = id ? `${API}/companies/${id}` : `${API}/companies`;
+  const url = id ? `${API_ADMIN}/companies/${id}` : `${API_ADMIN}/companies`;
 
   const res = await fetch(url, {
     method,
@@ -174,64 +183,35 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  resetForm();
+  hideForm();
   loadCompanies();
-});
-
-// ================================
-// EDIT
-// ================================
-function editCompany(c) {
-  formTitle.textContent = "Bedrijf bewerken";
-  companyIdInput.value = c._id;
-  nameInput.value = c.name;
-  cityInput.value = c.city || "";
-  descriptionInput.value = c.description || "";
-  isVerifiedInput.checked = !!c.isVerified;
-
-  [...categoriesSelect.options].forEach(
-    (o) => (o.selected = c.categories?.includes(o.value))
-  );
-
-  updateSpecialties();
-
-  [...specialtiesSelect.options].forEach(
-    (o) => (o.selected = c.specialties?.includes(o.value))
-  );
-
-  cancelEditBtn.hidden = false;
-  formCard.classList.remove("hidden");
 }
 
-// ================================
 // DELETE
-// ================================
 async function deleteCompany(id) {
   if (!confirm("Bedrijf verwijderen?")) return;
 
-  const res = await fetch(`${API}/companies/${id}`, {
+  await fetch(`${API_ADMIN}/companies/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  if (!res.ok) {
-    alert("Verwijderen mislukt");
-    return;
-  }
-
   loadCompanies();
 }
 
-// ================================
-// RESET
-// ================================
-cancelEditBtn.onclick = resetForm;
+// FORM VISIBILITY
+function showForm() {
+  formCard.classList.remove("hidden");
+}
 
+function hideForm() {
+  formCard.classList.add("hidden");
+}
+
+// RESET
 function resetForm() {
   form.reset();
   companyIdInput.value = "";
-  specialtiesSelect.innerHTML = "";
   formTitle.textContent = "Bedrijf toevoegen";
-  cancelEditBtn.hidden = true;
-  formCard.classList.add("hidden");
+  renderSpecialties([]);
 }

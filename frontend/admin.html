@@ -1,95 +1,82 @@
-<!-- frontend/admin.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Irisje – Admin</title>
+  <meta charset="utf-8" />
+  <title>Admin – Irisje</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 
-<body class="irisje-body">
+<body class="irisje-body min-h-screen">
   <main class="page-shell">
-
-    <!-- HEADER -->
     <div class="page-header-bar">
       <div class="page-title-block">
         <h1>Admin – Bedrijven</h1>
-        <p>Beheer bedrijven, sectoren en specialismen</p>
+        <p>Beheer bedrijven, categorieën en specialismen</p>
       </div>
-
-      <button id="add-company-btn" class="btn-primary">
-        + Bedrijf toevoegen
-      </button>
+      <button id="add-company-btn" class="btn-primary">+ Bedrijf toevoegen</button>
     </div>
 
-    <!-- FORM (standaard verborgen) -->
-    <section class="surface-card hidden" id="company-form-card">
-      <h2 class="text-lg font-semibold mb-4" id="form-title">
-        Bedrijf toevoegen
-      </h2>
+    <!-- FORMULIER -->
+    <section id="company-form-card" class="surface-card hidden">
+      <h2 id="form-title" class="mb-4">Bedrijf toevoegen</h2>
 
-      <form id="company-form" class="grid gap-4 max-w-lg">
+      <form id="company-form" class="space-y-6">
         <input type="hidden" id="company-id" />
 
         <div class="form-group">
-          <label>Naam</label>
-          <input type="text" id="name" class="form-input" required />
+          <label for="name">Bedrijfsnaam</label>
+          <input id="name" class="form-input" required />
         </div>
 
         <div class="form-group">
-          <label>Plaats</label>
-          <input type="text" id="city" class="form-input" />
+          <label for="city">Plaats</label>
+          <input id="city" class="form-input" />
         </div>
 
         <div class="form-group">
-          <label>Omschrijving</label>
+          <label for="description">Omschrijving</label>
           <textarea id="description" class="form-input"></textarea>
         </div>
 
         <div class="form-group">
-          <label>Sectoren</label>
-          <select id="categories" class="form-input" multiple></select>
+          <label for="category">Categorie</label>
+          <select id="category" class="form-input"></select>
         </div>
 
         <div class="form-group">
           <label>Specialismen</label>
-          <select id="specialties" class="form-input" multiple></select>
+          <div id="specialties" class="flex flex-wrap gap-2"></div>
         </div>
 
-        <label class="checkbox-label mt-2">
-          <input type="checkbox" id="isVerified" />
-          Geverifieerd
-        </label>
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="isVerified" />
+            Geverifieerd
+          </label>
+        </div>
 
-        <div class="flex gap-2 mt-4">
-          <button type="submit" class="btn-primary">
-            Opslaan
-          </button>
-          <button type="button" id="cancel-edit" class="btn-ghost hidden">
-            Annuleren
-          </button>
+        <div class="flex gap-3">
+          <button type="submit" class="btn-primary">Opslaan</button>
+          <button type="button" id="cancel-edit" class="btn-ghost">Annuleren</button>
         </div>
       </form>
     </section>
 
-    <!-- BEDRIJVENLIJST -->
+    <!-- TABEL -->
     <section class="surface-card">
-      <h2 class="text-lg font-semibold mb-4">Bedrijven</h2>
-
-      <table class="w-full text-sm">
-        <thead class="text-slate-500">
+      <table class="w-full">
+        <thead>
           <tr>
-            <th class="text-left py-2">Naam</th>
-            <th class="text-left py-2">Plaats</th>
-            <th class="text-left py-2">Sectoren</th>
-            <th class="text-left py-2">Status</th>
-            <th class="text-left py-2">Acties</th>
+            <th>Naam</th>
+            <th>Plaats</th>
+            <th>Categorie</th>
+            <th>Status</th>
+            <th>Acties</th>
           </tr>
         </thead>
         <tbody id="companies-table-body"></tbody>
       </table>
     </section>
-
   </main>
 
   <script src="js/admin.js"></script>
