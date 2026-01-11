@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Stap P1.4 – categorie automatisch invullen vanuit startbedrijf
+// Optie A – "Volgende stap" = aanvraag aanmaken
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -8,6 +8,7 @@
   if (!form) return;
 
   const categorySelect = document.getElementById("category");
+  const specialtySelect = document.getElementById("specialty");
   const messageInput = document.getElementById("message");
 
   const params = new URLSearchParams(window.location.search);
@@ -28,7 +29,7 @@
         startCompany = data.company;
       }
     } catch (e) {
-      console.error("Kon startbedrijf niet laden", e);
+      console.error("Startbedrijf kon niet worden geladen", e);
     }
   }
 
@@ -36,8 +37,9 @@
     e.preventDefault();
 
     let categoryValue = categorySelect?.value || "";
+    let specialtyValue = specialtySelect?.value || "";
 
-    // ✅ AUTO-CATEGORIE
+    // ✅ categorie automatisch overnemen van startbedrijf
     if (!categoryValue && startCompany?.categories?.length) {
       categoryValue = startCompany.categories[0];
     }
@@ -48,6 +50,8 @@
       message: messageInput.value.trim(),
       category: categoryValue,
       categories: categoryValue ? [categoryValue] : [],
+      specialty: specialtyValue,
+      specialties: specialtyValue ? [specialtyValue] : [],
       companySlug: companySlug || null,
     };
 
@@ -65,6 +69,7 @@
         return;
       }
 
+      // ✅ DIRECT DOOR NAAR RESULTATEN
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (e) {
       console.error(e);
