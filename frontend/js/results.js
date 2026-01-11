@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-17 — FIX: render naar resultsGrid + juiste response-key
+// v2026-01-18 — robuuste results weergave (geen stille leegfiltering)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -36,16 +36,26 @@ async function init() {
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    if (!res.ok || !Array.isArray(data.results)) {
+    // ✅ accepteer meerdere response-vormen
+    const companies = Array.isArray(data.results)
+      ? data.results
+      : Array.isArray(data.companies)
+      ? data.companies
+      : [];
+
+    if (!res.ok || companies.length === 0) {
       showEmpty(grid, emptyState, count, "Geen bedrijven gevonden.");
       return;
     }
 
-    const filtered = data.results.filter(c => {
-      if (!activeSector) return true;
-      const cats = normalizeArray(c.categories);
-      return cats.includes(activeSector);
-    });
+    // ✅ alleen filteren als sector écht bestaat
+    let filtered = companies;
+    if (activeSector) {
+      filtered = companies.filter(c => {
+        const cats = normalizeArray(c.categories);
+        return cats.includes(activeSector);
+      });
+    }
 
     if (intro) {
       intro.textContent = activeSector
@@ -66,7 +76,7 @@ async function init() {
     }
   } catch (e) {
     console.error("Results fout:", e);
-    showEmpty(qs("resultsGrid"), qs("emptyState"), qs("resultCount"), "Kon bedrijven niet laden.");
+    showEmpty(grid, emptyState, count, "Kon bedrijven niet laden.");
   }
 }
 
