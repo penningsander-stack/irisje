@@ -1,3 +1,6 @@
+<!-- frontend/admin.html -->
+<!-- v20260111-ADMIN-EDIT-FIX-COLUMNS-AND-MODAL -->
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -42,9 +45,12 @@
 </main>
 
 <!-- MODAL -->
-<div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+<div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
   <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-lg">
     <h3 class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
+
+    <!-- hidden id -->
+    <input id="editId" type="hidden" />
 
     <div class="space-y-3">
       <label class="block text-sm">
@@ -55,6 +61,11 @@
       <label class="block text-sm">
         <span class="text-slate-600">Plaats</span>
         <input id="editCity" class="mt-1 w-full rounded-lg border px-3 py-2" />
+      </label>
+
+      <label class="block text-sm">
+        <span class="text-slate-600">Omschrijving</span>
+        <textarea id="editDescription" rows="4" class="mt-1 w-full rounded-lg border px-3 py-2"></textarea>
       </label>
 
       <label class="block text-sm">
@@ -71,6 +82,8 @@
         <input id="editVerified" type="checkbox" />
         <span>Geverifieerd</span>
       </label>
+
+      <div id="editError" class="hidden text-sm text-red-600"></div>
     </div>
 
     <div class="mt-6 flex justify-end gap-3">

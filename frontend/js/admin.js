@@ -1,24 +1,17 @@
 // frontend/js/admin.js
-// v20260111-ADMIN-EDIT-MODAL-INJECT-FIX
+// v20260111-ADMIN-EDIT-FIX-COLUMNS-AND-MODAL
 //
 // Fixes:
-// - "Bewerken" klik deed niets omdat admin.html geen editModal/editForm elements had.
-// - Dit bestand injecteert nu automatisch een edit-modal in de DOM als die ontbreekt.
-// - Event delegation: clicks blijven werken, ook na re-render.
-// - Robust parsing van API response ({companies} of {results}).
-//
-// Vereist:
-// - JWT token in localStorage onder key "token" (zoals bij jouw login).
-// - Backend endpoint voor opslaan (PATCH /api/admin/companies/:id). Als die (nog) ontbreekt krijg je een duidelijke foutmelding.
+// - Rendert nu 5 kolommen (incl. Status) zodat "Bewerken" onder "Acties" blijft.
+// - Modal/JS structuur is nu 1-op-1 consistent met admin.html (cancelEdit/saveEdit/editId etc).
+// - Event delegation voor edit buttons.
+// - Robuust: ondersteunt response {companies: []} of {results: []}.
 
 (() => {
   "use strict";
 
   const API_BASE = "https://irisje-backend.onrender.com";
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
   const qs = (sel, root = document) => root.querySelector(sel);
 
   const getToken = () => {
@@ -44,25 +37,6 @@
     }
   }
 
-  function setStatus(message, type = "info") {
-    const el = qs("#adminStatus");
-    if (!el) return;
-
-    el.classList.remove("hidden");
-    el.textContent = message;
-
-    // optioneel: simpele status styling als je classes hebt
-    el.dataset.type = type;
-  }
-
-  function hideStatus() {
-    const el = qs("#adminStatus");
-    if (!el) return;
-    el.classList.add("hidden");
-    el.textContent = "";
-    el.dataset.type = "";
-  }
-
   function escapeHtml(str) {
     return String(str ?? "")
       .replace(/&/g, "&amp;")
@@ -78,6 +52,27 @@
     return [];
   }
 
+  function parseCommaList(str) {
+    return String(str ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function showError(msg) {
+    const box = qs("#errorBox");
+    if (!box) return;
+    box.classList.remove("hidden");
+    box.textContent = msg;
+  }
+
+  function hideError() {
+    const box = qs("#errorBox");
+    if (!box) return;
+    box.classList.add("hidden");
+    box.textContent = "";
+  }
+
   // -----------------------------
   // State
   // -----------------------------
@@ -85,112 +80,24 @@
   let companiesById = new Map();
 
   // -----------------------------
-  // Modal injection (admin.html mist dit vaak)
+  // Modal helpers
   // -----------------------------
-  function ensureEditModal() {
-    if (qs("#editModal")) return;
-
-    const modal = document.createElement("div");
-    modal.id = "editModal";
-    modal.className =
-      "fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4";
-    modal.setAttribute("aria-hidden", "true");
-
-    modal.innerHTML = `
-      <div class="w-full max-w-2xl rounded-2xl bg-white shadow-soft border border-slate-200">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <div>
-            <div class="text-sm text-slate-500">Bedrijf bewerken</div>
-            <div id="editTitle" class="text-lg font-semibold text-slate-900">—</div>
-          </div>
-          <button type="button" id="editClose"
-            class="rounded-lg px-3 py-2 text-sm border border-slate-200 hover:bg-slate-50">
-            Sluiten
-          </button>
-        </div>
-
-        <form id="editForm" class="p-5 space-y-4">
-          <input type="hidden" id="editId" />
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label class="block">
-              <div class="text-sm font-medium text-slate-700 mb-1">Naam</div>
-              <input id="editName" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            </label>
-
-            <label class="block">
-              <div class="text-sm font-medium text-slate-700 mb-1">Plaats</div>
-              <input id="editCity" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            </label>
-          </div>
-
-          <label class="block">
-            <div class="text-sm font-medium text-slate-700 mb-1">Omschrijving</div>
-            <textarea id="editDescription" rows="4"
-              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"></textarea>
-          </label>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label class="block">
-              <div class="text-sm font-medium text-slate-700 mb-1">Categorieën (komma-gescheiden)</div>
-              <input id="editCategories" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            </label>
-
-            <label class="block">
-              <div class="text-sm font-medium text-slate-700 mb-1">Specialismen (komma-gescheiden)</div>
-              <input id="editSpecialties" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-            </label>
-          </div>
-
-          <label class="inline-flex items-center gap-2">
-            <input id="editVerified" type="checkbox" class="h-4 w-4" />
-            <span class="text-sm text-slate-700">Geverifieerd</span>
-          </label>
-
-          <div class="flex items-center justify-end gap-2 pt-2">
-            <button type="button" id="editCancel"
-              class="rounded-lg px-4 py-2 text-sm border border-slate-200 hover:bg-slate-50">
-              Annuleren
-            </button>
-            <button type="submit" id="editSave"
-              class="rounded-lg px-4 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700">
-              Opslaan
-            </button>
-          </div>
-
-          <div id="editError" class="hidden text-sm text-red-600"></div>
-        </form>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    const close = () => hideModal(modal);
-
-    qs("#editClose")?.addEventListener("click", close);
-    qs("#editCancel")?.addEventListener("click", close);
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) close();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !modal.classList.contains("hidden")) close();
-    });
-
-    qs("#editForm")?.addEventListener("submit", onEditSubmit);
+  function modalEl() {
+    return qs("#editModal");
   }
 
-  function showModal(modalEl) {
-    modalEl.classList.remove("hidden");
-    modalEl.classList.add("flex");
-    modalEl.setAttribute("aria-hidden", "false");
+  function openModal() {
+    const m = modalEl();
+    if (!m) return;
+    m.classList.remove("hidden");
+    m.classList.add("flex");
   }
 
-  function hideModal(modalEl) {
-    modalEl.classList.add("hidden");
-    modalEl.classList.remove("flex");
-    modalEl.setAttribute("aria-hidden", "true");
+  function closeModal() {
+    const m = modalEl();
+    if (!m) return;
+    m.classList.add("hidden");
+    m.classList.remove("flex");
     clearEditError();
   }
 
@@ -208,8 +115,22 @@
     el.textContent = "";
   }
 
+  function fillEditForm(company) {
+    qs("#editId").value = company._id || "";
+
+    qs("#editName").value = company.name || "";
+    qs("#editCity").value = company.city || "";
+    qs("#editDescription").value = company.description || "";
+
+    qs("#editCategories").value = normalizeArr(company.categories).join(", ");
+    qs("#editSpecialties").value = normalizeArr(company.specialties).join(", ");
+
+    const isVerified = Boolean(company.isVerified ?? company.verified ?? false);
+    qs("#editVerified").checked = isVerified;
+  }
+
   // -----------------------------
-  // Render table
+  // Render
   // -----------------------------
   function renderCompaniesTable(list) {
     const tbody = qs("#companiesTbody");
@@ -220,23 +141,31 @@
     for (const c of list) {
       const tr = document.createElement("tr");
 
-      const cats = normalizeArr(c.categories).join(", ");
-      const city = c.city ?? "";
       const name = c.name ?? "";
+      const city = c.city ?? "";
+      const cats = normalizeArr(c.categories).join(", ");
+      const isVerified = Boolean(c.isVerified ?? c.verified ?? false);
 
       tr.innerHTML = `
-        <td class="py-3 pr-3">
+        <td class="px-4 py-3 align-top">
           <div class="font-medium text-slate-900">${escapeHtml(name)}</div>
           <div class="text-xs text-slate-500">${escapeHtml(c.slug ?? "")}</div>
         </td>
-        <td class="py-3 pr-3 text-slate-700">${escapeHtml(city)}</td>
-        <td class="py-3 pr-3 text-slate-700">${escapeHtml(cats)}</td>
-        <td class="py-3 text-right">
+
+        <td class="px-4 py-3 align-top text-slate-700">${escapeHtml(city)}</td>
+
+        <td class="px-4 py-3 align-top text-slate-700">${escapeHtml(cats)}</td>
+
+        <td class="px-4 py-3 align-top text-slate-700">
+          ${isVerified ? "Geverifieerd" : "Niet geverifieerd"}
+        </td>
+
+        <td class="px-4 py-3 align-top">
           <button
+            type="button"
             class="js-edit-btn rounded-lg px-3 py-2 text-sm border border-slate-200 hover:bg-slate-50"
             data-action="edit"
             data-id="${escapeHtml(c._id)}"
-            type="button"
           >
             Bewerken
           </button>
@@ -251,11 +180,11 @@
   // Load companies
   // -----------------------------
   async function loadCompanies() {
-    hideStatus();
+    hideError();
 
     const token = getToken();
     if (!token) {
-      setStatus("Geen token gevonden. Log opnieuw in als admin.", "error");
+      showError("Geen token gevonden. Log opnieuw in als admin.");
       return;
     }
 
@@ -268,12 +197,10 @@
       const data = await safeJson(res);
 
       if (!res.ok || !data?.ok) {
-        const msg = data?.error || `Kon bedrijven niet laden (HTTP ${res.status}).`;
-        setStatus(msg, "error");
+        showError(data?.error || `Kon bedrijven niet laden (HTTP ${res.status}).`);
         return;
       }
 
-      // Support beide vormen: {companies: []} of {results: []}
       companies = Array.isArray(data.companies)
         ? data.companies
         : Array.isArray(data.results)
@@ -284,12 +211,12 @@
 
       renderCompaniesTable(companies);
     } catch (err) {
-      setStatus(`Kon bedrijven niet laden: ${err?.message || err}`, "error");
+      showError(`Kon bedrijven niet laden: ${err?.message || err}`);
     }
   }
 
   // -----------------------------
-  // Click handling (event delegation)
+  // Click handling
   // -----------------------------
   function bindTableClicks() {
     const tbody = qs("#companiesTbody");
@@ -305,56 +232,42 @@
       if (action === "edit") {
         const c = companiesById.get(String(id));
         if (!c) {
-          setStatus("Bedrijf niet gevonden in de lijst (refresh de pagina).", "error");
+          showError("Bedrijf niet gevonden in de lijst. Ververs de pagina.");
           return;
         }
-        openEditModal(c);
+        clearEditError();
+        fillEditForm(c);
+        openModal();
       }
     });
   }
 
-  // -----------------------------
-  // Edit flow
-  // -----------------------------
-  function openEditModal(company) {
-    ensureEditModal();
+  function bindModalControls() {
+    qs("#cancelEdit")?.addEventListener("click", closeModal);
 
-    const modal = qs("#editModal");
-    if (!modal) {
-      setStatus("Edit-modal kon niet worden opgebouwd.", "error");
-      return;
+    // klik op backdrop sluit ook
+    const m = modalEl();
+    if (m) {
+      m.addEventListener("click", (e) => {
+        if (e.target === m) closeModal();
+      });
     }
 
-    clearEditError();
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modalEl()?.classList.contains("hidden")) {
+        closeModal();
+      }
+    });
 
-    qs("#editTitle").textContent = company.name || "Bedrijf";
-    qs("#editId").value = company._id || "";
-
-    qs("#editName").value = company.name || "";
-    qs("#editCity").value = company.city || "";
-    qs("#editDescription").value = company.description || "";
-
-    qs("#editCategories").value = normalizeArr(company.categories).join(", ");
-    qs("#editSpecialties").value = normalizeArr(company.specialties).join(", ");
-
-    // Let op: in jouw data heet het vaak isVerified (frontend),
-    // maar sommige admin flows gebruiken verified. We ondersteunen beide.
-    const isVerified = Boolean(company.isVerified ?? company.verified ?? false);
-    qs("#editVerified").checked = isVerified;
-
-    showModal(modal);
+    qs("#saveEdit")?.addEventListener("click", onSaveEdit);
   }
 
-  function parseCommaList(str) {
-    return String(str ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
-  async function onEditSubmit(e) {
-    e.preventDefault();
+  // -----------------------------
+  // Save
+  // -----------------------------
+  async function onSaveEdit() {
     clearEditError();
+    hideError();
 
     const id = qs("#editId")?.value?.trim();
     if (!id) {
@@ -368,7 +281,6 @@
       description: qs("#editDescription")?.value || "",
       categories: parseCommaList(qs("#editCategories")?.value),
       specialties: parseCommaList(qs("#editSpecialties")?.value),
-      // backend kan "isVerified" of "verified" verwachten; we sturen beide om safe te zijn
       isVerified: Boolean(qs("#editVerified")?.checked),
       verified: Boolean(qs("#editVerified")?.checked),
     };
@@ -383,30 +295,26 @@
       const data = await safeJson(res);
 
       if (!res.ok || !data?.ok) {
-        const msg =
+        setEditError(
           data?.error ||
-          "Opslaan mislukt. Controleer of backend PATCH /api/admin/companies/:id bestaat.";
-        setEditError(msg);
+            "Opslaan mislukt. Controleer of backend PATCH /api/admin/companies/:id bestaat en admin is ingelogd."
+        );
         return;
       }
 
-      // backend kan {company} of {item} teruggeven; anders herladen
-      const updated =
-        data.company || data.item || data.updated || null;
+      const updated = data.company || data.item || data.updated || null;
 
       if (updated && updated._id) {
-        // update state lokaal
         companiesById.set(String(updated._id), updated);
-        companies = companies.map((c) => (String(c._id) === String(updated._id) ? updated : c));
+        companies = companies.map((c) =>
+          String(c._id) === String(updated._id) ? updated : c
+        );
         renderCompaniesTable(companies);
       } else {
         await loadCompanies();
       }
 
-      const modal = qs("#editModal");
-      if (modal) hideModal(modal);
-      setStatus("Bedrijf opgeslagen.", "success");
-      setTimeout(() => hideStatus(), 1500);
+      closeModal();
     } catch (err) {
       setEditError(err?.message || String(err));
     }
@@ -416,9 +324,8 @@
   // Init
   // -----------------------------
   document.addEventListener("DOMContentLoaded", async () => {
-    // status element is optioneel; als admin.html hem niet heeft is dat ok
-    ensureEditModal();
     bindTableClicks();
+    bindModalControls();
     await loadCompanies();
   });
 })();
