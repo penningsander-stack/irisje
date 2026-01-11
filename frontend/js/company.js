@@ -1,5 +1,6 @@
 // frontend/js/company.js
-// v2026-01-11 — Stap F: robuust laden via slug óf id (compatibel met results.html links)
+// v2026-01-11 — Stap G (A): teruglink + context behouden (company → results)
+// Doel: "Terug naar resultaten" met behoud van fromSector (indien aanwezig)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -8,8 +9,14 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   const params = new URLSearchParams(window.location.search);
 
-  // Historisch heet de queryparam "slug". We ondersteunen nu ook id als fallback.
+  // Historisch heet de queryparam "slug". We ondersteunen ook id als fallback.
   const slugOrId = params.get("slug") || params.get("id");
+
+  // Context voor teruglink
+  const fromSector = params.get("fromSector");
+
+  // Plaats teruglink zo vroeg mogelijk
+  renderBackLink(fromSector);
 
   if (!slugOrId) {
     renderError("Geen bedrijf opgegeven.");
@@ -20,7 +27,7 @@ async function init() {
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    // ✅ accepteer meerdere response-vormen (results / companies)
+    // Accepteer meerdere response-vormen (results / companies)
     const companies = Array.isArray(data.results)
       ? data.results
       : Array.isArray(data.companies)
@@ -43,6 +50,21 @@ async function init() {
   } catch (err) {
     renderError(err.message || "Fout bij laden bedrijf.");
   }
+}
+
+function renderBackLink(fromSector) {
+  const hero = document.getElementById("companyHero");
+  if (!hero) return;
+
+  const a = document.createElement("a");
+  a.className = "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
+  a.href = fromSector
+    ? `results.html?sector=${encodeURIComponent(fromSector)}`
+    : "results.html";
+  a.innerHTML = "← Terug naar resultaten";
+
+  // Plaats bovenaan de hero
+  hero.prepend(a);
 }
 
 function renderCompany(company) {
