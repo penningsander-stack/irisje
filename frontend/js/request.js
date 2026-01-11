@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Optie A – "Volgende stap" = aanvraag aanmaken
+// Optie A – definitieve fix categorie (nooit meer leeg)
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -7,8 +7,6 @@
   const form = document.getElementById("requestForm");
   if (!form) return;
 
-  const categorySelect = document.getElementById("category");
-  const specialtySelect = document.getElementById("specialty");
   const messageInput = document.getElementById("message");
 
   const params = new URLSearchParams(window.location.search);
@@ -36,12 +34,25 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    let categoryValue = categorySelect?.value || "";
-    let specialtyValue = specialtySelect?.value || "";
+    // 🔍 categorie robuust ophalen
+    let categoryValue = "";
 
-    // ✅ categorie automatisch overnemen van startbedrijf
+    const categorySelect =
+      form.querySelector('select[name="category"]') ||
+      document.getElementById("category");
+
+    if (categorySelect && categorySelect.value) {
+      categoryValue = categorySelect.value;
+    }
+
+    // ✅ KEIHARDE FALLBACK
     if (!categoryValue && startCompany?.categories?.length) {
       categoryValue = startCompany.categories[0];
+    }
+
+    if (!categoryValue) {
+      alert("Categorie kon niet worden bepaald.");
+      return;
     }
 
     const payload = {
@@ -49,9 +60,7 @@
       email: form.email.value.trim(),
       message: messageInput.value.trim(),
       category: categoryValue,
-      categories: categoryValue ? [categoryValue] : [],
-      specialty: specialtyValue,
-      specialties: specialtyValue ? [specialtyValue] : [],
+      categories: [categoryValue],
       companySlug: companySlug || null,
     };
 
@@ -69,7 +78,6 @@
         return;
       }
 
-      // ✅ DIRECT DOOR NAAR RESULTATEN
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (e) {
       console.error(e);
