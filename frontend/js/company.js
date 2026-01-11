@@ -1,9 +1,9 @@
 // frontend/js/company.js
-// v2026-01-13 — Company detailpagina
-// - Google-reviews (samenvatting) bovenaan
-// - Irisje-reviews (lijst) onderaan
-// - Review schrijven → review.html?companySlug=...
-// - Offerte aanvragen → request.html?companySlug=...
+// v2026-01-13 — Company detailpagina (syntax-fix + offerte-flow)
+// - Google-reviews (samenvatting)
+// - Irisje-reviews
+// - Review schrijven → review.html
+// - Offerte aanvragen → request.html
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -46,7 +46,7 @@ async function init() {
 }
 
 /* =========================
-   Reviews (Irisje)
+   Irisje reviews
 ========================= */
 
 async function loadIrisjeReviews(companyId) {
@@ -76,9 +76,7 @@ async function loadIrisjeReviews(companyId) {
     }
 
     container.innerHTML = "";
-    reviews.forEach(review => {
-      container.appendChild(renderReview(review));
-    });
+    reviews.forEach(r => container.appendChild(renderReview(r)));
   } catch (err) {
     console.error(err);
     container.innerHTML =
@@ -92,7 +90,6 @@ function renderReview(review) {
 
   const rating = Number(review.rating) || 0;
   const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
-
   const date = review.createdAt
     ? new Date(review.createdAt).toLocaleDateString("nl-NL")
     : "";
@@ -123,14 +120,12 @@ function renderCompany(company) {
       .join(" • ")
   );
 
-  // ⭐ Google-reviews (samenvatting)
   const googleLabel =
     company.reviewCount && company.reviewCount > 0
       ? `⭐ ${Number(company.avgRating || 0).toFixed(1)} (${company.reviewCount} Google-reviews)`
       : "Nog geen Google-reviews";
 
   setText("companyRating", googleLabel);
-
   setText(
     "companyAbout",
     company.description || "Geen beschrijving beschikbaar."
@@ -138,7 +133,6 @@ function renderCompany(company) {
 
   renderDetails(company);
   renderLogo(company);
-  renderPremium(company);
   bindReviewButton(company);
   bindRequestButton(company);
 }
@@ -148,7 +142,6 @@ function renderDetails(company) {
   if (!ul) return;
 
   ul.innerHTML = "";
-
   addLi(ul, "Plaats", company.city || "—");
   addLi(
     ul,
@@ -173,4 +166,91 @@ function renderLogo(company) {
 
   if (company.logoUrl) {
     img.src = company.logoUrl;
-    img.cla
+    img.classList.remove("hidden");
+    fallback.classList.add("hidden");
+  } else {
+    fallback.textContent = getInitials(company.name);
+    fallback.classList.remove("hidden");
+    img.classList.add("hidden");
+  }
+}
+
+/* =========================
+   Navigatie & CTA
+========================= */
+
+function renderBackLink(fromSector) {
+  const hero = document.getElementById("companyHero");
+  if (!hero) return;
+
+  const a = document.createElement("a");
+  a.className =
+    "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
+  a.href = fromSector
+    ? `results.html?sector=${encodeURIComponent(fromSector)}`
+    : "results.html";
+  a.textContent = "← Terug naar resultaten";
+
+  hero.prepend(a);
+}
+
+function bindReviewButton(company) {
+  const btn = document.getElementById("writeReviewBtn");
+  if (!btn || !company.slug) return;
+
+  btn.href = `review.html?companySlug=${encodeURIComponent(company.slug)}`;
+}
+
+function bindRequestButton(company) {
+  const btn = document.getElementById("ctaRequest");
+  if (!btn || !company.slug) return;
+
+  btn.addEventListener("click", () => {
+    window.location.href =
+      `request.html?companySlug=${encodeURIComponent(company.slug)}`;
+  });
+}
+
+/* =========================
+   Helpers
+========================= */
+
+function addLi(ul, label, value) {
+  const li = document.createElement("li");
+  li.innerHTML = `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
+  ul.appendChild(li);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
+}
+
+function renderError(msg) {
+  const hero = document.getElementById("companyHero");
+  if (!hero) return;
+  hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
+}
+
+/* =========================
+   Utils
+========================= */
+
+function getInitials(name) {
+  return String(name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(w => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
