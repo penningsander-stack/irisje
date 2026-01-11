@@ -3,57 +3,44 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin – Bedrijven</title>
-  <link rel="stylesheet" href="/style.css?v=20260117">
-</head>
+  <title>Irisje.nl — Admin</title>
 
+  <link rel="stylesheet" href="/style.css?v=20260111" />
+</head>
 <body class="irisje-body">
-<header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <span class="font-semibold">Irisje.nl — Admin</span>
-    <a href="dashboard.html" class="text-sm underline">Dashboard</a>
+
+<header class="irisje-header">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+    <h1 class="text-lg font-semibold">Irisje.nl — Admin</h1>
+    <nav class="flex gap-4 text-sm">
+      <a href="/dashboard.html" class="text-slate-600 hover:text-slate-900">Dashboard</a>
+      <a href="/admin.html" class="font-semibold text-slate-900">Bedrijven</a>
+      <a href="/logout.html" class="text-slate-600 hover:text-slate-900">Uitloggen</a>
+    </nav>
   </div>
 </header>
 
-<main class="max-w-6xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-semibold mb-4">Bedrijven</h1>
+<main class="max-w-6xl mx-auto px-4 py-6">
+  <h2 class="text-xl font-semibold mb-4">Bedrijven</h2>
 
-  <div id="errorBox" class="hidden text-red-600 mb-4"></div>
+  <div id="errorBox" class="hidden mb-4 text-red-600"></div>
 
-  <table class="w-full border-collapse">
-    <thead>
-      <tr class="border-b">
-        <th class="text-left py-2">Naam</th>
-        <th class="text-left py-2">Plaats</th>
-        <th class="text-left py-2">Categorieën</th>
-        <th class="text-left py-2">Acties</th>
-      </tr>
-    </thead>
-    <tbody id="companiesTbody"></tbody>
-  </table>
+  <div class="overflow-x-auto bg-white rounded-xl shadow-sm">
+    <table class="min-w-full text-sm">
+      <thead class="bg-slate-50 border-b">
+        <tr>
+          <th class="text-left px-4 py-3">Naam</th>
+          <th class="text-left px-4 py-3">Plaats</th>
+          <th class="text-left px-4 py-3">Categorieën</th>
+          <th class="text-left px-4 py-3">Status</th>
+          <th class="text-left px-4 py-3">Acties</th>
+        </tr>
+      </thead>
+      <tbody id="companiesTbody"></tbody>
+    </table>
+  </div>
 </main>
 
-<!-- Modal: categorieën bewerken -->
-<div id="editModal" class="fixed inset-0 hidden items-center justify-center bg-black/40">
-  <div class="bg-white rounded-lg w-full max-w-lg p-4">
-    <h2 class="text-lg font-semibold mb-3">Categorieën bewerken</h2>
-
-    <div class="mb-2 text-sm text-slate-600">
-      Bedrijf: <strong id="modalCompanyName"></strong>
-    </div>
-
-    <label class="block text-sm font-medium mb-1">Categorieën (min. 1 verplicht)</label>
-    <select id="modalCategories" multiple class="input w-full min-h-[120px]"></select>
-
-    <div id="modalError" class="hidden text-red-600 text-sm mt-2"></div>
-
-    <div class="flex justify-end gap-2 mt-4">
-      <button id="cancelBtn" class="btn-secondary">Annuleren</button>
-      <button id="saveBtn" class="btn-primary">Opslaan</button>
-    </div>
-  </div>
-</div>
-
-<script src="/js/admin.js?v=20260117"></script>
+<script src="/js/admin.js?v=20260111"></script>
 </body>
 </html>
