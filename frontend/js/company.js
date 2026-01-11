@@ -141,8 +141,15 @@ function renderCompany(company) {
   );
 
   renderDetails(company);
-  renderLogo(company);
-  renderPremium(company);
+renderLogo(company);
+renderPremium(company);
+
+// 👉 Review schrijven correct koppelen
+const writeReviewBtn = document.getElementById("writeReviewBtn");
+if (writeReviewBtn) {
+  writeReviewBtn.href = `review.html?companySlug=${encodeURIComponent(company.slug)}`;
+}
+
 }
 
 function renderDetails(company) {
