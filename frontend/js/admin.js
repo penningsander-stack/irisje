@@ -1,233 +1,149 @@
 // frontend/js/admin.js
-// v20260111-ADMIN-FIX-LOAD-COMPANIES-AND-EDIT
+// v20260111-ADMIN-FINAL-FIX
+// Werkt exact met admin.html (companiesTbody, editModal)
 
-(() => {
-  "use strict";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const API_BASE = "https://irisje-backend.onrender.com/api";
+let companiesCache = [];
+let editingCompanyId = null;
 
-  // -----------------------------
-  // Helpers
-  // -----------------------------
-  const $ = (sel) => document.querySelector(sel);
+document.addEventListener("DOMContentLoaded", init);
 
-  function getToken() {
-    return localStorage.getItem("token") || "";
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+function authHeaders() {
+  return {
+    Authorization: "Bearer " + getToken(),
+    "Content-Type": "application/json",
+  };
+}
+
+async function apiGet(path) {
+  const r = await fetch(API_BASE + path, { headers: authHeaders() });
+  const data = await r.json();
+  if (!r.ok || data.ok === false) throw new Error(data.error || "API fout");
+  return data;
+}
+
+async function apiPatch(path, body) {
+  const r = await fetch(API_BASE + path, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const data = await r.json();
+  if (!r.ok || data.ok === false) throw new Error(data.error || "API fout");
+  return data;
+}
+
+async function init() {
+  if (!getToken()) {
+    location.href = "/login.html";
+    return;
   }
 
-  function authHeaders() {
-    const token = getToken();
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
+  await loadCompanies();
+  wireModalButtons();
+}
 
-  async function apiFetch(path, opts = {}) {
-    const url = `${API_BASE}${path}`;
-    const headers = {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-      ...(opts.headers || {}),
-    };
+async function loadCompanies() {
+  const tbody = document.getElementById("companiesTbody");
+  const errorBox = document.getElementById("errorBox");
 
-    const res = await fetch(url, { ...opts, headers });
+  tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-slate-500">Laden…</td></tr>`;
 
-    // probeer altijd JSON te lezen; zo niet, maak duidelijke fout
-    const text = await res.text();
-    let data = null;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch (_) {
-      data = null;
-    }
+  try {
+    const data = await apiGet("/admin/companies");
+    companiesCache = data.companies;
 
-    if (!res.ok) {
-      const msg =
-        (data && (data.error || data.message)) ||
-        `HTTP ${res.status} (${res.statusText})`;
-      const err = new Error(msg);
-      err.status = res.status;
-      err.data = data;
-      throw err;
-    }
-
-    return data;
-  }
-
-  function setLoadingState(isLoading) {
-    const btn = $("#refreshCompaniesBtn");
-    if (!btn) return;
-    btn.disabled = isLoading;
-    btn.textContent = isLoading ? "Laden..." : "Ververs";
-  }
-
-  function showCompaniesError(message) {
-    const tbody = $("#adminCompanyTable");
-    if (tbody) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" style="padding:12px; color:#64748b;">
-            ${message || "Kon bedrijven niet laden."}
-          </td>
-        </tr>
-      `;
-    }
-  }
-
-  function escapeHtml(str) {
-    return String(str ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
-
-  // -----------------------------
-  // Companies
-  // -----------------------------
-  async function loadCompanies() {
-    const token = getToken();
-    if (!token) {
-      showCompaniesError("Niet ingelogd. Ga naar login.");
+    if (!companiesCache.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-4 text-slate-500">Geen bedrijven.</td></tr>`;
       return;
     }
 
-    const tbody = $("#adminCompanyTable");
-    if (!tbody) return;
-
-    setLoadingState(true);
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" style="padding:12px; color:#64748b;">Bedrijven laden…</td>
-      </tr>
-    `;
-
-    try {
-      // Backend: GET /api/admin/companies -> { ok: true, companies: [...] }
-      const data = await apiFetch("/admin/companies", { method: "GET" });
-      const companies = data?.companies || [];
-
-      if (!companies.length) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" style="padding:12px; color:#64748b;">Geen bedrijven gevonden.</td>
+    tbody.innerHTML = companiesCache
+      .map((c) => {
+        return `
+          <tr class="border-b">
+            <td class="px-4 py-3 font-medium">${c.name}</td>
+            <td class="px-4 py-3">${c.city || "—"}</td>
+            <td class="px-4 py-3">${(c.categories || []).join(", ")}</td>
+            <td class="px-4 py-3">
+              ${c.isVerified ? "✔️ Geverifieerd" : "⏳ Niet geverifieerd"}
+            </td>
+            <td class="px-4 py-3">
+              <button
+                class="text-indigo-600 hover:underline"
+                data-id="${c._id}"
+                data-action="edit"
+              >
+                Bewerken
+              </button>
+            </td>
           </tr>
         `;
-        return;
-      }
+      })
+      .join("");
 
-      tbody.innerHTML = companies
-        .map((c) => {
-          const name = escapeHtml(c.name || "");
-          const city = escapeHtml(c.city || "");
-          const cats = Array.isArray(c.categories) ? c.categories : [];
-          const categories = escapeHtml(cats.join(", "));
-          const slug = encodeURIComponent(c.slug || "");
-          const id = escapeHtml(c._id || "");
-
-          return `
-            <tr data-company-id="${id}">
-              <td class="py-3 px-4">
-                <div class="font-medium text-slate-900">${name}</div>
-                <div class="text-xs text-slate-500">${escapeHtml(c.slug || "")}</div>
-              </td>
-              <td class="py-3 px-4 text-slate-700">${city}</td>
-              <td class="py-3 px-4 text-slate-700">${categories}</td>
-              <td class="py-3 px-4">
-                <div class="flex flex-wrap gap-2">
-                  <a
-                    class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-                    href="/company.html?slug=${slug}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >Bekijken</a>
-
-                  <button
-                    type="button"
-                    class="btn-edit inline-flex items-center rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white hover:bg-indigo-700"
-                    data-edit-id="${id}"
-                  >Bewerken</button>
-                </div>
-              </td>
-            </tr>
-          `;
-        })
-        .join("");
-
-      // bind edit handlers
-      tbody.querySelectorAll(".btn-edit").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const id = btn.getAttribute("data-edit-id");
-          if (!id) return;
-
-          // haal huidige rij-waarden op als default
-          const row = btn.closest("tr");
-          const currentName =
-            row?.querySelector("td:nth-child(1) .font-medium")?.textContent?.trim() ||
-            "";
-          const currentCity =
-            row?.querySelector("td:nth-child(2)")?.textContent?.trim() || "";
-          const currentCategories =
-            row?.querySelector("td:nth-child(3)")?.textContent?.trim() || "";
-
-          // simpele, robuuste edit-flow zonder extra HTML (geen modal nodig)
-          const newName = window.prompt("Bedrijfsnaam:", currentName);
-          if (newName === null) return;
-
-          const newCity = window.prompt("Plaats:", currentCity);
-          if (newCity === null) return;
-
-          const newCategoriesStr = window.prompt(
-            "Categorieën (komma-gescheiden):",
-            currentCategories
-          );
-          if (newCategoriesStr === null) return;
-
-          const payload = {
-            name: String(newName).trim(),
-            city: String(newCity).trim(),
-            categories: String(newCategoriesStr)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean),
-          };
-
-          try {
-            // Backend (Stap 1B-A): PATCH /api/admin/companies/:id
-            await apiFetch(`/admin/companies/${encodeURIComponent(id)}`, {
-              method: "PATCH",
-              body: JSON.stringify(payload),
-            });
-
-            // herlaad lijst zodat je zeker consistente data hebt
-            await loadCompanies();
-          } catch (e) {
-            alert(`Bewerken mislukt: ${e.message}`);
-          }
-        });
-      });
-    } catch (err) {
-      showCompaniesError(err.message || "Kon bedrijven niet laden.");
-      console.error("❌ loadCompanies error:", err);
-    } finally {
-      setLoadingState(false);
-    }
+    tbody.querySelectorAll("button[data-action='edit']").forEach((btn) => {
+      btn.addEventListener("click", () => openEdit(btn.dataset.id));
+    });
+  } catch (err) {
+    errorBox.textContent = err.message;
+    errorBox.classList.remove("hidden");
+    tbody.innerHTML = "";
   }
+}
 
-  // -----------------------------
-  // Init
-  // -----------------------------
-  function init() {
-    const refreshBtn = $("#refreshCompaniesBtn");
-    if (refreshBtn) {
-      refreshBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        loadCompanies();
-      });
-    }
+function openEdit(id) {
+  const c = companiesCache.find((x) => x._id === id);
+  if (!c) return;
 
-    // alleen bedrijven-tab in deze minimal versie: direct laden
-    loadCompanies();
-  }
+  editingCompanyId = id;
 
-  document.addEventListener("DOMContentLoaded", init);
-})();
+  document.getElementById("editName").value = c.name || "";
+  document.getElementById("editCity").value = c.city || "";
+  document.getElementById("editCategories").value = (c.categories || []).join(", ");
+  document.getElementById("editSpecialties").value = (c.specialties || []).join(", ");
+  document.getElementById("editVerified").checked = !!c.isVerified;
+
+  document.getElementById("editModal").classList.remove("hidden");
+  document.getElementById("editModal").classList.add("flex");
+}
+
+function wireModalButtons() {
+  document.getElementById("cancelEdit").onclick = closeModal;
+  document.getElementById("saveEdit").onclick = saveEdit;
+}
+
+function closeModal() {
+  document.getElementById("editModal").classList.add("hidden");
+  document.getElementById("editModal").classList.remove("flex");
+  editingCompanyId = null;
+}
+
+async function saveEdit() {
+  if (!editingCompanyId) return;
+
+  const payload = {
+    name: document.getElementById("editName").value.trim(),
+    city: document.getElementById("editCity").value.trim(),
+    categories: document
+      .getElementById("editCategories")
+      .value.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+    specialties: document
+      .getElementById("editSpecialties")
+      .value.split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+    isVerified: document.getElementById("editVerified").checked,
+  };
+
+  await apiPatch(`/admin/companies/${editingCompanyId}`, payload);
+  closeModal();
+  await loadCompanies();
+}
