@@ -1,6 +1,7 @@
 // frontend/js/company.js
-// v2026-01-11 — Stap H: direct company-endpoint gebruiken (slug)
-// Endpoint: GET /api/companies/slug/:slug
+// v2026-01-11 — Stap I: reviews tonen op company.html
+// Gebruikt: GET /api/companies/slug/:slug
+//           GET /api/reviews/company/:companyId
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -29,11 +30,73 @@ async function init() {
       throw new Error("Bedrijf niet gevonden.");
     }
 
-    renderCompany(data.company);
+    const company = data.company;
+    renderCompany(company);
+
+    // 👉 Reviews laden (Stap I)
+    await loadReviews(company._id);
   } catch (err) {
     console.error(err);
     renderError(err.message || "Fout bij laden bedrijf.");
   }
+}
+
+/* =========================
+   Reviews
+========================= */
+
+async function loadReviews(companyId) {
+  const container = document.getElementById("companyReviews");
+  if (!container) return;
+
+  container.innerHTML = "<p class='text-slate-500'>Reviews laden…</p>";
+
+  try {
+    const res = await fetch(
+      `${API_BASE}/reviews/company/${encodeURIComponent(companyId)}`
+    );
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error("Kon reviews niet laden.");
+    }
+
+    const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+
+    if (reviews.length === 0) {
+      container.innerHTML =
+        "<p class='text-slate-500'>Nog geen reviews.</p>";
+      return;
+    }
+
+    container.innerHTML = "";
+    reviews.forEach(r => container.appendChild(renderReview(r)));
+  } catch (err) {
+    console.error(err);
+    container.innerHTML =
+      "<p class='text-red-600'>Reviews konden niet worden geladen.</p>";
+  }
+}
+
+function renderReview(review) {
+  const div = document.createElement("div");
+  div.className = "border rounded-lg p-4 mb-3 bg-white";
+
+  const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+  const date = review.createdAt
+    ? new Date(review.createdAt).toLocaleDateString("nl-NL")
+    : "";
+
+  div.innerHTML = `
+    <div class="flex items-center justify-between mb-1">
+      <strong>${escapeHtml(review.reviewerName || "Anoniem")}</strong>
+      <span class="text-sm text-slate-500">${escapeHtml(date)}</span>
+    </div>
+    <div class="text-yellow-500 mb-1">${stars}</div>
+    <p class="text-slate-700">${escapeHtml(review.comment || "")}</p>
+  `;
+
+  return div;
 }
 
 /* =========================
