@@ -34,13 +34,9 @@
       <div class="flex items-start gap-4">
         <div id="companyLogoWrap"
              class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center overflow-hidden">
-          <!-- ✅ GEEN placeholder src meer (voorkomt 404 vóór JS) -->
           <img id="companyLogo" alt="Logo" class="hidden w-full h-full object-contain p-2" />
-          <!-- ✅ Initials fallback (wordt door JS gevuld indien geen logo) -->
           <div id="companyLogoFallback"
-               class="hidden w-full h-full flex items-center justify-center font-bold text-indigo-700">
-            <!-- JS zet hier initialen -->
-          </div>
+               class="hidden w-full h-full flex items-center justify-center font-bold text-indigo-700"></div>
         </div>
 
         <div class="min-w-0">
@@ -50,44 +46,19 @@
         </div>
       </div>
 
+      <!-- CTA's -->
       <div class="mt-4 flex flex-wrap gap-3">
         <button id="ctaRequest"
                 class="inline-flex items-center rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
           Vraag offerte aan
         </button>
-        <a href="results.html"
+
+        <a id="writeReviewBtn"
            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-          Terug naar resultaten
+          Schrijf een review
         </a>
       </div>
     </div>
-  </section>
-
-  <!-- Schrijf review knop (slug -> review.html) -->
-  <section class="section-shell mt-4">
-    <a
-      id="writeReviewBtn"
-      class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
-    >
-      Schrijf een review
-    </a>
-
-    <script>
-      (() => {
-        const btn = document.getElementById("writeReviewBtn");
-        if (!btn) return;
-
-        const params = new URLSearchParams(window.location.search);
-        const slug = params.get("slug");
-
-        if (!slug) {
-          btn.style.display = "none";
-          return;
-        }
-
-        btn.href = `/review.html?companySlug=${encodeURIComponent(slug)}`;
-      })();
-    </script>
   </section>
 
   <!-- CONTENT -->
@@ -104,18 +75,10 @@
 
       <!-- REVIEWS -->
       <div class="surface-card p-6 rounded-2xl shadow-soft">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-lg font-semibold">Reviews</h2>
-          <select id="reviewSort" class="px-2 py-1 border rounded-lg text-sm">
-            <option value="newest">Nieuwste</option>
-            <option value="highest">Hoogste score</option>
-          </select>
-        </div>
+        <h2 class="text-lg font-semibold mb-3">Reviews</h2>
 
-        <div id="reviewsContainer" class="space-y-4"></div>
-        <div id="noReviews" class="text-sm text-slate-500 hidden">
-          Dit bedrijf heeft nog geen reviews.
-        </div>
+        <!-- 👇 DIT ID WORDT DOOR company.js GEBRUIKT -->
+        <div id="companyReviews" class="space-y-4"></div>
       </div>
     </div>
 
@@ -131,6 +94,6 @@
     </aside>
   </section>
 
-  <script src="/js/company.js?v=20251229"></script>
+  <script src="/js/company.js?v=20260111"></script>
 </body>
 </html>
