@@ -1,6 +1,3 @@
-<!-- frontend/admin.html -->
-<!-- v20260111-ADMIN-EDIT-FIX-COLUMNS-AND-MODAL -->
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -8,27 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Irisje.nl — Admin</title>
 
-  <link rel="stylesheet" href="/style.css?v=20260111" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body class="irisje-body">
 
 <header class="irisje-header">
   <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
     <h1 class="text-lg font-semibold">Irisje.nl — Admin</h1>
-    <nav class="flex gap-4 text-sm">
-      <a href="/dashboard.html" class="text-slate-600 hover:text-slate-900">Dashboard</a>
-      <a href="/admin.html" class="font-semibold text-slate-900">Bedrijven</a>
-      <a href="/logout.html" class="text-slate-600 hover:text-slate-900">Uitloggen</a>
-    </nav>
   </div>
 </header>
 
 <main class="max-w-6xl mx-auto px-4 py-6">
-  <h2 class="text-xl font-semibold mb-4">Bedrijven</h2>
 
+  <h2 class="text-xl font-semibold mb-4">Bedrijven</h2>
   <div id="errorBox" class="hidden mb-4 text-red-600"></div>
 
-  <div class="overflow-x-auto bg-white rounded-xl shadow-sm">
+  <div class="overflow-x-auto bg-white rounded-xl shadow-sm relative z-10">
     <table class="min-w-full text-sm">
       <thead class="bg-slate-50 border-b">
         <tr>
@@ -42,57 +34,58 @@
       <tbody id="companiesTbody"></tbody>
     </table>
   </div>
+
 </main>
 
 <!-- MODAL -->
-<div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+<div
+  id="editModal"
+  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center;"
+>
   <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-lg">
     <h3 class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
 
-    <!-- hidden id -->
     <input id="editId" type="hidden" />
 
-    <div class="space-y-3">
-      <label class="block text-sm">
-        <span class="text-slate-600">Naam</span>
-        <input id="editName" class="mt-1 w-full rounded-lg border px-3 py-2" />
-      </label>
+    <label class="block mb-3 text-sm">
+      Naam
+      <input id="editName" class="mt-1 w-full rounded-lg border px-3 py-2" />
+    </label>
 
-      <label class="block text-sm">
-        <span class="text-slate-600">Plaats</span>
-        <input id="editCity" class="mt-1 w-full rounded-lg border px-3 py-2" />
-      </label>
+    <label class="block mb-3 text-sm">
+      Plaats
+      <input id="editCity" class="mt-1 w-full rounded-lg border px-3 py-2" />
+    </label>
 
-      <label class="block text-sm">
-        <span class="text-slate-600">Omschrijving</span>
-        <textarea id="editDescription" rows="4" class="mt-1 w-full rounded-lg border px-3 py-2"></textarea>
-      </label>
+    <label class="block mb-3 text-sm">
+      Omschrijving
+      <textarea id="editDescription" rows="4" class="mt-1 w-full rounded-lg border px-3 py-2"></textarea>
+    </label>
 
-      <label class="block text-sm">
-        <span class="text-slate-600">Categorieën (komma-gescheiden)</span>
-        <input id="editCategories" class="mt-1 w-full rounded-lg border px-3 py-2" />
-      </label>
+    <label class="block mb-3 text-sm">
+      Categorieën (komma’s)
+      <input id="editCategories" class="mt-1 w-full rounded-lg border px-3 py-2" />
+    </label>
 
-      <label class="block text-sm">
-        <span class="text-slate-600">Specialismen (komma-gescheiden)</span>
-        <input id="editSpecialties" class="mt-1 w-full rounded-lg border px-3 py-2" />
-      </label>
+    <label class="block mb-3 text-sm">
+      Specialismen (komma’s)
+      <input id="editSpecialties" class="mt-1 w-full rounded-lg border px-3 py-2" />
+    </label>
 
-      <label class="flex items-center gap-2 text-sm mt-2">
-        <input id="editVerified" type="checkbox" />
-        <span>Geverifieerd</span>
-      </label>
+    <label class="flex items-center gap-2 text-sm mb-4">
+      <input id="editVerified" type="checkbox" />
+      Geverifieerd
+    </label>
 
-      <div id="editError" class="hidden text-sm text-red-600"></div>
-    </div>
+    <div id="editError" class="hidden text-sm text-red-600 mb-3"></div>
 
-    <div class="mt-6 flex justify-end gap-3">
-      <button id="cancelEdit" class="px-4 py-2 text-sm rounded-lg border">Annuleren</button>
-      <button id="saveEdit" class="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white">Opslaan</button>
+    <div class="flex justify-end gap-3">
+      <button id="cancelEdit" class="px-4 py-2 border rounded-lg">Annuleren</button>
+      <button id="saveEdit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">Opslaan</button>
     </div>
   </div>
 </div>
 
-<script src="/js/admin.js?v=20260111"></script>
+<script src="/js/admin.js"></script>
 </body>
 </html>
