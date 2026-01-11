@@ -1,5 +1,5 @@
 // backend/routes/admin.js
-// v20260111-ADMIN-COMPANIES-CRUD
+// v20260111-SECTORS-SPECIALTIES-ENFORCED
 
 const express = require("express");
 const router = express.Router();
@@ -12,8 +12,30 @@ const Claim = require("../models/claim");
 const { getLogs } = require("../utils/logger");
 
 // ============================================================
-// helpers
+// VASTE SECTOREN & SPECIALISMEN
 // ============================================================
+const SECTORS = {
+  juridisch: [
+    "arbeidsrecht",
+    "familierecht",
+    "bestuursrecht",
+    "huurrecht",
+    "ondernemingsrecht",
+  ],
+  bouw: [
+    "aannemer",
+    "installatie",
+    "elektra",
+    "loodgieter",
+  ],
+  zorg: [
+    "thuiszorg",
+    "jeugdzorg",
+    "ggz",
+  ],
+};
+
+// helpers
 function makeSlug(value) {
   return value
     .toString()
@@ -22,6 +44,26 @@ function makeSlug(value) {
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-");
+}
+
+function validateSectorsAndSpecialties(sectors = [], specialties = []) {
+  // sectors = categories (technisch)
+  for (const sector of sectors) {
+    if (!SECTORS[sector]) {
+      return `Ongeldige sector: ${sector}`;
+    }
+  }
+
+  for (const spec of specialties) {
+    const found = sectors.some((sector) =>
+      SECTORS[sector].includes(spec)
+    );
+    if (!found) {
+      return `Ongeldig specialisme: ${spec}`;
+    }
+  }
+
+  return null;
 }
 
 // ============================================================
@@ -39,11 +81,8 @@ router.get("/companies", async (req, res) => {
       .lean();
 
     return res.json({ ok: true, companies });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: "Kon bedrijven niet ophalen",
-    });
+  } catch {
+    return res.status(500).json({ ok: false, error: "Kon bedrijven niet ophalen" });
   }
 });
 
@@ -56,33 +95,32 @@ router.post("/companies", async (req, res) => {
       name,
       city,
       description,
-      categories,
-      specialties,
+      categories = [],
+      specialties = [],
       isVerified,
     } = req.body;
 
     if (!name || typeof name !== "string") {
-      return res.status(400).json({
-        ok: false,
-        error: "Naam is verplicht",
-      });
+      return res.status(400).json({ ok: false, error: "Naam is verplicht" });
+    }
+
+    const validationError = validateSectorsAndSpecialties(categories, specialties);
+    if (validationError) {
+      return res.status(400).json({ ok: false, error: validationError });
     }
 
     const company = await Company.create({
       name: name.trim(),
       slug: makeSlug(name),
-      owner: req.user.id, // <-- CRUCIAAL
+      owner: req.user.id,
       city: typeof city === "string" ? city.trim() : "",
       description: typeof description === "string" ? description.trim() : "",
-      categories: Array.isArray(categories) ? categories.map(String) : [],
-      specialties: Array.isArray(specialties) ? specialties.map(String) : [],
+      categories,
+      specialties,
       isVerified: typeof isVerified === "boolean" ? isVerified : false,
     });
 
-    return res.status(201).json({
-      ok: true,
-      company,
-    });
+    return res.status(201).json({ ok: true, company });
   } catch (err) {
     return res.status(500).json({
       ok: false,
@@ -103,10 +141,23 @@ router.patch("/companies/:id", async (req, res) => {
       updates.name = req.body.name.trim();
       updates.slug = makeSlug(req.body.name);
     }
+
     if (typeof req.body.city === "string") updates.city = req.body.city.trim();
     if (typeof req.body.description === "string") updates.description = req.body.description.trim();
-    if (Array.isArray(req.body.categories)) updates.categories = req.body.categories.map(String);
-    if (Array.isArray(req.body.specialties)) updates.specialties = req.body.specialties.map(String);
+
+    if (Array.isArray(req.body.categories)) {
+      const err = validateSectorsAndSpecialties(
+        req.body.categories,
+        req.body.specialties || []
+      );
+      if (err) return res.status(400).json({ ok: false, error: err });
+      updates.categories = req.body.categories;
+    }
+
+    if (Array.isArray(req.body.specialties)) {
+      updates.specialties = req.body.specialties;
+    }
+
     if (typeof req.body.isVerified === "boolean") updates.isVerified = req.body.isVerified;
 
     const company = await Company.findByIdAndUpdate(
@@ -120,11 +171,8 @@ router.patch("/companies/:id", async (req, res) => {
     }
 
     return res.json({ ok: true, company });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: "Kon bedrijf niet bijwerken",
-    });
+  } catch {
+    return res.status(500).json({ ok: false, error: "Kon bedrijf niet bijwerken" });
   }
 });
 
@@ -135,11 +183,8 @@ router.delete("/companies/:id", async (req, res) => {
   try {
     await Company.findByIdAndDelete(req.params.id);
     return res.json({ ok: true });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: "Kon bedrijf niet verwijderen",
-    });
+  } catch {
+    return res.status(500).json({ ok: false, error: "Kon bedrijf niet verwijderen" });
   }
 });
 
