@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v2026-01-11 — Admin frontend met bewerken + verify-toggle
+// v2026-01-11b — FIX: modal opent altijd (geen hidden/flex race)
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -40,10 +40,11 @@ async function loadCompanies() {
     });
 
     const data = await res.json();
-    const companies = Array.isArray(data.companies) ? data.companies : null;
-    if (!res.ok || !companies) throw new Error("Kon bedrijven niet laden.");
+    if (!res.ok || !Array.isArray(data.companies)) {
+      throw new Error("Kon bedrijven niet laden.");
+    }
 
-    companies.forEach(addRow);
+    data.companies.forEach(addRow);
   } catch (err) {
     errorBox.textContent = err.message;
     errorBox.classList.remove("hidden");
@@ -54,25 +55,26 @@ function addRow(company) {
   const tr = document.createElement("tr");
   tr.className = "border-b hover:bg-slate-50";
 
-  const statusBadge = company.isVerified
-    ? `<span class="text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs">✔ Geverifieerd</span>`
-    : `<span class="text-amber-700 bg-amber-50 px-2 py-1 rounded-full text-xs">⏳ Niet geverifieerd</span>`;
-
   tr.innerHTML = `
     <td class="px-4 py-3 font-medium">${escapeHtml(company.name || "")}</td>
     <td class="px-4 py-3">${escapeHtml(company.city || "")}</td>
     <td class="px-4 py-3 text-slate-600">
       ${Array.isArray(company.categories) ? escapeHtml(company.categories.join(", ")) : ""}
     </td>
-    <td class="px-4 py-3">${statusBadge}</td>
     <td class="px-4 py-3">
-      <button class="text-indigo-600 text-sm hover:underline" data-edit="${company._id}">
+      ${company.isVerified
+        ? `<span class="text-green-700 bg-green-50 px-2 py-1 rounded-full text-xs">✔ Geverifieerd</span>`
+        : `<span class="text-amber-700 bg-amber-50 px-2 py-1 rounded-full text-xs">⏳ Niet geverifieerd</span>`
+      }
+    </td>
+    <td class="px-4 py-3">
+      <button type="button" class="text-indigo-600 text-sm hover:underline">
         Bewerken
       </button>
     </td>
   `;
 
-  tr.querySelector("[data-edit]").onclick = () => openEdit(company);
+  tr.querySelector("button").addEventListener("click", () => openEdit(company));
   tbody.appendChild(tr);
 }
 
@@ -85,18 +87,18 @@ function openEdit(company) {
   editSpecialties.value = Array.isArray(company.specialties) ? company.specialties.join(", ") : "";
   editVerified.checked = !!company.isVerified;
 
-  modal.classList.remove("hidden");
-  modal.classList.add("flex");
+  // 🔥 HARD OPEN (geen Tailwind-race)
+  modal.style.display = "flex";
 }
 
-cancelBtn.onclick = closeEdit;
+cancelBtn.addEventListener("click", closeEdit);
+
 function closeEdit() {
-  modal.classList.add("hidden");
-  modal.classList.remove("flex");
+  modal.style.display = "none";
   currentCompany = null;
 }
 
-saveBtn.onclick = async () => {
+saveBtn.addEventListener("click", async () => {
   if (!currentCompany) return;
 
   const payload = {
@@ -125,13 +127,10 @@ saveBtn.onclick = async () => {
   } catch (err) {
     alert(err.message || "Fout bij opslaan");
   }
-};
+});
 
 function splitList(str) {
-  return str
-    .split(",")
-    .map(s => s.trim())
-    .filter(Boolean);
+  return str.split(",").map(s => s.trim()).filter(Boolean);
 }
 
 function escapeHtml(str) {
