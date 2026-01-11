@@ -1,11 +1,16 @@
 // frontend/js/company.js
-// v2026-01-11 — Stap N: reviewbronnen scheiden (Google vs Irisje)
-// - Bovenaan: Google-reviews labelen
-// - Onder: "Reviews op Irisje.nl" + Irisje-reviews
+// v2026-01-11 — Company detailpagina
+// - Google-reviews (samenvatting) bovenaan
+// - Irisje-reviews (lijst) onderaan
+// - Review schrijven → review.html?companySlug=...
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
 document.addEventListener("DOMContentLoaded", init);
+
+/* =========================
+   Init
+========================= */
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
@@ -30,9 +35,8 @@ async function init() {
     }
 
     const company = data.company;
-    renderCompany(company);
 
-    // Irisje-reviews laden
+    renderCompany(company);
     await loadIrisjeReviews(company._id);
   } catch (err) {
     console.error(err);
@@ -71,7 +75,9 @@ async function loadIrisjeReviews(companyId) {
     }
 
     container.innerHTML = "";
-    reviews.forEach(r => container.appendChild(renderReview(r)));
+    reviews.forEach(review => {
+      container.appendChild(renderReview(review));
+    });
   } catch (err) {
     console.error(err);
     container.innerHTML =
@@ -83,7 +89,9 @@ function renderReview(review) {
   const div = document.createElement("div");
   div.className = "border rounded-lg p-4 bg-white";
 
-  const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+  const rating = Number(review.rating) || 0;
+  const stars = "★".repeat(rating) + "☆".repeat(5 - rating);
+
   const date = review.createdAt
     ? new Date(review.createdAt).toLocaleDateString("nl-NL")
     : "";
@@ -101,23 +109,8 @@ function renderReview(review) {
 }
 
 /* =========================
-   UI helpers
+   Company UI
 ========================= */
-
-function renderBackLink(fromSector) {
-  const hero = document.getElementById("companyHero");
-  if (!hero) return;
-
-  const a = document.createElement("a");
-  a.className =
-    "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
-  a.href = fromSector
-    ? `results.html?sector=${encodeURIComponent(fromSector)}`
-    : "results.html";
-  a.innerHTML = "← Terug naar resultaten";
-
-  hero.prepend(a);
-}
 
 function renderCompany(company) {
   setText("companyName", company.name);
@@ -129,10 +122,12 @@ function renderCompany(company) {
       .join(" • ")
   );
 
-  // ⭐ Google-reviews expliciet labelen (Trustoo-stijl)
-  const googleLabel = company.reviewCount
-    ? `⭐ ${Number(company.avgRating || 0).toFixed(1)} (${company.reviewCount} Google-reviews)`
-    : "Nog geen Google-reviews";
+  // ⭐ Google-reviews (samenvatting)
+  const googleLabel =
+    company.reviewCount && company.reviewCount > 0
+      ? `⭐ ${Number(company.avgRating || 0).toFixed(1)} (${company.reviewCount} Google-reviews)`
+      : "Nog geen Google-reviews";
+
   setText("companyRating", googleLabel);
 
   setText(
@@ -141,15 +136,9 @@ function renderCompany(company) {
   );
 
   renderDetails(company);
-renderLogo(company);
-renderPremium(company);
-
-// 👉 Review schrijven correct koppelen
-const writeReviewBtn = document.getElementById("writeReviewBtn");
-if (writeReviewBtn) {
-  writeReviewBtn.href = `review.html?companySlug=${encodeURIComponent(company.slug)}`;
-}
-
+  renderLogo(company);
+  renderPremium(company);
+  bindReviewButton(company);
 }
 
 function renderDetails(company) {
@@ -157,6 +146,7 @@ function renderDetails(company) {
   if (!ul) return;
 
   ul.innerHTML = "";
+
   addLi(ul, "Plaats", company.city || "—");
   addLi(
     ul,
@@ -172,12 +162,6 @@ function renderDetails(company) {
       ? company.specialties.join(", ")
       : "—"
   );
-}
-
-function addLi(ul, label, value) {
-  const li = document.createElement("li");
-  li.innerHTML = `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
-  ul.appendChild(li);
 }
 
 function renderLogo(company) {
@@ -199,9 +183,48 @@ function renderLogo(company) {
 function renderPremium(company) {
   const badge = document.getElementById("premiumBadge");
   if (!badge) return;
-  company.isPremium
-    ? badge.classList.remove("hidden")
-    : badge.classList.add("hidden");
+
+  if (company.isPremium) {
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+/* =========================
+   Navigatie / CTA
+========================= */
+
+function renderBackLink(fromSector) {
+  const hero = document.getElementById("companyHero");
+  if (!hero) return;
+
+  const a = document.createElement("a");
+  a.className =
+    "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
+  a.href = fromSector
+    ? `results.html?sector=${encodeURIComponent(fromSector)}`
+    : "results.html";
+  a.innerHTML = "← Terug naar resultaten";
+
+  hero.prepend(a);
+}
+
+function bindReviewButton(company) {
+  const btn = document.getElementById("writeReviewBtn");
+  if (!btn || !company.slug) return;
+
+  btn.href = `review.html?companySlug=${encodeURIComponent(company.slug)}`;
+}
+
+/* =========================
+   Helpers
+========================= */
+
+function addLi(ul, label, value) {
+  const li = document.createElement("li");
+  li.innerHTML = `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
+  ul.appendChild(li);
 }
 
 function setText(id, value) {
@@ -212,6 +235,7 @@ function setText(id, value) {
 function renderError(msg) {
   const hero = document.getElementById("companyHero");
   if (!hero) return;
+
   hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
 }
 
