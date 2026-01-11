@@ -1,178 +1,59 @@
-// frontend/js/results.js
-// v2026-01-17 — Stap P1.2 (scope-safe)
-// Trustoo-model: startbedrijf vast + max. 4 extra bedrijven
+<!-- frontend/results.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bedrijven – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css?v=20260117">
+</head>
 
-(function () {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
+<body class="irisje-body">
 
-  const grid = document.getElementById("resultsGrid");
-  const emptyState = document.getElementById("emptyState");
-  const intro = document.getElementById("resultsIntro");
-  const countEl = document.getElementById("resultCount");
-  const selectedCountEl = document.getElementById("selectedCount");
-  const submitBtn = document.getElementById("submitBtn");
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+        <span class="font-semibold text-slate-900">Irisje.nl</span>
+      </a>
+      <div class="text-sm text-slate-700">
+        <span id="selectedCount">0</span> van 5 geselecteerd
+      </div>
+    </div>
+  </header>
 
-  const fixedBox = document.getElementById("fixedCompanyBox");
-  const fixedNameEl = document.getElementById("fixedCompanyName");
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-2xl font-semibold mb-2">Kies bedrijven voor je aanvraag</h1>
+    <p id="resultsIntro" class="text-slate-600 mb-4"></p>
 
-  let selected = new Set();
-  let fixedCompanyId = null;
-  let requestId = null;
+    <div id="fixedCompanyBox" class="hidden mb-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+      <p class="text-sm text-indigo-700">
+        Deze aanvraag wordt in ieder geval verstuurd naar:
+      </p>
+      <p id="fixedCompanyName" class="font-semibold text-indigo-900 mt-1">—</p>
+    </div>
 
-  document.addEventListener("DOMContentLoaded", init);
+    <p id="resultCount" class="text-sm text-slate-600 mb-4"></p>
 
-  async function init() {
-    const params = new URLSearchParams(location.search);
-    requestId = params.get("requestId");
+    <div id="resultsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
 
-    if (!requestId) {
-      showEmpty("Geen aanvraag gevonden.");
-      return;
-    }
+    <div id="emptyState" class="hidden mt-10 text-center text-slate-600">
+      <p class="mb-2 font-medium">Geen bedrijven gevonden.</p>
+      <p>Probeer je filters aan te passen.</p>
+    </div>
+  </main>
 
-    try {
-      // 1️⃣ aanvraag ophalen
-      const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
-      const reqData = await reqRes.json();
+  <div class="fixed bottom-0 inset-x-0 bg-white border-t shadow-soft">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="text-sm text-slate-600">
+        Je selectie wordt in één keer verstuurd.
+      </div>
+      <button id="submitBtn" class="irisje-btn opacity-50 pointer-events-none">
+        Verstuur aanvraag
+      </button>
+    </div>
+  </div>
 
-      if (!reqRes.ok || !reqData.ok || !reqData.request) {
-        throw new Error("Aanvraag niet gevonden.");
-      }
-
-      const req = reqData.request;
-
-      if (req.companyId) {
-        fixedCompanyId = String(req.companyId);
-        selected.add(fixedCompanyId);
-        fixedBox.classList.remove("hidden");
-        fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
-      }
-
-      updateSelectedCount();
-
-      // 2️⃣ bedrijven laden
-      const res = await fetch(`${API_BASE}/companies`);
-      const data = await res.json();
-
-      const companies = Array.isArray(data.results)
-        ? data.results
-        : Array.isArray(data.companies)
-        ? data.companies
-        : [];
-
-      if (companies.length === 0) {
-        showEmpty("Geen bedrijven gevonden.");
-        return;
-      }
-
-      intro.textContent =
-        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
-
-      renderCompanies(companies);
-      countEl.textContent = `${companies.length} bedrijven gevonden`;
-    } catch (e) {
-      console.error(e);
-      showEmpty("Kon resultaten niet laden.");
-    }
-  }
-
-  function renderCompanies(companies) {
-    grid.innerHTML = "";
-
-    for (const c of companies) {
-      const id = String(c._id || c.id);
-      const isFixed = id === fixedCompanyId;
-
-      const card = document.createElement("div");
-      card.className =
-        "border rounded-xl p-4 bg-white shadow-soft flex items-start gap-3";
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.className = "mt-1";
-      checkbox.checked = isFixed;
-      checkbox.disabled = isFixed;
-
-      checkbox.addEventListener("change", () => {
-        if (checkbox.checked) {
-          if (selected.size >= 5) {
-            checkbox.checked = false;
-            return;
-          }
-          selected.add(id);
-        } else {
-          selected.delete(id);
-        }
-        updateSelectedCount();
-      });
-
-      const info = document.createElement("div");
-      info.innerHTML = `
-        <div class="font-semibold text-slate-900">${escapeHtml(c.name || "")}</div>
-        <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
-        <div class="text-xs text-slate-500">
-          ${escapeHtml(Array.isArray(c.categories) ? c.categories.join(", ") : "")}
-        </div>
-      `;
-
-      card.appendChild(checkbox);
-      card.appendChild(info);
-      grid.appendChild(card);
-    }
-  }
-
-  function updateSelectedCount() {
-    selectedCountEl.textContent = selected.size;
-
-    if (selected.size > 0) {
-      submitBtn.classList.remove("opacity-50", "pointer-events-none");
-    } else {
-      submitBtn.classList.add("opacity-50", "pointer-events-none");
-    }
-  }
-
-  submitBtn.addEventListener("click", async () => {
-    if (selected.size === 0) return;
-
-    try {
-      const res = await fetch(
-        `${API_BASE}/publicRequests/${requestId}/submit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            companyIds: Array.from(selected),
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        alert("Versturen mislukt.");
-        return;
-      }
-
-      alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
-    } catch (e) {
-      console.error(e);
-      alert("Versturen mislukt.");
-    }
-  });
-
-  function showEmpty(msg) {
-    grid.innerHTML = "";
-    emptyState.classList.remove("hidden");
-    const p = emptyState.querySelector("p");
-    if (p) p.textContent = msg;
-  }
-
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-})();
+  <script src="/js/results.js?v=20260117"></script>
+</body>
+</html>
