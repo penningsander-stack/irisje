@@ -43,7 +43,7 @@ const specialtiesSelect = document.getElementById("specialties");
 const isVerifiedInput = document.getElementById("isVerified");
 const cancelEditBtn = document.getElementById("cancel-edit");
 
-const tableBody = document.querySelector("#companies-table tbody");
+const tableBody = document.getElementById("companies-table-body");
 
 // ================================
 // INIT
