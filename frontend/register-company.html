@@ -1,3 +1,4 @@
+<!-- frontend/register-company.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -6,7 +7,7 @@
   <title>Bedrijf registreren – Irisje.nl</title>
 
   <!-- Irisje core styling -->
-  <link rel="stylesheet" href="/style.css?v=20260108">
+  <link rel="stylesheet" href="/style.css?v=20260111" />
 </head>
 
 <body class="irisje-body">
@@ -18,73 +19,68 @@
 </header>
 
 <main class="max-w-xl mx-auto px-4 py-10">
-  <h1 class="text-2xl font-semibold mb-2">Registreer je bedrijf</h1>
-  <p class="text-sm text-slate-600 mb-6">
-    In enkele minuten zichtbaar voor klanten. Kies zorgvuldig je categorieën en specialismen
-    — deze bepalen hoe je wordt gematcht.
-  </p>
+  <h1 class="text-2xl font-semibold mb-2">Bedrijf registreren</h1>
+
+  <!-- READ-ONLY NOTICE -->
+  <div class="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+    Nieuwe bedrijven worden momenteel <strong>handmatig door Irisje gecontroleerd en toegevoegd</strong>.<br />
+    Wil je je aanmelden? Stuur dan een bericht naar
+    <strong>info@irisje.nl</strong> met je bedrijfsgegevens.
+  </div>
 
   <form id="companyForm" class="space-y-5" novalidate>
     <div>
       <input
-        required
+        disabled
         name="name"
-        class="input w-full"
+        class="input w-full opacity-60 cursor-not-allowed"
         placeholder="Bedrijfsnaam"
-        autocomplete="organization"
       />
     </div>
 
     <div>
       <input
-        required
+        disabled
         name="city"
-        class="input w-full"
+        class="input w-full opacity-60 cursor-not-allowed"
         placeholder="Plaats"
-        autocomplete="address-level2"
       />
     </div>
 
     <div>
       <label class="block text-sm font-medium mb-1">
-        Categorieën <span class="text-slate-400">(meerdere mogelijk)</span>
+        Categorieën
       </label>
       <select
+        disabled
         name="categories"
-        id="categoriesSelect"
         multiple
-        class="input w-full min-h-[96px]"
+        class="input w-full min-h-[96px] opacity-60 cursor-not-allowed"
       ></select>
-      <p class="text-xs text-slate-500 mt-1">
-        Kies alle categorieën waarop je gevonden wilt worden.
-      </p>
     </div>
 
     <div>
       <label class="block text-sm font-medium mb-1">
-        Specialismen <span class="text-slate-400">(optioneel, maar aanbevolen)</span>
+        Specialismen
       </label>
       <select
+        disabled
         name="specialties"
-        id="specialtiesSelect"
         multiple
-        class="input w-full min-h-[96px]"
+        class="input w-full min-h-[96px] opacity-60 cursor-not-allowed"
       ></select>
     </div>
 
-    <div id="formError" class="hidden text-sm text-red-600"></div>
-
     <button
-      id="submitBtn"
-      class="btn-primary w-full flex items-center justify-center gap-2"
-      type="submit"
+      type="button"
+      disabled
+      class="btn-primary w-full opacity-50 cursor-not-allowed"
     >
-      <span id="submitText">Bedrijf registreren</span>
-      <span id="submitSpinner" class="hidden animate-spin">⏳</span>
+      Registratie tijdelijk gesloten
     </button>
   </form>
 </main>
 
-<script src="/js/register-company.js?v=20260108"></script>
+<script src="/js/register-company.js?v=20260111"></script>
 </body>
 </html>
