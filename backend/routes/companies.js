@@ -18,18 +18,43 @@ function makeSlug(name = "") {
 }
 
 /**
+ * GET /api/companies
+ * Publieke lijst voor results.html
+ */
+router.get("/", async (req, res) => {
+  try {
+    const companies = await Company.find({})
+      .select("name city categories specialties slug")
+      .sort({ name: 1 });
+
+    res.json({
+      ok: true,
+      companies,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      ok: false,
+      error: "Kon bedrijven niet ophalen",
+    });
+  }
+});
+
+/**
  * GET /api/companies/me
  * Haal eigen bedrijf op
  */
 router.get("/me", auth, async (req, res) => {
   try {
     const company = await Company.findOne({ owner: req.user.id });
+
     if (!company) {
       return res.status(404).json({
         ok: false,
         error: "Geen bedrijf gekoppeld aan dit account",
       });
     }
+
     res.json({ ok: true, company });
   } catch (err) {
     console.error(err);
@@ -65,7 +90,6 @@ router.patch("/me", auth, async (req, res) => {
     let company = await Company.findOne({ owner: req.user.id });
 
     if (!company) {
-      // ➜ AANMAKEN
       company = new Company({
         owner: req.user.id,
         name,
@@ -76,15 +100,15 @@ router.patch("/me", auth, async (req, res) => {
         slug: makeSlug(name),
       });
     } else {
-      // ➜ UPDATEN
       company.name = name;
       company.city = city;
       company.description = description;
       company.categories = categories;
       company.specialties = specialties;
 
-      if (!company.slug || company.slug !== makeSlug(name)) {
-        company.slug = makeSlug(name);
+      const newSlug = makeSlug(name);
+      if (!company.slug || company.slug !== newSlug) {
+        company.slug = newSlug;
       }
     }
 
