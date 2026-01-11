@@ -1,7 +1,7 @@
 // backend/routes/reviews.js
-// v20260102-REVIEWS-CONFIRM-REDIRECT-FIX
+// v20260111-REVIEWS-SYNC
 //
-// Reviews API – Optie B (status + confirmToken)
+// Reviews API – met automatische sync naar Company.avgRating / reviewCount
 //
 // Endpoints:
 // - POST   /api/reviews
@@ -24,6 +24,32 @@ function generateToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
+async function recalcCompanyRating(companyId) {
+  const stats = await Review.aggregate([
+    { $match: { companyId, status: "approved" } },
+    {
+      $group: {
+        _id: "$companyId",
+        avgRating: { $avg: "$rating" },
+        reviewCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  if (stats.length === 0) {
+    await Company.findByIdAndUpdate(companyId, {
+      avgRating: 0,
+      reviewCount: 0,
+    });
+    return;
+  }
+
+  await Company.findByIdAndUpdate(companyId, {
+    avgRating: Math.round(stats[0].avgRating * 10) / 10,
+    reviewCount: stats[0].reviewCount,
+  });
+}
+
 // ------------------------
 // POST /api/reviews
 // ------------------------
@@ -36,10 +62,9 @@ router.post("/", async (req, res) => {
       reviewerName,
       reviewerEmail,
       comment,
-      message, // legacy
+      message,
     } = req.body || {};
 
-    // Basisvalidatie input
     if (!rating || !reviewerName || !reviewerEmail || (!comment && !message)) {
       return res.status(400).json({
         ok: false,
@@ -47,7 +72,6 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Resolve companyId
     let resolvedCompanyId = companyId || null;
 
     if (!resolvedCompanyId && companySlug) {
@@ -68,14 +92,12 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Canonieke mapping
-    const mappedComment = comment || message;
     const token = generateToken();
 
     const review = new Review({
       companyId: resolvedCompanyId,
       rating,
-      comment: mappedComment,
+      comment: comment || message,
       reviewerName,
       reviewerEmail,
       status: "pending",
@@ -84,30 +106,21 @@ router.post("/", async (req, res) => {
 
     await review.save();
 
-    // Bevestigingsmail PAS NA succesvolle save
-    try {
-      // ✅ DIRECT naar backend confirm-route (server-side bevestiging)
-      const confirmUrl = `https://irisje-backend.onrender.com/api/reviews/confirm/${token}`;
+    const confirmUrl = `https://irisje-backend.onrender.com/api/reviews/confirm/${token}`;
 
+    try {
       await mailer.sendMail({
         to: reviewerEmail,
         subject: "Bevestig je review op Irisje.nl",
         html: `
           <p>Hoi ${reviewerName},</p>
-          <p>Bedankt voor je review. Klik op de knop hieronder om je review te bevestigen:</p>
-          <p>
-            <a href="${confirmUrl}"
-               style="display:inline-block;padding:10px 16px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px">
-              Review bevestigen
-            </a>
-          </p>
-          <p>Werkt de knop niet? Kopieer deze link:</p>
-          <p>${confirmUrl}</p>
+          <p>Bevestig je review via onderstaande link:</p>
+          <p><a href="${confirmUrl}">${confirmUrl}</a></p>
           <p>Groet,<br>Irisje.nl</p>
         `,
       });
     } catch (mailErr) {
-      console.error("[reviews] confirm mail failed:", mailErr.message);
+      console.error("[reviews] mail error:", mailErr.message);
     }
 
     return res.json({ ok: true });
@@ -127,22 +140,18 @@ router.get("/confirm/:token", async (req, res) => {
   try {
     const { token } = req.params;
 
-    if (!token) {
-      return res.redirect("https://irisje.nl/review-failed.html");
-    }
-
     const review = await Review.findOne({ confirmToken: token });
-
     if (!review) {
       return res.redirect("https://irisje.nl/review-failed.html");
     }
 
-    // Zet status naar approved
     review.status = "approved";
-    review.confirmToken = null; // token eenmalig gebruiken
+    review.confirmToken = null;
     await review.save();
 
-    // ✅ JOUW BESTAANDE CONFIRM-PAGINA
+    // 🔁 HERBEREKEN COMPANY SCORE
+    await recalcCompanyRating(review.companyId);
+
     return res.redirect("https://irisje.nl/review-confirm.html");
   } catch (err) {
     console.error("[reviews] confirm error:", err);
@@ -155,10 +164,8 @@ router.get("/confirm/:token", async (req, res) => {
 // ------------------------
 router.get("/company/:companyId", async (req, res) => {
   try {
-    const { companyId } = req.params;
-
     const reviews = await Review.find({
-      companyId,
+      companyId: req.params.companyId,
       status: "approved",
     })
       .sort({ createdAt: -1 })
@@ -182,9 +189,7 @@ router.get("/company/:companyId", async (req, res) => {
 // ------------------------
 router.patch("/report/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const review = await Review.findById(id);
+    const review = await Review.findById(req.params.id);
     if (!review) {
       return res.status(404).json({
         ok: false,
@@ -194,6 +199,9 @@ router.patch("/report/:id", async (req, res) => {
 
     review.status = "rejected";
     await review.save();
+
+    // 🔁 HERBEREKEN COMPANY SCORE
+    await recalcCompanyRating(review.companyId);
 
     return res.json({ ok: true });
   } catch (err) {
