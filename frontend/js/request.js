@@ -1,13 +1,14 @@
 // frontend/js/request.js
-// Optie A – definitieve fix categorie (nooit meer leeg)
+// Optie A – correct aangesloten op request.html (step1Form)
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const form = document.getElementById("requestForm");
+  const form = document.getElementById("step1Form");
   if (!form) return;
 
-  const messageInput = document.getElementById("message");
+  const categorySelect = document.getElementById("categorySelect");
+  const specialtySelect = document.getElementById("specialtySelect");
 
   const params = new URLSearchParams(window.location.search);
   const companySlug = params.get("companySlug");
@@ -34,18 +35,14 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // 🔍 categorie robuust ophalen
-    let categoryValue = "";
+    const name = form.querySelector('input[name="name"]').value.trim();
+    const email = form.querySelector('input[name="email"]').value.trim();
+    const message = form.querySelector('textarea[name="message"]').value.trim();
 
-    const categorySelect =
-      form.querySelector('select[name="category"]') ||
-      document.getElementById("category");
+    let categoryValue = categorySelect.value || "";
+    let specialtyValue = specialtySelect?.value || "";
 
-    if (categorySelect && categorySelect.value) {
-      categoryValue = categorySelect.value;
-    }
-
-    // ✅ KEIHARDE FALLBACK
+    // ✅ HARD FALLBACK: categorie vanuit startbedrijf
     if (!categoryValue && startCompany?.categories?.length) {
       categoryValue = startCompany.categories[0];
     }
@@ -56,11 +53,13 @@
     }
 
     const payload = {
-      name: form.name.value.trim(),
-      email: form.email.value.trim(),
-      message: messageInput.value.trim(),
+      name,
+      email,
+      message,
       category: categoryValue,
       categories: [categoryValue],
+      specialty: specialtyValue || "",
+      specialties: specialtyValue ? [specialtyValue] : [],
       companySlug: companySlug || null,
     };
 
@@ -78,6 +77,7 @@
         return;
       }
 
+      // ✅ DIRECT DOOR NAAR RESULTATEN
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (e) {
       console.error(e);
