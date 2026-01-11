@@ -1,90 +1,142 @@
 // frontend/js/company.js
-// v20260115-COMPANY-SAFE-DOM-BINDING (ongewijzigd functioneel)
+// v2026-01-11 — afgestemd op huidige company.html
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", initCompany);
+document.addEventListener("DOMContentLoaded", init);
 
-async function initCompany() {
+async function init() {
   const params = new URLSearchParams(window.location.search);
   const slug = params.get("slug");
 
   if (!slug) {
-    console.error("❌ company slug ontbreekt in URL");
+    renderError("Geen bedrijf opgegeven.");
     return;
   }
 
   try {
-    const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
-    if (!res.ok) throw new Error("Company load error");
+    const res = await fetch(`${API_BASE}/companies`);
+    const data = await res.json();
 
-    const json = await res.json();
-    const company = json.item;
-    if (!company) {
-      console.error("❌ Company niet gevonden");
-      return;
+    if (!res.ok || !Array.isArray(data.results)) {
+      throw new Error("Kon bedrijven niet laden.");
     }
+
+    const company = data.results.find(c => c.slug === slug);
+    if (!company) {
+      throw new Error("Bedrijf niet gevonden.");
+    }
+
     renderCompany(company);
   } catch (err) {
-    console.error("❌ Company load error:", err);
+    renderError(err.message || "Fout bij laden bedrijf.");
   }
 }
 
 function renderCompany(company) {
   setText("companyName", company.name);
-  setText("companyCity", company.city);
+  setText(
+    "companyMeta",
+    [company.city, company.isVerified ? "Geverifieerd" : null]
+      .filter(Boolean)
+      .join(" • ")
+  );
 
-  if (company.introduction) {
-    setHTMLIfExists("companyIntroduction", company.introduction);
-    showIfExists("sectionAbout");
+  setText(
+    "companyRating",
+    company.reviewCount
+      ? `${company.avgRating.toFixed(1)} ★ (${company.reviewCount} reviews)`
+      : "Nog geen reviews"
+  );
+
+  setText("companyAbout", company.description || "Geen beschrijving beschikbaar.");
+
+  renderDetails(company);
+  renderLogo(company);
+  renderPremium(company);
+}
+
+function renderDetails(company) {
+  const ul = document.getElementById("companyDetails");
+  if (!ul) return;
+
+  ul.innerHTML = "";
+
+  addLi(ul, "Plaats", company.city);
+  addLi(
+    ul,
+    "Categorieën",
+    Array.isArray(company.categories) ? company.categories.join(", ") : "—"
+  );
+  addLi(
+    ul,
+    "Specialismen",
+    Array.isArray(company.specialties) && company.specialties.length
+      ? company.specialties.join(", ")
+      : "—"
+  );
+}
+
+function addLi(ul, label, value) {
+  const li = document.createElement("li");
+  li.innerHTML = `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
+  ul.appendChild(li);
+}
+
+function renderLogo(company) {
+  const img = document.getElementById("companyLogo");
+  const fallback = document.getElementById("companyLogoFallback");
+
+  if (!img || !fallback) return;
+
+  if (company.logoUrl) {
+    img.src = company.logoUrl;
+    img.classList.remove("hidden");
+    fallback.classList.add("hidden");
   } else {
-    hideIfExists("sectionAbout");
+    fallback.textContent = getInitials(company.name);
+    fallback.classList.remove("hidden");
+    img.classList.add("hidden");
   }
+}
 
-  if (Array.isArray(company.reasons) && company.reasons.length) {
-    const ul = document.getElementById("companyReasons");
-    if (ul) {
-      ul.innerHTML = "";
-      company.reasons.forEach(r => {
-        const li = document.createElement("li");
-        li.textContent = r;
-        ul.appendChild(li);
-      });
-      showIfExists("sectionReasons");
-    }
-  } else {
-    hideIfExists("sectionReasons");
-  }
+function renderPremium(company) {
+  const badge = document.getElementById("premiumBadge");
+  if (!badge) return;
 
-  if (Array.isArray(company.specialties) && company.specialties.length) {
-    const ul = document.getElementById("companySpecialties");
-    if (ul) {
-      ul.innerHTML = "";
-      company.specialties.forEach(s => {
-        const li = document.createElement("li");
-        li.textContent = s;
-        ul.appendChild(li);
-      });
-      showIfExists("sectionSpecialties");
-    }
+  if (company.isPremium) {
+    badge.classList.remove("hidden");
   } else {
-    hideIfExists("sectionSpecialties");
+    badge.classList.add("hidden");
   }
 }
 
 function setText(id, value) {
   const el = document.getElementById(id);
-  if (el) el.textContent = value || "";
+  if (el) el.textContent = value ?? "";
 }
-function setHTMLIfExists(id, html) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = html;
+
+function renderError(msg) {
+  const hero = document.getElementById("companyHero");
+  if (!hero) return;
+
+  hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
 }
-function showIfExists(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove("hidden");
+
+function getInitials(name) {
+  return String(name || "")
+    .split(" ")
+    .slice(0, 2)
+    .map(w => w[0])
+    .join("")
+    .toUpperCase();
 }
-function hideIfExists(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add("hidden");
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
