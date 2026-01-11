@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v2026-01-17 — FIX: admin gebruikt /api/admin/companies + data.results
+// v2026-01-11 — FIX: accepteert admin-response met companies óf results
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -15,7 +15,7 @@ async function init() {
     return;
   }
 
-  await loadCompanies();
+  loadCompanies();
 }
 
 async function loadCompanies() {
@@ -31,14 +31,20 @@ async function loadCompanies() {
 
     const data = await res.json();
 
-    // ✅ juiste key
-    if (!res.ok || !Array.isArray(data.results)) {
+    const companies =
+      Array.isArray(data.results)
+        ? data.results
+        : Array.isArray(data.companies)
+        ? data.companies
+        : null;
+
+    if (!res.ok || !companies) {
       throw new Error("Kon bedrijven niet laden.");
     }
 
-    data.results.forEach(addRow);
-  } catch (e) {
-    errorBox.textContent = e.message || "Fout bij laden bedrijven.";
+    companies.forEach(addRow);
+  } catch (err) {
+    errorBox.textContent = err.message || "Fout bij laden bedrijven.";
     errorBox.classList.remove("hidden");
   }
 }
@@ -51,13 +57,11 @@ function addRow(company) {
     <td class="py-2">${escapeHtml(company.name || "")}</td>
     <td class="py-2">${escapeHtml(company.city || "")}</td>
     <td class="py-2 text-sm">
-      ${escapeHtml(
-        Array.isArray(company.categories) ? company.categories.join(", ") : ""
-      )}
+      ${Array.isArray(company.categories)
+        ? escapeHtml(company.categories.join(", "))
+        : ""}
     </td>
-    <td class="py-2">
-      <span class="text-slate-400 text-sm">–</span>
-    </td>
+    <td class="py-2 text-slate-400 text-sm">–</td>
   `;
 
   tbody.appendChild(tr);
