@@ -1,13 +1,13 @@
 // frontend/js/results.js
-// v2026-01-17 — Stap P1.2 (scope-safe)
+// Optie B – UX-vriendelijke handling zonder requestId
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
   const grid = document.getElementById("resultsGrid");
   const emptyState = document.getElementById("emptyState");
+  const emptyMessage = document.getElementById("emptyMessage");
   const intro = document.getElementById("resultsIntro");
-  const countEl = document.getElementById("resultCount");
   const selectedCountEl = document.getElementById("selectedCount");
   const submitBtn = document.getElementById("submitBtn");
 
@@ -25,7 +25,9 @@
     requestId = params.get("requestId");
 
     if (!requestId) {
-      showEmpty("Geen aanvraag gevonden.");
+      showEmpty(
+        "Deze pagina kun je alleen bereiken via een offerteaanvraag. Start hieronder een nieuwe aanvraag."
+      );
       return;
     }
 
@@ -34,10 +36,16 @@
       const reqData = await reqRes.json();
 
       if (!reqRes.ok || !reqData.ok || !reqData.request) {
-        throw new Error("Aanvraag niet gevonden.");
+        showEmpty(
+          "Deze aanvraag is niet (meer) beschikbaar. Start gerust een nieuwe aanvraag."
+        );
+        return;
       }
 
       const req = reqData.request;
+
+      intro.textContent =
+        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
       if (req.companyId) {
         fixedCompanyId = String(req.companyId);
@@ -58,18 +66,16 @@
         : [];
 
       if (!companies.length) {
-        showEmpty("Geen bedrijven gevonden.");
+        showEmpty("Er zijn momenteel geen passende bedrijven beschikbaar.");
         return;
       }
 
-      intro.textContent =
-        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
-
       renderCompanies(companies);
-      countEl.textContent = `${companies.length} bedrijven gevonden`;
     } catch (e) {
       console.error(e);
-      showEmpty("Kon resultaten niet laden.");
+      showEmpty(
+        "Er ging iets mis bij het laden van de resultaten. Probeer het later opnieuw."
+      );
     }
   }
 
@@ -82,7 +88,7 @@
 
       const card = document.createElement("div");
       card.className =
-        "border rounded-xl p-4 bg-white shadow-soft flex items-start gap-3";
+        "border rounded-xl p-4 bg-white shadow-soft flex items-start gap-3 text-left";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
@@ -116,15 +122,8 @@
 
   function updateSelectedCount() {
     selectedCountEl.textContent = selected.size;
-
-    submitBtn.classList.toggle(
-      "pointer-events-none",
-      selected.size === 0
-    );
-    submitBtn.classList.toggle(
-      "opacity-50",
-      selected.size === 0
-    );
+    submitBtn.classList.toggle("pointer-events-none", selected.size === 0);
+    submitBtn.classList.toggle("opacity-50", selected.size === 0);
   }
 
   submitBtn.addEventListener("click", async () => {
@@ -156,8 +155,8 @@
 
   function showEmpty(msg) {
     grid.innerHTML = "";
+    emptyMessage.textContent = msg;
     emptyState.classList.remove("hidden");
-    emptyState.querySelector("p").textContent = msg;
   }
 
   function escapeHtml(str) {

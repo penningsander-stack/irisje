@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bedrijven – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260117">
+  <title>Kies bedrijven – Irisje.nl</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
 
 <body class="irisje-body">
@@ -13,7 +13,7 @@
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
       <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white text-indigo-700 font-bold shadow-brand">I</span>
         <span class="font-semibold text-slate-900">Irisje.nl</span>
       </a>
       <div class="text-sm text-slate-700">
@@ -22,25 +22,36 @@
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-4 py-8">
-    <h1 class="text-2xl font-semibold mb-2">Kies bedrijven voor je aanvraag</h1>
-    <p id="resultsIntro" class="text-slate-600 mb-4"></p>
+  <main class="max-w-4xl mx-auto px-4 py-10 text-center">
 
-    <div id="fixedCompanyBox" class="hidden mb-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
+    <h1 class="text-2xl font-semibold mb-3">
+      Kies bedrijven voor je aanvraag
+    </h1>
+
+    <p id="resultsIntro" class="text-slate-600 mb-8"></p>
+
+    <!-- Empty / uitleg state -->
+    <div id="emptyState" class="hidden bg-white border rounded-2xl p-8 shadow-soft">
+      <p id="emptyMessage" class="text-slate-700 mb-6"></p>
+
+      <a
+        href="index.html"
+        class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
+      >
+        Start een nieuwe aanvraag
+      </a>
+    </div>
+
+    <!-- Resultaten -->
+    <div id="fixedCompanyBox" class="hidden mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-left">
       <p class="text-sm text-indigo-700">
         Deze aanvraag wordt in ieder geval verstuurd naar:
       </p>
-      <p id="fixedCompanyName" class="font-semibold text-indigo-900 mt-1">—</p>
+      <p id="fixedCompanyName" class="font-semibold text-indigo-900 mt-1"></p>
     </div>
 
-    <p id="resultCount" class="text-sm text-slate-600 mb-4"></p>
+    <div id="resultsGrid" class="grid md:grid-cols-2 gap-4"></div>
 
-    <div id="resultsGrid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-
-    <div id="emptyState" class="hidden mt-10 text-center text-slate-600">
-      <p class="mb-2 font-medium">Geen bedrijven gevonden.</p>
-      <p>Probeer je filters aan te passen.</p>
-    </div>
   </main>
 
   <div class="fixed bottom-0 inset-x-0 bg-white border-t shadow-soft">
@@ -48,12 +59,15 @@
       <div class="text-sm text-slate-600">
         Je selectie wordt in één keer verstuurd.
       </div>
-      <button id="submitBtn" class="irisje-btn opacity-50 pointer-events-none">
+      <button
+        id="submitBtn"
+        class="irisje-btn opacity-50 pointer-events-none"
+      >
         Verstuur aanvraag
       </button>
     </div>
   </div>
 
-  <script src="/js/results.js?v=20260117"></script>
+  <script src="/js/results.js"></script>
 </body>
 </html>
