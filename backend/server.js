@@ -45,6 +45,9 @@ app.use("/api/admin", require("./routes/admin"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publicCategories", require("./routes/publicCategories"));
 
+// 🔹 NIEUW: centrale read-only categorie-config
+app.use("/api/meta", require("./routes/meta"));
+
 // ✅ Seed route (nodig voor /api/seed/seed-companies)
 app.use("/api/seed", require("./routes/seed"));
 
