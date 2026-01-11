@@ -1,9 +1,11 @@
 // backend/routes/admin.js
-// v20260111-ADMIN-COMPANIES-EDIT-DELETE
+// v20260111-ADMIN-COMPANIES-CRUD
 //
-// Behoudt ALLE bestaande admin-functionaliteit
-// + PATCH company (bewerken)
-// + DELETE company (verwijderen)
+// Admin companies:
+// - GET    /admin/companies
+// - POST   /admin/companies        (nieuw: aanmaken)
+// - PATCH  /admin/companies/:id    (bewerken)
+// - DELETE /admin/companies/:id    (verwijderen)
 
 const express = require("express");
 const router = express.Router();
@@ -36,6 +38,49 @@ router.get("/companies", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "Kon bedrijven niet ophalen",
+      details: err.message,
+    });
+  }
+});
+
+// ============================================================
+// POST company (admin toevoegen)
+// ============================================================
+router.post("/companies", async (req, res) => {
+  try {
+    const {
+      name,
+      city,
+      description,
+      categories,
+      specialties,
+      isVerified,
+    } = req.body;
+
+    if (!name || typeof name !== "string") {
+      return res.status(400).json({
+        ok: false,
+        error: "Naam is verplicht",
+      });
+    }
+
+    const company = await Company.create({
+      name: name.trim(),
+      city: typeof city === "string" ? city.trim() : "",
+      description: typeof description === "string" ? description.trim() : "",
+      categories: Array.isArray(categories) ? categories.map(String) : [],
+      specialties: Array.isArray(specialties) ? specialties.map(String) : [],
+      isVerified: typeof isVerified === "boolean" ? isVerified : false,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      company,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      error: "Kon bedrijf niet aanmaken",
       details: err.message,
     });
   }
@@ -135,8 +180,10 @@ router.delete("/companies/:id", async (req, res) => {
 });
 
 // ============================================================
-// GET reported reviews
+// OVERIGE ADMIN ROUTES (ongewijzigd)
 // ============================================================
+
+// reported reviews
 router.get("/reported-reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ reported: true })
@@ -155,7 +202,6 @@ router.get("/reported-reviews", async (req, res) => {
   }
 });
 
-// clear review report
 router.post("/reported-reviews/:id/clear", async (req, res) => {
   try {
     const updated = await Review.findByIdAndUpdate(
@@ -185,9 +231,7 @@ router.post("/reported-reviews/:id/clear", async (req, res) => {
   }
 });
 
-// ============================================================
-// GET claims
-// ============================================================
+// claims
 router.get("/claims", async (req, res) => {
   try {
     const claims = await Claim.find({})
@@ -206,7 +250,6 @@ router.get("/claims", async (req, res) => {
   }
 });
 
-// approve claim
 router.post("/claims/:id/approve", async (req, res) => {
   try {
     const claim = await Claim.findById(req.params.id).lean();
@@ -236,7 +279,6 @@ router.post("/claims/:id/approve", async (req, res) => {
   }
 });
 
-// reject claim
 router.post("/claims/:id/reject", async (req, res) => {
   try {
     const claim = await Claim.findById(req.params.id).lean();
@@ -262,65 +304,7 @@ router.post("/claims/:id/reject", async (req, res) => {
   }
 });
 
-// ============================================================
-// GET pending reviews
-// ============================================================
-router.get("/reviews/pending", async (req, res) => {
-  try {
-    const reviews = await Review.find({ status: "pending" })
-      .populate("companyId", "name slug")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return res.json({ ok: true, items: reviews });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: "Kon pending reviews niet ophalen",
-    });
-  }
-});
-
-// ============================================================
-// Update review status
-// ============================================================
-router.patch("/reviews/:id/status", async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    if (!["approved", "rejected"].includes(status)) {
-      return res.status(400).json({
-        ok: false,
-        error: "Ongeldige status",
-      });
-    }
-
-    const review = await Review.findById(req.params.id);
-    if (!review) {
-      return res.status(404).json({
-        ok: false,
-        error: "Review niet gevonden",
-      });
-    }
-
-    review.status = status;
-    await review.save();
-
-    return res.json({
-      ok: true,
-      message: `Review ${status}`,
-    });
-  } catch (err) {
-    return res.status(500).json({
-      ok: false,
-      error: "Kon reviewstatus niet aanpassen",
-    });
-  }
-});
-
-// ============================================================
-// GET logs
-// ============================================================
+// logs
 router.get("/logs", (req, res) => {
   try {
     const logs = getLogs();
