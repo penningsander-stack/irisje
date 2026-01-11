@@ -1,8 +1,9 @@
 // frontend/js/company.js
-// v2026-01-11 — Company detailpagina
+// v2026-01-13 — Company detailpagina
 // - Google-reviews (samenvatting) bovenaan
 // - Irisje-reviews (lijst) onderaan
 // - Review schrijven → review.html?companySlug=...
+// - Offerte aanvragen → request.html?companySlug=...
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -139,6 +140,7 @@ function renderCompany(company) {
   renderLogo(company);
   renderPremium(company);
   bindReviewButton(company);
+  bindRequestButton(company);
 }
 
 function renderDetails(company) {
@@ -171,93 +173,4 @@ function renderLogo(company) {
 
   if (company.logoUrl) {
     img.src = company.logoUrl;
-    img.classList.remove("hidden");
-    fallback.classList.add("hidden");
-  } else {
-    fallback.textContent = getInitials(company.name);
-    fallback.classList.remove("hidden");
-    img.classList.add("hidden");
-  }
-}
-
-function renderPremium(company) {
-  const badge = document.getElementById("premiumBadge");
-  if (!badge) return;
-
-  if (company.isPremium) {
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
-}
-
-/* =========================
-   Navigatie / CTA
-========================= */
-
-function renderBackLink(fromSector) {
-  const hero = document.getElementById("companyHero");
-  if (!hero) return;
-
-  const a = document.createElement("a");
-  a.className =
-    "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
-  a.href = fromSector
-    ? `results.html?sector=${encodeURIComponent(fromSector)}`
-    : "results.html";
-  a.innerHTML = "← Terug naar resultaten";
-
-  hero.prepend(a);
-}
-
-function bindReviewButton(company) {
-  const btn = document.getElementById("writeReviewBtn");
-  if (!btn || !company.slug) return;
-
-  btn.href = `review.html?companySlug=${encodeURIComponent(company.slug)}`;
-}
-
-/* =========================
-   Helpers
-========================= */
-
-function addLi(ul, label, value) {
-  const li = document.createElement("li");
-  li.innerHTML = `<strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}`;
-  ul.appendChild(li);
-}
-
-function setText(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value ?? "";
-}
-
-function renderError(msg) {
-  const hero = document.getElementById("companyHero");
-  if (!hero) return;
-
-  hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
-}
-
-/* =========================
-   Utils
-========================= */
-
-function getInitials(name) {
-  return String(name || "")
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(w => w[0])
-    .join("")
-    .toUpperCase();
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+    img.cla
