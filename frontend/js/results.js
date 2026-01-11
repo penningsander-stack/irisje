@@ -137,27 +137,31 @@ submitBtn.addEventListener("click", async () => {
   if (selected.size === 0) return;
 
   try {
-    const res = await fetch(`${API_BASE}/publicRequests/${requestId}/recipients`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        companyIds: Array.from(selected),
-      }),
-    });
+    const res = await fetch(
+      `${API_BASE}/publicRequests/${requestId}/submit`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyIds: Array.from(selected),
+        }),
+      }
+    );
 
     const data = await res.json();
 
     if (!res.ok || !data.ok) {
-      alert("Versturen mislukt.");
+      alert(data?.error || "Versturen mislukt.");
       return;
     }
 
-    alert(`Aanvraag verstuurd naar ${selected.size} bedrijven.`);
+    alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
   } catch (e) {
     console.error(e);
     alert("Versturen mislukt.");
   }
 });
+
 
 function showEmpty(msg) {
   grid.innerHTML = "";
