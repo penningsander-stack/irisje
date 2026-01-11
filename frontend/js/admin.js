@@ -1,5 +1,5 @@
 // frontend/js/admin.js
-// v2026-01-11 A4.2 – admin aangesloten op /api/meta/categories
+// v2026-01-11 A4.2.1 – bugfix specialties rendering
 
 const API_ADMIN = "https://irisje-backend.onrender.com/api/admin";
 const API_META = "https://irisje-backend.onrender.com/api/meta";
@@ -33,24 +33,28 @@ async function init() {
   bindUI();
 }
 
-// UI BINDINGS
+// UI
 function bindUI() {
   addCompanyBtn.onclick = () => {
     resetForm();
     showForm();
   };
 
-  cancelEditBtn.onclick = () => {
-    hideForm();
-  };
+  cancelEditBtn.onclick = hideForm;
 
   form.onsubmit = submitForm;
+
+  // ❗ FIX: wrapper i.p.v. directe renderSpecialties
+  categorySelect.onchange = () => {
+    renderSpecialties([]);
+  };
 }
 
-// LOAD CATEGORY CONFIG
+// LOAD CATEGORIES
 async function loadCategories() {
   const res = await fetch(`${API_META}/categories`);
   const data = await res.json();
+
   if (!data.ok) {
     alert("Kon categorieën niet laden");
     return;
@@ -66,16 +70,16 @@ async function loadCategories() {
     categorySelect.appendChild(opt);
   });
 
-  categorySelect.onchange = renderSpecialties;
-  renderSpecialties();
+  // initial render
+  renderSpecialties([]);
 }
 
 // RENDER SPECIALTIES
-function renderSpecialties(selected = []) {
+function renderSpecialties(selectedKeys = []) {
   const catKey = categorySelect.value;
   const category = CATEGORY_CONFIG.find((c) => c.key === catKey);
-  specialtiesWrap.innerHTML = "";
 
+  specialtiesWrap.innerHTML = "";
   if (!category) return;
 
   category.specialties.forEach((s) => {
@@ -85,7 +89,7 @@ function renderSpecialties(selected = []) {
     const cb = document.createElement("input");
     cb.type = "checkbox";
     cb.value = s.key;
-    if (selected.includes(s.key)) cb.checked = true;
+    cb.checked = selectedKeys.includes(s.key);
 
     label.appendChild(cb);
     label.appendChild(document.createTextNode(" " + s.label));
@@ -99,6 +103,7 @@ async function loadCompanies() {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();
+
   if (!data.ok) {
     alert("Kon bedrijven niet laden");
     return;
@@ -108,7 +113,7 @@ async function loadCompanies() {
   data.companies.forEach(renderRow);
 }
 
-// RENDER TABLE ROW
+// TABLE ROW
 function renderRow(c) {
   const tr = document.createElement("tr");
 
@@ -141,9 +146,10 @@ function editCompany(c) {
   descriptionInput.value = c.description || "";
   isVerifiedInput.checked = !!c.isVerified;
 
-  if (c.categories && c.categories.length) {
+  if (c.categories?.length) {
     categorySelect.value = c.categories[0];
   }
+
   renderSpecialties(c.specialties || []);
 }
 
@@ -199,7 +205,7 @@ async function deleteCompany(id) {
   loadCompanies();
 }
 
-// FORM VISIBILITY
+// VISIBILITY
 function showForm() {
   formCard.classList.remove("hidden");
 }
