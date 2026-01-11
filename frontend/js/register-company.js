@@ -1,5 +1,5 @@
 // frontend/js/register-company.js
-// v2026-01-11 A5.1 – register-company gebruikt /api/meta/categories (single category + multi specialties)
+// v2026-01-11 A5.3 – definitief: opslaan via /api/companies/me
 
 const API_META = "https://irisje-backend.onrender.com/api/meta";
 const API_COMPANIES = "https://irisje-backend.onrender.com/api/companies";
@@ -63,10 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
         categoryEl.appendChild(opt);
       }
 
-      // initial render (none selected)
       renderSpecialties([]);
       clearStatus();
-    } catch (e) {
+    } catch {
       categoryEl.innerHTML = `<option value="">Kon categorieën niet laden</option>`;
       setStatus("Kon categorieën niet laden (netwerkfout).", "text-red-600");
     }
@@ -78,9 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const catKey = categoryEl.value;
     const category = CATEGORY_CONFIG.find((c) => c.key === catKey);
 
-    if (!category || !Array.isArray(category.specialties)) {
-      return;
-    }
+    if (!category || !Array.isArray(category.specialties)) return;
 
     for (const s of category.specialties) {
       const label = document.createElement("label");
@@ -146,58 +143,34 @@ document.addEventListener("DOMContentLoaded", () => {
       specialties,
     };
 
-    // Verwachting: je bent ingelogd en hebt token (zoals de rest van je platform).
     const token = localStorage.getItem("token");
     if (!token) {
-      setStatus("Niet ingelogd (token ontbreekt). Log in en probeer opnieuw.", "text-red-600");
+      setStatus("Niet ingelogd. Log in en probeer opnieuw.", "text-red-600");
       return;
     }
 
-    // We proberen eerst een “me”-achtige endpoint. Als die niet bestaat, kan dit 404 geven.
-    // Dan laten we dat netjes zien (zonder iets stuk te maken).
     setStatus("Opslaan…", "text-slate-600");
 
-    // Strategie: eerst PATCH /api/companies/me (als je die hebt),
-    // anders PATCH /api/companies (of een ander endpoint) moet jij later bevestigen.
-    // We doen nu alleen een veilige poging met duidelijke foutmelding.
-    const candidates = [
-      { method: "PATCH", url: `${API_COMPANIES}/me` },
-      { method: "PATCH", url: `${API_COMPANIES}` },
-    ];
+    try {
+      const res = await fetch(`${API_COMPANIES}/me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    let lastErr = null;
+      const data = await safeJson(res);
 
-    for (const c of candidates) {
-      try {
-        const res = await fetch(c.url, {
-          method: c.method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await safeJson(res);
-
-        if (res.ok && data && data.ok) {
-          setStatus("Opgeslagen.", "text-emerald-600");
-          return;
-        }
-
-        // als endpoint niet bestaat of niet klopt, proberen we volgende kandidaat
-        lastErr = data || { ok: false, error: `HTTP ${res.status}` };
-
-        // Alleen doorproberen bij 404 (endpoint bestaat niet)
-        if (res.status !== 404) break;
-      } catch (err) {
-        lastErr = { ok: false, error: "Netwerkfout" };
-        break;
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || `HTTP ${res.status}`);
       }
-    }
 
-    const detail = lastErr?.details || lastErr?.error || "Opslaan mislukt.";
-    setStatus(`Opslaan mislukt: ${detail}`, "text-red-600");
+      setStatus("Opgeslagen.", "text-emerald-600");
+    } catch (err) {
+      setStatus(`Opslaan mislukt: ${err.message}`, "text-red-600");
+    }
   }
 
   async function safeJson(res) {
