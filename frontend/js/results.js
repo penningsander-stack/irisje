@@ -1,131 +1,169 @@
 // frontend/js/results.js
-// v2026-01-11 — Stap F: bedrijf aanklikbaar maken (results → company)
-// Doel: klik op bedrijf → company.html?slug=...
+// v2026-01-17 — Stap P1.2
+// - 1 startbedrijf vast geselecteerd
+// - max. 4 extra bedrijven aanvinkbaar
+// - totaal max. 5
+// - bevestigen via "Verstuur aanvraag"
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
+const grid = document.getElementById("resultsGrid");
+const emptyState = document.getElementById("emptyState");
+const intro = document.getElementById("resultsIntro");
+const countEl = document.getElementById("resultCount");
+const selectedCountEl = document.getElementById("selectedCount");
+const submitBtn = document.getElementById("submitBtn");
+
+const fixedBox = document.getElementById("fixedCompanyBox");
+const fixedNameEl = document.getElementById("fixedCompanyName");
+
+let selected = new Set();
+let fixedCompanyId = null;
+let requestId = null;
+
 document.addEventListener("DOMContentLoaded", init);
-
-function normalize(val) {
-  return String(val || "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-");
-}
-
-function normalizeArray(arr) {
-  if (!Array.isArray(arr)) return [];
-  return arr.map(v => normalize(v));
-}
-
-function qs(id) {
-  return document.getElementById(id);
-}
 
 async function init() {
   const params = new URLSearchParams(location.search);
-  const activeSector = normalize(params.get("sector"));
+  requestId = params.get("requestId");
 
-  const grid = qs("resultsGrid");
-  const emptyState = qs("emptyState");
-  const intro = qs("resultsIntro");
-  const count = qs("resultCount");
-
-  if (!grid) return;
+  if (!requestId) {
+    showEmpty("Geen aanvraag gevonden.");
+    return;
+  }
 
   try {
+    // 1️⃣ aanvraag ophalen (om startbedrijf te kennen)
+    const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
+    const reqData = await reqRes.json();
+
+    if (!reqRes.ok || !reqData.ok || !reqData.request) {
+      throw new Error("Aanvraag niet gevonden.");
+    }
+
+    const req = reqData.request;
+
+    if (req.companyId) {
+      fixedCompanyId = String(req.companyId);
+      selected.add(fixedCompanyId);
+      fixedBox.classList.remove("hidden");
+      fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
+    }
+
+    updateSelectedCount();
+
+    // 2️⃣ bedrijven laden (matching)
     const res = await fetch(`${API_BASE}/companies`);
     const data = await res.json();
 
-    // ✅ accepteer meerdere response-vormen
     const companies = Array.isArray(data.results)
       ? data.results
       : Array.isArray(data.companies)
       ? data.companies
       : [];
 
-    if (!res.ok || companies.length === 0) {
-      showEmpty(grid, emptyState, count, "Geen bedrijven gevonden.");
+    if (companies.length === 0) {
+      showEmpty("Geen bedrijven gevonden.");
       return;
     }
 
-    // ✅ alleen filteren als sector écht bestaat
-    let filtered = companies;
-    if (activeSector) {
-      filtered = companies.filter(c => {
-        const cats = normalizeArray(c.categories);
-        return cats.includes(activeSector);
-      });
-    }
+    intro.textContent =
+      "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
-    if (intro) {
-      intro.textContent = activeSector
-        ? `Resultaten voor sector: ${activeSector.replace(/-/g, " ")}`
-        : "Alle bedrijven";
-    }
-
-    if (filtered.length === 0) {
-      showEmpty(grid, emptyState, count, "Geen bedrijven gevonden voor deze sector.");
-      return;
-    }
-
-    hideEmpty(emptyState);
-    renderCards(grid, filtered, params);
-
-    if (count) {
-      count.textContent = `${filtered.length} bedrijven gevonden`;
-    }
+    renderCompanies(companies);
+    countEl.textContent = `${companies.length} bedrijven gevonden`;
   } catch (e) {
-    console.error("Results fout:", e);
-    showEmpty(grid, emptyState, count, "Kon bedrijven niet laden.");
+    console.error(e);
+    showEmpty("Kon resultaten niet laden.");
   }
 }
 
-function renderCards(grid, companies, currentParams) {
+function renderCompanies(companies) {
   grid.innerHTML = "";
 
   for (const c of companies) {
-    // Belangrijk: backend hoort slug te leveren. Als die ontbreekt gebruiken we _id als fallback.
-    // company.js kan beide matchen (slug of id).
-    const ref = c.slug || c._id || c.id || "";
-    const safeRef = encodeURIComponent(String(ref));
+    const id = String(c._id || c.id);
+    const isFixed = id === fixedCompanyId;
 
-    // behoud context (optioneel)
-    const extra = new URLSearchParams();
-    if (currentParams && currentParams.get("sector")) {
-      extra.set("fromSector", currentParams.get("sector"));
-    }
-    const extraQs = extra.toString() ? `&${extra.toString()}` : "";
+    const card = document.createElement("div");
+    card.className =
+      "border rounded-xl p-4 bg-white shadow-soft flex items-start gap-3";
 
-    const a = document.createElement("a");
-    a.href = `company.html?slug=${safeRef}${extraQs}`;
-    a.className = "block border rounded-xl p-4 bg-white shadow-soft hover:shadow-md transition";
-    a.setAttribute("aria-label", `Bekijk bedrijf: ${c.name || ""}`);
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "mt-1";
+    checkbox.checked = isFixed;
+    checkbox.disabled = isFixed;
 
-    a.innerHTML = `
-      <div class="font-semibold text-slate-900 mb-1">${escapeHtml(c.name || "")}</div>
-      <div class="text-sm text-slate-600 mb-2">${escapeHtml(c.city || "")}</div>
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) {
+        if (selected.size >= 5) {
+          checkbox.checked = false;
+          return;
+        }
+        selected.add(id);
+      } else {
+        selected.delete(id);
+      }
+      updateSelectedCount();
+    });
+
+    const info = document.createElement("div");
+    info.innerHTML = `
+      <div class="font-semibold text-slate-900">${escapeHtml(c.name || "")}</div>
+      <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
       <div class="text-xs text-slate-500">
         ${escapeHtml(Array.isArray(c.categories) ? c.categories.join(", ") : "")}
       </div>
     `;
 
-    grid.appendChild(a);
+    card.appendChild(checkbox);
+    card.appendChild(info);
+    grid.appendChild(card);
   }
 }
 
-function showEmpty(grid, emptyState, count, msg) {
-  if (grid) grid.innerHTML = "";
-  if (count) count.textContent = "";
-  if (emptyState) {
-    emptyState.classList.remove("hidden");
-    const p = emptyState.querySelector("p");
-    if (p) p.textContent = msg;
+function updateSelectedCount() {
+  selectedCountEl.textContent = selected.size;
+
+  if (selected.size > 0) {
+    submitBtn.classList.remove("opacity-50", "pointer-events-none");
+  } else {
+    submitBtn.classList.add("opacity-50", "pointer-events-none");
   }
 }
 
-function hideEmpty(emptyState) {
-  if (emptyState) emptyState.classList.add("hidden");
+submitBtn.addEventListener("click", async () => {
+  if (selected.size === 0) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/publicRequests/${requestId}/recipients`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyIds: Array.from(selected),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      alert("Versturen mislukt.");
+      return;
+    }
+
+    alert(`Aanvraag verstuurd naar ${selected.size} bedrijven.`);
+  } catch (e) {
+    console.error(e);
+    alert("Versturen mislukt.");
+  }
+});
+
+function showEmpty(msg) {
+  grid.innerHTML = "";
+  emptyState.classList.remove("hidden");
+  const p = emptyState.querySelector("p");
+  if (p) p.textContent = msg;
 }
 
 function escapeHtml(str) {
