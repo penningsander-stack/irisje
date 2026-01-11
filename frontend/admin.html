@@ -3,114 +3,75 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl — Admin</title>
-
-  <link rel="stylesheet" href="/style.css" />
+  <title>Irisje – Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body class="irisje-body">
+<body>
+  <main class="container">
+    <h1>Admin – Bedrijven</h1>
 
-<header class="irisje-header">
-  <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-    <h1 class="text-lg font-semibold">Irisje.nl — Admin</h1>
-  </div>
-</header>
+    <!-- Bedrijf toevoegen / bewerken -->
+    <section class="card">
+      <h2 id="form-title">Bedrijf toevoegen</h2>
 
-<main class="max-w-6xl mx-auto px-4 py-6">
+      <form id="company-form">
+        <input type="hidden" id="company-id" />
 
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="text-xl font-semibold">Bedrijven</h2>
-    <button
-      id="addCompany"
-      type="button"
-      class="px-4 py-2 bg-indigo-600 text-white rounded-lg"
-    >
-      Bedrijf toevoegen
-    </button>
-  </div>
+        <div class="field">
+          <label>Naam</label>
+          <input type="text" id="name" required />
+        </div>
 
-  <div id="errorBox" class="hidden mb-4 text-red-600"></div>
+        <div class="field">
+          <label>Plaats</label>
+          <input type="text" id="city" />
+        </div>
 
-  <div class="overflow-x-auto bg-white rounded-xl shadow-sm relative z-10">
-    <table class="min-w-full text-sm">
-      <thead class="bg-slate-50 border-b">
-        <tr>
-          <th class="text-left px-4 py-3">Naam</th>
-          <th class="text-left px-4 py-3">Plaats</th>
-          <th class="text-left px-4 py-3">Categorieën</th>
-          <th class="text-left px-4 py-3">Status</th>
-          <th class="text-left px-4 py-3">Acties</th>
-        </tr>
-      </thead>
-      <tbody id="companiesTbody"></tbody>
-    </table>
-  </div>
+        <div class="field">
+          <label>Omschrijving</label>
+          <textarea id="description"></textarea>
+        </div>
 
-</main>
+        <div class="field">
+          <label>Sectoren</label>
+          <select id="categories" multiple></select>
+        </div>
 
-<!-- MODAL -->
-<div
-  id="editModal"
-  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1000; align-items:center; justify-content:center;"
->
-  <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-lg">
-    <h3 id="modalTitle" class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
+        <div class="field">
+          <label>Specialismen</label>
+          <select id="specialties" multiple></select>
+        </div>
 
-    <input id="editId" type="hidden" />
+        <div class="field">
+          <label>
+            <input type="checkbox" id="isVerified" />
+            Geverifieerd
+          </label>
+        </div>
 
-    <label class="block mb-3 text-sm">
-      Naam
-      <input id="editName" class="mt-1 w-full rounded-lg border px-3 py-2" />
-    </label>
+        <button type="submit">Opslaan</button>
+        <button type="button" id="cancel-edit" hidden>Annuleren</button>
+      </form>
+    </section>
 
-    <label class="block mb-3 text-sm">
-      Plaats
-      <input id="editCity" class="mt-1 w-full rounded-lg border px-3 py-2" />
-    </label>
+    <!-- Bedrijvenlijst -->
+    <section class="card">
+      <h2>Bedrijven</h2>
+      <table id="companies-table">
+        <thead>
+          <tr>
+            <th>Naam</th>
+            <th>Plaats</th>
+            <th>Sectoren</th>
+            <th>Status</th>
+            <th>Acties</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
 
-    <label class="block mb-3 text-sm">
-      Omschrijving
-      <textarea id="editDescription" rows="4" class="mt-1 w-full rounded-lg border px-3 py-2"></textarea>
-    </label>
-
-    <label class="block mb-3 text-sm">
-      Categorieën (komma’s)
-      <input id="editCategories" class="mt-1 w-full rounded-lg border px-3 py-2" />
-    </label>
-
-    <label class="block mb-3 text-sm">
-      Specialismen (komma’s)
-      <input id="editSpecialties" class="mt-1 w-full rounded-lg border px-3 py-2" />
-    </label>
-
-    <label class="flex items-center gap-2 text-sm mb-4">
-      <input id="editVerified" type="checkbox" />
-      Geverifieerd
-    </label>
-
-    <div id="editError" class="hidden text-sm text-red-600 mb-3"></div>
-
-    <div class="flex justify-between gap-3">
-      <button
-        id="deleteCompany"
-        type="button"
-        class="px-4 py-2 border border-red-300 text-red-600 rounded-lg"
-      >
-        Verwijderen
-      </button>
-
-      <div class="flex gap-3">
-        <button id="cancelEdit" type="button" class="px-4 py-2 border rounded-lg">
-          Annuleren
-        </button>
-        <button id="saveEdit" type="button" class="px-4 py-2 bg-indigo-600 text-white rounded-lg">
-          Opslaan
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="/js/admin.js"></script>
+  <script src="/js/admin.js"></script>
 </body>
 </html>
