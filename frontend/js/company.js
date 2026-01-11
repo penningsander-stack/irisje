@@ -1,7 +1,7 @@
 // frontend/js/company.js
-// v2026-01-11 — Stap I: reviews tonen op company.html
-// Gebruikt: GET /api/companies/slug/:slug
-//           GET /api/reviews/company/:companyId
+// v2026-01-11 — Stap N: reviewbronnen scheiden (Google vs Irisje)
+// - Bovenaan: Google-reviews labelen
+// - Onder: "Reviews op Irisje.nl" + Irisje-reviews
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
-
   const slug = params.get("slug");
   const fromSector = params.get("fromSector");
 
@@ -33,8 +32,8 @@ async function init() {
     const company = data.company;
     renderCompany(company);
 
-    // 👉 Reviews laden (Stap I)
-    await loadReviews(company._id);
+    // Irisje-reviews laden
+    await loadIrisjeReviews(company._id);
   } catch (err) {
     console.error(err);
     renderError(err.message || "Fout bij laden bedrijf.");
@@ -42,14 +41,16 @@ async function init() {
 }
 
 /* =========================
-   Reviews
+   Reviews (Irisje)
 ========================= */
 
-async function loadReviews(companyId) {
+async function loadIrisjeReviews(companyId) {
   const container = document.getElementById("companyReviews");
+  const empty = document.getElementById("noIrisjeReviews");
   if (!container) return;
 
   container.innerHTML = "<p class='text-slate-500'>Reviews laden…</p>";
+  if (empty) empty.classList.add("hidden");
 
   try {
     const res = await fetch(
@@ -64,8 +65,8 @@ async function loadReviews(companyId) {
     const reviews = Array.isArray(data.reviews) ? data.reviews : [];
 
     if (reviews.length === 0) {
-      container.innerHTML =
-        "<p class='text-slate-500'>Nog geen reviews.</p>";
+      container.innerHTML = "";
+      if (empty) empty.classList.remove("hidden");
       return;
     }
 
@@ -80,7 +81,7 @@ async function loadReviews(companyId) {
 
 function renderReview(review) {
   const div = document.createElement("div");
-  div.className = "border rounded-lg p-4 mb-3 bg-white";
+  div.className = "border rounded-lg p-4 bg-white";
 
   const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
   const date = review.createdAt
@@ -128,12 +129,11 @@ function renderCompany(company) {
       .join(" • ")
   );
 
-  setText(
-    "companyRating",
-    company.reviewCount
-      ? `${Number(company.avgRating || 0).toFixed(1)} ★ (${company.reviewCount} reviews)`
-      : "Nog geen reviews"
-  );
+  // ⭐ Google-reviews expliciet labelen (Trustoo-stijl)
+  const googleLabel = company.reviewCount
+    ? `⭐ ${Number(company.avgRating || 0).toFixed(1)} (${company.reviewCount} Google-reviews)`
+    : "Nog geen Google-reviews";
+  setText("companyRating", googleLabel);
 
   setText(
     "companyAbout",
@@ -150,7 +150,6 @@ function renderDetails(company) {
   if (!ul) return;
 
   ul.innerHTML = "";
-
   addLi(ul, "Plaats", company.city || "—");
   addLi(
     ul,
@@ -177,7 +176,6 @@ function addLi(ul, label, value) {
 function renderLogo(company) {
   const img = document.getElementById("companyLogo");
   const fallback = document.getElementById("companyLogoFallback");
-
   if (!img || !fallback) return;
 
   if (company.logoUrl) {
@@ -194,7 +192,6 @@ function renderLogo(company) {
 function renderPremium(company) {
   const badge = document.getElementById("premiumBadge");
   if (!badge) return;
-
   company.isPremium
     ? badge.classList.remove("hidden")
     : badge.classList.add("hidden");
@@ -208,7 +205,6 @@ function setText(id, value) {
 function renderError(msg) {
   const hero = document.getElementById("companyHero");
   if (!hero) return;
-
   hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
 }
 
