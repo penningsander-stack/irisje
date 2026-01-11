@@ -1,6 +1,6 @@
 // frontend/js/company.js
-// v2026-01-11 — Stap G (A): teruglink + context behouden (company → results)
-// Doel: "Terug naar resultaten" met behoud van fromSector (indien aanwezig)
+// v2026-01-11 — Stap H: direct company-endpoint gebruiken (slug)
+// Endpoint: GET /api/companies/slug/:slug
 
 const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -9,66 +9,55 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   const params = new URLSearchParams(window.location.search);
 
-  // Historisch heet de queryparam "slug". We ondersteunen ook id als fallback.
-  const slugOrId = params.get("slug") || params.get("id");
-
-  // Context voor teruglink
+  const slug = params.get("slug");
   const fromSector = params.get("fromSector");
 
-  // Plaats teruglink zo vroeg mogelijk
   renderBackLink(fromSector);
 
-  if (!slugOrId) {
+  if (!slug) {
     renderError("Geen bedrijf opgegeven.");
     return;
   }
 
   try {
-    const res = await fetch(`${API_BASE}/companies`);
+    const res = await fetch(
+      `${API_BASE}/companies/slug/${encodeURIComponent(slug)}`
+    );
     const data = await res.json();
 
-    // Accepteer meerdere response-vormen (results / companies)
-    const companies = Array.isArray(data.results)
-      ? data.results
-      : Array.isArray(data.companies)
-      ? data.companies
-      : null;
-
-    if (!res.ok || !Array.isArray(companies)) {
-      throw new Error("Kon bedrijven niet laden.");
-    }
-
-    const company =
-      companies.find(c => String(c.slug || "") === String(slugOrId)) ||
-      companies.find(c => String(c._id || c.id || "") === String(slugOrId));
-
-    if (!company) {
+    if (!res.ok || !data.ok || !data.company) {
       throw new Error("Bedrijf niet gevonden.");
     }
 
-    renderCompany(company);
+    renderCompany(data.company);
   } catch (err) {
+    console.error(err);
     renderError(err.message || "Fout bij laden bedrijf.");
   }
 }
+
+/* =========================
+   UI helpers
+========================= */
 
 function renderBackLink(fromSector) {
   const hero = document.getElementById("companyHero");
   if (!hero) return;
 
   const a = document.createElement("a");
-  a.className = "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
+  a.className =
+    "inline-flex items-center text-sm text-slate-600 hover:text-slate-900 mb-3";
   a.href = fromSector
     ? `results.html?sector=${encodeURIComponent(fromSector)}`
     : "results.html";
   a.innerHTML = "← Terug naar resultaten";
 
-  // Plaats bovenaan de hero
   hero.prepend(a);
 }
 
 function renderCompany(company) {
   setText("companyName", company.name);
+
   setText(
     "companyMeta",
     [company.city, company.isVerified ? "Geverifieerd" : null]
@@ -83,7 +72,10 @@ function renderCompany(company) {
       : "Nog geen reviews"
   );
 
-  setText("companyAbout", company.description || "Geen beschrijving beschikbaar.");
+  setText(
+    "companyAbout",
+    company.description || "Geen beschrijving beschikbaar."
+  );
 
   renderDetails(company);
   renderLogo(company);
@@ -140,11 +132,9 @@ function renderPremium(company) {
   const badge = document.getElementById("premiumBadge");
   if (!badge) return;
 
-  if (company.isPremium) {
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
+  company.isPremium
+    ? badge.classList.remove("hidden")
+    : badge.classList.add("hidden");
 }
 
 function setText(id, value) {
@@ -158,6 +148,10 @@ function renderError(msg) {
 
   hero.innerHTML = `<div class="text-red-600">${escapeHtml(msg)}</div>`;
 }
+
+/* =========================
+   Utils
+========================= */
 
 function getInitials(name) {
   return String(name || "")
