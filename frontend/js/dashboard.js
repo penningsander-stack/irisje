@@ -6,6 +6,13 @@ const API_BASE = "https://irisje-backend.onrender.com/api";
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
+  // ⛔ dashboard.js mag NIET draaien op admin.html
+  if (location.pathname.endsWith("/admin.html")) {
+    return;
+  }
+
+
+async function init() {
   const token = localStorage.getItem("token");
   if (!token) {
     location.href = "/login.html";
