@@ -1,9 +1,8 @@
 // backend/routes/admin.js
-// v20251230-ADMIN-REVIEWS-PENDING
+// v20260111-ADMIN-COMPANIES-EDIT
 //
-// Uitbreiding:
-// - Behoudt ALLE bestaande admin-functionaliteit
-// - Voegt beheer toe voor pending reviews (goedkeuren / afwijzen)
+// Behoudt ALLE bestaande admin-functionaliteit
+// + Admin PATCH voor bedrijven (bewerken / verifiëren)
 
 const express = require("express");
 const router = express.Router();
@@ -42,16 +41,74 @@ router.get("/companies", async (req, res) => {
 });
 
 // ============================================================
+// 🆕 PATCH company (admin bewerken / verifiëren)
+// ============================================================
+router.patch("/companies/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const updates = {};
+
+    if (typeof req.body.name === "string") {
+      updates.name = req.body.name.trim();
+    }
+
+    if (typeof req.body.city === "string") {
+      updates.city = req.body.city.trim();
+    }
+
+    if (Array.isArray(req.body.categories)) {
+      updates.categories = req.body.categories.map(String);
+    }
+
+    if (Array.isArray(req.body.specialties)) {
+      updates.specialties = req.body.specialties.map(String);
+    }
+
+    if (typeof req.body.isVerified === "boolean") {
+      updates.isVerified = req.body.isVerified;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "Geen geldige velden om bij te werken",
+      });
+    }
+
+    const company = await Company.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).lean();
+
+    if (!company) {
+      return res.status(404).json({
+        ok: false,
+        error: "Bedrijf niet gevonden",
+      });
+    }
+
+    return res.json({ ok: true, company });
+  } catch (err) {
+    return res.status(500).json({
+      ok: false,
+      error: "Kon bedrijf niet bijwerken",
+      details: err.message,
+    });
+  }
+});
+
+// ============================================================
 // GET reported reviews
 // ============================================================
 router.get("/reported-reviews", async (req, res) => {
   try {
     const reviews = await Review.find({ reported: true })
-  .populate("companyId", "name slug")
-  .sort({ createdAt: -1 })
-  .lean()
-  .exec();
-
+      .populate("companyId", "name slug")
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
 
     return res.json({ ok: true, reviews });
   } catch (err) {
@@ -125,7 +182,10 @@ router.post("/claims/:id/approve", async (req, res) => {
       });
     }
 
-    await Company.findByIdAndUpdate(claim.companyId, { verified: true });
+    await Company.findByIdAndUpdate(claim.companyId, {
+      isVerified: true,
+    });
+
     await Claim.findByIdAndDelete(req.params.id);
 
     return res.json({
@@ -168,7 +228,7 @@ router.post("/claims/:id/reject", async (req, res) => {
 });
 
 // ============================================================
-// 🆕 GET pending reviews (admin)
+// GET pending reviews
 // ============================================================
 router.get("/reviews/pending", async (req, res) => {
   try {
@@ -179,7 +239,6 @@ router.get("/reviews/pending", async (req, res) => {
 
     return res.json({ ok: true, items: reviews });
   } catch (err) {
-    console.error("❌ Pending reviews error:", err);
     return res.status(500).json({
       ok: false,
       error: "Kon pending reviews niet ophalen",
@@ -188,7 +247,7 @@ router.get("/reviews/pending", async (req, res) => {
 });
 
 // ============================================================
-// 🆕 Update review status (approve / reject)
+// Update review status
 // ============================================================
 router.patch("/reviews/:id/status", async (req, res) => {
   try {
@@ -217,7 +276,6 @@ router.patch("/reviews/:id/status", async (req, res) => {
       message: `Review ${status}`,
     });
   } catch (err) {
-    console.error("❌ Review status update error:", err);
     return res.status(500).json({
       ok: false,
       error: "Kon reviewstatus niet aanpassen",
