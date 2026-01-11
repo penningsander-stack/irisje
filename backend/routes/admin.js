@@ -3,6 +3,7 @@
 //
 // Behoudt ALLE bestaande admin-functionaliteit
 // + Admin PATCH voor bedrijven (bewerken / verifiëren)
+// + PATCH accepteert nu ook `description` (contract-herstel)
 
 const express = require("express");
 const router = express.Router();
@@ -41,7 +42,7 @@ router.get("/companies", async (req, res) => {
 });
 
 // ============================================================
-// 🆕 PATCH company (admin bewerken / verifiëren)
+// PATCH company (admin bewerken / verifiëren)
 // ============================================================
 router.patch("/companies/:id", async (req, res) => {
   try {
@@ -55,6 +56,10 @@ router.patch("/companies/:id", async (req, res) => {
 
     if (typeof req.body.city === "string") {
       updates.city = req.body.city.trim();
+    }
+
+    if (typeof req.body.description === "string") {
+      updates.description = req.body.description.trim();
     }
 
     if (Array.isArray(req.body.categories)) {
