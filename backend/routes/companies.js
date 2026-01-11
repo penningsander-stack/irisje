@@ -73,13 +73,33 @@ router.patch("/me", auth, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const company = await Company.findOne({ owner: userId });
-    if (!company) {
-      return res.status(404).json({
-        ok: false,
-        error: "Geen bedrijf gekoppeld aan dit account",
-      });
-    }
+    let company = await Company.findOne({ owner: req.user.id });
+
+if (!company) {
+  company = new Company({
+    owner: req.user.id,
+    name: req.body.name,
+    city: req.body.city,
+    description: req.body.description || "",
+    categories: req.body.categories || [],
+    specialties: req.body.specialties || [],
+    slug: req.body.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, ""),
+  });
+} else {
+  company.name = req.body.name;
+  company.city = req.body.city;
+  company.description = req.body.description || "";
+  company.categories = req.body.categories || [];
+  company.specialties = req.body.specialties || [];
+}
+
+await company.save();
+
+res.json({ ok: true, company });
+
 
     const {
       name,
