@@ -41,6 +41,45 @@
   </div>
 </main>
 
+<!-- MODAL -->
+<div id="editModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-lg">
+    <h3 class="text-lg font-semibold mb-4">Bedrijf bewerken</h3>
+
+    <div class="space-y-3">
+      <label class="block text-sm">
+        <span class="text-slate-600">Naam</span>
+        <input id="editName" class="mt-1 w-full rounded-lg border px-3 py-2" />
+      </label>
+
+      <label class="block text-sm">
+        <span class="text-slate-600">Plaats</span>
+        <input id="editCity" class="mt-1 w-full rounded-lg border px-3 py-2" />
+      </label>
+
+      <label class="block text-sm">
+        <span class="text-slate-600">Categorieën (komma-gescheiden)</span>
+        <input id="editCategories" class="mt-1 w-full rounded-lg border px-3 py-2" />
+      </label>
+
+      <label class="block text-sm">
+        <span class="text-slate-600">Specialismen (komma-gescheiden)</span>
+        <input id="editSpecialties" class="mt-1 w-full rounded-lg border px-3 py-2" />
+      </label>
+
+      <label class="flex items-center gap-2 text-sm mt-2">
+        <input id="editVerified" type="checkbox" />
+        <span>Geverifieerd</span>
+      </label>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-3">
+      <button id="cancelEdit" class="px-4 py-2 text-sm rounded-lg border">Annuleren</button>
+      <button id="saveEdit" class="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white">Opslaan</button>
+    </div>
+  </div>
+</div>
+
 <script src="/js/admin.js?v=20260111"></script>
 </body>
 </html>
