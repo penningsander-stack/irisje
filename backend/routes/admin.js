@@ -3,7 +3,7 @@
 //
 // Admin companies:
 // - GET    /admin/companies
-// - POST   /admin/companies        (nieuw: aanmaken)
+// - POST   /admin/companies        (aanmaken door admin)
 // - PATCH  /admin/companies/:id    (bewerken)
 // - DELETE /admin/companies/:id    (verwijderen)
 
@@ -17,6 +17,19 @@ const Review = require("../models/review");
 const Request = require("../models/request");
 const Claim = require("../models/claim");
 const { getLogs } = require("../utils/logger");
+
+// ============================================================
+// helpers
+// ============================================================
+function makeSlug(value) {
+  return value
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
 
 // ============================================================
 // ADMIN AUTH – alles hieronder vereist admin
@@ -64,8 +77,12 @@ router.post("/companies", async (req, res) => {
       });
     }
 
+    const slug = makeSlug(name);
+
     const company = await Company.create({
       name: name.trim(),
+      slug,
+      owner: null, // admin-created company
       city: typeof city === "string" ? city.trim() : "",
       description: typeof description === "string" ? description.trim() : "",
       categories: Array.isArray(categories) ? categories.map(String) : [],
@@ -97,6 +114,7 @@ router.patch("/companies/:id", async (req, res) => {
 
     if (typeof req.body.name === "string") {
       updates.name = req.body.name.trim();
+      updates.slug = makeSlug(req.body.name);
     }
 
     if (typeof req.body.city === "string") {
