@@ -90,17 +90,16 @@
   function updateHelper() {
   const totalSelected = selected.size;
   const remaining = fixedCompanyId
-    ? Math.max(0, 1 + maxExtra() - totalSelected) // 1 = startbedrijf
-    : Math.max(0, maxTotal() - totalSelected);
+    ? Math.max(0, 5 - totalSelected)
+    : Math.max(0, 5 - totalSelected);
 
   if (remaining === 0) {
     helperText.textContent = "Je hebt het maximale aantal bedrijven geselecteerd.";
-  } else if (fixedCompanyId) {
-    helperText.textContent = `Je kunt nog ${remaining} extra bedrijf${remaining > 1 ? "en" : ""} selecteren.`;
   } else {
-    helperText.textContent = `Je kunt nog ${remaining} bedrijf${remaining > 1 ? "en" : ""} selecteren.`;
+    helperText.textContent = `Je kunt nog ${remaining} bedrijf${remaining === 1 ? "" : "en"} selecteren.`;
   }
 }
+
 
 
   function render(companies) {
