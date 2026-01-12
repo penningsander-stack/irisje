@@ -1,79 +1,152 @@
 // frontend/js/request.js
-// Offerte starten bij specifiek bedrijf + tonen startbedrijf
+// v2026-01-12 — premium request stap 1 + sector/plaats normalisatie (slug->label) + startbedrijf
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
+  // --- DOM ---
   const form = document.getElementById("step1Form");
   if (!form) return;
 
-  const categorySelect = document.getElementById("categorySelect");
-  const specialtySelect = document.getElementById("specialtySelect");
+  const nameInput = document.getElementById("nameInput");
+  const emailInput = document.getElementById("emailInput");
+  const messageInput = document.getElementById("messageInput");
+
+  const categorySelect = document.getElementById("categorySelect");   // UI: Sector
+  const specialtySelect = document.getElementById("specialtySelect"); // UI: Specialisme
+  const formError = document.getElementById("formError");
 
   const companyBox = document.getElementById("companyBox");
   const companyNameEl = document.getElementById("companyName");
   const companyCityEl = document.getElementById("companyCity");
 
   const params = new URLSearchParams(window.location.search);
-  const companySlugRaw = params.get("companySlug");
-  const companySlug = companySlugRaw ? String(companySlugRaw).trim() : "";
+  const companySlug = params.get("companySlug");
+  const sectorSlug = params.get("sector"); // vanuit homepage categorie-kaart
 
   let startCompany = null;
 
+  // --- Sectoren: slug + label (label moet matchen met Company.categories in DB) ---
+  const SECTORS = [
+    { slug: "aannemer", label: "Aannemer", emoji: "📌" },
+    { slug: "advocaat", label: "Advocaat", emoji: "⚖️" },
+    { slug: "airco", label: "Airco", emoji: "❄️" },
+    { slug: "bouwbedrijf", label: "Bouwbedrijf", emoji: "🔧" },
+    { slug: "dakdekker", label: "Dakdekker", emoji: "🏠" },
+    { slug: "duurzaam", label: "Duurzaam", emoji: "🌱" },
+    { slug: "elektricien", label: "Elektricien", emoji: "🔌" },
+    { slug: "glaszetter", label: "Glaszetter", emoji: "🪟" },
+    { slug: "hovenier", label: "Hovenier", emoji: "🌳" },
+    { slug: "installatie", label: "Installatie", emoji: "📌" },
+    { slug: "isolatie", label: "Isolatie", emoji: "🧱" },
+    { slug: "juridisch", label: "Juridisch", emoji: "⚖️" },
+    { slug: "klusbedrijf", label: "Klusbedrijf", emoji: "🔧" },
+    { slug: "loodgieter", label: "Loodgieter", emoji: "💧" },
+    { slug: "schilder", label: "Schilder", emoji: "🎨" },
+    { slug: "schoonmaakbedrijf", label: "Schoonmaakbedrijf", emoji: "🧹" },
+    { slug: "slotenmaker", label: "Slotenmaker", emoji: "🔑" },
+    { slug: "spoedservice", label: "Spoedservice", emoji: "🚨" },
+    { slug: "stukadoor", label: "Stukadoor", emoji: "📌" },
+    { slug: "tegelzetter", label: "Tegelzetter", emoji: "📌" },
+    { slug: "timmerman", label: "Timmerman", emoji: "🪚" },
+    { slug: "vloeren", label: "Vloeren", emoji: "📐" },
+    { slug: "woninginrichting", label: "Woninginrichting", emoji: "🛋️" },
+    { slug: "zonnepanelen", label: "Zonnepanelen", emoji: "☀️" },
+  ];
+
+  // Specialismes (optioneel; als geen lijst → select blijft disabled)
   const SPECIALTIES = {
     Loodgieter: ["Lekkage", "Verstopping", "CV-ketel", "Spoedservice"],
     Advocaat: ["Arbeidsrecht", "Strafrecht", "Familierecht"],
     Schilder: ["Binnen", "Buiten", "Houtrot"],
+    Elektricien: ["Storing", "Groepenkast", "Laadpaal", "Spoedservice"],
+    Dakdekker: ["Lekkage", "Dakinspectie", "Dakrenovatie", "Spoedservice"],
   };
 
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
-    // categorie → specialismes initialiseren (ook zonder startbedrijf)
-    categorySelect.dispatchEvent(new Event("change"));
+    populateSectors();
 
-    if (!companySlug) return;
+    // 1) Als sector via URL is meegegeven (slug), preselect op label
+    if (sectorSlug) {
+      const match = SECTORS.find(s => s.slug === sectorSlug);
+      if (match) {
+        categorySelect.value = match.label;
+        categorySelect.dispatchEvent(new Event("change"));
+      }
+    }
 
+    // 2) Als companySlug is meegegeven: startbedrijf ophalen en categorie preselecten + locken
+    if (companySlug) {
+      await loadStartCompany(companySlug);
+    }
+  }
+
+  function populateSectors() {
+    // behoud placeholder
+    const first = categorySelect.querySelector('option[value=""]');
+    categorySelect.innerHTML = "";
+    if (first) categorySelect.appendChild(first);
+
+    SECTORS.forEach(s => {
+      const opt = document.createElement("option");
+      opt.value = s.label; // BELANGRIJK: label matcht met DB categories
+      opt.textContent = `${s.emoji} ${s.label}`;
+      categorySelect.appendChild(opt);
+    });
+  }
+
+  async function loadStartCompany(slug) {
     try {
-      const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(companySlug)}`);
+      const res = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(slug)}`);
       const data = await res.json();
 
       if (res.ok && data && data.ok && data.company) {
         startCompany = data.company;
 
-        // 🏢 toon startbedrijf
+        // toon box
         companyNameEl.textContent = startCompany.name || "";
         companyCityEl.textContent = startCompany.city || "";
         companyBox.classList.remove("hidden");
 
-        // preselect categorie (optioneel)
-        if (Array.isArray(startCompany.categories) && startCompany.categories.length) {
-          const firstCat = String(startCompany.categories[0] || "").trim();
-          if (firstCat) {
-            categorySelect.value = firstCat;
-            categorySelect.dispatchEvent(new Event("change"));
-          }
+        // preselect categorie op eerste category van bedrijf (label)
+        const firstCat = Array.isArray(startCompany.categories) ? startCompany.categories[0] : "";
+        if (firstCat) {
+          categorySelect.value = firstCat;
+          categorySelect.dispatchEvent(new Event("change"));
+
+          // bij startbedrijf: sector vast (voorkomt mismatch)
+          categorySelect.disabled = true;
         }
       }
     } catch (e) {
-      console.error("request init error:", e);
+      console.error("Startcompany load failed:", e);
     }
   }
 
-  // categorie → specialismes
+  // Sector → specialismes
   categorySelect.addEventListener("change", () => {
-    const cat = String(categorySelect.value || "").trim();
+    const label = categorySelect.value;
+
     specialtySelect.innerHTML = "";
 
-    if (!cat || !SPECIALTIES[cat]) {
+    const list = SPECIALTIES[label];
+    if (!label) {
       specialtySelect.disabled = true;
-      specialtySelect.innerHTML = `<option value="">Kies eerst een categorie</option>`;
+      specialtySelect.innerHTML = `<option value="">Kies eerst een sector</option>`;
+      return;
+    }
+
+    if (!list || !Array.isArray(list) || list.length === 0) {
+      specialtySelect.disabled = true;
+      specialtySelect.innerHTML = `<option value="">Geen specialismes beschikbaar</option>`;
       return;
     }
 
     specialtySelect.disabled = false;
-    specialtySelect.innerHTML = `<option value="">Kies een specialisme</option>`;
-    SPECIALTIES[cat].forEach((s) => {
+    specialtySelect.innerHTML = `<option value="">Kies een specialisme (optioneel)</option>`;
+    list.forEach(s => {
       const o = document.createElement("option");
       o.value = s;
       o.textContent = s;
@@ -83,23 +156,18 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    hideError();
 
-    const name = form.querySelector('input[name="name"]').value.trim();
-    const email = form.querySelector('input[name="email"]').value.trim();
-    const message = form.querySelector('textarea[name="message"]').value.trim();
+    const name = (nameInput.value || "").trim();
+    const email = (emailInput.value || "").trim();
+    const message = (messageInput.value || "").trim();
 
-    let categoryValue = String(categorySelect.value || "").trim();
-    let specialtyValue = String(specialtySelect.value || "").trim();
+    const categoryValue = (categorySelect.value || "").trim(); // label
+    const specialtyValue = specialtySelect.disabled ? "" : (specialtySelect.value || "").trim();
 
-    // fallback: als startbedrijf categorie heeft maar user niets gekozen
-    if (!categoryValue && startCompany && Array.isArray(startCompany.categories) && startCompany.categories.length) {
-      categoryValue = String(startCompany.categories[0] || "").trim();
-    }
-
-    if (!categoryValue) {
-      alert("Categorie ontbreekt.");
-      return;
-    }
+    if (!name) return showError("Naam ontbreekt.");
+    if (!email) return showError("E-mail ontbreekt.");
+    if (!categoryValue) return showError("Kies een sector.");
 
     const payload = {
       name,
@@ -109,12 +177,14 @@
       categories: [categoryValue],
       specialty: specialtyValue,
       specialties: specialtyValue ? [specialtyValue] : [],
-      // startbedrijf
       companySlug: companySlug || null,
+      // Optie A “plaats”: wordt later door results getoond. (Geen filtering hier.)
+      // We laten dit hier bewust weg omdat jouw backend-flow voor publicRequests primair category/specialty gebruikt.
+      // Als jij city ook in request wilt opslaan in deze flow, pakken we dat als aparte stap.
     };
 
     try {
-      const res = await fetch(`${API_BASE}/publicrequests`, {
+      const res = await fetch(`${API_BASE}/publicRequests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -123,14 +193,25 @@
       const data = await res.json();
 
       if (!res.ok || !data || !data.ok || !data.requestId) {
-        alert((data && data.message) || "Aanvraag mislukt.");
-        return;
+        return showError("Aanvraag mislukt. Probeer het opnieuw.");
       }
 
       window.location.href = `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
     } catch (err) {
-      console.error("request submit error:", err);
-      alert("Aanvraag mislukt.");
+      console.error(err);
+      showError("Aanvraag mislukt. Probeer het opnieuw.");
     }
   });
+
+  function showError(msg) {
+    if (!formError) return;
+    formError.textContent = msg;
+    formError.classList.remove("hidden");
+  }
+
+  function hideError() {
+    if (!formError) return;
+    formError.textContent = "";
+    formError.classList.add("hidden");
+  }
 })();
