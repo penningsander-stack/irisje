@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Definitieve fix: city verplicht meesturen bij aanmaken aanvraag
+// Definitieve fix: backend verwacht 'sector' (niet 'category')
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -17,24 +17,20 @@
     const message =
       document.getElementById("messageInput").value.trim() ||
       "Geen aanvullende toelichting opgegeven.";
-    const category = document.getElementById("categorySelect").value;
+    const sector = document.getElementById("categorySelect").value;
 
-    if (!name || !email || !city || !category) {
+    if (!name || !email || !sector) {
       err.textContent = "Niet alle verplichte velden zijn ingevuld.";
       err.classList.remove("hidden");
       return;
     }
 
     const payload = {
-      name,
-      email,
+      sector,          // ⬅️ DIT WAS HET PROBLEEM
       city,
-      message,
-      category,
-      categories: [category],
-      specialty: "",
-      specialties: [],
-      companySlug: null
+      name,            // mag mee, wordt genegeerd door model
+      email,           // idem
+      message          // idem
     };
 
     try {
@@ -43,10 +39,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       const data = await res.json();
 
-      if (!res.ok || !data?.requestId) throw new Error();
-      window.location.href = `/results.html?requestId=${data.requestId}`;
+      if (!res.ok || !data?._id) throw new Error();
+      window.location.href = `/results.html?requestId=${data._id}`;
     } catch {
       err.textContent = "Aanvraag mislukt. Probeer het opnieuw.";
       err.classList.remove("hidden");
