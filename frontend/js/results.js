@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-13c — FIX: filter-leegte + eerlijke UX fallback
+// v2026-01-13d — FIX: robuuste company-bron + zichtbare results
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -49,9 +49,17 @@
         return;
       }
 
-      allCompanies = Array.isArray(data.companies) ? data.companies : [];
+      // 🔴 HIER ZAT HET PROBLEEM
+      allCompanies =
+        data.companies ||
+        data.matches ||
+        data.results ||
+        data.availableCompanies ||
+        [];
 
-      if (data.request.company) {
+      if (!Array.isArray(allCompanies)) allCompanies = [];
+
+      if (data.request.company && data.request.company._id) {
         startCompanyId = data.request.company._id;
         selectedIds.add(startCompanyId);
         renderStartCompany(data.request.company);
@@ -59,8 +67,8 @@
 
       resultsStatus.textContent = allCompanies.length
         ? ""
-        : "Geen bedrijven gevonden voor deze aanvraag.";
-    } catch {
+        : "Geen bedrijven beschikbaar voor deze aanvraag.";
+    } catch (e) {
       resultsStatus.textContent = "Fout bij laden van bedrijven.";
     }
   }
@@ -171,8 +179,8 @@
       isSending = false;
       submitBtn.disabled = false;
       submitBtn.textContent = "Aanvraag versturen naar geselecteerde bedrijven";
-      alert("Versturen mislukt. Probeer het opnieuw.");
       updateCounter();
+      alert("Versturen mislukt. Probeer het opnieuw.");
     }
   });
 
