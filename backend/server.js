@@ -1,5 +1,5 @@
 // backend/server.js
-// v2026-01-06 BACKEND-ONLY-NO-FRONTEND
+// v2026-01-12 – FIX: verwijder niet-bestaande publiccompanies route
 
 require("dotenv").config();
 const express = require("express");
@@ -35,7 +35,10 @@ mongoose
 /* =========================
  * API Routes
  * ========================= */
-app.use("/api/publiccompanies", require("./routes/publiccompanies"));
+
+// ❌ VERWIJDERD – bestand bestaat niet
+// app.use("/api/publiccompanies", require("./routes/publiccompanies"));
+
 app.use("/api/publicrequests", require("./routes/publicrequests"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
@@ -44,11 +47,7 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publiccategories", require("./routes/publiccategories"));
-
-// 🔹 centrale read-only categorie-config
 app.use("/api/meta", require("./routes/meta"));
-
-// ✅ Seed route
 app.use("/api/seed", require("./routes/seed"));
 
 /* =========================
