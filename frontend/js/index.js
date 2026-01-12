@@ -1,8 +1,8 @@
 // frontend/js/index.js
-// v2026-01-10 — NORMALISATIE: sector (voorheen category)
+// v2026-01-12 — sector + plaats correct verwerkt
 
 // ======================================================
-// VASTE SECTOREN (CENTRALE DEFINITIE)
+// VASTE SECTOREN
 // ======================================================
 const FIXED_CATEGORIES = [
   { slug: "aannemer", label: "Aannemer", emoji: "📌" },
@@ -32,12 +32,69 @@ const FIXED_CATEGORIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
+  populateSectorSelect();
+  initFormSubmit();
   renderFixedCategories();
-  initHowItWorks?.();
-  initReviews?.();
-  initPrimaryCtaFocus(); // ✅ UX-verbetering
+  initPrimaryCtaFocus();
 });
 
+// ======================================================
+// Sector dropdown
+// ======================================================
+function populateSectorSelect() {
+  const select = document.getElementById("searchSector");
+  if (!select) return;
+
+  FIXED_CATEGORIES.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat.slug;
+    opt.textContent = `${cat.emoji} ${cat.label}`;
+    select.appendChild(opt);
+  });
+}
+
+// ======================================================
+// Form submit → request aanmaken
+// ======================================================
+function initFormSubmit() {
+  const form = document.getElementById("searchForm");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const sector = document.getElementById("searchSector").value;
+    const city = document.getElementById("searchCity").value.trim();
+
+    if (!sector) {
+      alert("Kies een sector.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/publicRequests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sector, city })
+      });
+
+      const data = await res.json();
+
+      if (!data.requestId) {
+        alert("Aanvraag kon niet worden aangemaakt.");
+        return;
+      }
+
+      window.location.href = `/results.html?requestId=${data.requestId}`;
+    } catch (err) {
+      alert("Er ging iets mis bij het aanmaken van de aanvraag.");
+    }
+  });
+}
+
+// ======================================================
+// Populaire categorieën
+// ======================================================
 function renderFixedCategories() {
   const container = document.getElementById("popularCategories");
   if (!container) return;
@@ -46,7 +103,6 @@ function renderFixedCategories() {
 
   FIXED_CATEGORIES.forEach(cat => {
     const a = document.createElement("a");
-    // ⬇️ NORMALISATIE: sector
     a.href = `results.html?sector=${encodeURIComponent(cat.slug)}`;
     a.className = "category-card";
     a.innerHTML = `
@@ -58,22 +114,16 @@ function renderFixedCategories() {
 }
 
 // ======================================================
-// UX: CTA "Vraag gratis offerte aan"
+// UX: CTA focus
 // ======================================================
 function initPrimaryCtaFocus() {
   const cta = document.querySelector(".primary-cta");
-  const firstInput = document.getElementById("searchCategory");
-
+  const firstInput = document.getElementById("searchSector");
   if (!cta || !firstInput) return;
 
   cta.addEventListener("click", () => {
-    // kleine delay zodat anchor-scroll eerst plaatsvindt
     setTimeout(() => {
       firstInput.focus();
     }, 250);
   });
 }
-
-// ongewijzigde helpers
-function initHowItWorks() { /* idem als voorheen */ }
-function initReviews() { /* idem als voorheen */ }
