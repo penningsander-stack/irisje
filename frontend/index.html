@@ -9,38 +9,48 @@
   <link rel="canonical" href="https://irisje.nl/" />
   <meta name="theme-color" content="#4F46E5" />
 
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" href="/favicon.ico" />
   <link rel="manifest" href="/manifest.json" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="/style.css?v=20251208">
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20251225">
+  <link rel="stylesheet" href="/style.css?v=20260112" />
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260112" />
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- Centrale header -->
-  <div id="site-header"></div>
-  <script>
-    fetch("/partials/header.html")
-      .then(r => r.text())
-      .then(html => {
-        document.getElementById("site-header").innerHTML = html;
-      });
-  </script>
+  <!-- HEADER -->
+  <header class="irisje-header sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+      <a href="index.html" class="flex items-center space-x-2">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white text-indigo-700 font-bold shadow-brand">I</span>
+        <span class="font-semibold text-sm text-slate-900">Irisje.nl</span>
+      </a>
 
+      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
+        <a href="#popularCategories" class="nav-link">Categorieën</a>
+        <a href="login.html" class="nav-link">Voor bedrijven</a>
+      </nav>
+
+      <div class="flex items-center space-x-2">
+        <a href="login.html" class="btn-primary btn-xs">Inloggen</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
   <main class="flex-1">
-    <section class="relative overflow-hidden">
-      <div class="max-w-6xl mx-auto px-4 pt-10 pb-16 lg:pt-16 lg:pb-20 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
 
-        <!-- Hero -->
-        <div class="space-y-6 hero-copy">
-          <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/80 border border-indigo-100 text-[11px] text-slate-600 shadow-soft">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-xs mr-2">✔</span>
-            Binnen enkele minuten in contact met betrouwbare bedrijven
+    <!-- HERO -->
+    <section class="relative overflow-hidden">
+      <div class="max-w-6xl mx-auto px-4 pt-12 pb-16 grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+
+        <div class="space-y-6">
+          <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/80 border border-indigo-100 text-xs text-slate-600 shadow-soft">
+            ✔ Binnen enkele minuten in contact met betrouwbare bedrijven
           </div>
 
           <h1 class="hero-title">
@@ -49,40 +59,63 @@
 
           <p class="hero-subtitle">
             Eén aanvraag, meerdere reacties. Vergelijk bedrijven, lees echte reviews
-            en kies zelf met wie je verder gaat – snel, transparant en zonder gedoe.
+            en kies zelf met wie je verder gaat.
           </p>
 
           <ul class="hero-bullets">
-            <li><span>✔</span> Bedrijven worden handmatig gecontroleerd</li>
-            <li><span>✔</span> Reviews van echte klanten, geen nep-profielen</li>
-            <li><span>✔</span> Offerte-aanvragen zijn altijd gratis en vrijblijvend</li>
+            <li>✔ Bedrijven worden handmatig gecontroleerd</li>
+            <li>✔ Reviews van echte klanten</li>
+            <li>✔ Offertes altijd gratis en vrijblijvend</li>
           </ul>
 
-          <div class="cta-group flex flex-wrap items-center gap-3">
-            <a href="#zoek-een-bedrijf" class="btn-primary primary-cta">Vraag gratis een offerte aan</a>
-            <a href="index.html#categorieen" class="btn-ghost text-xs sm:text-sm">Bekijk categorieën</a>
+          <div class="flex flex-wrap gap-3">
+            <a href="request.html" class="btn-primary primary-cta">
+              Vraag gratis een offerte aan
+            </a>
+            <a href="#popularCategories" class="btn-ghost">
+              Bekijk categorieën
+            </a>
           </div>
         </div>
 
-        <!-- Zoekformulier -->
-        <div id="zoek-een-bedrijf" class="lg:ml-auto w-full max-w-md">
-          <div class="glass-card card-fade-in">
-            <h2 class="text-center text-xs font-semibold text-slate-700 mb-1 tracking-wide uppercase">
-              Zoek een bedrijf
-            </h2>
-            <p class="text-[11px] text-slate-500 text-center mb-5">
-              Vul kort in wat je zoekt en waar.
-            </p>
+        <!-- VISUAL / INFO CARD -->
+        <div class="glass-card">
+          <h2 class="text-sm font-semibold text-center mb-2">Zo werkt Irisje</h2>
+          <ol class="text-xs text-slate-600 space-y-2">
+            <li>1. Kies een categorie</li>
+            <li>2. Beschrijf kort je aanvraag</li>
+            <li>3. Ontvang reacties van geschikte bedrijven</li>
+          </ol>
+        </div>
 
-            <form id="searchForm" class="grid gap-3" novalidate>
-              <div class="form-group">
-                <label for="searchSector">Sector</label>
-                <select id="searchSector" class="form-input" required>
-                  <option value="">Kies een sector</option>
-                  <!-- opties worden via JS gevuld -->
-                </select>
-              </div>
+      </div>
+    </section>
 
-              <div class="form-group">
-                <label for="searchCity">Plaats</label>
-                <input id="searchCity" type="text" class="form-input" placeho
+    <!-- CATEGORIEËN -->
+    <section id="popularCategories" class="section-shell">
+      <div class="section-header">
+        <div class="section-title">
+          <h2>Populaire categorieën</h2>
+          <p>Kies een categorie en start direct je aanvraag.</p>
+        </div>
+      </div>
+
+      <div id="popularCategoriesGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer-shell">
+    <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-xs text-slate-400">© 2026 Irisje.nl</p>
+      <div class="flex gap-4 text-xs text-slate-400">
+        <a href="#popularCategories">Categorieën</a>
+        <a href="login.html">Voor bedrijven</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/index.js?v=20260112"></script>
+</body>
+</html>
