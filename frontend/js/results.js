@@ -1,6 +1,5 @@
 // frontend/js/results.js
-// Trustoo-model: startbedrijf vast + max. 4 extra bedrijven
-// FIX: teller = 1 en startbedrijf niet dubbel tonen
+// Definitieve fix: teller = 1 en startbedrijf nooit dubbel
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -17,6 +16,7 @@
   let fixedCompanyId = null;
   let requestId = null;
   let requestCategory = null;
+  let requestCompanySlug = null;
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -35,25 +35,9 @@
 
       const req = reqData.request;
       requestCategory = req.category || null;
+      requestCompanySlug = req.companySlug || null;
 
-      // 2️⃣ startbedrijf bepalen
-      if (req.companyId) {
-        fixedCompanyId = String(req.companyId);
-        selected.add(fixedCompanyId);
-        fixedBox.classList.remove("hidden");
-        fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
-      } else if (req.companySlug) {
-        const cRes = await fetch(`${API_BASE}/companies/slug/${req.companySlug}`);
-        const cData = await cRes.json();
-        if (cRes.ok && cData.ok && cData.company) {
-          fixedCompanyId = String(cData.company._id);
-          selected.add(fixedCompanyId);
-          fixedBox.classList.remove("hidden");
-          fixedNameEl.textContent = cData.company.name;
-        }
-      }
-
-      // 3️⃣ bedrijven laden
+      // 2️⃣ bedrijven ophalen
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
       let companies = Array.isArray(data.results)
@@ -69,24 +53,39 @@
         );
       }
 
-      // 🔥 VERWIJDER startbedrijf uit lijst
-      if (fixedCompanyId) {
-        companies = companies.filter(
-          c => String(c._id) !== fixedCompanyId
-        );
+      if (companies.length === 0) {
+        return showEmpty("Geen bedrijven gevonden.");
       }
 
-      if (companies.length === 0) {
-        intro.textContent =
-          "Je aanvraag is aangemaakt. Er zijn geen extra geschikte bedrijven gevonden.";
-      } else {
-        intro.textContent =
-          "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+      // 3️⃣ startbedrijf bepalen (ROBUST)
+      let fixedCompany = null;
+
+      if (requestCompanySlug) {
+        fixedCompany = companies.find(c => c.slug === requestCompanySlug) || null;
       }
+
+      // fallback: als er maar één bedrijf is
+      if (!fixedCompany && companies.length === 1) {
+        fixedCompany = companies[0];
+      }
+
+      if (fixedCompany) {
+        fixedCompanyId = String(fixedCompany._id);
+        selected.add(fixedCompanyId);
+
+        fixedBox.classList.remove("hidden");
+        fixedNameEl.textContent = fixedCompany.name;
+
+        // verwijder startbedrijf uit lijst
+        companies = companies.filter(c => String(c._id) !== fixedCompanyId);
+      }
+
+      intro.textContent =
+        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
       renderCompanies(companies);
 
-      // 🔥 Dwing teller NA render
+      // 🔒 teller afdwingen
       updateSelectedCount();
     } catch (e) {
       console.error(e);
