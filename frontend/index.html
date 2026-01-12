@@ -22,27 +22,16 @@
 
 <body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white/90 text-indigo-700 text-sm font-bold shadow-brand">I</span>
-        <div class="flex flex-col leading-tight">
-          <span class="font-semibold text-sm text-slate-900 tracking-tight">Irisje.nl</span>
-          <span class="text-[11px] text-slate-500 hidden sm:block">Vind direct een betrouwbare vakman</span>
-        </div>
-      </a>
+  <div id="site-header"></div>
 
-      <nav class="hidden sm:flex items-center space-x-6 text-xs font-medium text-slate-600">
-        <a href="index.html#categorieen" class="nav-link">Bedrijven</a>
-        <a href="login.html" class="nav-link">Voor bedrijven</a>
-      </nav>
+<script>
+  fetch("/partials/header.html")
+    .then(r => r.text())
+    .then(html => {
+      document.getElementById("site-header").innerHTML = html;
+    });
+</script>
 
-      <div class="flex items-center space-x-2">
-        <a href="index.html#categorieen" class="hidden sm:inline-flex btn-ghost btn-xs">Categorieën</a>
-        <a href="login.html" class="inline-flex btn-primary btn-xs">Inloggen</a>
-      </div>
-    </div>
-  </header>
 
   <main class="flex-1">
     <section class="relative overflow-hidden">
