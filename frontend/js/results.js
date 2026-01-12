@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// v2026-01-13b — FIX: cards zichtbaar (result-card) + robuuste fetch + veilige submit
+// v2026-01-13c — FIX: filter-leegte + eerlijke UX fallback
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -28,57 +28,44 @@
 
   async function init() {
     if (!requestId) {
-      if (resultsStatus) resultsStatus.textContent = "Aanvraag-ID ontbreekt.";
-      if (submitBtn) submitBtn.disabled = true;
+      resultsStatus.textContent = "Aanvraag-ID ontbreekt.";
+      submitBtn.disabled = true;
       return;
     }
 
-    if (resultsStatus) resultsStatus.textContent = "Bedrijven worden geladen…";
+    resultsStatus.textContent = "Bedrijven worden geladen…";
     await loadRequestAndCompanies();
     renderCompanies();
     updateCounter();
   }
 
-  async function safeJson(res) {
-    try {
-      return await res.json();
-    } catch (_) {
-      return null;
-    }
-  }
-
   async function loadRequestAndCompanies() {
     try {
       const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`);
-      const data = await safeJson(res);
+      const data = await res.json();
 
       if (!res.ok || !data || !data.request) {
-        if (resultsStatus) resultsStatus.textContent = "Aanvraag niet gevonden.";
-        allCompanies = [];
+        resultsStatus.textContent = "Aanvraag niet gevonden.";
         return;
       }
 
       allCompanies = Array.isArray(data.companies) ? data.companies : [];
 
-      if (resultsStatus) {
-        resultsStatus.textContent = allCompanies.length
-          ? ""
-          : "Geen bedrijven gevonden voor deze aanvraag.";
-      }
-
-      if (data.request.company && data.request.company._id) {
+      if (data.request.company) {
         startCompanyId = data.request.company._id;
         selectedIds.add(startCompanyId);
         renderStartCompany(data.request.company);
       }
-    } catch (e) {
-      if (resultsStatus) resultsStatus.textContent = "Er ging iets mis bij het laden van de bedrijven.";
-      allCompanies = [];
+
+      resultsStatus.textContent = allCompanies.length
+        ? ""
+        : "Geen bedrijven gevonden voor deze aanvraag.";
+    } catch {
+      resultsStatus.textContent = "Fout bij laden van bedrijven.";
     }
   }
 
   function renderStartCompany(company) {
-    if (!startCompanyBox) return;
     startCompanyBox.classList.remove("hidden");
     startCompanyBox.innerHTML = `
       <div class="text-[11px] text-slate-500 mb-1">Startbedrijf (vast geselecteerd)</div>
@@ -88,19 +75,21 @@
   }
 
   function renderCompanies() {
-    if (!companiesList) return;
     companiesList.innerHTML = "";
 
-    const list = appliedCity
-      ? allCompanies.filter(c => (c.city || "").toLowerCase().includes(appliedCity))
-      : allCompanies;
+    let list = allCompanies;
 
-    if (!list.length && resultsStatus) {
-      // laat bestaande “Aanvraag niet gevonden.” staan, anders: geen resultaten
-      if (!resultsStatus.textContent) {
-        resultsStatus.textContent = appliedCity
-          ? "Geen bedrijven gevonden voor dit filter."
-          : "Geen bedrijven gevonden voor deze aanvraag.";
+    if (appliedCity) {
+      const filtered = allCompanies.filter(c =>
+        (c.city || "").toLowerCase().includes(appliedCity)
+      );
+
+      if (filtered.length === 0) {
+        resultsStatus.textContent =
+          "Geen exacte match op plaats. We tonen alle beschikbare bedrijven.";
+      } else {
+        list = filtered;
+        resultsStatus.textContent = "";
       }
     }
 
@@ -112,8 +101,6 @@
       const disabled = !checked && selectedIds.size >= 5;
 
       const card = document.createElement("div");
-
-      // ✅ BELANGRIJKE FIX: gebruik bestaande premium styling
       card.className = "result-card";
 
       card.innerHTML = `
@@ -126,8 +113,9 @@
         </div>
       `;
 
-      const checkbox = card.querySelector("input");
-      checkbox.addEventListener("change", e => toggleSelect(c._id, e.target.checked));
+      card.querySelector("input").addEventListener("change", e =>
+        toggleSelect(c._id, e.target.checked)
+      );
 
       companiesList.appendChild(card);
     });
@@ -141,72 +129,55 @@
   }
 
   function updateCounter() {
-    if (selectionCounter) selectionCounter.textContent = `${selectedIds.size} van 5 geselecteerd`;
+    selectionCounter.textContent = `${selectedIds.size} van 5 geselecteerd`;
+    selectionHint.textContent =
+      selectedIds.size >= 5
+        ? "Maximum bereikt"
+        : `Je kunt nog ${5 - selectedIds.size} kiezen`;
+    submitBtn.disabled = selectedIds.size === 0 || isSending;
+  }
 
-    if (selectionHint) {
-      selectionHint.textContent =
-        selectedIds.size >= 5
-          ? "Maximum bereikt"
-          : `Je kunt nog ${5 - selectedIds.size} kiezen`;
+  applyCityBtn.addEventListener("click", () => {
+    appliedCity = cityInput.value.trim().toLowerCase();
+    cityHint.textContent = appliedCity
+      ? `Gefilterd op: ${cityInput.value}`
+      : "Gebruik dit om bedrijven in jouw regio te tonen.";
+    renderCompanies();
+  });
+
+  submitBtn.addEventListener("click", async () => {
+    if (isSending || selectedIds.size === 0) return;
+
+    isSending = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Aanvraag wordt verstuurd…";
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}/send`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            companyIds: Array.from(selectedIds),
+            city: appliedCity || "Onbekend"
+          })
+        }
+      );
+
+      if (!res.ok) throw new Error();
+      window.location.href = "/success.html";
+    } catch {
+      isSending = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Aanvraag versturen naar geselecteerde bedrijven";
+      alert("Versturen mislukt. Probeer het opnieuw.");
+      updateCounter();
     }
+  });
 
-    if (submitBtn) submitBtn.disabled = selectedIds.size === 0 || isSending;
-  }
-
-  if (applyCityBtn) {
-    applyCityBtn.addEventListener("click", () => {
-      appliedCity = (cityInput?.value || "").trim().toLowerCase();
-
-      if (cityHint) {
-        cityHint.textContent = appliedCity
-          ? `Gefilterd op: ${cityInput.value}`
-          : "Gebruik dit om bedrijven in jouw regio te tonen.";
-      }
-
-      if (resultsStatus) resultsStatus.textContent = "";
-      renderCompanies();
-    });
-  }
-
-  if (submitBtn) {
-    submitBtn.addEventListener("click", async () => {
-      if (!requestId) return;
-      if (selectedIds.size === 0) return;
-      if (isSending) return;
-
-      isSending = true;
-      submitBtn.disabled = true;
-
-      const originalText = submitBtn.textContent;
-      submitBtn.textContent = "Aanvraag wordt verstuurd…";
-
-      try {
-        const res = await fetch(
-          `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}/send`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              companyIds: Array.from(selectedIds),
-              city: appliedCity || "Onbekend"
-            })
-          }
-        );
-
-        if (!res.ok) throw new Error("send failed");
-        window.location.href = "/success.html";
-      } catch (e) {
-        isSending = false;
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText || "Aanvraag versturen naar geselecteerde bedrijven";
-        alert("Versturen mislukt. Probeer het opnieuw.");
-        updateCounter();
-      }
-    });
-  }
-
-  function escapeHtml(value) {
-    return String(value)
+  function escapeHtml(v) {
+    return String(v)
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
