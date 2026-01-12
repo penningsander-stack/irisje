@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Correcte Trustoo-flow: startbedrijf altijd 1e + teller = 1
+// Trustoo-flow: startbedrijf = 1, nooit dubbel, teller altijd correct
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -21,6 +21,7 @@
   async function init() {
     const params = new URLSearchParams(location.search);
     requestId = params.get("requestId");
+
     if (!requestId) {
       return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
     }
@@ -37,25 +38,15 @@
       const requestCategory = request.category || null;
       const requestCompanySlug = request.companySlug || null;
 
-      // 2️⃣ bedrijven ophalen (ONGEFILTERD)
-      const res = await fetch(`${API_BASE}/companies`);
-      const data = await res.json();
-
-      let companies = Array.isArray(data.results)
-        ? data.results
-        : Array.isArray(data.companies)
-        ? data.companies
-        : [];
-
-      if (companies.length === 0) {
-        return showEmpty("Geen bedrijven gevonden.");
-      }
-
-      // 3️⃣ startbedrijf ALTIJD eerst bepalen
+      // 2️⃣ startbedrijf EXPLICIET ophalen via slug
       let fixedCompany = null;
 
       if (requestCompanySlug) {
-        fixedCompany = companies.find(c => c.slug === requestCompanySlug) || null;
+        const cRes = await fetch(`${API_BASE}/companies/slug/${requestCompanySlug}`);
+        const cData = await cRes.json();
+        if (cRes.ok && cData.ok && cData.company) {
+          fixedCompany = cData.company;
+        }
       }
 
       if (fixedCompany) {
@@ -65,11 +56,27 @@
         fixedBox.classList.remove("hidden");
         fixedNameEl.textContent = fixedCompany.name;
 
-        // verwijder startbedrijf uit lijst
+        // 🔒 TELLER EXPLICIET OP 1
+        selectedCountEl.textContent = "1";
+        submitBtn.classList.remove("opacity-50", "pointer-events-none");
+      }
+
+      // 3️⃣ overige bedrijven ophalen
+      const res = await fetch(`${API_BASE}/companies`);
+      const data = await res.json();
+
+      let companies = Array.isArray(data.results)
+        ? data.results
+        : Array.isArray(data.companies)
+        ? data.companies
+        : [];
+
+      // verwijder startbedrijf
+      if (fixedCompanyId) {
         companies = companies.filter(c => String(c._id) !== fixedCompanyId);
       }
 
-      // 4️⃣ overige bedrijven filteren op categorie
+      // filter op categorie
       if (requestCategory) {
         companies = companies.filter(
           c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
@@ -80,7 +87,6 @@
         "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
       renderCompanies(companies);
-      updateSelectedCount();
     } catch (err) {
       console.error(err);
       showEmpty("Kon resultaten niet laden.");
@@ -127,14 +133,8 @@
 
   function updateSelectedCount() {
     selectedCountEl.textContent = selected.size;
-    submitBtn.classList.toggle(
-      "opacity-50",
-      selected.size === 0
-    );
-    submitBtn.classList.toggle(
-      "pointer-events-none",
-      selected.size === 0
-    );
+    submitBtn.classList.toggle("opacity-50", selected.size === 0);
+    submitBtn.classList.toggle("pointer-events-none", selected.size === 0);
   }
 
   submitBtn.addEventListener("click", async () => {
