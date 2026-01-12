@@ -160,7 +160,8 @@
 
     const name = (nameInput.value || "").trim();
     const email = (emailInput.value || "").trim();
-    const message = (messageInput.value || "").trim();
+    const message = (messageInput.value || "").trim() || "Geen aanvullende toelichting opgegeven.";
+
 
     const categoryValue = (categorySelect.value || "").trim(); // label
     const specialtyValue = specialtySelect.disabled ? "" : (specialtySelect.value || "").trim();
