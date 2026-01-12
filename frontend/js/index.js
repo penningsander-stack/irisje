@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderFixedCategories();
   initHowItWorks?.();
   initReviews?.();
+  initPrimaryCtaFocus(); // ✅ UX-verbetering
 });
 
 function renderFixedCategories() {
@@ -53,6 +54,23 @@ function renderFixedCategories() {
       <span class="category-label">${cat.label}</span>
     `;
     container.appendChild(a);
+  });
+}
+
+// ======================================================
+// UX: CTA "Vraag gratis offerte aan"
+// ======================================================
+function initPrimaryCtaFocus() {
+  const cta = document.querySelector(".primary-cta");
+  const firstInput = document.getElementById("searchCategory");
+
+  if (!cta || !firstInput) return;
+
+  cta.addEventListener("click", () => {
+    // kleine delay zodat anchor-scroll eerst plaatsvindt
+    setTimeout(() => {
+      firstInput.focus();
+    }, 250);
   });
 }
 
