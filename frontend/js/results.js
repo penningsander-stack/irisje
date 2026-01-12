@@ -1,16 +1,14 @@
 // frontend/js/results.js
-// Stap P1.4 – filter op categorie + teller fix
+// Trustoo-model: startbedrijf vast + max. 4 extra bedrijven
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
   const grid = document.getElementById("resultsGrid");
   const emptyState = document.getElementById("emptyState");
-  const emptyMessage = document.getElementById("emptyMessage");
   const intro = document.getElementById("resultsIntro");
   const selectedCountEl = document.getElementById("selectedCount");
   const submitBtn = document.getElementById("submitBtn");
-
   const fixedBox = document.getElementById("fixedCompanyBox");
   const fixedNameEl = document.getElementById("fixedCompanyName");
 
@@ -22,31 +20,17 @@
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     requestId = params.get("requestId");
-
-    if (!requestId) {
-      showEmpty(
-        "Deze pagina kun je alleen bereiken via een offerteaanvraag."
-      );
-      return;
-    }
+    if (!requestId) return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
 
     try {
       const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
       const reqData = await reqRes.json();
-
-      if (!reqRes.ok || !reqData.ok || !reqData.request) {
-        showEmpty("Deze aanvraag is niet (meer) beschikbaar.");
-        return;
-      }
+      if (!reqRes.ok || !reqData.ok || !reqData.request) throw new Error();
 
       const req = reqData.request;
-      requestCategory =
-        req.category || (req.categories && req.categories[0]) || null;
-
-      intro.textContent =
-        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+      requestCategory = req.category || null;
 
       if (req.companyId) {
         fixedCompanyId = String(req.companyId);
@@ -54,51 +38,34 @@
         fixedBox.classList.remove("hidden");
         fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
       }
-
-      updateSelectedCount(); // ✅ teller start op 1
+      updateSelectedCount();
 
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
+      let companies = Array.isArray(data.results) ? data.results : (Array.isArray(data.companies) ? data.companies : []);
 
-      let companies = Array.isArray(data.results)
-        ? data.results
-        : Array.isArray(data.companies)
-        ? data.companies
-        : [];
-
-      // ✅ FILTER OP CATEGORIE
       if (requestCategory) {
-        companies = companies.filter(
-          (c) =>
-            Array.isArray(c.categories) &&
-            c.categories.includes(requestCategory)
-        );
+        companies = companies.filter(c => Array.isArray(c.categories) && c.categories.includes(requestCategory));
       }
 
-      if (!companies.length) {
-        showEmpty(
-          "Er zijn geen extra bedrijven gevonden die passen bij deze aanvraag."
-        );
-        return;
-      }
+      if (companies.length === 0) return showEmpty("Geen bedrijven gevonden.");
 
+      intro.textContent = "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
       renderCompanies(companies);
     } catch (e) {
       console.error(e);
-      showEmpty("Er ging iets mis bij het laden van de resultaten.");
+      showEmpty("Kon resultaten niet laden.");
     }
   }
 
   function renderCompanies(companies) {
     grid.innerHTML = "";
-
-    companies.forEach((c) => {
+    for (const c of companies) {
       const id = String(c._id || c.id);
       const isFixed = id === fixedCompanyId;
 
       const card = document.createElement("div");
-      card.className =
-        "border rounded-xl p-4 bg-white shadow-soft flex items-start gap-3 text-left";
+      card.className = "border rounded-xl p-4 bg-white flex items-start gap-3";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
@@ -107,10 +74,7 @@
 
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
-          if (selected.size >= 5) {
-            checkbox.checked = false;
-            return;
-          }
+          if (selected.size >= 5) { checkbox.checked = false; return; }
           selected.add(id);
         } else {
           selected.delete(id);
@@ -121,41 +85,35 @@
       const info = document.createElement("div");
       info.innerHTML = `
         <div class="font-semibold">${escapeHtml(c.name || "")}</div>
-        <div class="text-sm text-slate-600">${escapeHtml(c.city || "")}</div>
+        <div class="text-sm text-gray-600">${escapeHtml(c.city || "")}</div>
+        <div class="text-sm">${escapeHtml((c.categories || []).join(", "))}</div>
       `;
 
       card.appendChild(checkbox);
       card.appendChild(info);
       grid.appendChild(card);
-    });
+    }
   }
 
   function updateSelectedCount() {
     selectedCountEl.textContent = selected.size;
-    submitBtn.classList.toggle("pointer-events-none", selected.size === 0);
-    submitBtn.classList.toggle("opacity-50", selected.size === 0);
+    if (selected.size > 0) {
+      submitBtn.classList.remove("opacity-50", "pointer-events-none");
+    } else {
+      submitBtn.classList.add("opacity-50", "pointer-events-none");
+    }
   }
 
   submitBtn.addEventListener("click", async () => {
-    if (!selected.size) return;
-
+    if (selected.size === 0) return;
     try {
-      const res = await fetch(
-        `${API_BASE}/publicRequests/${requestId}/submit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companyIds: Array.from(selected) }),
-        }
-      );
-
+      const res = await fetch(`${API_BASE}/publicRequests/${requestId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyIds: Array.from(selected) }),
+      });
       const data = await res.json();
-
-      if (!res.ok || !data.ok) {
-        alert("Versturen mislukt.");
-        return;
-      }
-
+      if (!res.ok || !data.ok) return alert("Versturen mislukt.");
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
     } catch (e) {
       console.error(e);
@@ -165,8 +123,9 @@
 
   function showEmpty(msg) {
     grid.innerHTML = "";
-    emptyMessage.textContent = msg;
     emptyState.classList.remove("hidden");
+    const p = emptyState.querySelector("p");
+    if (p) p.textContent = msg;
   }
 
   function escapeHtml(str) {

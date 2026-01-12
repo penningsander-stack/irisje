@@ -1,136 +1,63 @@
-<!-- frontend/request.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Aanvraag starten – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css?v=20260111">
+  <title>Start je aanvraag – Irisje.nl</title>
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
+<body>
+  <header class="container py-4">
+    <a href="/index.html" class="text-xl font-bold">Irisje.nl</a>
+  </header>
 
-<body class="irisje-body">
-  <main class="max-w-3xl mx-auto px-4 py-10">
+  <main class="container max-w-2xl py-8">
+    <h1 class="text-2xl font-semibold mb-4">Start je aanvraag</h1>
 
-    <!-- STAP 1 -->
-    <section id="step1" class="space-y-5">
-      <h1 id="pageTitle" class="text-2xl font-semibold">Start je aanvraag</h1>
-
-      <!-- Single-company banner (optie B) -->
-      <div id="singleCompanyBox" class="hidden rounded-2xl border border-slate-200 bg-white p-4">
-        <p class="text-sm text-slate-600">Je aanvraag wordt rechtstreeks verstuurd naar:</p>
-        <p id="singleCompanyName" class="text-base font-semibold text-slate-900 mt-1">—</p>
-        <p id="singleCompanyMeta" class="text-sm text-slate-500 mt-1">—</p>
+    <form id="step1Form" class="space-y-4">
+      <div>
+        <label class="block mb-1">Naam</label>
+        <input type="text" name="name" required class="w-full border rounded-xl px-4 py-2" />
       </div>
 
-      <form id="step1Form" class="space-y-4">
-        <div>
-          <label class="font-medium mb-2 block">Naam</label>
-          <input
-            type="text"
-            name="name"
-            required
-            class="w-full border rounded-xl px-4 py-2"
-            autocomplete="name"
-          />
-        </div>
+      <div>
+        <label class="block mb-1">E-mail</label>
+        <input type="email" name="email" required class="w-full border rounded-xl px-4 py-2" />
+      </div>
 
-        <div>
-          <label class="font-medium mb-2 block">E-mail</label>
-          <input
-            type="email"
-            name="email"
-            required
-            class="w-full border rounded-xl px-4 py-2"
-            autocomplete="email"
-          />
-        </div>
+      <div>
+        <label class="block mb-1">Waar kunnen we mee helpen?</label>
+        <textarea name="message" rows="4" class="w-full border rounded-xl px-4 py-2"
+          placeholder="Bijvoorbeeld: ik heb een conflict met mijn werkgever"></textarea>
+      </div>
 
-        <div>
-          <label class="font-medium mb-2 block">Waar kunnen we mee helpen?</label>
-          <textarea
-            name="message"
-            required
-            class="w-full border rounded-xl px-4 py-2"
-            rows="4"
-            placeholder="Bijvoorbeeld: ik heb een conflict met mijn werkgever"
-          ></textarea>
-        </div>
+      <p class="text-sm text-gray-600">
+        Kies een categorie en specialisme, dan kunnen we je beter matchen met geschikte bedrijven.
+      </p>
 
-        <!-- Optie B: categorie/specialisme blijven zichtbaar, maar worden optioneel in single-company modus -->
-        <div>
-          <p id="companySearchLabel" class="font-medium mb-2">Wat voor bedrijf zoek je?</p>
-          <p id="companySearchHelp" class="text-xs text-slate-500 mb-3">
-            Kies een categorie en specialisme, dan kunnen we je beter matchen met geschikte bedrijven.
-          </p>
+      <div>
+        <label class="block mb-1">Categorie</label>
+        <!-- NIET required: wordt automatisch ingevuld vanuit startbedrijf -->
+        <select id="categorySelect" name="category" class="w-full border rounded-xl px-4 py-2">
+          <option value="">Kies een categorie</option>
+          <option value="Loodgieter">Loodgieter</option>
+          <option value="Advocaat">Advocaat</option>
+          <option value="Schilder">Schilder</option>
+        </select>
+      </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="text-sm text-slate-600 block mb-1">Categorie</label>
-              <select id="categorySelect" name="category" required class="w-full border rounded-xl px-4 py-2">
-                <option value="">Kies een categorie</option>
-              </select>
-            </div>
+      <div>
+        <label class="block mb-1">Specialisme</label>
+        <!-- NIET required -->
+        <select id="specialtySelect" name="specialty" disabled class="w-full border rounded-xl px-4 py-2">
+          <option value="">Kies eerst een categorie</option>
+        </select>
+      </div>
 
-            <div>
-              <label class="text-sm text-slate-600 block mb-1">Specialisme</label>
-              <select id="specialtySelect" name="specialty" required disabled class="w-full border rounded-xl px-4 py-2">
-                <option value="">Kies eerst een categorie</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <button type="submit" class="irisje-btn w-full">
-          Volgende stap
-        </button>
-      </form>
-    </section>
-
-    <!-- STAP 2 -->
-    <section id="step2" class="hidden space-y-5">
-      <h2 class="text-xl font-semibold">Nog een paar vragen</h2>
-      <p id="summaryText" class="text-sm text-slate-600"></p>
-
-      <form id="step2Form" class="space-y-4">
-        <div>
-          <p class="font-medium mb-2">Hoe dringend is je vraag?</p>
-          <select name="urgency" required class="w-full border rounded-xl px-4 py-2">
-            <option value="">Kies een optie</option>
-            <option value="direct">Zo snel mogelijk</option>
-            <option value="binnenkort">Binnen enkele dagen</option>
-            <option value="geen-haast">Geen haast</option>
-          </select>
-        </div>
-
-        <div>
-          <p class="font-medium mb-2">In welke fase zit je?</p>
-          <select name="stage" required class="w-full border rounded-xl px-4 py-2">
-            <option value="">Kies een optie</option>
-            <option value="orientatie">Oriënterend</option>
-            <option value="offerte">Offerte / voorstel</option>
-            <option value="spoed">Spoed / direct actie</option>
-          </select>
-        </div>
-
-        <div>
-          <p class="font-medium mb-2">Plaats (optioneel)</p>
-          <input
-            type="text"
-            name="city"
-            class="w-full border rounded-xl px-4 py-2"
-            placeholder="Bijv. Den Haag"
-            autocomplete="address-level2"
-          />
-        </div>
-
-        <button type="submit" class="irisje-btn w-full">
-          Verstuur aanvraag
-        </button>
-      </form>
-    </section>
-
+      <button type="submit" class="btn-primary w-full">Volgende stap</button>
+    </form>
   </main>
 
-  <script src="/js/request.js?v=20260111"></script>
+  <script src="/js/request.js"></script>
 </body>
 </html>

@@ -1,72 +1,41 @@
-<!-- frontend/results.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kies bedrijven – Irisje.nl</title>
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
-
-<body class="irisje-body">
-
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-      <a href="index.html" class="flex items-center space-x-2">
-        <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white text-indigo-700 font-bold shadow-brand">I</span>
-        <span class="font-semibold text-slate-900">Irisje.nl</span>
-      </a>
-      <div class="text-sm text-slate-700">
-        <span id="selectedCount">0</span> van 5 geselecteerd
-      </div>
-    </div>
+<body>
+  <header class="container py-4">
+    <a href="/index.html" class="text-xl font-bold">Irisje.nl</a>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-10 text-center">
-
-    <h1 class="text-2xl font-semibold mb-3">
-      Kies bedrijven voor je aanvraag
-    </h1>
-
-    <p id="resultsIntro" class="text-slate-600 mb-8"></p>
-
-    <!-- Empty / uitleg state -->
-    <div id="emptyState" class="hidden bg-white border rounded-2xl p-8 shadow-soft">
-      <p id="emptyMessage" class="text-slate-700 mb-6"></p>
-
-      <a
-        href="index.html"
-        class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition"
-      >
-        Start een nieuwe aanvraag
-      </a>
+  <main class="container py-8">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-semibold">Kies bedrijven voor je aanvraag</h1>
+      <div class="text-sm"> <span id="selectedCount">0</span> van 5 geselecteerd</div>
     </div>
 
-    <!-- Resultaten -->
-    <div id="fixedCompanyBox" class="hidden mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-left">
-      <p class="text-sm text-indigo-700">
-        Deze aanvraag wordt in ieder geval verstuurd naar:
-      </p>
-      <p id="fixedCompanyName" class="font-semibold text-indigo-900 mt-1"></p>
+    <p id="resultsIntro" class="mb-4"></p>
+
+    <div id="fixedCompanyBox" class="hidden mb-4 p-4 rounded-xl border bg-gray-50">
+      Startbedrijf: <strong id="fixedCompanyName"></strong>
     </div>
 
-    <div id="resultsGrid" class="grid md:grid-cols-2 gap-4"></div>
+    <div id="emptyState" class="hidden p-6 border rounded-xl text-center">
+      <p>Geen aanvraag gevonden.</p>
+      <a href="/index.html" class="btn-secondary mt-3 inline-block">Start een nieuwe aanvraag</a>
+    </div>
 
-  </main>
+    <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 
-  <div class="fixed bottom-0 inset-x-0 bg-white border-t shadow-soft">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="text-sm text-slate-600">
-        Je selectie wordt in één keer verstuurd.
-      </div>
-      <button
-        id="submitBtn"
-        class="irisje-btn opacity-50 pointer-events-none"
-      >
-        Verstuur aanvraag
+    <div class="mt-6">
+      <button id="submitBtn" class="btn-primary opacity-50 pointer-events-none">
+        Je selectie wordt in één keer verstuurd
       </button>
     </div>
-  </div>
+  </main>
 
   <script src="/js/results.js"></script>
 </body>

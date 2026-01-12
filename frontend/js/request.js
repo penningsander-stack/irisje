@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Optie A – correct aangesloten op request.html (step1Form)
+// Optie A: "Volgende stap" = aanvraag aanmaken + redirect
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -19,14 +19,10 @@
 
   async function init() {
     if (!companySlug) return;
-
     try {
       const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
       const data = await res.json();
-
-      if (res.ok && data.ok && data.company) {
-        startCompany = data.company;
-      }
+      if (res.ok && data.ok && data.company) startCompany = data.company;
     } catch (e) {
       console.error("Startbedrijf kon niet worden geladen", e);
     }
@@ -42,7 +38,7 @@
     let categoryValue = categorySelect.value || "";
     let specialtyValue = specialtySelect?.value || "";
 
-    // ✅ HARD FALLBACK: categorie vanuit startbedrijf
+    // Harde fallback: categorie vanuit startbedrijf
     if (!categoryValue && startCompany?.categories?.length) {
       categoryValue = startCompany.categories[0];
     }
@@ -69,15 +65,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-
       if (!res.ok || !data.ok || !data.requestId) {
         alert("Aanvraag kon niet worden aangemaakt.");
         return;
       }
-
-      // ✅ DIRECT DOOR NAAR RESULTATEN
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (e) {
       console.error(e);
