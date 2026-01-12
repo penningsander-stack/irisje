@@ -1,6 +1,6 @@
 // frontend/js/results.js
 // Trustoo-model: startbedrijf vast + max. 4 extra bedrijven
-// FIX: teller start op 1 bij offerte via bedrijf
+// FIX: teller = 1 en startbedrijf niet dubbel tonen
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -38,13 +38,11 @@
 
       // 2️⃣ startbedrijf bepalen
       if (req.companyId) {
-        // oud model
         fixedCompanyId = String(req.companyId);
         selected.add(fixedCompanyId);
         fixedBox.classList.remove("hidden");
         fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
       } else if (req.companySlug) {
-        // nieuw model (Optie A)
         const cRes = await fetch(`${API_BASE}/companies/slug/${req.companySlug}`);
         const cData = await cRes.json();
         if (cRes.ok && cData.ok && cData.company) {
@@ -55,9 +53,6 @@
         }
       }
 
-      // 👉 HIER zat de bug: teller moet NU al worden geüpdatet
-      updateSelectedCount();
-
       // 3️⃣ bedrijven laden
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
@@ -67,20 +62,32 @@
         ? data.companies
         : [];
 
+      // filter op categorie
       if (requestCategory) {
         companies = companies.filter(
           c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
         );
       }
 
-      if (companies.length === 0) {
-        return showEmpty("Geen bedrijven gevonden.");
+      // 🔥 VERWIJDER startbedrijf uit lijst
+      if (fixedCompanyId) {
+        companies = companies.filter(
+          c => String(c._id) !== fixedCompanyId
+        );
       }
 
-      intro.textContent =
-        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+      if (companies.length === 0) {
+        intro.textContent =
+          "Je aanvraag is aangemaakt. Er zijn geen extra geschikte bedrijven gevonden.";
+      } else {
+        intro.textContent =
+          "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+      }
 
       renderCompanies(companies);
+
+      // 🔥 Dwing teller NA render
+      updateSelectedCount();
     } catch (e) {
       console.error(e);
       showEmpty("Kon resultaten niet laden.");
@@ -91,16 +98,13 @@
     grid.innerHTML = "";
 
     for (const c of companies) {
-      const id = String(c._id || c.id);
-      const isFixed = id === fixedCompanyId;
+      const id = String(c._id);
 
       const card = document.createElement("div");
       card.className = "border rounded-xl p-4 bg-white flex items-start gap-3";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
-      checkbox.checked = isFixed;
-      checkbox.disabled = isFixed;
 
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
