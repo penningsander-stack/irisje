@@ -16,28 +16,23 @@
 
     <form id="step1Form" class="space-y-4">
       <div>
-        <label class="block mb-1">Naam</label>
-        <input type="text" name="name" required class="w-full border rounded-xl px-4 py-2" />
+        <label>Naam</label>
+        <input type="text" name="name" required class="w-full border rounded-xl px-4 py-2">
       </div>
 
       <div>
-        <label class="block mb-1">E-mail</label>
-        <input type="email" name="email" required class="w-full border rounded-xl px-4 py-2" />
+        <label>E-mail</label>
+        <input type="email" name="email" required class="w-full border rounded-xl px-4 py-2">
       </div>
 
       <div>
-        <label class="block mb-1">Waar kunnen we mee helpen?</label>
+        <label>Waar kunnen we mee helpen?</label>
         <textarea name="message" rows="4" class="w-full border rounded-xl px-4 py-2"
           placeholder="Bijvoorbeeld: ik heb een conflict met mijn werkgever"></textarea>
       </div>
 
-      <p class="text-sm text-gray-600">
-        Kies een categorie en specialisme, dan kunnen we je beter matchen met geschikte bedrijven.
-      </p>
-
       <div>
-        <label class="block mb-1">Categorie</label>
-        <!-- NIET required: wordt automatisch ingevuld vanuit startbedrijf -->
+        <label>Categorie</label>
         <select id="categorySelect" name="category" class="w-full border rounded-xl px-4 py-2">
           <option value="">Kies een categorie</option>
           <option value="Loodgieter">Loodgieter</option>
@@ -47,8 +42,7 @@
       </div>
 
       <div>
-        <label class="block mb-1">Specialisme</label>
-        <!-- NIET required -->
+        <label>Specialisme</label>
         <select id="specialtySelect" name="specialty" disabled class="w-full border rounded-xl px-4 py-2">
           <option value="">Kies eerst een categorie</option>
         </select>
