@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// G1: hard max-selectie (totaal 5, max 4 extra bij startbedrijf)
+// UX: duidelijke helpertekst, disabled state en limiet-hint
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -11,16 +11,18 @@
   const submitBtn = document.getElementById("submitBtn");
   const fixedBox = document.getElementById("fixedCompanyBox");
   const fixedNameEl = document.getElementById("fixedCompanyName");
+  const helperText = document.getElementById("helperText");
+  const limitHint = document.getElementById("limitHint");
 
   let requestId = null;
-  let fixedCompanyId = null; // string
-  const selected = new Set(); // companyId strings
-  const checkboxById = new Map(); // companyId -> checkbox
+  let fixedCompanyId = null;
+  const selected = new Set();
+  const checkboxById = new Map();
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function maxTotal() { return 5; }
-  function maxExtra() { return fixedCompanyId ? 4 : 5; }
+  const maxTotal = () => 5;
+  const maxExtra = () => (fixedCompanyId ? 4 : 5);
 
   async function init() {
     const params = new URLSearchParams(location.search);
@@ -28,7 +30,6 @@
     if (!requestId) return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
 
     try {
-      // aanvraag ophalen
       const reqRes = await fetch(`${API_BASE}/publicrequests/${encodeURIComponent(requestId)}`);
       const reqData = await reqRes.json();
       if (!reqRes.ok || !reqData?.ok || !reqData.request) {
@@ -39,7 +40,6 @@
       const requestCategory = (req.category || "").trim() || null;
       const requestCompanySlug = (req.companySlug || "").trim() || null;
 
-      // startbedrijf (via slug)
       if (requestCompanySlug) {
         try {
           const cRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(requestCompanySlug)}`);
@@ -50,15 +50,13 @@
               selected.add(fixedCompanyId);
               fixedBox.classList.remove("hidden");
               fixedNameEl.textContent = cData.company.name || "Geselecteerd bedrijf";
+              updateHelper();
               updateSelectedCount();
             }
           }
-        } catch (e) {
-          console.error("startbedrijf fetch error:", e);
-        }
+        } catch {}
       }
 
-      // overige bedrijven
       const companiesRes = await fetch(`${API_BASE}/companies`);
       const companiesData = await companiesRes.json();
       let companies = Array.isArray(companiesData?.results)
@@ -67,12 +65,9 @@
         ? companiesData.companies
         : [];
 
-      // startbedrijf uitsluiten
       if (fixedCompanyId) {
         companies = companies.filter(c => String(c._id || c.id || "") !== fixedCompanyId);
       }
-
-      // filter categorie
       if (requestCategory) {
         companies = companies.filter(
           c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
@@ -83,13 +78,19 @@
         ? "Je aanvraag is aangemaakt. Je kunt deze ook naar maximaal 4 andere geschikte bedrijven sturen."
         : "Je aanvraag is aangemaakt. Kies maximaal 5 bedrijven om je aanvraag naartoe te sturen.";
 
+      updateHelper();
       render(companies);
       updateSelectedCount();
       updateDisabling();
-    } catch (e) {
-      console.error("results init error:", e);
+    } catch {
       showEmpty("Kon resultaten niet laden.");
     }
+  }
+
+  function updateHelper() {
+    helperText.textContent = fixedCompanyId
+      ? "Je kunt maximaal 4 extra bedrijven selecteren (5 totaal)."
+      : "Je kunt maximaal 5 bedrijven selecteren.";
   }
 
   function render(companies) {
@@ -108,7 +109,6 @@
       cb.checked = selected.has(id);
 
       cb.addEventListener("change", () => {
-        // HARD GUARDS
         if (cb.checked) {
           if (selected.size >= maxTotal()) { cb.checked = false; return; }
           if (fixedCompanyId && countExtra() >= maxExtra()) { cb.checked = false; return; }
@@ -154,18 +154,31 @@
   function updateDisabling() {
     const totalLimit = selected.size >= maxTotal();
     const extraLimit = fixedCompanyId && countExtra() >= maxExtra();
+    const limitReached = totalLimit || extraLimit;
 
-    for (const [id, cb] of checkboxById.entries()) {
-      if (cb.checked) { cb.disabled = false; continue; }
-      if (totalLimit) { cb.disabled = true; continue; }
-      if (extraLimit) { cb.disabled = true; continue; }
-      cb.disabled = false;
+    limitHint.classList.toggle("hidden", !limitReached);
+
+    for (const [, cb] of checkboxById) {
+      if (cb.checked) {
+        cb.disabled = false;
+        cb.closest("div").style.opacity = "1";
+        cb.closest("div").style.cursor = "default";
+        continue;
+      }
+      if (limitReached) {
+        cb.disabled = true;
+        cb.closest("div").style.opacity = "0.5";
+        cb.closest("div").style.cursor = "not-allowed";
+      } else {
+        cb.disabled = false;
+        cb.closest("div").style.opacity = "1";
+        cb.closest("div").style.cursor = "default";
+      }
     }
   }
 
   submitBtn.addEventListener("click", async () => {
     if (!requestId || selected.size === 0) return;
-
     try {
       const res = await fetch(`${API_BASE}/publicrequests/${encodeURIComponent(requestId)}/submit`, {
         method: "POST",
@@ -178,8 +191,7 @@
         return;
       }
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
-    } catch (e) {
-      console.error("submit error:", e);
+    } catch {
       alert("Versturen mislukt.");
     }
   });
