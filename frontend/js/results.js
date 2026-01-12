@@ -1,5 +1,6 @@
 // frontend/js/results.js
 // Trustoo-model: startbedrijf vast + max. 4 extra bedrijven
+// FIX: teller start op 1 bij offerte via bedrijf
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -22,9 +23,12 @@
   async function init() {
     const params = new URLSearchParams(location.search);
     requestId = params.get("requestId");
-    if (!requestId) return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
+    if (!requestId) {
+      return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
+    }
 
     try {
+      // 1️⃣ aanvraag ophalen
       const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
       const reqData = await reqRes.json();
       if (!reqRes.ok || !reqData.ok || !reqData.request) throw new Error();
@@ -32,25 +36,50 @@
       const req = reqData.request;
       requestCategory = req.category || null;
 
+      // 2️⃣ startbedrijf bepalen
       if (req.companyId) {
+        // oud model
         fixedCompanyId = String(req.companyId);
         selected.add(fixedCompanyId);
         fixedBox.classList.remove("hidden");
         fixedNameEl.textContent = req.companyName || "Geselecteerd bedrijf";
+      } else if (req.companySlug) {
+        // nieuw model (Optie A)
+        const cRes = await fetch(`${API_BASE}/companies/slug/${req.companySlug}`);
+        const cData = await cRes.json();
+        if (cRes.ok && cData.ok && cData.company) {
+          fixedCompanyId = String(cData.company._id);
+          selected.add(fixedCompanyId);
+          fixedBox.classList.remove("hidden");
+          fixedNameEl.textContent = cData.company.name;
+        }
       }
+
+      // 👉 HIER zat de bug: teller moet NU al worden geüpdatet
       updateSelectedCount();
 
+      // 3️⃣ bedrijven laden
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
-      let companies = Array.isArray(data.results) ? data.results : (Array.isArray(data.companies) ? data.companies : []);
+      let companies = Array.isArray(data.results)
+        ? data.results
+        : Array.isArray(data.companies)
+        ? data.companies
+        : [];
 
       if (requestCategory) {
-        companies = companies.filter(c => Array.isArray(c.categories) && c.categories.includes(requestCategory));
+        companies = companies.filter(
+          c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
+        );
       }
 
-      if (companies.length === 0) return showEmpty("Geen bedrijven gevonden.");
+      if (companies.length === 0) {
+        return showEmpty("Geen bedrijven gevonden.");
+      }
 
-      intro.textContent = "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+      intro.textContent =
+        "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
+
       renderCompanies(companies);
     } catch (e) {
       console.error(e);
@@ -60,6 +89,7 @@
 
   function renderCompanies(companies) {
     grid.innerHTML = "";
+
     for (const c of companies) {
       const id = String(c._id || c.id);
       const isFixed = id === fixedCompanyId;
@@ -74,7 +104,10 @@
 
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
-          if (selected.size >= 5) { checkbox.checked = false; return; }
+          if (selected.size >= 5) {
+            checkbox.checked = false;
+            return;
+          }
           selected.add(id);
         } else {
           selected.delete(id);
@@ -106,14 +139,21 @@
 
   submitBtn.addEventListener("click", async () => {
     if (selected.size === 0) return;
+
     try {
-      const res = await fetch(`${API_BASE}/publicRequests/${requestId}/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyIds: Array.from(selected) }),
-      });
+      const res = await fetch(
+        `${API_BASE}/publicRequests/${requestId}/submit`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companyIds: Array.from(selected) })
+        }
+      );
       const data = await res.json();
-      if (!res.ok || !data.ok) return alert("Versturen mislukt.");
+      if (!res.ok || !data.ok) {
+        alert("Versturen mislukt.");
+        return;
+      }
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
     } catch (e) {
       console.error(e);
