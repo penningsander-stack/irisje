@@ -89,9 +89,7 @@
 
   function updateHelper() {
   const totalSelected = selected.size;
-  const remaining = fixedCompanyId
-    ? Math.max(0, 5 - totalSelected)
-    : Math.max(0, 5 - totalSelected);
+  const remaining = Math.max(0, 5 - totalSelected);
 
   if (remaining === 0) {
     helperText.textContent = "Je hebt het maximale aantal bedrijven geselecteerd.";
@@ -99,6 +97,7 @@
     helperText.textContent = `Je kunt nog ${remaining} bedrijf${remaining === 1 ? "" : "en"} selecteren.`;
   }
 }
+
 
 
 
