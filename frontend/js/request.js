@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-12 — DEFINITIEVE FIX: city verplicht bij aanmaken
+// Definitieve fix: city verplicht meesturen bij aanmaken aanvraag
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -11,25 +11,31 @@
     e.preventDefault();
     err.classList.add("hidden");
 
-    const payload = {
-      name: document.getElementById("nameInput").value.trim(),
-      email: document.getElementById("emailInput").value.trim(),
-      city: document.getElementById("cityInput").value.trim(),
-      message:
-        document.getElementById("messageInput").value.trim() ||
-        "Geen aanvullende toelichting opgegeven.",
-      category: document.getElementById("categorySelect").value,
-      categories: [document.getElementById("categorySelect").value],
-      specialty: "",
-      specialties: [],
-      companySlug: null,
-    };
+    const name = document.getElementById("nameInput").value.trim();
+    const email = document.getElementById("emailInput").value.trim();
+    const city = document.getElementById("cityInput").value.trim();
+    const message =
+      document.getElementById("messageInput").value.trim() ||
+      "Geen aanvullende toelichting opgegeven.";
+    const category = document.getElementById("categorySelect").value;
 
-    if (!payload.name || !payload.email || !payload.city || !payload.category) {
+    if (!name || !email || !city || !category) {
       err.textContent = "Niet alle verplichte velden zijn ingevuld.";
       err.classList.remove("hidden");
       return;
     }
+
+    const payload = {
+      name,
+      email,
+      city,
+      message,
+      category,
+      categories: [category],
+      specialty: "",
+      specialties: [],
+      companySlug: null
+    };
 
     try {
       const res = await fetch(API, {
@@ -37,13 +43,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
 
-      if (!res.ok || !data?.requestId) {
-        throw new Error("Backend fout");
-      }
-
+      if (!res.ok || !data?.requestId) throw new Error();
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch {
       err.textContent = "Aanvraag mislukt. Probeer het opnieuw.";
