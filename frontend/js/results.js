@@ -113,10 +113,14 @@
 
   submitBtn.addEventListener("click", async () => {
     await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}/send`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ companyIds: Array.from(selectedIds) }),
-    });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    companyIds: Array.from(selectedIds),
+    city: appliedCity || "Onbekend"
+  }),
+});
+
 
     window.location.href = "/success.html";
   });
