@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Definitieve fix: teller = 1 en startbedrijf nooit dubbel
+// Correcte Trustoo-flow: startbedrijf altijd 1e + teller = 1
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -15,8 +15,6 @@
   let selected = new Set();
   let fixedCompanyId = null;
   let requestId = null;
-  let requestCategory = null;
-  let requestCompanySlug = null;
 
   document.addEventListener("DOMContentLoaded", init);
 
@@ -31,42 +29,33 @@
       // 1️⃣ aanvraag ophalen
       const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
       const reqData = await reqRes.json();
-      if (!reqRes.ok || !reqData.ok || !reqData.request) throw new Error();
+      if (!reqRes.ok || !reqData.ok || !reqData.request) {
+        throw new Error("Aanvraag niet gevonden");
+      }
 
-      const req = reqData.request;
-      requestCategory = req.category || null;
-      requestCompanySlug = req.companySlug || null;
+      const request = reqData.request;
+      const requestCategory = request.category || null;
+      const requestCompanySlug = request.companySlug || null;
 
-      // 2️⃣ bedrijven ophalen
+      // 2️⃣ bedrijven ophalen (ONGEFILTERD)
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
+
       let companies = Array.isArray(data.results)
         ? data.results
         : Array.isArray(data.companies)
         ? data.companies
         : [];
 
-      // filter op categorie
-      if (requestCategory) {
-        companies = companies.filter(
-          c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
-        );
-      }
-
       if (companies.length === 0) {
         return showEmpty("Geen bedrijven gevonden.");
       }
 
-      // 3️⃣ startbedrijf bepalen (ROBUST)
+      // 3️⃣ startbedrijf ALTIJD eerst bepalen
       let fixedCompany = null;
 
       if (requestCompanySlug) {
         fixedCompany = companies.find(c => c.slug === requestCompanySlug) || null;
-      }
-
-      // fallback: als er maar één bedrijf is
-      if (!fixedCompany && companies.length === 1) {
-        fixedCompany = companies[0];
       }
 
       if (fixedCompany) {
@@ -80,15 +69,20 @@
         companies = companies.filter(c => String(c._id) !== fixedCompanyId);
       }
 
+      // 4️⃣ overige bedrijven filteren op categorie
+      if (requestCategory) {
+        companies = companies.filter(
+          c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
+        );
+      }
+
       intro.textContent =
         "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
       renderCompanies(companies);
-
-      // 🔒 teller afdwingen
       updateSelectedCount();
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
       showEmpty("Kon resultaten niet laden.");
     }
   }
@@ -120,7 +114,7 @@
 
       const info = document.createElement("div");
       info.innerHTML = `
-        <div class="font-semibold">${escapeHtml(c.name || "")}</div>
+        <div class="font-semibold">${escapeHtml(c.name)}</div>
         <div class="text-sm text-gray-600">${escapeHtml(c.city || "")}</div>
         <div class="text-sm">${escapeHtml((c.categories || []).join(", "))}</div>
       `;
@@ -133,11 +127,14 @@
 
   function updateSelectedCount() {
     selectedCountEl.textContent = selected.size;
-    if (selected.size > 0) {
-      submitBtn.classList.remove("opacity-50", "pointer-events-none");
-    } else {
-      submitBtn.classList.add("opacity-50", "pointer-events-none");
-    }
+    submitBtn.classList.toggle(
+      "opacity-50",
+      selected.size === 0
+    );
+    submitBtn.classList.toggle(
+      "pointer-events-none",
+      selected.size === 0
+    );
   }
 
   submitBtn.addEventListener("click", async () => {
@@ -152,11 +149,13 @@
           body: JSON.stringify({ companyIds: Array.from(selected) })
         }
       );
+
       const data = await res.json();
       if (!res.ok || !data.ok) {
         alert("Versturen mislukt.");
         return;
       }
+
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
     } catch (e) {
       console.error(e);
