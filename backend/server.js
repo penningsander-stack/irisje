@@ -35,20 +35,20 @@ mongoose
 /* =========================
  * API Routes
  * ========================= */
-app.use("/api/publicCompanies", require("./routes/publicCompanies"));
-app.use("/api/publicRequests", require("./routes/publicRequests"));
+app.use("/api/publiccompanies", require("./routes/publiccompanies"));
+app.use("/api/publicrequests", require("./routes/publicrequests"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/payments", require("./routes/payments"));
-app.use("/api/publicCategories", require("./routes/publicCategories"));
+app.use("/api/publiccategories", require("./routes/publiccategories"));
 
-// 🔹 NIEUW: centrale read-only categorie-config
+// 🔹 centrale read-only categorie-config
 app.use("/api/meta", require("./routes/meta"));
 
-// ✅ Seed route (nodig voor /api/seed/seed-companies)
+// ✅ Seed route
 app.use("/api/seed", require("./routes/seed"));
 
 /* =========================
