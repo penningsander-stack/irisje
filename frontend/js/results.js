@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Trustoo-flow: startbedrijf = 1, nooit dubbel, teller altijd correct
+// Fix: startbedrijf altijd vast (teller=1) + nooit dubbel in lijst
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -27,68 +27,56 @@
     }
 
     try {
-      // 1️⃣ aanvraag ophalen
+      // 1) Aanvraag ophalen
       const reqRes = await fetch(`${API_BASE}/publicRequests/${requestId}`);
       const reqData = await reqRes.json();
       if (!reqRes.ok || !reqData.ok || !reqData.request) {
         throw new Error("Aanvraag niet gevonden");
       }
 
-      const request = reqData.request;
-      const requestCategory = request.category || null;
-      const requestCompanySlug = request.companySlug || null;
+      const req = reqData.request;
+      const requestCategory = (req.category || "").trim() || null;
+      const requestCompanySlug = (req.companySlug || "").trim() || null;
 
-      // 2️⃣ startbedrijf EXPLICIET ophalen via slug
-      let fixedCompany = null;
-
+      // 2) Startbedrijf altijd ophalen via slug-endpoint (meest betrouwbaar)
       if (requestCompanySlug) {
-        const cRes = await fetch(`${API_BASE}/companies/slug/${requestCompanySlug}`);
+        const cRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(requestCompanySlug)}`);
         const cData = await cRes.json();
         if (cRes.ok && cData.ok && cData.company) {
-          fixedCompany = cData.company;
+          fixedCompanyId = String(cData.company._id);
+          selected.add(fixedCompanyId);
+
+          fixedBox.classList.remove("hidden");
+          fixedNameEl.textContent = cData.company.name || "Geselecteerd bedrijf";
         }
       }
 
-      if (fixedCompany) {
-        fixedCompanyId = String(fixedCompany._id);
-        selected.add(fixedCompanyId);
-
-        fixedBox.classList.remove("hidden");
-        fixedNameEl.textContent = fixedCompany.name;
-
-        // 🔒 TELLER EXPLICIET OP 1
-        selectedCountEl.textContent = "1";
-        submitBtn.classList.remove("opacity-50", "pointer-events-none");
-      }
-
-      // 3️⃣ overige bedrijven ophalen
+      // 3) Overige bedrijven ophalen
       const res = await fetch(`${API_BASE}/companies`);
       const data = await res.json();
-
       let companies = Array.isArray(data.results)
         ? data.results
         : Array.isArray(data.companies)
         ? data.companies
         : [];
 
-      // verwijder startbedrijf
+      // 4) Startbedrijf uit lijst halen (nooit dubbel)
       if (fixedCompanyId) {
-        companies = companies.filter(c => String(c._id) !== fixedCompanyId);
+        companies = companies.filter(c => String(c._id || c.id) !== fixedCompanyId);
       }
 
-      // filter op categorie
+      // 5) Filter op categorie (alleen voor de "extra" bedrijven)
       if (requestCategory) {
-        companies = companies.filter(
-          c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
-        );
+        companies = companies.filter(c => Array.isArray(c.categories) && c.categories.includes(requestCategory));
       }
 
       intro.textContent =
         "Je aanvraag is aangemaakt. Je kunt deze ook naar andere geschikte bedrijven sturen.";
 
       renderCompanies(companies);
-    } catch (err) {
-      console.error(err);
+      updateSelectedCount(); // teller nu altijd correct (>=1 als startbedrijf is gezet)
+    } catch (e) {
+      console.error(e);
       showEmpty("Kon resultaten niet laden.");
     }
   }
@@ -97,13 +85,14 @@
     grid.innerHTML = "";
 
     for (const c of companies) {
-      const id = String(c._id);
+      const id = String(c._id || c.id);
 
       const card = document.createElement("div");
       card.className = "border rounded-xl p-4 bg-white flex items-start gap-3";
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
+      checkbox.checked = selected.has(id);
 
       checkbox.addEventListener("change", () => {
         if (checkbox.checked) {
@@ -120,7 +109,7 @@
 
       const info = document.createElement("div");
       info.innerHTML = `
-        <div class="font-semibold">${escapeHtml(c.name)}</div>
+        <div class="font-semibold">${escapeHtml(c.name || "")}</div>
         <div class="text-sm text-gray-600">${escapeHtml(c.city || "")}</div>
         <div class="text-sm">${escapeHtml((c.categories || []).join(", "))}</div>
       `;
@@ -132,30 +121,29 @@
   }
 
   function updateSelectedCount() {
-    selectedCountEl.textContent = selected.size;
-    submitBtn.classList.toggle("opacity-50", selected.size === 0);
-    submitBtn.classList.toggle("pointer-events-none", selected.size === 0);
+    selectedCountEl.textContent = String(selected.size);
+    if (selected.size > 0) {
+      submitBtn.classList.remove("opacity-50", "pointer-events-none");
+    } else {
+      submitBtn.classList.add("opacity-50", "pointer-events-none");
+    }
   }
 
   submitBtn.addEventListener("click", async () => {
     if (selected.size === 0) return;
 
     try {
-      const res = await fetch(
-        `${API_BASE}/publicRequests/${requestId}/submit`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ companyIds: Array.from(selected) })
-        }
-      );
+      const res = await fetch(`${API_BASE}/publicRequests/${requestId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyIds: Array.from(selected) }),
+      });
 
       const data = await res.json();
       if (!res.ok || !data.ok) {
         alert("Versturen mislukt.");
         return;
       }
-
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
     } catch (e) {
       console.error(e);
