@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// End-to-end fix: startbedrijf vast (teller=1), nooit dubbel, max 4 extra selecteerbaar
+// G1: hard max-selectie (totaal 5, max 4 extra bij startbedrijf)
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -12,28 +12,26 @@
   const fixedBox = document.getElementById("fixedCompanyBox");
   const fixedNameEl = document.getElementById("fixedCompanyName");
 
-  // state
   let requestId = null;
   let fixedCompanyId = null; // string
   const selected = new Set(); // companyId strings
-  const checkboxById = new Map(); // companyId -> checkbox element
+  const checkboxById = new Map(); // companyId -> checkbox
 
   document.addEventListener("DOMContentLoaded", init);
+
+  function maxTotal() { return 5; }
+  function maxExtra() { return fixedCompanyId ? 4 : 5; }
 
   async function init() {
     const params = new URLSearchParams(location.search);
     requestId = params.get("requestId");
-
-    if (!requestId) {
-      return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
-    }
+    if (!requestId) return showEmpty("Deze pagina kun je alleen bereiken via een offerteaanvraag.");
 
     try {
-      // 1) aanvraag ophalen
+      // aanvraag ophalen
       const reqRes = await fetch(`${API_BASE}/publicrequests/${encodeURIComponent(requestId)}`);
       const reqData = await reqRes.json();
-
-      if (!reqRes.ok || !reqData || !reqData.ok || !reqData.request) {
+      if (!reqRes.ok || !reqData?.ok || !reqData.request) {
         return showEmpty("Geen aanvraag gevonden.");
       }
 
@@ -41,20 +39,17 @@
       const requestCategory = (req.category || "").trim() || null;
       const requestCompanySlug = (req.companySlug || "").trim() || null;
 
-      // 2) startbedrijf ophalen via slug (betrouwbaar)
+      // startbedrijf (via slug)
       if (requestCompanySlug) {
         try {
           const cRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(requestCompanySlug)}`);
           const cData = await cRes.json();
-          if (cRes.ok && cData && cData.ok && cData.company) {
+          if (cRes.ok && cData?.ok && cData.company) {
             fixedCompanyId = String(cData.company._id || cData.company.id || "");
             if (fixedCompanyId) {
               selected.add(fixedCompanyId);
-
               fixedBox.classList.remove("hidden");
               fixedNameEl.textContent = cData.company.name || "Geselecteerd bedrijf";
-
-              // ✅ teller direct naar 1
               updateSelectedCount();
             }
           }
@@ -63,53 +58,41 @@
         }
       }
 
-      // 3) overige bedrijven ophalen
+      // overige bedrijven
       const companiesRes = await fetch(`${API_BASE}/companies`);
       const companiesData = await companiesRes.json();
-
       let companies = Array.isArray(companiesData?.results)
         ? companiesData.results
         : Array.isArray(companiesData?.companies)
         ? companiesData.companies
         : [];
 
-      // 4) startbedrijf uitsluiten uit extra lijst (nooit dubbel)
+      // startbedrijf uitsluiten
       if (fixedCompanyId) {
-        companies = companies.filter((c) => String(c._id || c.id || "") !== fixedCompanyId);
+        companies = companies.filter(c => String(c._id || c.id || "") !== fixedCompanyId);
       }
 
-      // 5) filter op categorie voor extra bedrijven
+      // filter categorie
       if (requestCategory) {
         companies = companies.filter(
-          (c) => Array.isArray(c.categories) && c.categories.includes(requestCategory)
+          c => Array.isArray(c.categories) && c.categories.includes(requestCategory)
         );
       }
 
-      intro.textContent =
-        fixedCompanyId
-          ? "Je aanvraag is aangemaakt. Je kunt deze ook naar maximaal 4 andere geschikte bedrijven sturen."
-          : "Je aanvraag is aangemaakt. Kies maximaal 5 bedrijven om je aanvraag naartoe te sturen.";
+      intro.textContent = fixedCompanyId
+        ? "Je aanvraag is aangemaakt. Je kunt deze ook naar maximaal 4 andere geschikte bedrijven sturen."
+        : "Je aanvraag is aangemaakt. Kies maximaal 5 bedrijven om je aanvraag naartoe te sturen.";
 
-      renderCompanies(companies);
+      render(companies);
       updateSelectedCount();
-      updateCheckboxDisabling();
+      updateDisabling();
     } catch (e) {
       console.error("results init error:", e);
       showEmpty("Kon resultaten niet laden.");
     }
   }
 
-  function maxTotalSelectable() {
-    // Startbedrijf telt mee als 1 → max 4 extra → totaal 5
-    return 5;
-  }
-
-  function maxExtraSelectable() {
-    // Als startbedrijf bestaat: 4 extra, anders 5 (want dan is er geen vaste)
-    return fixedCompanyId ? 4 : 5;
-  }
-
-  function renderCompanies(companies) {
+  function render(companies) {
     grid.innerHTML = "";
     checkboxById.clear();
 
@@ -120,65 +103,47 @@
       const card = document.createElement("div");
       card.className = "border rounded-xl p-4 bg-white flex items-start gap-3";
 
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = selected.has(id);
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = selected.has(id);
 
-      checkbox.addEventListener("change", () => {
-        const isChecked = checkbox.checked;
-
-        if (isChecked) {
-          // limiet: totaal 5 (incl. startbedrijf)
-          if (selected.size >= maxTotalSelectable()) {
-            checkbox.checked = false;
-            return;
-          }
-
-          // extra-limiet: max 4 extra als startbedrijf bestaat
-          if (fixedCompanyId) {
-            const extraCount = countExtraSelected();
-            if (extraCount >= maxExtraSelectable()) {
-              checkbox.checked = false;
-              return;
-            }
-          }
-
+      cb.addEventListener("change", () => {
+        // HARD GUARDS
+        if (cb.checked) {
+          if (selected.size >= maxTotal()) { cb.checked = false; return; }
+          if (fixedCompanyId && countExtra() >= maxExtra()) { cb.checked = false; return; }
           selected.add(id);
         } else {
           selected.delete(id);
         }
-
         updateSelectedCount();
-        updateCheckboxDisabling();
+        updateDisabling();
       });
 
-      checkboxById.set(id, checkbox);
+      checkboxById.set(id, cb);
 
       const info = document.createElement("div");
       info.innerHTML = `
-        <div class="font-semibold">${escapeHtml(c.name || "")}</div>
-        <div class="text-sm text-gray-600">${escapeHtml(c.city || "")}</div>
-        <div class="text-sm">${escapeHtml((c.categories || []).join(", "))}</div>
+        <div class="font-semibold">${esc(c.name || "")}</div>
+        <div class="text-sm text-gray-600">${esc(c.city || "")}</div>
+        <div class="text-sm">${esc((c.categories || []).join(", "))}</div>
       `;
 
-      card.appendChild(checkbox);
+      card.appendChild(cb);
       card.appendChild(info);
       grid.appendChild(card);
     }
   }
 
-  function countExtraSelected() {
+  function countExtra() {
     if (!fixedCompanyId) return selected.size;
-    let extra = 0;
-    for (const id of selected) {
-      if (id !== fixedCompanyId) extra++;
-    }
-    return extra;
+    let n = 0;
+    for (const id of selected) if (id !== fixedCompanyId) n++;
+    return n;
   }
 
   function updateSelectedCount() {
     selectedCountEl.textContent = String(selected.size);
-
     if (selected.size > 0) {
       submitBtn.classList.remove("opacity-50", "pointer-events-none");
     } else {
@@ -186,36 +151,20 @@
     }
   }
 
-  function updateCheckboxDisabling() {
-    const totalLimitReached = selected.size >= maxTotalSelectable();
+  function updateDisabling() {
+    const totalLimit = selected.size >= maxTotal();
+    const extraLimit = fixedCompanyId && countExtra() >= maxExtra();
 
-    // als startbedrijf bestaat: extra-limit reached zodra extra==4
-    const extraLimitReached = fixedCompanyId ? countExtraSelected() >= maxExtraSelectable() : selected.size >= maxExtraSelectable();
-
-    for (const [id, checkbox] of checkboxById.entries()) {
-      if (checkbox.checked) {
-        checkbox.disabled = false;
-        continue;
-      }
-
-      // Niet-aangevinkte checkboxes uitzetten zodra limiet is bereikt
-      if (totalLimitReached) {
-        checkbox.disabled = true;
-        continue;
-      }
-
-      if (fixedCompanyId && extraLimitReached) {
-        checkbox.disabled = true;
-        continue;
-      }
-
-      checkbox.disabled = false;
+    for (const [id, cb] of checkboxById.entries()) {
+      if (cb.checked) { cb.disabled = false; continue; }
+      if (totalLimit) { cb.disabled = true; continue; }
+      if (extraLimit) { cb.disabled = true; continue; }
+      cb.disabled = false;
     }
   }
 
   submitBtn.addEventListener("click", async () => {
-    if (!requestId) return;
-    if (selected.size === 0) return;
+    if (!requestId || selected.size === 0) return;
 
     try {
       const res = await fetch(`${API_BASE}/publicrequests/${encodeURIComponent(requestId)}/submit`, {
@@ -223,13 +172,11 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyIds: Array.from(selected) }),
       });
-
       const data = await res.json();
-      if (!res.ok || !data || !data.ok) {
-        alert((data && data.message) || "Versturen mislukt.");
+      if (!res.ok || !data?.ok) {
+        alert(data?.message || "Versturen mislukt.");
         return;
       }
-
       alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
     } catch (e) {
       console.error("submit error:", e);
@@ -244,12 +191,8 @@
     if (p) p.textContent = msg;
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  function esc(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
   }
 })();
