@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Optie A + werkend specialisme
+// Offerte starten bij specifiek bedrijf + tonen startbedrijf
 
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -10,53 +10,55 @@
   const categorySelect = document.getElementById("categorySelect");
   const specialtySelect = document.getElementById("specialtySelect");
 
+  const companyBox = document.getElementById("companyBox");
+  const companyNameEl = document.getElementById("companyName");
+  const companyCityEl = document.getElementById("companyCity");
+
   const params = new URLSearchParams(window.location.search);
   const companySlug = params.get("companySlug");
 
   let startCompany = null;
 
-  // Hardcoded specialismes (kan later uit backend)
   const SPECIALTIES = {
-    Loodgieter: [
-      "Lekkage",
-      "Verstopping",
-      "CV-ketel",
-      "Dakwerk",
-      "Spoedservice"
-    ],
-    Advocaat: [
-      "Arbeidsrecht",
-      "Strafrecht",
-      "Familierecht",
-      "Bestuursrecht"
-    ],
-    Schilder: [
-      "Binnenschilderwerk",
-      "Buitenschilderwerk",
-      "Behang",
-      "Houtrot"
-    ]
+    Loodgieter: ["Lekkage", "Verstopping", "CV-ketel", "Spoedservice"],
+    Advocaat: ["Arbeidsrecht", "Strafrecht", "Familierecht"],
+    Schilder: ["Binnen", "Buiten", "Houtrot"]
   };
 
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
     if (!companySlug) return;
+
     try {
       const res = await fetch(`${API_BASE}/companies/slug/${companySlug}`);
       const data = await res.json();
-      if (res.ok && data.ok && data.company) startCompany = data.company;
+
+      if (res.ok && data.ok && data.company) {
+        startCompany = data.company;
+
+        // 🏢 toon startbedrijf
+        companyNameEl.textContent = startCompany.name;
+        companyCityEl.textContent = startCompany.city || "";
+        companyBox.classList.remove("hidden");
+
+        // preselect categorie (optioneel zichtbaar)
+        if (startCompany.categories?.length) {
+          categorySelect.value = startCompany.categories[0];
+          categorySelect.dispatchEvent(new Event("change"));
+        }
+      }
     } catch (e) {
       console.error(e);
     }
   }
 
-  // 🔥 CATEGORIE → SPECIALISMES
+  // categorie → specialismes
   categorySelect.addEventListener("change", () => {
-    const category = categorySelect.value;
+    const cat = categorySelect.value;
     specialtySelect.innerHTML = "";
 
-    if (!category || !SPECIALTIES[category]) {
+    if (!cat || !SPECIALTIES[cat]) {
       specialtySelect.disabled = true;
       specialtySelect.innerHTML = `<option>Kies eerst een categorie</option>`;
       return;
@@ -64,12 +66,11 @@
 
     specialtySelect.disabled = false;
     specialtySelect.innerHTML = `<option value="">Kies een specialisme</option>`;
-
-    SPECIALTIES[category].forEach(s => {
-      const opt = document.createElement("option");
-      opt.value = s;
-      opt.textContent = s;
-      specialtySelect.appendChild(opt);
+    SPECIALTIES[cat].forEach(s => {
+      const o = document.createElement("option");
+      o.value = s;
+      o.textContent = s;
+      specialtySelect.appendChild(o);
     });
   });
 
@@ -83,7 +84,6 @@
     let categoryValue = categorySelect.value || "";
     let specialtyValue = specialtySelect.value || "";
 
-    // Fallback categorie vanuit startbedrijf
     if (!categoryValue && startCompany?.categories?.length) {
       categoryValue = startCompany.categories[0];
     }
@@ -111,10 +111,12 @@
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+
       if (!res.ok || !data.ok || !data.requestId) {
         alert("Aanvraag mislukt.");
         return;
       }
+
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (e) {
       console.error(e);

@@ -14,6 +14,13 @@
   <main class="container max-w-2xl py-8">
     <h1 class="text-2xl font-semibold mb-4">Start je aanvraag</h1>
 
+    <!-- 🏢 STARTBEDRIJF -->
+    <div id="companyBox" class="hidden mb-6 p-4 border rounded-xl bg-gray-50">
+      <div class="text-sm text-gray-600 mb-1">Je vraagt een offerte aan bij</div>
+      <div id="companyName" class="font-semibold"></div>
+      <div id="companyCity" class="text-sm text-gray-600"></div>
+    </div>
+
     <form id="step1Form" class="space-y-4">
       <div>
         <label>Naam</label>
@@ -28,7 +35,7 @@
       <div>
         <label>Waar kunnen we mee helpen?</label>
         <textarea name="message" rows="4" class="w-full border rounded-xl px-4 py-2"
-          placeholder="Bijvoorbeeld: ik heb een conflict met mijn werkgever"></textarea>
+          placeholder="Bijvoorbeeld: ik heb een lekkage in de badkamer"></textarea>
       </div>
 
       <div>
