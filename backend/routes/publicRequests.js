@@ -16,7 +16,9 @@ router.post("/", async (req, res) => {
 
     const request = await Request.create({
       sector,
-      city: city || ""
+      city: city || "",
+      status: "draft",
+      selectedCompanies: []
     });
 
     res.json({ requestId: request._id });
@@ -36,24 +38,44 @@ router.get("/:id", async (req, res) => {
 
     let companies = [];
 
-    // 1. Match bedrijven op sector (primair)
     if (request.sector) {
-      companies = await Company.find({
-        sector: request.sector
-      }).lean();
+      companies = await Company.find({ sector: request.sector }).lean();
     }
 
-    // 2. Fallback: geen match → alle bedrijven tonen
     if (!companies || companies.length === 0) {
       companies = await Company.find({}).lean();
     }
 
-    res.json({
-      request,
-      companies
-    });
+    res.json({ request, companies });
   } catch (err) {
     console.error("publicRequests GET error:", err);
+    res.status(500).json({ error: "Serverfout" });
+  }
+});
+
+// 🔹 Aanvraag versturen naar geselecteerde bedrijven
+router.post("/:id/send", async (req, res) => {
+  try {
+    const { companyIds } = req.body;
+
+    if (!Array.isArray(companyIds) || companyIds.length === 0) {
+      return res.status(400).json({ error: "Geen bedrijven geselecteerd" });
+    }
+
+    const request = await Request.findById(req.params.id);
+    if (!request) {
+      return res.status(404).json({ error: "Aanvraag niet gevonden" });
+    }
+
+    request.selectedCompanies = companyIds;
+    request.status = "sent";
+    request.sentAt = new Date();
+
+    await request.save();
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("publicRequests SEND error:", err);
     res.status(500).json({ error: "Serverfout" });
   }
 });
