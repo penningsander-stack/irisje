@@ -198,7 +198,8 @@
         alert(data?.message || "Versturen mislukt.");
         return;
       }
-      alert(`Aanvraag verstuurd naar ${data.created} bedrijven.`);
+      window.location.href = "/confirmation.html";
+
     } catch {
       alert("Versturen mislukt.");
     }
