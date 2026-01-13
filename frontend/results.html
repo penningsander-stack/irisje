@@ -3,96 +3,124 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <title>Kies bedrijven voor je aanvraag – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl – Kies bedrijven voor je aanvraag</title>
 
-  <meta name="theme-color" content="#4F46E5" />
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="manifest" href="/manifest.json" />
+  <!-- bestaande styling -->
+  <link rel="stylesheet" href="/frontend/css/style.css" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="/style.css?v=20260113" />
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260113" />
+  <!-- version bump om cache te breken -->
+  <script defer src="/frontend/js/results.js?v=20260113-stable"></script>
 </head>
+<body>
 
-<body class="irisje-body flex flex-col min-h-screen fade-seq">
+  <!-- HEADER (bestaand of eenvoudig) -->
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="logo">Irisje.nl</a>
+    </div>
+  </header>
 
-<header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <a href="index.html" class="flex items-center space-x-2">
-      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white text-indigo-700 font-bold shadow-brand">I</span>
-      <span class="font-semibold text-sm text-slate-900">Irisje.nl</span>
-    </a>
-  </div>
-</header>
+  <!-- MAIN -->
+  <main class="container">
 
-<main class="flex-1">
-<section class="max-w-6xl mx-auto px-4 pt-10 pb-16">
+    <section class="results-intro">
+      <h1>Kies bedrijven voor je aanvraag</h1>
+      <p>
+        Selecteer maximaal <strong>5 bedrijven</strong>.  
+        Je aanvraag wordt daarna in één keer verstuurd.
+      </p>
+    </section>
 
-  <h1 class="text-xl font-semibold mb-2">Kies bedrijven voor je aanvraag</h1>
-  <p class="text-sm text-slate-500 mb-6">
-    Selecteer maximaal <strong>5 bedrijven</strong>.  
-    Je aanvraag wordt daarna in één keer verstuurd.
-  </p>
+    <!-- FILTERS -->
+    <section class="results-filters">
+      <h2>Waar zoek je een bedrijf?</h2>
 
-  <!-- PLAATS / POSTCODE -->
-  <div class="glass-card mb-6">
-    <h2 class="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
-      Waar zoek je een bedrijf?
-    </h2>
+      <div class="filter-row">
+        <input
+          type="text"
+          id="filterCity"
+          placeholder="Plaats"
+          autocomplete="off"
+        />
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <div class="form-group sm:col-span-2">
-        <label for="cityInput">Plaats of postcode</label>
-        <input id="cityInput" type="text" class="form-input" placeholder="Bijv. Amsterdam of 1011AB" />
-      </div>
-      <div class="form-group sm:col-span-1 flex items-end">
-        <button id="applyCityBtn" class="btn-primary w-full">
+        <input
+          type="text"
+          id="filterPostcode"
+          placeholder="Postcode"
+          autocomplete="off"
+        />
+
+        <button type="button" class="btn-secondary">
           Filter toepassen
         </button>
       </div>
+
+      <p class="filter-help">
+        Gebruik dit om bedrijven in jouw regio te tonen.
+      </p>
+    </section>
+
+    <!-- TOP BAR: teller + sortering -->
+    <section class="results-topbar">
+      <div
+        id="selectedCount"
+        data-selected-count
+        class="selected-counter"
+      >
+        0 geselecteerd
+      </div>
+
+      <!-- optioneel, maar alvast stabiel -->
+      <select id="filterSort">
+        <option value="relevantie">Sorteren: relevantie</option>
+        <option value="score-desc">Hoogste score</option>
+        <option value="score-asc">Laagste score</option>
+        <option value="naam-asc">Naam A–Z</option>
+        <option value="naam-desc">Naam Z–A</option>
+      </select>
+    </section>
+
+    <!-- MESSAGE AREA (JS beheert visibility + tekst) -->
+    <div
+      id="resultsMessage"
+      data-results-message
+      class="results-message"
+      style="display:none;"
+    ></div>
+
+    <!-- RESULTATENLIJST -->
+    <section
+      id="companiesList"
+      data-companies-list
+      class="companies-list"
+    >
+      <!--
+        JS rendert hier de bedrijven.
+        Geen fallback HTML.
+      -->
+    </section>
+
+    <!-- ACTIES -->
+    <section class="results-actions">
+      <button
+        id="submitSelectionBtn"
+        type="button"
+        class="btn-primary"
+        disabled
+      >
+        Verstuur aanvraag
+      </button>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container">
+      © 2026 Irisje.nl
     </div>
+  </footer>
 
-    <p id="cityHint" class="text-[11px] text-slate-500 mt-2">
-      Gebruik dit om bedrijven in jouw regio te tonen.
-    </p>
-  </div>
-
-  <!-- STATUS -->
-  <div class="mb-2 text-sm text-slate-600">
-    <span id="selectionCounter">0 van 5 geselecteerd</span>
-    <span id="selectionHint" class="ml-2 text-slate-400"></span>
-  </div>
-
-  <!-- FEEDBACK -->
-  <div id="resultsStatus" class="text-sm text-slate-500 mb-4">
-    Bedrijven worden geladen…
-  </div>
-
-  <!-- STARTBEDRIJF -->
-  <div id="startCompanyBox" class="glass-card mb-4 hidden"></div>
-
-  <!-- BEDRIJVEN -->
-  <div id="companiesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-
-  <div class="mt-6">
-    <button id="submitSelectionBtn" class="btn-primary" disabled>
-      Aanvraag versturen naar geselecteerde bedrijven
-    </button>
-  </div>
-
-</section>
-</main>
-
-<footer class="footer-shell">
-  <div class="max-w-6xl mx-auto px-4 py-6 text-xs text-slate-400">
-    © 2026 Irisje.nl
-  </div>
-</footer>
-
-<script src="js/results.js?v=20260113"></script>
 </body>
 </html>
