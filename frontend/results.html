@@ -3,119 +3,115 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Kies bedrijven voor je aanvraag – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Irisje.nl – Kies bedrijven voor je aanvraag</title>
 
-  <!-- JOUW BESTAANDE STYLING -->
-  <link rel="stylesheet" href="css/style.css?v=20260113b" />
+  <meta name="theme-color" content="#4F46E5" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/manifest.json" />
 
-  <!-- RESULTS LOGICA -->
-  <script defer src="js/results.js?v=20260113b"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- BESTAANDE IRISJE STYLING -->
+  <link rel="stylesheet" href="/style.css?v=20260113-fix" />
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260113-fix" />
 </head>
-<body>
 
-  <!-- BESTAANDE HEADER -->
-  <header class="page-header">
-    <div class="page-header-inner">
-      <a href="/" class="logo">Irisje.nl</a>
-    </div>
-  </header>
+<body class="irisje-body flex flex-col min-h-screen fade-seq">
 
-  <!-- PAGINA WRAPPER (BELANGRIJK VOOR LAYOUT) -->
-  <div class="page">
+<header class="irisje-header sticky top-0 z-40">
+  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+    <a href="index.html" class="flex items-center space-x-2">
+      <span class="inline-flex items-center justify-center w-9 h-9 rounded-2xl bg-white text-indigo-700 font-bold shadow-brand">I</span>
+      <span class="font-semibold text-sm text-slate-900">Irisje.nl</span>
+    </a>
+  </div>
+</header>
 
-    <div class="page-content">
+<main class="flex-1">
+<section class="max-w-6xl mx-auto px-4 pt-10 pb-16">
 
-      <!-- TITELKAART -->
-      <div class="card">
-        <h1>Kies bedrijven voor je aanvraag</h1>
-        <p>
-          Selecteer maximaal <strong>5 bedrijven</strong>.
-          Je aanvraag wordt daarna in één keer verstuurd.
-        </p>
+  <h1 class="text-xl font-semibold mb-2">Kies bedrijven voor je aanvraag</h1>
+  <p class="text-sm text-slate-500 mb-6">
+    Selecteer maximaal <strong>5 bedrijven</strong>.
+    Je aanvraag wordt daarna in één keer verstuurd.
+  </p>
+
+  <!-- PLAATS / POSTCODE FILTER -->
+  <div class="glass-card mb-6">
+    <h2 class="text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wide">
+      Waar zoek je een bedrijf?
+    </h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div class="form-group sm:col-span-2">
+        <label for="filterCity">Plaats of postcode</label>
+        <input
+          id="filterCity"
+          type="text"
+          class="form-input"
+          placeholder="Bijv. Amsterdam of 1011AB"
+          autocomplete="off"
+        />
       </div>
-
-      <!-- FILTERKAART -->
-      <div class="card">
-        <h2>Waar zoek je een bedrijf?</h2>
-
-        <div class="form-row">
-          <input
-            type="text"
-            id="filterCity"
-            placeholder="Plaats"
-            class="input"
-          />
-
-          <input
-            type="text"
-            id="filterPostcode"
-            placeholder="Postcode"
-            class="input"
-          />
-
-          <button type="button" class="button">
-            Filter toepassen
-          </button>
-        </div>
-
-        <p class="help-text">
-          Gebruik dit om bedrijven in jouw regio te tonen.
-        </p>
-      </div>
-
-      <!-- TELLER + SORTERING -->
-      <div class="card card-inline">
-        <div
-          id="selectedCount"
-          data-selected-count
-          class="selection-counter"
-        >
-          0 geselecteerd
-        </div>
-
-        <select id="filterSort" class="select">
-          <option value="relevantie">Sorteren: relevantie</option>
-          <option value="score-desc">Hoogste score</option>
-          <option value="score-asc">Laagste score</option>
-          <option value="naam-asc">Naam A–Z</option>
-          <option value="naam-desc">Naam Z–A</option>
-        </select>
-      </div>
-
-      <!-- BERICHTEN (JS BEHEERT ZICHTBAARHEID) -->
-      <div
-        id="resultsMessage"
-        data-results-message
-        class="status-message"
-        style="display:none;"
-      ></div>
-
-      <!-- BEDRIJVENLIJST (GRID KOMT UIT CSS) -->
-      <div
-        id="companiesList"
-        data-companies-list
-        class="companies-grid"
-      ></div>
-
-      <!-- ACTIEKNOP -->
-      <div class="card">
-        <button
-          id="submitSelectionBtn"
-          class="button button-primary"
-          disabled
-        >
-          Verstuur aanvraag
+      <div class="form-group sm:col-span-1 flex items-end">
+        <button type="button" class="btn-primary w-full">
+          Filter toepassen
         </button>
       </div>
-
     </div>
+
+    <p class="text-[11px] text-slate-500 mt-2">
+      Gebruik dit om bedrijven in jouw regio te tonen.
+    </p>
   </div>
 
-  <!-- FOOTER -->
-  <footer class="page-footer">
-    © 2026 Irisje.nl
-  </footer>
+  <!-- TELLER -->
+  <div class="mb-2 text-sm text-slate-600">
+    <span id="selectedCount" data-selected-count>0 geselecteerd</span>
+  </div>
 
+  <!-- STATUS / FEEDBACK (JS BEHEERT INHOUD) -->
+  <div
+    id="resultsMessage"
+    data-results-message
+    class="text-sm text-slate-500 mb-4"
+    style="display:none;"
+  ></div>
+
+  <!-- (OPTIONEEL) STARTBEDRIJF -->
+  <div id="startCompanyBox" class="glass-card mb-4 hidden"></div>
+
+  <!-- BEDRIJVEN -->
+  <div
+    id="companiesList"
+    data-companies-list
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+  ></div>
+
+  <!-- ACTIEKNOP -->
+  <div class="mt-6">
+    <button
+      id="submitSelectionBtn"
+      class="btn-primary"
+      disabled
+    >
+      Aanvraag versturen naar geselecteerde bedrijven
+    </button>
+  </div>
+
+</section>
+</main>
+
+<footer class="footer-shell">
+  <div class="max-w-6xl mx-auto px-4 py-6 text-xs text-slate-400">
+    © 2026 Irisje.nl
+  </div>
+</footer>
+
+<!-- RESULTS LOGICA -->
+<script src="js/results.js?v=20260113-fix" defer></script>
 </body>
 </html>
