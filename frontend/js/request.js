@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-13 — companySlug naamfix
+// v2026-01-13 — sector verbergen bij companySlug
 
 (() => {
   const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -11,12 +11,16 @@
   const companyBlock = document.getElementById("companyBlock");
   const companyNameEl = document.getElementById("companyName");
   const genericTitle = document.getElementById("genericTitle");
+
+  const sectorBlock = document.getElementById("sectorBlock");
   const categorySelect = document.getElementById("categorySelect");
 
   const form = document.getElementById("step1Form");
   const err = document.getElementById("formError");
 
-  // 🔹 Bedrijf ophalen via slug
+  let fixedSector = null;
+
+  // 1️⃣ Bedrijf ophalen indien slug aanwezig
   if (companySlug) {
     fetch(`${API_COMPANIES}/${companySlug}`)
       .then(r => r.ok ? r.json() : null)
@@ -29,21 +33,20 @@
         companyBlock.classList.remove("hidden");
         genericTitle.classList.add("hidden");
 
-        if (company.category) {
-          categorySelect.value = company.category;
-          categorySelect.disabled = true;
-        }
+        // sector vastzetten + verbergen
+        fixedSector = company.category || null;
+        sectorBlock.classList.add("hidden");
       })
       .catch(() => {});
   }
 
-  // 🔹 Form submit
+  // 2️⃣ Form submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.add("hidden");
 
-    const sector = categorySelect.value;
     const city = document.getElementById("cityInput").value.trim();
+    const sector = fixedSector || categorySelect.value;
 
     if (!sector) {
       err.textContent = "Kies een sector.";
