@@ -1,106 +1,151 @@
-// backend/routes/publicRequests.js
+// frontend/js/request.js
+// v2026-01-13 — sector-afleiding definitief gefixt
 
-const express = require("express");
-const router = express.Router();
+(() => {
+  const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
+  const API_COMPANY_BY_SLUG = "https://irisje-backend.onrender.com/api/companies/slug";
 
-const PublicRequest = require("../models/request");
-const Company = require("../models/company");
+  const params = new URLSearchParams(window.location.search);
+  const companySlug = params.get("companySlug");
 
-/**
- * GET /api/publicRequests/:id
- * Haalt aanvraag + bijpassende bedrijven op
- */
-router.get("/:id", async (req, res) => {
-  try {
-    const request = await PublicRequest.findById(req.params.id);
-    if (!request) {
-      return res.status(404).json({ error: "Aanvraag niet gevonden" });
-    }
+  const form = document.getElementById("step1Form");
+  const err = document.getElementById("formError");
+  const submitBtn = document.getElementById("submitBtn");
 
-    let companies = [];
+  const companyBlock = document.getElementById("companyBlock");
+  const companyNameEl = document.getElementById("companyName");
+  const companyHint = document.getElementById("companyHint");
+  const genericTitle = document.getElementById("genericTitle");
 
-    // 1️⃣ Als aanvraag al verzonden is → vaste selectie
-    if (Array.isArray(request.companyIds) && request.companyIds.length > 0) {
-      companies = await Company.find({
-        _id: { $in: request.companyIds },
-        active: true
-      });
-    }
-    // 2️⃣ Nieuwe aanvraag → match op sector
-    else {
-      companies = await Company.find({
-        active: true,
-        categories: request.sector
-      }).limit(200); // veiligheidslimiet
-    }
+  const sectorBlock = document.getElementById("sectorBlock");
+  const categorySelect = document.getElementById("categorySelect");
 
-    res.json({ request, companies });
-  } catch (err) {
-    console.error("publicRequests GET error:", err);
-    res.status(500).json({ error: "Serverfout" });
+  const nameInput = document.getElementById("nameInput");
+  const emailInput = document.getElementById("emailInput");
+  const cityInput = document.getElementById("cityInput");
+  const messageInput = document.getElementById("messageInput");
+
+  let fixedSector = null;
+
+  const disableSubmit = (text) => {
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-60");
+    submitBtn.textContent = text;
+  };
+
+  const enableSubmit = () => {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("opacity-60");
+    submitBtn.textContent = "Volgende stap";
+  };
+
+  // sector altijd verborgen bij companySlug
+  if (companySlug && sectorBlock) {
+    sectorBlock.classList.add("hidden");
+    categorySelect.required = false;
+    categorySelect.disabled = true;
+    disableSubmit("Bedrijf laden…");
   }
-});
 
-/**
- * POST /api/publicRequests
- * Nieuwe aanvraag aanmaken
- */
-router.post("/", async (req, res) => {
-  try {
-    const { sector, city, companySlug, name, email, message } = req.body;
+  // helper: sector afleiden uit backend-company
+  const resolveSector = (company) => {
+    if (!company) return null;
+
+    // meest gebruikte varianten binnen Irisje
+    if (company.sector) return company.sector;
+    if (company.category) return company.category;
+    if (company.mainCategory) return company.mainCategory;
+
+    if (Array.isArray(company.categories) && company.categories.length > 0) {
+      return company.categories[0];
+    }
+
+    return null;
+  };
+
+  // bedrijf ophalen
+  if (companySlug) {
+    fetch(`${API_COMPANY_BY_SLUG}/${encodeURIComponent(companySlug)}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        const company = data?.company || data;
+
+        if (!company || !company.name) {
+          err.textContent = "Bedrijf niet gevonden.";
+          err.classList.remove("hidden");
+          return;
+        }
+
+        companyNameEl.textContent = company.name;
+        companyBlock.classList.remove("hidden");
+        genericTitle?.classList.add("hidden");
+
+        fixedSector = resolveSector(company);
+
+        if (!fixedSector) {
+          err.textContent =
+            "Kon de sector van dit bedrijf niet bepalen. Neem contact op met support.";
+          err.classList.remove("hidden");
+          return;
+        }
+
+        enableSubmit();
+      })
+      .catch(() => {
+        err.textContent = "Kon bedrijfsgegevens niet laden.";
+        err.classList.remove("hidden");
+      });
+  }
+
+  // submit
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    err.classList.add("hidden");
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const city = cityInput.value.trim();
+    const message = messageInput.value.trim();
+
+    const sector = companySlug ? fixedSector : categorySelect.value;
+
+    if (!name || !email || !city) {
+      err.textContent = "Vul je naam, e-mail en plaats/postcode in.";
+      err.classList.remove("hidden");
+      return;
+    }
 
     if (!sector) {
-      return res.status(400).json({ error: "Sector ontbreekt" });
+      err.textContent = "Sector ontbreekt. Probeer opnieuw.";
+      err.classList.remove("hidden");
+      return;
     }
 
-    const request = await PublicRequest.create({
-      sector,
-      city: city || "",
-      companySlug: companySlug || null,
-      name: name || "",
-      email: email || "",
-      message: message || "",
-      status: "draft",
-      companyIds: []
-    });
+    disableSubmit("Even bezig…");
 
-    res.json({ requestId: request._id });
-  } catch (err) {
-    console.error("publicRequests POST error:", err);
-    res.status(500).json({ error: "Serverfout" });
-  }
-});
+    try {
+      const res = await fetch(API_REQUESTS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sector,
+          city,
+          name,
+          email,
+          message,
+          companySlug
+        })
+      });
 
-/**
- * POST /api/publicRequests/:id/send
- * Aanvraag definitief verzenden
- */
-router.post("/:id/send", async (req, res) => {
-  try {
-    const { companyIds } = req.body;
+      const data = await res.json();
 
-    if (!Array.isArray(companyIds) || companyIds.length === 0) {
-      return res.status(400).json({ error: "Geen bedrijven geselecteerd" });
+      if (!res.ok || !data.requestId) throw new Error();
+
+      window.location.href = `/results.html?requestId=${data.requestId}`;
+    } catch {
+      err.textContent = "Aanvraag mislukt. Probeer het opnieuw.";
+      err.classList.remove("hidden");
+      enableSubmit();
     }
-
-    if (companyIds.length > 5) {
-      return res.status(400).json({ error: "Maximaal 5 bedrijven toegestaan" });
-    }
-
-    const request = await PublicRequest.findById(req.params.id);
-    if (!request) {
-      return res.status(404).json({ error: "Aanvraag niet gevonden" });
-    }
-
-    request.companyIds = companyIds;
-    request.status = "sent";
-    await request.save();
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("publicRequests SEND error:", err);
-    res.status(500).json({ error: "Serverfout" });
-  }
-});
-
-module.exports = router;
+  });
+})();
