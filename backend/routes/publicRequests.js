@@ -3,8 +3,8 @@
 const express = require("express");
 const router = express.Router();
 
-const PublicRequest = require("../models/Request");
-const Company = require("../models/Company");
+const PublicRequest = require("../models/request");
+const Company = require("../models/company");
 
 /**
  * GET /api/publicRequests/:id
