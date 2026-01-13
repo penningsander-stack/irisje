@@ -1,5 +1,5 @@
 // frontend/js/results.js
-/* v2026-01-14 STARTCOMPANY-SLUG-FIRST (DEFINITIEF) */
+/* v2026-01-14 STARTCOMPANY-RENDER-FIELD-FIX */
 
 (() => {
   "use strict";
@@ -30,15 +30,33 @@
     el.textContent = text;
   }
 
+  // >>> VEILIGE VELD-RESOLVERS <<<
+  function getName(c) {
+    return c.name || c.companyName || "Onbekend bedrijf";
+  }
+
+  function getCity(c) {
+    return c.city || c.place || "";
+  }
+
+  function getSlug(c) {
+    return c.slug || c.companySlug || "";
+  }
+
+  function getId(c) {
+    return String(c._id || c.id || c.companyId || "");
+  }
+
   function renderCompany(company, selected = false) {
-    const id = company._id || company.id || company.companyId;
-    const slug = company.slug || company.companySlug || "";
+    const id = getId(company);
+    const slug = getSlug(company);
+
     const card = document.createElement("div");
     card.className = "glass-card p-4 flex flex-col";
 
     card.innerHTML = `
-      <strong class="text-sm mb-1">${company.name}</strong>
-      <span class="text-xs text-slate-500 mb-2">${company.city || ""}</span>
+      <strong class="text-sm mb-1">${getName(company)}</strong>
+      <span class="text-xs text-slate-500 mb-2">${getCity(company)}</span>
       <span class="text-xs text-slate-500 mb-3">Score: ${company.score ?? 0}</span>
       <div class="mt-auto flex gap-2">
         <button class="btn-primary select-btn">
@@ -50,16 +68,15 @@
 
     const btn = card.querySelector(".select-btn");
 
-    if (selected && id) state.selectedIds.add(String(id));
+    if (selected && id) state.selectedIds.add(id);
 
     btn.addEventListener("click", () => {
-      const key = String(id);
-      if (state.selectedIds.has(key)) {
-        state.selectedIds.delete(key);
+      if (state.selectedIds.has(id)) {
+        state.selectedIds.delete(id);
         btn.textContent = "Selecteer";
       } else {
         if (state.selectedIds.size >= 5) return;
-        state.selectedIds.add(key);
+        state.selectedIds.add(id);
         btn.textContent = "Geselecteerd";
       }
       updateCounter();
@@ -83,29 +100,18 @@
     state.request = data.request || {};
     state.companies = Array.isArray(data.companies) ? data.companies : [];
 
-    // >>> DEFINITIEVE MATCH-LOGICA <<<
-    const startSlug = state.request.companySlug || state.request.startCompanySlug || "";
+    const startSlug = state.request.companySlug || "";
     const startId   = String(state.request.companyId || "");
 
-    let startCompany = null;
-
-    if (startSlug) {
-      startCompany = state.companies.find(c =>
-        (c.slug || c.companySlug || "") === startSlug
-      );
-    }
-
-    if (!startCompany && startId) {
-      startCompany = state.companies.find(c =>
-        String(c._id || c.id || c.companyId || "") === startId
-      );
-    }
+    let startCompany =
+      state.companies.find(c => getSlug(c) === startSlug) ||
+      state.companies.find(c => getId(c) === startId) ||
+      null;
 
     const others = startCompany
       ? state.companies.filter(c => c !== startCompany)
       : state.companies.slice();
 
-    // RENDER STARTBEDRIJF
     const startBox = qs("#startCompanyBox");
     if (startCompany && startBox) {
       startBox.classList.remove("hidden");
@@ -113,7 +119,6 @@
       startBox.appendChild(renderCompany(startCompany, true));
     }
 
-    // RENDER OVERIGE BEDRIJVEN
     const list = qs("#companiesList");
     if (list) {
       list.innerHTML = "";
@@ -122,7 +127,7 @@
 
     updateCounter();
     setMessage("");
-    console.log("STARTCOMPANY OK", { startSlug, startId, found: !!startCompany });
+    console.log("STARTCOMPANY RENDERED", getName(startCompany));
   }
 
   document.addEventListener("DOMContentLoaded", init);
