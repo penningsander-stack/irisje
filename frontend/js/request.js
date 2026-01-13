@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-13 — companySlug + sector verbergen (HTML-first) + bedrijfsnaam tonen
+// v2026-01-13 — race condition fixedSector FIX
 
 (() => {
   const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -25,7 +25,23 @@
   const cityInput = document.getElementById("cityInput");
   const messageInput = document.getElementById("messageInput");
 
-  // Sector is HTML-first hidden. Alleen tonen bij algemene aanvraag.
+  let fixedSector = null;
+  let companyLoaded = false;
+
+  // helper
+  const disableSubmit = (text) => {
+    submitBtn.disabled = true;
+    submitBtn.classList.add("opacity-60");
+    if (text) submitBtn.textContent = text;
+  };
+
+  const enableSubmit = (text = "Volgende stap") => {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove("opacity-60");
+    submitBtn.textContent = text;
+  };
+
+  // Sector UI
   const setSectorVisible = (visible) => {
     if (!sectorBlock || !categorySelect) return;
     if (visible) {
@@ -34,58 +50,67 @@
       categorySelect.disabled = false;
     } else {
       sectorBlock.classList.add("hidden");
-      categorySelect.required = false; // belangrijk: anders blokkeert HTML5 validation alsnog
+      categorySelect.required = false;
       categorySelect.disabled = true;
     }
   };
 
-  // State
-  let fixedSector = null;
-
-  // 1) Page mode
+  // MODE
   if (!companySlug) {
-    // Algemene aanvraag: sector tonen
+    // algemene aanvraag
     setSectorVisible(true);
   } else {
-    // Gerichte aanvraag: sector nooit tonen
+    // gerichte aanvraag
     setSectorVisible(false);
+    disableSubmit("Bedrijf laden…");
 
-    // Bedrijf ophalen voor naam + sector vastzetten
     fetch(`${API_COMPANY_BY_SLUG}/${encodeURIComponent(companySlug)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        // ondersteuning voor beide mogelijke shapes: {company:{...}} of direct company object
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
         const company = data?.company || data;
+        companyLoaded = true;
 
         if (!company || !company.name) {
-          // slug ongeldig: terug naar algemene aanvraag-UX (maar laat user verder gaan)
-          companyHint.textContent = "Bedrijf niet gevonden. Je kunt wel een algemene aanvraag doen.";
+          companyHint.textContent =
+            "Bedrijf niet gevonden. Je kunt wel een algemene aanvraag doen.";
           companyHint.classList.remove("hidden");
           companyBlock.classList.remove("hidden");
+          enableSubmit();
           return;
         }
 
         companyNameEl.textContent = company.name;
         companyBlock.classList.remove("hidden");
-        if (genericTitle) genericTitle.classList.add("hidden");
+        genericTitle?.classList.add("hidden");
 
-        // sector van bedrijf vastzetten voor de request
         fixedSector = company.category || company.sector || null;
+
+        if (!fixedSector) {
+          err.textContent =
+            "Kon de sector van dit bedrijf niet bepalen. Probeer het later opnieuw.";
+          err.classList.remove("hidden");
+          return;
+        }
+
+        enableSubmit();
       })
       .catch(() => {
-        // network error: laat user alsnog doorgaan (zonder naam)
-        companyHint.textContent = "Kon bedrijfsgegevens niet laden. Je kunt wel doorgaan met je aanvraag.";
-        companyHint.classList.remove("hidden");
-        companyBlock.classList.remove("hidden");
+        companyLoaded = true;
+        err.textContent =
+          "Kon bedrijfsgegevens niet laden. Probeer het opnieuw.";
+        err.classList.remove("hidden");
       });
   }
 
-  // 2) Submit
+  // SUBMIT
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.add("hidden");
 
-    // Basis validatie (simpel en duidelijk)
+    if (companySlug && !companyLoaded) {
+      return; // veiligheid
+    }
+
     const name = nameInput.value.trim();
     const email = emailInput.value.trim();
     const city = cityInput.value.trim();
@@ -100,14 +125,12 @@
     }
 
     if (!sector) {
-      err.textContent = "Kies een sector.";
+      err.textContent = "Er is iets misgegaan met de sector. Probeer opnieuw.";
       err.classList.remove("hidden");
       return;
     }
 
-    submitBtn.disabled = true;
-    submitBtn.classList.add("opacity-60");
-    submitBtn.textContent = "Even bezig…";
+    disableSubmit("Even bezig…");
 
     try {
       const res = await fetch(API_REQUESTS, {
@@ -116,7 +139,6 @@
         body: JSON.stringify({
           sector,
           city,
-          // deze velden slaan we nog niet op (optioneel later), maar sturen alvast mee
           name,
           email,
           message,
@@ -127,17 +149,14 @@
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.requestId) {
-        throw new Error(data?.error || "Request failed");
+        throw new Error();
       }
 
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch {
       err.textContent = "Aanvraag mislukt. Probeer het opnieuw.";
       err.classList.remove("hidden");
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("opacity-60");
-      submitBtn.textContent = "Volgende stap";
+      enableSubmit();
     }
   });
 })();
