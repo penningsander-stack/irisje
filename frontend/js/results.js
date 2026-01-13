@@ -1,195 +1,148 @@
 // frontend/js/results.js
-// v2026-01-13d — FIX: robuuste company-bron + zichtbare results
+// v2026-01-13 — definitieve rendering + filter fallback
 
-(function () {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
+(() => {
+  const API = "https://irisje-backend.onrender.com/api/publicRequests";
 
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
 
-  const cityInput = document.getElementById("cityInput");
-  const applyCityBtn = document.getElementById("applyCityBtn");
-  const cityHint = document.getElementById("cityHint");
+  const listEl = document.getElementById("companyList");
+  const countEl = document.getElementById("selectedCount");
+  const hintEl = document.getElementById("filterHint");
+  const emptyEl = document.getElementById("emptyState");
 
-  const companiesList = document.getElementById("companiesList");
-  const selectionCounter = document.getElementById("selectionCounter");
-  const selectionHint = document.getElementById("selectionHint");
-  const submitBtn = document.getElementById("submitSelectionBtn");
-  const startCompanyBox = document.getElementById("startCompanyBox");
-  const resultsStatus = document.getElementById("resultsStatus");
+  const cityInput = document.getElementById("cityFilter");
+  const filterBtn = document.getElementById("applyFilterBtn");
+  const sendBtn = document.getElementById("sendRequestBtn");
 
   let allCompanies = [];
+  let visibleCompanies = [];
   let selectedIds = new Set();
-  let startCompanyId = null;
-  let appliedCity = "";
-  let isSending = false;
 
-  init();
+  if (!requestId) return;
 
-  async function init() {
-    if (!requestId) {
-      resultsStatus.textContent = "Aanvraag-ID ontbreekt.";
-      submitBtn.disabled = true;
+  fetch(`${API}/${requestId}`)
+    .then(r => r.json())
+    .then(data => {
+      allCompanies = Array.isArray(data.companies) ? data.companies : [];
+      visibleCompanies = [...allCompanies];
+      render();
+    })
+    .catch(() => {
+      emptyEl.textContent = "Kon bedrijven niet laden.";
+      emptyEl.classList.remove("hidden");
+    });
+
+  function normalize(v) {
+    return (v || "").toString().toLowerCase();
+  }
+
+  function applyCityFilter() {
+    const q = normalize(cityInput.value);
+    hintEl.classList.add("hidden");
+
+    if (!q) {
+      visibleCompanies = [...allCompanies];
+      render();
       return;
     }
 
-    resultsStatus.textContent = "Bedrijven worden geladen…";
-    await loadRequestAndCompanies();
-    renderCompanies();
-    updateCounter();
-  }
+    const matched = allCompanies.filter(c =>
+      normalize(c.city).includes(q) ||
+      normalize(c.place).includes(q) ||
+      normalize(c.location).includes(q)
+    );
 
-  async function loadRequestAndCompanies() {
-    try {
-      const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`);
-      const data = await res.json();
-
-      if (!res.ok || !data || !data.request) {
-        resultsStatus.textContent = "Aanvraag niet gevonden.";
-        return;
-      }
-
-      // 🔴 HIER ZAT HET PROBLEEM
-      allCompanies =
-        data.companies ||
-        data.matches ||
-        data.results ||
-        data.availableCompanies ||
-        [];
-
-      if (!Array.isArray(allCompanies)) allCompanies = [];
-
-      if (data.request.company && data.request.company._id) {
-        startCompanyId = data.request.company._id;
-        selectedIds.add(startCompanyId);
-        renderStartCompany(data.request.company);
-      }
-
-      resultsStatus.textContent = allCompanies.length
-        ? ""
-        : "Geen bedrijven beschikbaar voor deze aanvraag.";
-    } catch (e) {
-      resultsStatus.textContent = "Fout bij laden van bedrijven.";
-    }
-  }
-
-  function renderStartCompany(company) {
-    startCompanyBox.classList.remove("hidden");
-    startCompanyBox.innerHTML = `
-      <div class="text-[11px] text-slate-500 mb-1">Startbedrijf (vast geselecteerd)</div>
-      <div class="font-semibold">${escapeHtml(company.name || "")}</div>
-      <div class="text-xs text-slate-500">${escapeHtml(company.city || "")}</div>
-    `;
-  }
-
-  function renderCompanies() {
-    companiesList.innerHTML = "";
-
-    let list = allCompanies;
-
-    if (appliedCity) {
-      const filtered = allCompanies.filter(c =>
-        (c.city || "").toLowerCase().includes(appliedCity)
-      );
-
-      if (filtered.length === 0) {
-        resultsStatus.textContent =
-          "Geen exacte match op plaats. We tonen alle beschikbare bedrijven.";
-      } else {
-        list = filtered;
-        resultsStatus.textContent = "";
-      }
+    if (matched.length === 0) {
+      // Fallback: toon alles
+      visibleCompanies = [...allCompanies];
+      hintEl.textContent = "Geen exacte match op plaats. We tonen alle beschikbare bedrijven.";
+      hintEl.classList.remove("hidden");
+    } else {
+      visibleCompanies = matched;
     }
 
-    list.forEach(c => {
-      if (!c || !c._id) return;
-      if (c._id === startCompanyId) return;
+    render();
+  }
 
-      const checked = selectedIds.has(c._id);
-      const disabled = !checked && selectedIds.size >= 5;
+  filterBtn?.addEventListener("click", applyCityFilter);
 
+  function render() {
+    listEl.innerHTML = "";
+    emptyEl.classList.add("hidden");
+
+    if (visibleCompanies.length === 0) {
+      emptyEl.textContent = "Geen bedrijven beschikbaar voor deze aanvraag.";
+      emptyEl.classList.remove("hidden");
+      updateCount();
+      return;
+    }
+
+    visibleCompanies.forEach(company => {
       const card = document.createElement("div");
-      card.className = "result-card";
+      card.className = "company-card";
+
+      const checked = selectedIds.has(company._id);
 
       card.innerHTML = `
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <div class="result-title">${escapeHtml(c.name || "")}</div>
-            <div class="result-location">${escapeHtml(c.city || "")}</div>
+        <label class="company-row">
+          <input type="checkbox" ${checked ? "checked" : ""}>
+          <div class="company-info">
+            <strong>${company.name}</strong>
+            ${company.city ? `<div class="muted">${company.city}</div>` : ""}
           </div>
-          <input type="checkbox" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}/>
-        </div>
+        </label>
       `;
 
-      card.querySelector("input").addEventListener("change", e =>
-        toggleSelect(c._id, e.target.checked)
-      );
+      const checkbox = card.querySelector("input");
+      checkbox.addEventListener("change", () => {
+        if (checkbox.checked) {
+          if (selectedIds.size >= 5) {
+            checkbox.checked = false;
+            return;
+          }
+          selectedIds.add(company._id);
+        } else {
+          selectedIds.delete(company._id);
+        }
+        updateCount();
+      });
 
-      companiesList.appendChild(card);
+      listEl.appendChild(card);
     });
+
+    updateCount();
   }
 
-  function toggleSelect(id, checked) {
-    if (checked && selectedIds.size >= 5) return;
-    checked ? selectedIds.add(id) : selectedIds.delete(id);
-    updateCounter();
-    renderCompanies();
+  function updateCount() {
+    countEl.textContent = `${selectedIds.size} van 5 geselecteerd`;
+    sendBtn.disabled = selectedIds.size === 0;
   }
 
-  function updateCounter() {
-    selectionCounter.textContent = `${selectedIds.size} van 5 geselecteerd`;
-    selectionHint.textContent =
-      selectedIds.size >= 5
-        ? "Maximum bereikt"
-        : `Je kunt nog ${5 - selectedIds.size} kiezen`;
-    submitBtn.disabled = selectedIds.size === 0 || isSending;
-  }
+  sendBtn?.addEventListener("click", async () => {
+    if (selectedIds.size === 0) return;
 
-  applyCityBtn.addEventListener("click", () => {
-    appliedCity = cityInput.value.trim().toLowerCase();
-    cityHint.textContent = appliedCity
-      ? `Gefilterd op: ${cityInput.value}`
-      : "Gebruik dit om bedrijven in jouw regio te tonen.";
-    renderCompanies();
-  });
-
-  submitBtn.addEventListener("click", async () => {
-    if (isSending || selectedIds.size === 0) return;
-
-    isSending = true;
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Aanvraag wordt verstuurd…";
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Bezig…";
 
     try {
-      const res = await fetch(
-        `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}/send`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            companyIds: Array.from(selectedIds),
-            city: appliedCity || "Onbekend"
-          })
-        }
-      );
+      const res = await fetch(`${API}/${requestId}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyIds: Array.from(selectedIds),
+          city: cityInput?.value || ""
+        })
+      });
 
       if (!res.ok) throw new Error();
-      window.location.href = "/success.html";
+
+      window.location.href = `/success.html?requestId=${requestId}`;
     } catch {
-      isSending = false;
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Aanvraag versturen naar geselecteerde bedrijven";
-      updateCounter();
-      alert("Versturen mislukt. Probeer het opnieuw.");
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Aanvraag versturen";
+      alert("Verzenden mislukt. Probeer opnieuw.");
     }
   });
-
-  function escapeHtml(v) {
-    return String(v)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-  }
 })();
