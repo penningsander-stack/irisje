@@ -19,19 +19,47 @@ router.get("/:id", async (req, res) => {
 
     let companies = [];
 
-    // 1️⃣ Als aanvraag al verzonden is → vaste selectie
+    // 1️⃣ Aanvraag is al verzonden → vaste selectie
     if (Array.isArray(request.companyIds) && request.companyIds.length > 0) {
       companies = await Company.find({
         _id: { $in: request.companyIds },
         active: true
       });
     }
-    // 2️⃣ Nieuwe aanvraag → match op sector
+
+    // 2️⃣ Nieuwe aanvraag → match op sector (robuust)
     else {
-      companies = await Company.find({
-        active: true,
-        categories: request.sector
-      }).limit(200); // veiligheidslimiet
+      const sectorRaw = (request.sector || "").trim();
+      const sector = sectorRaw.toLowerCase();
+
+      if (sector) {
+        companies = await Company.find({
+          active: true,
+          $or: [
+            // categories als array
+            {
+              categories: {
+                $elemMatch: {
+                  $regex: `^${sector}$`,
+                  $options: "i"
+                }
+              }
+            },
+            // categories als string
+            {
+              categories: {
+                $regex: `^${sector}$`,
+                $options: "i"
+              }
+            }
+          ]
+        }).limit(200);
+      }
+
+      // 3️⃣ Fallback: geen sector-match → toon alle actieve bedrijven (beperkt)
+      if (!companies || companies.length === 0) {
+        companies = await Company.find({ active: true }).limit(200);
+      }
     }
 
     res.json({ request, companies });
@@ -54,7 +82,7 @@ router.post("/", async (req, res) => {
     }
 
     const request = await PublicRequest.create({
-      sector,
+      sector: sector.trim(),
       city: city || "",
       companySlug: companySlug || null,
       name: name || "",
