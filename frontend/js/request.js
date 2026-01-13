@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-13 — companySlug support hersteld
+// v2026-01-13 — companySlug naamfix
 
 (() => {
   const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -16,12 +16,14 @@
   const form = document.getElementById("step1Form");
   const err = document.getElementById("formError");
 
-  // 1️⃣ Bedrijf ophalen indien slug aanwezig
+  // 🔹 Bedrijf ophalen via slug
   if (companySlug) {
     fetch(`${API_COMPANIES}/${companySlug}`)
       .then(r => r.ok ? r.json() : null)
-      .then(company => {
-        if (!company) return;
+      .then(data => {
+        if (!data || !data.company) return;
+
+        const company = data.company;
 
         companyNameEl.textContent = company.name;
         companyBlock.classList.remove("hidden");
@@ -35,7 +37,7 @@
       .catch(() => {});
   }
 
-  // 2️⃣ Form submit
+  // 🔹 Form submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.add("hidden");
