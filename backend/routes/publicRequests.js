@@ -8,7 +8,7 @@ const Company = require("../models/company");
 
 /**
  * GET /api/publicRequests/:id
- * Haalt aanvraag + gekoppelde bedrijven op
+ * Haalt aanvraag + bijpassende bedrijven op
  */
 router.get("/:id", async (req, res) => {
   try {
@@ -19,15 +19,24 @@ router.get("/:id", async (req, res) => {
 
     let companies = [];
 
-    // Als aanvraag al verzonden is → gekoppelde bedrijven ophalen
+    // 1️⃣ Als aanvraag al verzonden is → vaste selectie
     if (Array.isArray(request.companyIds) && request.companyIds.length > 0) {
       companies = await Company.find({
-        _id: { $in: request.companyIds }
+        _id: { $in: request.companyIds },
+        active: true
       });
+    }
+    // 2️⃣ Nieuwe aanvraag → match op sector
+    else {
+      companies = await Company.find({
+        active: true,
+        categories: request.sector
+      }).limit(200); // veiligheidslimiet
     }
 
     res.json({ request, companies });
   } catch (err) {
+    console.error("publicRequests GET error:", err);
     res.status(500).json({ error: "Serverfout" });
   }
 });
@@ -38,7 +47,7 @@ router.get("/:id", async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { sector, city, companySlug } = req.body;
+    const { sector, city, companySlug, name, email, message } = req.body;
 
     if (!sector) {
       return res.status(400).json({ error: "Sector ontbreekt" });
@@ -48,19 +57,23 @@ router.post("/", async (req, res) => {
       sector,
       city: city || "",
       companySlug: companySlug || null,
+      name: name || "",
+      email: email || "",
+      message: message || "",
       status: "draft",
       companyIds: []
     });
 
     res.json({ requestId: request._id });
   } catch (err) {
+    console.error("publicRequests POST error:", err);
     res.status(500).json({ error: "Serverfout" });
   }
 });
 
 /**
  * POST /api/publicRequests/:id/send
- * Aanvraag definitief verzenden naar geselecteerde bedrijven
+ * Aanvraag definitief verzenden
  */
 router.post("/:id/send", async (req, res) => {
   try {
@@ -85,6 +98,7 @@ router.post("/:id/send", async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
+    console.error("publicRequests SEND error:", err);
     res.status(500).json({ error: "Serverfout" });
   }
 });
