@@ -42,8 +42,12 @@ router.get("/:id", async (req, res) => {
       companies = await Company.find({ sector: request.sector }).lean();
     }
 
-    if (!companies || companies.length === 0) {
-      companies = await Company.find({}).lean();
+    // 2. Geen fallback naar andere sectoren
+// Als er geen matches zijn, sturen we een lege lijst terug
+if (!companies || companies.length === 0) {
+  companies = [];
+}
+
     }
 
     res.json({ request, companies });
