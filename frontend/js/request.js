@@ -1,17 +1,46 @@
 // frontend/js/request.js
-// v2026-01-12 — EXACTE MATCH MET backend/routes/publicRequests.js
+// v2026-01-13 — companySlug support hersteld
 
 (() => {
-  const API = "https://irisje-backend.onrender.com/api/publicRequests";
+  const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
+  const API_COMPANIES = "https://irisje-backend.onrender.com/api/companies/slug";
+
+  const params = new URLSearchParams(window.location.search);
+  const companySlug = params.get("companySlug");
+
+  const companyBlock = document.getElementById("companyBlock");
+  const companyNameEl = document.getElementById("companyName");
+  const genericTitle = document.getElementById("genericTitle");
+  const categorySelect = document.getElementById("categorySelect");
 
   const form = document.getElementById("step1Form");
   const err = document.getElementById("formError");
 
+  // 1️⃣ Bedrijf ophalen indien slug aanwezig
+  if (companySlug) {
+    fetch(`${API_COMPANIES}/${companySlug}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(company => {
+        if (!company) return;
+
+        companyNameEl.textContent = company.name;
+        companyBlock.classList.remove("hidden");
+        genericTitle.classList.add("hidden");
+
+        if (company.category) {
+          categorySelect.value = company.category;
+          categorySelect.disabled = true;
+        }
+      })
+      .catch(() => {});
+  }
+
+  // 2️⃣ Form submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.add("hidden");
 
-    const sector = document.getElementById("categorySelect").value;
+    const sector = categorySelect.value;
     const city = document.getElementById("cityInput").value.trim();
 
     if (!sector) {
@@ -21,12 +50,13 @@
     }
 
     try {
-      const res = await fetch(API, {
+      const res = await fetch(API_REQUESTS, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sector,        // ⬅️ exact wat backend verwacht
-          city: city || ""
+          sector,
+          city: city || "",
+          companySlug: companySlug || null
         }),
       });
 
@@ -37,7 +67,7 @@
       }
 
       window.location.href = `/results.html?requestId=${data.requestId}`;
-    } catch (e) {
+    } catch {
       err.textContent = "Aanvraag mislukt. Probeer het opnieuw.";
       err.classList.remove("hidden");
     }

@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="/style.css?v=20260112" />
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260112" />
+  <link rel="stylesheet" href="/style.css?v=20260113" />
+  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260113" />
 </head>
 
 <body class="irisje-body flex flex-col min-h-screen">
@@ -28,7 +28,16 @@
 
 <main class="flex-1">
   <section class="max-w-xl mx-auto px-4 pt-10 pb-16">
-    <h1 class="text-xl font-semibold mb-6">Start je aanvraag</h1>
+
+    <!-- Bedrijfstitel -->
+    <div id="companyBlock" class="mb-6 hidden">
+      <p class="text-sm text-slate-500">Je doet een aanvraag bij</p>
+      <h1 id="companyName" class="text-xl font-semibold"></h1>
+    </div>
+
+    <h2 id="genericTitle" class="text-xl font-semibold mb-6">
+      Start je aanvraag
+    </h2>
 
     <form id="step1Form" class="grid gap-3">
 
@@ -72,6 +81,6 @@
   </section>
 </main>
 
-<script src="js/request.js?v=20260112"></script>
+<script src="js/request.js?v=20260113"></script>
 </body>
 </html>
