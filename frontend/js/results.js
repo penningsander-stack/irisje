@@ -1,26 +1,26 @@
 // frontend/js/results.js
-// v2026-01-13 — definitieve rendering + filter fallback
+// v2026-01-13 — DOM-safe + filter fallback
 
 (() => {
   const API = "https://irisje-backend.onrender.com/api/publicRequests";
 
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
+  if (!requestId) return;
 
+  // SAFE DOM LOOKUPS
   const listEl = document.getElementById("companyList");
-  const countEl = document.getElementById("selectedCount");
+  const countEl = document.getElementById("selectedCount") 
+               || document.getElementById("selectedCounter");
   const hintEl = document.getElementById("filterHint");
   const emptyEl = document.getElementById("emptyState");
-
   const cityInput = document.getElementById("cityFilter");
   const filterBtn = document.getElementById("applyFilterBtn");
   const sendBtn = document.getElementById("sendRequestBtn");
 
   let allCompanies = [];
   let visibleCompanies = [];
-  let selectedIds = new Set();
-
-  if (!requestId) return;
+  const selectedIds = new Set();
 
   fetch(`${API}/${requestId}`)
     .then(r => r.json())
@@ -30,17 +30,19 @@
       render();
     })
     .catch(() => {
-      emptyEl.textContent = "Kon bedrijven niet laden.";
-      emptyEl.classList.remove("hidden");
+      if (emptyEl) {
+        emptyEl.textContent = "Kon bedrijven niet laden.";
+        emptyEl.classList.remove("hidden");
+      }
     });
 
-  function normalize(v) {
-    return (v || "").toString().toLowerCase();
-  }
+  const norm = v => (v || "").toString().toLowerCase();
 
   function applyCityFilter() {
-    const q = normalize(cityInput.value);
-    hintEl.classList.add("hidden");
+    if (!cityInput) return;
+
+    const q = norm(cityInput.value);
+    if (hintEl) hintEl.classList.add("hidden");
 
     if (!q) {
       visibleCompanies = [...allCompanies];
@@ -49,16 +51,18 @@
     }
 
     const matched = allCompanies.filter(c =>
-      normalize(c.city).includes(q) ||
-      normalize(c.place).includes(q) ||
-      normalize(c.location).includes(q)
+      norm(c.city).includes(q) ||
+      norm(c.place).includes(q) ||
+      norm(c.location).includes(q)
     );
 
     if (matched.length === 0) {
-      // Fallback: toon alles
       visibleCompanies = [...allCompanies];
-      hintEl.textContent = "Geen exacte match op plaats. We tonen alle beschikbare bedrijven.";
-      hintEl.classList.remove("hidden");
+      if (hintEl) {
+        hintEl.textContent =
+          "Geen exacte match op plaats. We tonen alle beschikbare bedrijven.";
+        hintEl.classList.remove("hidden");
+      }
     } else {
       visibleCompanies = matched;
     }
@@ -69,12 +73,16 @@
   filterBtn?.addEventListener("click", applyCityFilter);
 
   function render() {
+    if (!listEl) return;
+
     listEl.innerHTML = "";
-    emptyEl.classList.add("hidden");
+    emptyEl?.classList.add("hidden");
 
     if (visibleCompanies.length === 0) {
-      emptyEl.textContent = "Geen bedrijven beschikbaar voor deze aanvraag.";
-      emptyEl.classList.remove("hidden");
+      if (emptyEl) {
+        emptyEl.textContent = "Geen bedrijven beschikbaar voor deze aanvraag.";
+        emptyEl.classList.remove("hidden");
+      }
       updateCount();
       return;
     }
@@ -116,8 +124,12 @@
   }
 
   function updateCount() {
-    countEl.textContent = `${selectedIds.size} van 5 geselecteerd`;
-    sendBtn.disabled = selectedIds.size === 0;
+    if (countEl) {
+      countEl.textContent = `${selectedIds.size} van 5 geselecteerd`;
+    }
+    if (sendBtn) {
+      sendBtn.disabled = selectedIds.size === 0;
+    }
   }
 
   sendBtn?.addEventListener("click", async () => {
