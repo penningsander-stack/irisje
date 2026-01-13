@@ -3,131 +3,64 @@
 const express = require("express");
 const router = express.Router();
 
-const PublicRequest = require("../models/request");
-const Company = require("../models/company");
+const PublicRequest = require("../models/Request");
+const Company = require("../models/Company");
 
-/**
- * GET /api/publicRequests/:id
- * Haalt aanvraag + bijpassende bedrijven op
- */
+// GET /api/publicRequests/:id
 router.get("/:id", async (req, res) => {
   try {
-    const request = await PublicRequest.findById(req.params.id);
+    const request = await PublicRequest.findById(req.params.id).lean();
     if (!request) {
-      return res.status(404).json({ error: "Aanvraag niet gevonden" });
+      return res.status(404).json({ error: "Request not found" });
     }
 
-    let companies = [];
+    // Bestaande matchinglogica (zoals je die al had)
+    const companies = await Company.find({
+      sector: request.sector,
+      city: request.city
+    }).lean();
 
-    // 1️⃣ Aanvraag is al verzonden → vaste selectie
-    if (Array.isArray(request.companyIds) && request.companyIds.length > 0) {
-      companies = await Company.find({
-        _id: { $in: request.companyIds },
-        active: true
-      });
+    let startCompany = null;
+
+    // 1️⃣ Probeer startbedrijf via companyId
+    if (request.companyId) {
+      startCompany = companies.find(
+        c => String(c._id) === String(request.companyId)
+      );
     }
 
-    // 2️⃣ Nieuwe aanvraag → match op sector (robuust)
-    else {
-      const sectorRaw = (request.sector || "").trim();
-      const sector = sectorRaw.toLowerCase();
-
-      if (sector) {
-        companies = await Company.find({
-          active: true,
-          $or: [
-            // categories als array
-            {
-              categories: {
-                $elemMatch: {
-                  $regex: `^${sector}$`,
-                  $options: "i"
-                }
-              }
-            },
-            // categories als string
-            {
-              categories: {
-                $regex: `^${sector}$`,
-                $options: "i"
-              }
-            }
-          ]
-        }).limit(200);
-      }
-
-      // 3️⃣ Fallback: geen sector-match → toon alle actieve bedrijven (beperkt)
-      if (!companies || companies.length === 0) {
-        companies = await Company.find({ active: true }).limit(200);
-      }
+    // 2️⃣ Fallback: via slug
+    if (!startCompany && request.companySlug) {
+      startCompany = companies.find(
+        c => c.slug === request.companySlug
+      );
     }
 
-    res.json({ request, companies });
-  } catch (err) {
-    console.error("publicRequests GET error:", err);
-    res.status(500).json({ error: "Serverfout" });
-  }
-});
-
-/**
- * POST /api/publicRequests
- * Nieuwe aanvraag aanmaken
- */
-router.post("/", async (req, res) => {
-  try {
-    const { sector, city, companySlug, name, email, message } = req.body;
-
-    if (!sector) {
-      return res.status(400).json({ error: "Sector ontbreekt" });
+    // 3️⃣ Als nog niet gevonden: expliciet ophalen uit DB
+    if (!startCompany && request.companyId) {
+      startCompany = await Company.findById(request.companyId).lean();
     }
 
-    const request = await PublicRequest.create({
-      sector: sector.trim(),
-      city: city || "",
-      companySlug: companySlug || null,
-      name: name || "",
-      email: email || "",
-      message: message || "",
-      status: "draft",
-      companyIds: []
+    // 4️⃣ Startbedrijf bovenaan zetten en duplicaat verwijderen
+    let finalCompanies = companies;
+    if (startCompany) {
+      finalCompanies = [
+        startCompany,
+        ...companies.filter(c => String(c._id) !== String(startCompany._id))
+      ];
+    }
+
+    return res.json({
+      request: {
+        ...request,
+        startCompany: startCompany || null
+      },
+      companies: finalCompanies
     });
 
-    res.json({ requestId: request._id });
   } catch (err) {
-    console.error("publicRequests POST error:", err);
-    res.status(500).json({ error: "Serverfout" });
-  }
-});
-
-/**
- * POST /api/publicRequests/:id/send
- * Aanvraag definitief verzenden
- */
-router.post("/:id/send", async (req, res) => {
-  try {
-    const { companyIds } = req.body;
-
-    if (!Array.isArray(companyIds) || companyIds.length === 0) {
-      return res.status(400).json({ error: "Geen bedrijven geselecteerd" });
-    }
-
-    if (companyIds.length > 5) {
-      return res.status(400).json({ error: "Maximaal 5 bedrijven toegestaan" });
-    }
-
-    const request = await PublicRequest.findById(req.params.id);
-    if (!request) {
-      return res.status(404).json({ error: "Aanvraag niet gevonden" });
-    }
-
-    request.companyIds = companyIds;
-    request.status = "sent";
-    await request.save();
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("publicRequests SEND error:", err);
-    res.status(500).json({ error: "Serverfout" });
+    console.error("publicRequests error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
