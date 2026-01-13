@@ -1,5 +1,5 @@
 // frontend/js/results.js
-/* v2026-01-13 STARTCOMPANY-ID-MATCH */
+/* v2026-01-14 STARTCOMPANY-SLUG-FIRST (DEFINITIEF) */
 
 (() => {
   "use strict";
@@ -23,7 +23,7 @@
     if (el) el.textContent = `${state.selectedIds.size} geselecteerd`;
   }
 
-  function renderMessage(text = "") {
+  function setMessage(text = "") {
     const el = qs("#resultsMessage");
     if (!el) return;
     el.style.display = text ? "" : "none";
@@ -31,7 +31,8 @@
   }
 
   function renderCompany(company, selected = false) {
-    const id = company._id;
+    const id = company._id || company.id || company.companyId;
+    const slug = company.slug || company.companySlug || "";
     const card = document.createElement("div");
     card.className = "glass-card p-4 flex flex-col";
 
@@ -43,23 +44,22 @@
         <button class="btn-primary select-btn">
           ${selected ? "Geselecteerd" : "Selecteer"}
         </button>
-        <a href="company.html?slug=${company.slug}" class="btn-secondary">Bekijk</a>
+        ${slug ? `<a href="company.html?slug=${encodeURIComponent(slug)}" class="btn-secondary">Bekijk</a>` : ``}
       </div>
     `;
 
     const btn = card.querySelector(".select-btn");
 
-    if (selected) {
-      state.selectedIds.add(id);
-    }
+    if (selected && id) state.selectedIds.add(String(id));
 
     btn.addEventListener("click", () => {
-      if (state.selectedIds.has(id)) {
-        state.selectedIds.delete(id);
+      const key = String(id);
+      if (state.selectedIds.has(key)) {
+        state.selectedIds.delete(key);
         btn.textContent = "Selecteer";
       } else {
         if (state.selectedIds.size >= 5) return;
-        state.selectedIds.add(id);
+        state.selectedIds.add(key);
         btn.textContent = "Geselecteerd";
       }
       updateCounter();
@@ -71,24 +71,41 @@
   async function init() {
     state.requestId = getRequestId();
     if (!state.requestId) {
-      renderMessage("Aanvraag niet gevonden.");
+      setMessage("Aanvraag niet gevonden.");
       return;
     }
 
-    renderMessage("Bedrijven laden…");
+    setMessage("Bedrijven laden…");
 
     const res = await fetch(`${API_BASE}/api/publicRequests/${state.requestId}`);
     const data = await res.json();
 
-    state.request = data.request;
-    state.companies = data.companies || [];
+    state.request = data.request || {};
+    state.companies = Array.isArray(data.companies) ? data.companies : [];
 
-    const startCompanyId = state.request.companyId;
+    // >>> DEFINITIEVE MATCH-LOGICA <<<
+    const startSlug = state.request.companySlug || state.request.startCompanySlug || "";
+    const startId   = String(state.request.companyId || "");
 
-    const startCompany = state.companies.find(c => c._id === startCompanyId);
-    const otherCompanies = state.companies.filter(c => c._id !== startCompanyId);
+    let startCompany = null;
 
-    // STARTBEDRIJF
+    if (startSlug) {
+      startCompany = state.companies.find(c =>
+        (c.slug || c.companySlug || "") === startSlug
+      );
+    }
+
+    if (!startCompany && startId) {
+      startCompany = state.companies.find(c =>
+        String(c._id || c.id || c.companyId || "") === startId
+      );
+    }
+
+    const others = startCompany
+      ? state.companies.filter(c => c !== startCompany)
+      : state.companies.slice();
+
+    // RENDER STARTBEDRIJF
     const startBox = qs("#startCompanyBox");
     if (startCompany && startBox) {
       startBox.classList.remove("hidden");
@@ -96,13 +113,16 @@
       startBox.appendChild(renderCompany(startCompany, true));
     }
 
-    // OVERIGE BEDRIJVEN
+    // RENDER OVERIGE BEDRIJVEN
     const list = qs("#companiesList");
-    list.innerHTML = "";
-    otherCompanies.forEach(c => list.appendChild(renderCompany(c)));
+    if (list) {
+      list.innerHTML = "";
+      others.forEach(c => list.appendChild(renderCompany(c)));
+    }
 
     updateCounter();
-    renderMessage("");
+    setMessage("");
+    console.log("STARTCOMPANY OK", { startSlug, startId, found: !!startCompany });
   }
 
   document.addEventListener("DOMContentLoaded", init);
