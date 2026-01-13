@@ -6,72 +6,45 @@
   <title>Kies bedrijven voor je aanvraag – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- bestaande styling -->
-  <link rel="stylesheet" href="/frontend/css/style.css" />
+  <!-- Correcte paden voor jouw frontend-structuur -->
+  <link rel="stylesheet" href="css/style.css?v=20260113a" />
 
-  <!-- version bump om cache te breken -->
-  <script defer src="/frontend/js/results.js?v=20260113-stable"></script>
+  <!-- JS moet laden vanuit frontend/js/ (niet /frontend/js/) -->
+  <script defer src="js/results.js?v=20260113a"></script>
 </head>
 <body>
 
-  <!-- HEADER (bestaand of eenvoudig) -->
   <header class="site-header">
     <div class="container">
       <a href="/" class="logo">Irisje.nl</a>
     </div>
   </header>
 
-  <!-- MAIN -->
   <main class="container">
 
     <section class="results-intro">
       <h1>Kies bedrijven voor je aanvraag</h1>
       <p>
-        Selecteer maximaal <strong>5 bedrijven</strong>.  
+        Selecteer maximaal <strong>5 bedrijven</strong>.
         Je aanvraag wordt daarna in één keer verstuurd.
       </p>
     </section>
 
-    <!-- FILTERS -->
     <section class="results-filters">
       <h2>Waar zoek je een bedrijf?</h2>
 
       <div class="filter-row">
-        <input
-          type="text"
-          id="filterCity"
-          placeholder="Plaats"
-          autocomplete="off"
-        />
-
-        <input
-          type="text"
-          id="filterPostcode"
-          placeholder="Postcode"
-          autocomplete="off"
-        />
-
-        <button type="button" class="btn-secondary">
-          Filter toepassen
-        </button>
+        <input type="text" id="filterCity" placeholder="Plaats" autocomplete="off" />
+        <input type="text" id="filterPostcode" placeholder="Postcode" autocomplete="off" />
+        <button type="button" class="btn-secondary">Filter toepassen</button>
       </div>
 
-      <p class="filter-help">
-        Gebruik dit om bedrijven in jouw regio te tonen.
-      </p>
+      <p class="filter-help">Gebruik dit om bedrijven in jouw regio te tonen.</p>
     </section>
 
-    <!-- TOP BAR: teller + sortering -->
     <section class="results-topbar">
-      <div
-        id="selectedCount"
-        data-selected-count
-        class="selected-counter"
-      >
-        0 geselecteerd
-      </div>
+      <div id="selectedCount" data-selected-count class="selected-counter">0 geselecteerd</div>
 
-      <!-- optioneel, maar alvast stabiel -->
       <select id="filterSort">
         <option value="relevantie">Sorteren: relevantie</option>
         <option value="score-desc">Hoogste score</option>
@@ -81,45 +54,20 @@
       </select>
     </section>
 
-    <!-- MESSAGE AREA (JS beheert visibility + tekst) -->
-    <div
-      id="resultsMessage"
-      data-results-message
-      class="results-message"
-      style="display:none;"
-    ></div>
+    <div id="resultsMessage" data-results-message class="results-message" style="display:none;"></div>
 
-    <!-- RESULTATENLIJST -->
-    <section
-      id="companiesList"
-      data-companies-list
-      class="companies-list"
-    >
-      <!--
-        JS rendert hier de bedrijven.
-        Geen fallback HTML.
-      -->
-    </section>
+    <section id="companiesList" data-companies-list class="companies-list"></section>
 
-    <!-- ACTIES -->
     <section class="results-actions">
-      <button
-        id="submitSelectionBtn"
-        type="button"
-        class="btn-primary"
-        disabled
-      >
+      <button id="submitSelectionBtn" type="button" class="btn-primary" disabled>
         Verstuur aanvraag
       </button>
     </section>
 
   </main>
 
-  <!-- FOOTER -->
   <footer class="site-footer">
-    <div class="container">
-      © 2026 Irisje.nl
-    </div>
+    <div class="container">© 2026 Irisje.nl</div>
   </footer>
 
 </body>
