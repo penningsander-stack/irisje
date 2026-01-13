@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// v2026-01-13 — sector verbergen bij companySlug
+// v2026-01-13 — sector direct verbergen bij companySlug (FIX)
 
 (() => {
   const API_REQUESTS = "https://irisje-backend.onrender.com/api/publicRequests";
@@ -20,7 +20,12 @@
 
   let fixedSector = null;
 
-  // 1️⃣ Bedrijf ophalen indien slug aanwezig
+  // ✅ DIRECT: gerichte aanvraag = sector nooit tonen
+  if (companySlug && sectorBlock) {
+    sectorBlock.classList.add("hidden");
+  }
+
+  // 🔹 Bedrijf ophalen (alleen voor naam + sector)
   if (companySlug) {
     fetch(`${API_COMPANIES}/${companySlug}`)
       .then(r => r.ok ? r.json() : null)
@@ -33,14 +38,12 @@
         companyBlock.classList.remove("hidden");
         genericTitle.classList.add("hidden");
 
-        // sector vastzetten + verbergen
         fixedSector = company.category || null;
-        sectorBlock.classList.add("hidden");
       })
       .catch(() => {});
   }
 
-  // 2️⃣ Form submit
+  // 🔹 Form submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     err.classList.add("hidden");
