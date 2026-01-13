@@ -29,26 +29,28 @@
 <main class="flex-1">
   <section class="max-w-xl mx-auto px-4 pt-10 pb-16">
 
-    <!-- Bedrijfstitel -->
+    <!-- Bedrijfstitel (alleen bij companySlug) -->
     <div id="companyBlock" class="mb-6 hidden">
       <p class="text-sm text-slate-500">Je doet een aanvraag bij</p>
       <h1 id="companyName" class="text-xl font-semibold"></h1>
+      <p id="companyHint" class="text-sm text-slate-500 mt-1 hidden"></p>
     </div>
 
+    <!-- Titel (alleen bij algemene aanvraag) -->
     <h2 id="genericTitle" class="text-xl font-semibold mb-6">
       Start je aanvraag
     </h2>
 
-    <form id="step1Form" class="grid gap-3">
+    <form id="step1Form" class="grid gap-3" novalidate>
 
       <div class="form-group">
         <label>Naam</label>
-        <input id="nameInput" class="form-input" required />
+        <input id="nameInput" class="form-input" autocomplete="name" required />
       </div>
 
       <div class="form-group">
         <label>E-mail</label>
-        <input id="emailInput" type="email" class="form-input" required />
+        <input id="emailInput" type="email" class="form-input" autocomplete="email" required />
       </div>
 
       <div class="form-group">
@@ -62,10 +64,10 @@
           placeholder="Bijvoorbeeld: lekkage aan het dak"></textarea>
       </div>
 
-      <!-- Sector (alleen zichtbaar bij algemene aanvraag) -->
-      <div class="form-group" id="sectorBlock">
+      <!-- Sector: HTML-first verborgen. JS toont dit alleen als er GEEN companySlug is -->
+      <div class="form-group hidden" id="sectorBlock">
         <label>Sector</label>
-        <select id="categorySelect" class="form-input" required>
+        <select id="categorySelect" class="form-input">
           <option value="">Kies een sector</option>
           <option value="Dakdekker">Dakdekker</option>
           <option value="Loodgieter">Loodgieter</option>
@@ -75,8 +77,13 @@
         </select>
       </div>
 
-      <button class="btn-primary mt-2">Volgende stap</button>
+      <button class="btn-primary mt-2" id="submitBtn">Volgende stap</button>
 
       <div id="formError" class="text-xs text-rose-600 hidden"></div>
     </form>
-  </sect
+  </section>
+</main>
+
+<script src="js/request.js?v=20260113"></script>
+</body>
+</html>
