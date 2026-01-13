@@ -5,7 +5,10 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-// Nieuwe aanvraag
+/**
+ * POST /api/publicRequests
+ * Nieuwe aanvraag aanmaken
+ */
 router.post("/", async (req, res) => {
   try {
     const { sector, city } = req.body;
@@ -21,43 +24,53 @@ router.post("/", async (req, res) => {
       selectedCompanies: []
     });
 
-    res.json({ requestId: request._id });
+    return res.json({ requestId: request._id });
   } catch (err) {
     console.error("publicRequests POST error:", err);
-    res.status(500).json({ error: "Serverfout" });
+    return res.status(500).json({ error: "Serverfout" });
   }
 });
 
-// Aanvraag ophalen + bedrijven matchen
+/**
+ * GET /api/publicRequests/:id
+ * Aanvraag ophalen + bedrijven matchen op sector
+ */
 router.get("/:id", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id).lean();
+
     if (!request) {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
     let companies = [];
 
+    // 🔒 Strikte sector-matching
     if (request.sector) {
-      companies = await Company.find({ sector: request.sector }).lean();
+      companies = await Company.find({
+        sector: request.sector
+      }).lean();
     }
 
-    // 2. Geen fallback naar andere sectoren
-// Als er geen matches zijn, sturen we een lege lijst terug
-if (!companies || companies.length === 0) {
-  companies = [];
-}
-
+    // ❗ GEEN fallback naar andere sectoren
+    if (!Array.isArray(companies)) {
+      companies = [];
     }
 
-    res.json({ request, companies });
+    return res.json({
+      request,
+      companies
+    });
   } catch (err) {
     console.error("publicRequests GET error:", err);
-    res.status(500).json({ error: "Serverfout" });
+    return res.status(500).json({ error: "Serverfout" });
   }
 });
 
-// 🔹 Aanvraag versturen naar geselecteerde bedrijven
+/**
+ * POST /api/publicRequests/:id/send
+ * Geselecteerde bedrijven opslaan
+ */
 router.post("/:id/send", async (req, res) => {
   try {
     const { companyIds } = req.body;
@@ -67,6 +80,7 @@ router.post("/:id/send", async (req, res) => {
     }
 
     const request = await Request.findById(req.params.id);
+
     if (!request) {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
@@ -77,10 +91,10 @@ router.post("/:id/send", async (req, res) => {
 
     await request.save();
 
-    res.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
     console.error("publicRequests SEND error:", err);
-    res.status(500).json({ error: "Serverfout" });
+    return res.status(500).json({ error: "Serverfout" });
   }
 });
 
