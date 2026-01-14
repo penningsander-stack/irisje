@@ -2,72 +2,74 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <title>Irisje.nl – Nieuwe aanvraag</title>
+  <title>Irisje.nl – Vind betrouwbare bedrijven</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Leidende CSS -->
   <link rel="stylesheet" href="/frontend/css/style.css" />
 </head>
 <body>
 
-  <header class="site-header">
-    <div class="container">
-      <a href="/" class="logo">Irisje.nl</a>
-    </div>
-  </header>
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="logo">Irisje.nl</a>
+    <nav class="main-nav">
+      <a href="/request.html" class="btn-primary">Start je aanvraag</a>
+    </nav>
+  </div>
+</header>
 
-  <main class="container">
-    <section class="card card--large">
-      <h1>Nieuwe aanvraag</h1>
-      <p class="muted">
-        Vertel ons wat je zoekt. Wij koppelen je aan passende bedrijven.
-      </p>
+<main>
 
-      <form id="requestForm" novalidate>
-
-        <!-- Categorie -->
-        <div class="form-group">
-          <label for="category">Wat heb je nodig?</label>
-          <select id="category" required>
-            <option value="">Kies een categorie</option>
-            <option value="Hovenier">Hovenier</option>
-            <option value="Loodgieter">Loodgieter</option>
-            <option value="Elektricien">Elektricien</option>
-            <option value="Schilder">Schilder</option>
-            <option value="Advocaat">Advocaat</option>
-          </select>
-        </div>
-
-        <!-- Plaats (autocomplete) -->
-        <div class="form-group autocomplete">
-          <label for="cityInput">Plaats</label>
-          <input
-            id="cityInput"
-            type="text"
-            placeholder="Begin met typen…"
-            autocomplete="off"
-            required
-          />
-          <input type="hidden" id="city" />
-          <div id="citySuggestions" class="autocomplete-list"></div>
-          <small class="muted">Kies een plaats uit de lijst.</small>
-        </div>
-
-        <!-- Actie -->
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">
-            Bekijk geschikte bedrijven
-          </button>
-        </div>
-
-        <p id="formError" class="error hidden">
-          Er ging iets mis bij het starten van je aanvraag.
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <h1>Vind betrouwbare bedrijven,<br>zonder gedoe</h1>
+        <p class="hero-text">
+          Eén aanvraag. Meerdere passende bedrijven. Jij kiest zelf met wie je verdergaat.
         </p>
+        <a href="/request.html" class="btn-primary btn-large">
+          Start je aanvraag
+        </a>
+      </div>
+    </div>
+  </section>
 
-      </form>
-    </section>
-  </main>
+  <!-- USP’s -->
+  <section class="usps">
+    <div class="container usp-grid">
+      <div class="usp">
+        <h3>Eén aanvraag</h3>
+        <p>Je hoeft je aanvraag maar één keer te doen.</p>
+      </div>
+      <div class="usp">
+        <h3>Vergelijk bedrijven</h3>
+        <p>Bekijk bedrijven en kies zelf met wie je contact wilt.</p>
+      </div>
+      <div class="usp">
+        <h3>Betrouwbaar</h3>
+        <p>Bedrijven worden gecontroleerd en beoordeeld.</p>
+      </div>
+    </div>
+  </section>
 
-  <script src="/frontend/js/request.js"></script>
+  <!-- Vertrouwen -->
+  <section class="trust">
+    <div class="container">
+      <h2>Waarom Irisje?</h2>
+      <p class="muted">
+        Irisje helpt je bij het vinden van passende bedrijven, zonder spam,
+        zonder verkooppraatjes en zonder verplichtingen.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="muted">© Irisje.nl</p>
+  </div>
+</footer>
+
 </body>
 </html>
