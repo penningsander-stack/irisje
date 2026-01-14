@@ -1,148 +1,167 @@
 // frontend/js/results.js
-/* v2026-01-14 SAFE-NO-CRASH */
+(function () {
+  const API_BASE = "https://irisje-backend.onrender.com/api/publicRequests";
 
-(() => {
-  "use strict";
+  const els = {
+    contextBlock: document.getElementById("contextBlock"),
+    contextText: document.getElementById("contextText"),
 
-  const API_BASE = "https://irisje-backend.onrender.com";
-  const qs = (s, r = document) => r.querySelector(s);
+    stateLoading: document.getElementById("stateLoading"),
+    stateError: document.getElementById("stateError"),
+    stateEmpty: document.getElementById("stateEmpty"),
+    stateResults: document.getElementById("stateResults"),
 
-  const state = {
-    requestId: null,
-    request: {},
-    companies: [],
-    selectedIds: new Set()
+    resultsList: document.getElementById("resultsList"),
+
+    actionBar: document.getElementById("actionBar"),
+    selectedCount: document.getElementById("selectedCount"),
+    sendBtn: document.getElementById("sendBtn"),
+    retryBtn: document.getElementById("retryBtn")
   };
 
-  const safe = (v) => (v == null ? "" : String(v));
+  let selectedCompanyIds = [];
+  let requestId = null;
+
+  init();
+
+  function init() {
+    hideAllStates();
+    show(els.stateLoading);
+
+    requestId = getRequestId();
+    if (!requestId) {
+      return renderError("missing_request");
+    }
+
+    fetchResults(requestId);
+    if (els.retryBtn) {
+      els.retryBtn.addEventListener("click", () => {
+        hideAllStates();
+        show(els.stateLoading);
+        fetchResults(requestId);
+      });
+    }
+  }
 
   function getRequestId() {
-    return new URLSearchParams(window.location.search).get("requestId");
-  }
-
-  function updateCounter() {
-    const el = qs("#selectedCount");
-    if (el) el.textContent = `${state.selectedIds.size} geselecteerd`;
-  }
-
-  function setMessage(text = "") {
-    const el = qs("#resultsMessage");
-    if (!el) return;
-    el.style.display = text ? "" : "none";
-    el.textContent = safe(text);
-  }
-
-  // VEILIGE RESOLVERS — NOOIT CRASHEN
-  function getName(c) {
-    return safe(c && (c.name || c.companyName || "Onbekend bedrijf"));
-  }
-  function getCity(c) {
-    return safe(c && (c.city || c.place || ""));
-  }
-  function getSlug(c) {
-    return safe(c && (c.slug || c.companySlug || ""));
-  }
-  function getId(c) {
-    return safe(c && (c._id || c.id || c.companyId || ""));
-  }
-
-  function renderCompany(company, selected = false) {
-    if (!company) return document.createDocumentFragment();
-
-    const id = getId(company);
-    const slug = getSlug(company);
-
-    const card = document.createElement("div");
-    card.className = "glass-card p-4 flex flex-col";
-
-    card.innerHTML = `
-      <strong class="text-sm mb-1">${getName(company)}</strong>
-      <span class="text-xs text-slate-500 mb-2">${getCity(company)}</span>
-      <span class="text-xs text-slate-500 mb-3">Score: ${safe(company.score ?? 0)}</span>
-      <div class="mt-auto flex gap-2">
-        <button class="btn-primary select-btn">
-          ${selected ? "Geselecteerd" : "Selecteer"}
-        </button>
-        ${slug ? `<a href="company.html?slug=${encodeURIComponent(slug)}" class="btn-secondary">Bekijk</a>` : ``}
-      </div>
-    `;
-
-    const btn = card.querySelector(".select-btn");
-
-    if (selected && id) state.selectedIds.add(id);
-
-    btn.addEventListener("click", () => {
-      if (!id) return;
-      if (state.selectedIds.has(id)) {
-        state.selectedIds.delete(id);
-        btn.textContent = "Selecteer";
-      } else {
-        if (state.selectedIds.size >= 5) return;
-        state.selectedIds.add(id);
-        btn.textContent = "Geselecteerd";
-      }
-      updateCounter();
-    });
-
-    return card;
-  }
-
-  async function init() {
-    state.requestId = getRequestId();
-    if (!state.requestId) {
-      setMessage("Aanvraag niet gevonden.");
-      return;
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("requestId");
+    if (fromUrl) {
+      sessionStorage.setItem("requestId", fromUrl);
+      return fromUrl;
     }
+    return sessionStorage.getItem("requestId");
+  }
 
-    setMessage("Bedrijven laden…");
-
-    let data;
+  async function fetchResults(id) {
     try {
-      const res = await fetch(`${API_BASE}/api/publicRequests/${state.requestId}`);
-      data = await res.json();
-    } catch {
-      setMessage("Fout bij laden van bedrijven.");
-      return;
+      const res = await fetch(`${API_BASE}/${id}`);
+      if (!res.ok) throw new Error("fetch_failed");
+
+      const data = await res.json();
+      if (!data || !data.request) throw new Error("invalid_response");
+
+      renderContext(data.request);
+
+      const companies = Array.isArray(data.companies) ? data.companies : [];
+      if (companies.length === 0) {
+        hideAllStates();
+        show(els.stateEmpty);
+        return;
+      }
+
+      renderResults(companies);
+    } catch (e) {
+      renderError(e.message);
     }
-
-    state.request = data.request || {};
-    state.companies = Array.isArray(data.companies) ? data.companies : [];
-
-    // Startbedrijf is OPTIONEEL: match op slug, fallback id
-    const startSlug = safe(state.request.companySlug);
-    const startId   = safe(state.request.companyId);
-
-    let startCompany =
-      (startSlug && state.companies.find(c => getSlug(c) === startSlug)) ||
-      (startId && state.companies.find(c => getId(c) === startId)) ||
-      null;
-
-    const others = startCompany
-      ? state.companies.filter(c => c !== startCompany)
-      : state.companies.slice();
-
-    const startBox = qs("#startCompanyBox");
-    if (startCompany && startBox) {
-      startBox.classList.remove("hidden");
-      startBox.innerHTML = "";
-      startBox.appendChild(renderCompany(startCompany, true));
-    }
-
-    const list = qs("#companiesList");
-    if (list) {
-      list.innerHTML = "";
-      others.forEach(c => list.appendChild(renderCompany(c)));
-    }
-
-    updateCounter();
-    setMessage("");
-
-    console.log("RESULTS OK", {
-      startFound: !!startCompany,
-      selected: state.selectedIds.size,
-      companies: state.companies.length
-    });
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  function renderContext(request) {
+    els.contextText.textContent = `Gebaseerd op je aanvraag in ${request.city || "jouw regio"}.`;
+    show(els.contextBlock);
+  }
+
+  function renderResults(companies) {
+    els.resultsList.innerHTML = "";
+    selectedCompanyIds = [];
+    updateSelectionUI();
+
+    companies.forEach(company => {
+      const card = document.createElement("div");
+      card.className = "surface-card flex items-center justify-between";
+
+      const info = document.createElement("div");
+      info.innerHTML = `
+        <strong>${escapeHtml(company.name || "Bedrijf")}</strong><br/>
+        <span class="text-sm text-slate-500">${escapeHtml(company.city || "")}</span>
+      `;
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.addEventListener("change", () =>
+        toggleSelection(company._id, checkbox.checked)
+      );
+
+      card.appendChild(info);
+      card.appendChild(checkbox);
+      els.resultsList.appendChild(card);
+    });
+
+    hideAllStates();
+    show(els.stateResults);
+    show(els.actionBar);
+  }
+
+  function toggleSelection(id, checked) {
+    if (checked) {
+      if (selectedCompanyIds.length >= 5) {
+        alert("Je kunt maximaal 5 bedrijven selecteren.");
+        return;
+      }
+      if (!selectedCompanyIds.includes(id)) {
+        selectedCompanyIds.push(id);
+      }
+    } else {
+      selectedCompanyIds = selectedCompanyIds.filter(x => x !== id);
+    }
+    updateSelectionUI();
+  }
+
+  function updateSelectionUI() {
+    els.selectedCount.textContent = selectedCompanyIds.length;
+    els.sendBtn.disabled = selectedCompanyIds.length === 0;
+  }
+
+  function renderError() {
+    hideAllStates();
+    show(els.stateError);
+  }
+
+  function hideAllStates() {
+    [
+      els.stateLoading,
+      els.stateError,
+      els.stateEmpty,
+      els.stateResults,
+      els.actionBar
+    ].forEach(hide);
+  }
+
+  function show(el) {
+    if (el) el.classList.remove("hidden");
+  }
+
+  function hide(el) {
+    if (el) el.classList.add("hidden");
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[s]));
+  }
 })();
