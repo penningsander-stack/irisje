@@ -1,75 +1,33 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <title>Irisje.nl – Nieuwe aanvraag</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Irisje.nl – Start je aanvraag</title>
-
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#4F46E5" />
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="/style.css?v=20260113" />
-  <link rel="stylesheet" href="/style-premium-overlay.css?v=20260113" />
+  <link rel="stylesheet" href="/frontend/css/style.css" />
 </head>
+<body>
 
-<body class="irisje-body flex flex-col min-h-screen">
-
-<header class="irisje-header sticky top-0 z-40">
-  <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-    <a href="index.html" class="font-semibold">Irisje.nl</a>
-    <a href="login.html" class="btn-primary btn-xs">Inloggen</a>
+<header class="site-header">
+  <div class="container">
+    <a href="/" class="logo">Irisje.nl</a>
   </div>
 </header>
 
-<main class="flex-1">
-  <section class="max-w-xl mx-auto px-4 pt-10 pb-16">
+<main class="container">
+  <section class="card card--large">
+    <h1>Nieuwe aanvraag</h1>
+    <p class="muted">
+      Vertel ons wat je zoekt. Wij tonen passende bedrijven.
+    </p>
 
-    <!-- Bedrijfstitel (alleen bij companySlug) -->
-    <div id="companyBlock" class="mb-6 hidden">
-      <p class="text-sm text-slate-500">Je doet een aanvraag bij</p>
-      <h1 id="companyName" class="text-xl font-semibold"></h1>
-      <p id="companyHint" class="text-sm text-slate-500 mt-1 hidden"></p>
-    </div>
-
-    <!-- Titel (alleen bij algemene aanvraag) -->
-    <h2 id="genericTitle" class="text-xl font-semibold mb-6">
-      Start je aanvraag
-    </h2>
-
-    <form id="step1Form" class="grid gap-3" novalidate>
+    <form id="requestForm" novalidate>
 
       <div class="form-group">
-        <label>Naam</label>
-        <input id="nameInput" class="form-input" autocomplete="name" required />
-      </div>
-
-      <div class="form-group">
-        <label>E-mail</label>
-        <input id="emailInput" type="email" class="form-input" autocomplete="email" required />
-      </div>
-
-      <div class="form-group">
-        <label>Plaats of postcode</label>
-        <input id="cityInput" class="form-input" placeholder="Bijv. Amsterdam of 1011AB" required />
-      </div>
-
-      <div class="form-group">
-        <label>Waar kunnen we mee helpen?</label>
-        <textarea id="messageInput" class="form-input" rows="4"
-          placeholder="Bijvoorbeeld: lekkage aan het dak"></textarea>
-      </div>
-
-      <!-- Sector: HTML-first verborgen. JS toont dit alleen als er GEEN companySlug is -->
-      <div class="form-group hidden" id="sectorBlock">
-        <label>Sector</label>
-        <select id="categorySelect" class="form-input">
-          <option value="">Kies een sector</option>
-          <option value="Dakdekker">Dakdekker</option>
+        <label for="category">Wat heb je nodig?</label>
+        <select id="category" required>
+          <option value="">Kies een categorie</option>
+          <option value="Hovenier">Hovenier</option>
           <option value="Loodgieter">Loodgieter</option>
           <option value="Elektricien">Elektricien</option>
           <option value="Schilder">Schilder</option>
@@ -77,13 +35,31 @@
         </select>
       </div>
 
-      <button class="btn-primary mt-2" id="submitBtn">Volgende stap</button>
+      <div class="form-group autocomplete">
+        <label for="cityInput">Plaats</label>
+        <input
+          id="cityInput"
+          type="text"
+          placeholder="Begin met typen…"
+          autocomplete="off"
+        />
+        <input type="hidden" id="city" />
+        <div id="citySuggestions" class="autocomplete-list"></div>
+        <small class="muted">Kies een plaats uit de lijst.</small>
+      </div>
 
-      <div id="formError" class="text-xs text-rose-600 hidden"></div>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">
+          Bekijk geschikte bedrijven
+        </button>
+      </div>
+
+      <p id="formError" class="error hidden"></p>
+
     </form>
   </section>
 </main>
 
-<script src="js/request.js?v=20260113"></script>
+<script src="/frontend/js/request.js"></script>
 </body>
 </html>
