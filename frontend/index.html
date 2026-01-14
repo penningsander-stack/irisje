@@ -1,161 +1,73 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Irisje.nl – Vind betrouwbare vakmensen</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <title>Irisje.nl – Nieuwe aanvraag</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- LEIDENDE CSS: Irisje Premium Light -->
-  <link rel="stylesheet" href="css/style.css" />
+  <!-- Leidende CSS -->
+  <link rel="stylesheet" href="/frontend/css/style.css" />
 </head>
+<body>
 
-<body class="irisje-body min-h-screen">
-
-  <!-- HERO BACKDROP (decoratief, fixed) -->
-  <div class="irisje-hero-backdrop">
-    <div class="irisje-orbit irisje-orbit--one"></div>
-    <div class="irisje-orbit irisje-orbit--two"></div>
-    <div class="irisje-orbit irisje-orbit--three"></div>
-  </div>
-
-  <!-- HEADER -->
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="section-shell flex items-center justify-between">
-      <div class="font-bold text-indigo-900">
-        Irisje.nl
-      </div>
-
-      <nav class="flex items-center space-x-6 text-sm">
-        <a href="#hoe-werkt-het" class="nav-link">Hoe werkt het</a>
-        <a href="#start-aanvraag" class="btn-primary btn-xs">Start aanvraag</a>
-      </nav>
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="logo">Irisje.nl</a>
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="section-shell grid gap-10 lg:grid-cols-2 fade-seq">
-    <div class="hero-copy">
-      <h1 class="hero-title mb-4">
-        Vind
-        <span class="hero-title-gradient">betrouwbare vakmensen</span>
-        bij jou in de buurt
-      </h1>
-
-      <p class="hero-subtitle mb-5 max-w-xl">
-        Eén aanvraag, meerdere reacties. Vergelijk bedrijven en kies zelf –
-        zonder verplichtingen.
+  <main class="container">
+    <section class="card card--large">
+      <h1>Nieuwe aanvraag</h1>
+      <p class="muted">
+        Vertel ons wat je zoekt. Wij koppelen je aan passende bedrijven.
       </p>
 
-      <ul class="hero-bullets mb-6 space-y-6">
-        <li><span>✓</span> Maximaal 5 bedrijven</li>
-        <li><span>✓</span> Geen spam of verkooppraatjes</li>
-        <li><span>✓</span> Bedrijven handmatig gecontroleerd</li>
-      </ul>
+      <form id="requestForm" novalidate>
 
-      <a href="#start-aanvraag" class="btn-primary primary-cta">
-        Start je aanvraag
-      </a>
-    </div>
-
-    <!-- lege rechterkolom is bewust: backdrop + rust -->
-    <div></div>
-  </section>
-
-  <!-- HOE WERKT HET -->
-  <section id="hoe-werkt-het" class="section-shell">
-    <div class="section-header">
-      <div class="section-title">
-        <div class="emoji">🧭</div>
-        <div>
-          <h2>Hoe werkt Irisje?</h2>
-          <p>In drie simpele stappen geregeld</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid gap-8 md:grid-cols-3">
-      <div class="surface-card card-fade-in">
-        <strong>1. Plaats je aanvraag</strong>
-        <p class="text-sm text-slate-600 mt-2">
-          Vertel wat je nodig hebt en waar.
-        </p>
-      </div>
-
-      <div class="surface-card card-fade-in">
-        <strong>2. Vergelijk bedrijven</strong>
-        <p class="text-sm text-slate-600 mt-2">
-          Bekijk passende bedrijven en kies er maximaal vijf.
-        </p>
-      </div>
-
-      <div class="surface-card card-fade-in">
-        <strong>3. Ontvang reacties</strong>
-        <p class="text-sm text-slate-600 mt-2">
-          Bedrijven nemen rechtstreeks contact met je op.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- START AANVRAAG (STAP 1 FLOW) -->
-  <section id="start-aanvraag" class="section-shell">
-    <div class="max-w-xl mx-auto glass-card">
-
-      <div class="mb-6">
-        <h2 class="text-lg font-semibold mb-1">
-          Start je aanvraag
-        </h2>
-        <p class="text-sm text-slate-500">
-          Dit kost maar een paar minuten. Je zit nog nergens aan vast.
-        </p>
-      </div>
-
-      <form id="requestForm" novalidate class="space-y-6">
-
+        <!-- Categorie -->
         <div class="form-group">
-          <label for="sector">Waar kunnen we mee helpen?</label>
-          <select id="sector" class="form-input" required>
+          <label for="category">Wat heb je nodig?</label>
+          <select id="category" required>
             <option value="">Kies een categorie</option>
+            <option value="Hovenier">Hovenier</option>
+            <option value="Loodgieter">Loodgieter</option>
+            <option value="Elektricien">Elektricien</option>
+            <option value="Schilder">Schilder</option>
+            <option value="Advocaat">Advocaat</option>
           </select>
-          <span class="error-text" data-error-for="sector"></span>
         </div>
 
-        <div class="form-group">
-          <label for="city">Plaats of postcode</label>
+        <!-- Plaats (autocomplete) -->
+        <div class="form-group autocomplete">
+          <label for="cityInput">Plaats</label>
           <input
+            id="cityInput"
             type="text"
-            id="city"
-            class="form-input"
-            placeholder="Bijv. Leeuwarden"
+            placeholder="Begin met typen…"
+            autocomplete="off"
             required
           />
-          <span class="error-text" data-error-for="city"></span>
+          <input type="hidden" id="city" />
+          <div id="citySuggestions" class="autocomplete-list"></div>
+          <small class="muted">Kies een plaats uit de lijst.</small>
         </div>
 
-        <div class="form-group">
-          <label for="description">Korte toelichting (optioneel)</label>
-          <textarea
-            id="description"
-            class="form-input"
-            rows="3"
-            placeholder="Waar moet het bedrijf rekening mee houden?"
-          ></textarea>
+        <!-- Actie -->
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">
+            Bekijk geschikte bedrijven
+          </button>
         </div>
 
-        <button type="submit" id="submitBtn" class="btn-primary w-full">
-          Bekijk geschikte bedrijven
-        </button>
+        <p id="formError" class="error hidden">
+          Er ging iets mis bij het starten van je aanvraag.
+        </p>
 
-        <div id="formStatus" class="rq-status text-sm"></div>
       </form>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <!-- FOOTER -->
-  <footer class="footer-shell py-10 text-center text-sm text-slate-500">
-    © Irisje.nl
-  </footer>
-
-  <script src="js/request.js"></script>
+  <script src="/frontend/js/request.js"></script>
 </body>
 </html>

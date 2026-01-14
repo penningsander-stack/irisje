@@ -1,121 +1,101 @@
 // frontend/js/request.js
-// TEMPORARY FRONTEND FALLBACK FOR CATEGORIES
-// --------------------------------------------------
-// Tijdelijke categoriebron om de flow te testen.
-// Payload stuurt zowel `category` als `sector`
-// voor backend-compatibiliteit.
-// --------------------------------------------------
 
-(function () {
-  const API_BASE = "https://irisje-backend.onrender.com/api";
+// Vast ingestelde, gestandaardiseerde plaatsnamen
+// (kan later uitgebreid of extern geladen worden)
+const PLACES = [
+  "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
+  "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
+  "Breda", "Tilburg", "Haarlem", "Alkmaar", "Amersfoort",
+  "Apeldoorn", "Leiden", "Dordrecht", "Gouda", "Middelburg",
+  "Burgh-Haamstede"
+];
 
-  const TEMP_CATEGORIES = [
-    "Loodgieter",
-    "Elektricien",
-    "Dakdekker",
-    "Schilder",
-    "Timmerman",
-    "Hovenier",
-    "Stukadoor",
-    "Tegelzetter",
-    "Schoonmaakbedrijf",
-    "Slotenmaker"
-  ];
+const form = document.getElementById("requestForm");
+const categorySelect = document.getElementById("category");
+const cityInput = document.getElementById("cityInput");
+const cityHidden = document.getElementById("city");
+const suggestionsBox = document.getElementById("citySuggestions");
+const errorBox = document.getElementById("formError");
 
-  const form = document.getElementById("requestForm");
-  const sectorSelect = document.getElementById("sector");
-  const submitBtn = document.getElementById("submitBtn");
-  const statusEl = document.getElementById("formStatus");
+// ---------- Autocomplete ----------
 
-  if (!form || !sectorSelect) return;
+cityInput.addEventListener("input", () => {
+  const query = cityInput.value.trim().toLowerCase();
+  suggestionsBox.innerHTML = "";
 
-  document.addEventListener("DOMContentLoaded", init);
+  cityHidden.value = "";
 
-  function init() {
-    populateTempCategories();
-    clearStatus();
-    disableSubmit(false);
+  if (!query) {
+    suggestionsBox.style.display = "none";
+    return;
   }
 
-  function populateTempCategories() {
-    sectorSelect.innerHTML = '<option value="">Kies een categorie</option>';
-    TEMP_CATEGORIES.forEach(name => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      opt.textContent = name;
-      sectorSelect.appendChild(opt);
+  const matches = PLACES.filter(p =>
+    p.toLowerCase().startsWith(query)
+  );
+
+  if (matches.length === 0) {
+    suggestionsBox.style.display = "none";
+    return;
+  }
+
+  matches.forEach(place => {
+    const item = document.createElement("div");
+    item.className = "autocomplete-item";
+    item.textContent = place;
+
+    item.addEventListener("click", () => {
+      cityInput.value = place;
+      cityHidden.value = place;
+      suggestionsBox.innerHTML = "";
+      suggestionsBox.style.display = "none";
     });
-  }
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    clearErrors();
-
-    const sector = sectorSelect.value.trim();
-    const city = document.getElementById("city").value.trim();
-    const description = document.getElementById("description").value.trim();
-
-    let hasError = false;
-    if (!sector) {
-      showError("sector", "Kies een categorie.");
-      hasError = true;
-    }
-    if (!city) {
-      showError("city", "Vul een plaats of postcode in.");
-      hasError = true;
-    }
-    if (hasError) return;
-
-    disableSubmit(true);
-    setStatus("Aanvraag wordt gestart…");
-
-    try {
-      const response = await fetch(`${API_BASE}/publicRequests`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          // BELANGRIJK: stuur beide velden voor compatibiliteit
-          category: sector,
-          sector: sector,
-          city: city,
-          description: description
-        })
-      });
-
-      if (!response.ok) throw new Error("request_failed");
-
-      const data = await response.json();
-      if (!data || !data._id) throw new Error("invalid_response");
-
-      sessionStorage.setItem("requestId", data._id);
-      window.location.href = `results.html?requestId=${data._id}`;
-    } catch (err) {
-      setStatus(
-        "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw."
-      );
-      disableSubmit(false);
-    }
+    suggestionsBox.appendChild(item);
   });
 
-  function disableSubmit(disabled) {
-    if (submitBtn) submitBtn.disabled = disabled;
+  suggestionsBox.style.display = "block";
+});
+
+// Klik buiten autocomplete → sluiten
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".autocomplete")) {
+    suggestionsBox.style.display = "none";
+  }
+});
+
+// ---------- Form submit ----------
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.classList.add("hidden");
+
+  const category = categorySelect.value;
+  const city = cityHidden.value;
+
+  if (!category || !city) {
+    errorBox.textContent = "Kies een categorie en een plaats uit de lijst.";
+    errorBox.classList.remove("hidden");
+    return;
   }
 
-  function setStatus(msg) {
-    if (statusEl) statusEl.textContent = msg;
-  }
+  try {
+    const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, city })
+    });
 
-  function clearStatus() {
-    if (statusEl) statusEl.textContent = "";
-  }
+    if (!res.ok) throw new Error("Request failed");
 
-  function showError(field, message) {
-    const el = document.querySelector(`[data-error-for="${field}"]`);
-    if (el) el.textContent = message;
-  }
+    const data = await res.json();
+    if (!data || !data.requestId) throw new Error("No requestId");
 
-  function clearErrors() {
-    document.querySelectorAll(".error-text").forEach(e => (e.textContent = ""));
-    clearStatus();
+    window.location.href = `/results.html?requestId=${data.requestId}`;
+
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = "Er ging iets mis bij het starten van je aanvraag.";
+    errorBox.classList.remove("hidden");
   }
-})();
+});
