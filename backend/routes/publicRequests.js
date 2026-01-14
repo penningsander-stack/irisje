@@ -3,53 +3,63 @@
 const express = require("express");
 const router = express.Router();
 
-const PublicRequest = require("../models/request");
-const Company = require("../models/rompany");
+// modellen (gebruik exact de casing zoals die in jouw repo bestaat)
+const Request = require("../models/Request");
+const Company = require("../models/Company");
 
 // GET /api/publicRequests/:id
 router.get("/:id", async (req, res) => {
   try {
-    const request = await PublicRequest.findById(req.params.id).lean();
+    // 1) aanvraag ophalen
+    const request = await Request.findById(req.params.id).lean();
     if (!request) {
-      return res.status(404).json({ error: "Request not found" });
+      return res.status(404).json({ error: "request not found" });
     }
 
-    // Bestaande matchinglogica (zoals je die al had)
+    // 2) bedrijven ophalen (laat dit gelijk aan jouw bestaande logica)
     const companies = await Company.find({
       sector: request.sector,
       city: request.city
     }).lean();
 
+    // 3) startbedrijf bepalen
     let startCompany = null;
+    const reqCompanyId = request.companyId ? String(request.companyId) : "";
+    const reqCompanySlug = request.companySlug ? String(request.companySlug) : "";
 
-    // 1️⃣ Probeer startbedrijf via companyId
-    if (request.companyId) {
-      startCompany = companies.find(
-        c => String(c._id) === String(request.companyId)
-      );
+    // 3a) match binnen companies via id
+    if (reqCompanyId) {
+      startCompany =
+        companies.find(c => String(c._id) === reqCompanyId) || null;
     }
 
-    // 2️⃣ Fallback: via slug
-    if (!startCompany && request.companySlug) {
-      startCompany = companies.find(
-        c => c.slug === request.companySlug
-      );
+    // 3b) fallback via slug
+    if (!startCompany && reqCompanySlug) {
+      startCompany =
+        companies.find(c => String(c.slug) === reqCompanySlug) || null;
     }
 
-    // 3️⃣ Als nog niet gevonden: expliciet ophalen uit DB
-    if (!startCompany && request.companyId) {
-      startCompany = await Company.findById(request.companyId).lean();
+    // 3c) laatste fallback: expliciet uit DB halen
+    if (!startCompany && reqCompanyId) {
+      try {
+        startCompany = await Company.findById(reqCompanyId).lean();
+      } catch (e) {
+        startCompany = null;
+      }
     }
 
-    // 4️⃣ Startbedrijf bovenaan zetten en duplicaat verwijderen
+    // 4) startbedrijf bovenaan zetten (zonder duplicaat)
     let finalCompanies = companies;
     if (startCompany) {
       finalCompanies = [
         startCompany,
-        ...companies.filter(c => String(c._id) !== String(startCompany._id))
+        ...companies.filter(
+          c => String(c._id) !== String(startCompany._id)
+        )
       ];
     }
 
+    // 5) response met expliciet startCompany-object
     return res.json({
       request: {
         ...request,
@@ -60,7 +70,7 @@ router.get("/:id", async (req, res) => {
 
   } catch (err) {
     console.error("publicRequests error:", err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "server error" });
   }
 });
 
