@@ -3,21 +3,21 @@
 const express = require("express");
 const router = express.Router();
 
-// modellen (gebruik exact de casing zoals die in jouw repo bestaat)
-const Request = require("../models/Request");
-const Company = require("../models/Company");
+// MODELLEN — ALLES LOWERCASE (zoals jouw repo)
+const requestModel = require("../models/request");
+const companyModel = require("../models/company");
 
 // GET /api/publicRequests/:id
 router.get("/:id", async (req, res) => {
   try {
     // 1) aanvraag ophalen
-    const request = await Request.findById(req.params.id).lean();
+    const request = await requestModel.findById(req.params.id).lean();
     if (!request) {
       return res.status(404).json({ error: "request not found" });
     }
 
-    // 2) bedrijven ophalen (laat dit gelijk aan jouw bestaande logica)
-    const companies = await Company.find({
+    // 2) bedrijven ophalen (laat criteria exact zoals ze bij jou werken)
+    const companies = await companyModel.find({
       sector: request.sector,
       city: request.city
     }).lean();
@@ -27,7 +27,7 @@ router.get("/:id", async (req, res) => {
     const reqCompanyId = request.companyId ? String(request.companyId) : "";
     const reqCompanySlug = request.companySlug ? String(request.companySlug) : "";
 
-    // 3a) match binnen companies via id
+    // 3a) match via companyId binnen companies[]
     if (reqCompanyId) {
       startCompany =
         companies.find(c => String(c._id) === reqCompanyId) || null;
@@ -42,13 +42,13 @@ router.get("/:id", async (req, res) => {
     // 3c) laatste fallback: expliciet uit DB halen
     if (!startCompany && reqCompanyId) {
       try {
-        startCompany = await Company.findById(reqCompanyId).lean();
-      } catch (e) {
+        startCompany = await companyModel.findById(reqCompanyId).lean();
+      } catch {
         startCompany = null;
       }
     }
 
-    // 4) startbedrijf bovenaan zetten (zonder duplicaat)
+    // 4) startbedrijf bovenaan zetten (geen duplicaat)
     let finalCompanies = companies;
     if (startCompany) {
       finalCompanies = [
@@ -59,7 +59,7 @@ router.get("/:id", async (req, res) => {
       ];
     }
 
-    // 5) response met expliciet startCompany-object
+    // 5) response
     return res.json({
       request: {
         ...request,
