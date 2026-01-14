@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Irisje.nl – Vind betrouwbare vakmensen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- LEIDEND: frontend/css/style.css -->
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -21,14 +22,23 @@
   <main>
     <!-- HERO -->
     <section class="hero">
-      <div class="container">
-        <h1>Vind betrouwbare vakmensen bij jou in de buurt</h1>
-        <p class="hero-sub">
-          Eén aanvraag, meerdere reacties. Vergelijk bedrijven en kies zelf.
-        </p>
-        <a href="#start-aanvraag" class="primary-cta">
-          Start je aanvraag
-        </a>
+      <div class="container hero-inner">
+        <div class="hero-copy">
+          <h1>Vind betrouwbare vakmensen bij jou in de buurt</h1>
+          <p class="hero-sub">
+            Eén aanvraag, meerdere reacties. Vergelijk bedrijven en kies zelf.
+          </p>
+          <a href="#start-aanvraag" class="primary-cta">
+            Start je aanvraag
+          </a>
+        </div>
+        <div class="hero-visual">
+          <div class="visual-card">
+            <div class="visual-line"></div>
+            <div class="visual-line short"></div>
+            <div class="visual-line"></div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -37,17 +47,17 @@
       <div class="container">
         <h2>Hoe werkt Irisje?</h2>
         <div class="step-grid">
-          <div class="step">
+          <div class="step card">
             <span class="step-number">1</span>
             <h3>Plaats je aanvraag</h3>
             <p>Vertel wat je nodig hebt en waar.</p>
           </div>
-          <div class="step">
+          <div class="step card">
             <span class="step-number">2</span>
             <h3>Vergelijk bedrijven</h3>
             <p>Bekijk geschikte bedrijven en kies er maximaal vijf.</p>
           </div>
-          <div class="step">
+          <div class="step card">
             <span class="step-number">3</span>
             <h3>Ontvang reacties</h3>
             <p>Bedrijven nemen contact met je op.</p>
@@ -58,50 +68,54 @@
 
     <!-- START AANVRAAG -->
     <section id="start-aanvraag" class="request-section">
-      <div class="container request-card">
-        <h2>Start je aanvraag</h2>
-        <p class="subtitle">
-          Dit kost maar een paar minuten. Je zit nog nergens aan vast.
-        </p>
-
-        <form id="requestForm" novalidate>
-          <div class="field">
-            <label for="sector">Waar kunnen we mee helpen?</label>
-            <select id="sector" required>
-              <option value="">Kies een categorie</option>
-            </select>
-            <div class="error" data-error-for="sector"></div>
+      <div class="container">
+        <div class="request-card card-elevated">
+          <div class="request-header">
+            <h2>Start je aanvraag</h2>
+            <p class="subtitle">
+              Dit kost maar een paar minuten. Je zit nog nergens aan vast.
+            </p>
           </div>
 
-          <div class="field">
-            <label for="city">Plaats of postcode</label>
-            <input type="text" id="city" required />
-            <div class="error" data-error-for="city"></div>
-          </div>
+          <form id="requestForm" novalidate>
+            <div class="field">
+              <label for="sector">Waar kunnen we mee helpen?</label>
+              <select id="sector" required>
+                <option value="">Kies een categorie</option>
+              </select>
+              <div class="error" data-error-for="sector"></div>
+            </div>
 
-          <div class="field">
-            <label for="description">Korte toelichting (optioneel)</label>
-            <textarea id="description" rows="4"></textarea>
-          </div>
+            <div class="field">
+              <label for="city">Plaats of postcode</label>
+              <input type="text" id="city" required />
+              <div class="error" data-error-for="city"></div>
+            </div>
 
-          <button type="submit" id="submitBtn">
-            Bekijk geschikte bedrijven
-          </button>
+            <div class="field">
+              <label for="description">Korte toelichting (optioneel)</label>
+              <textarea id="description" rows="4"></textarea>
+            </div>
 
-          <div id="formStatus" class="status"></div>
-        </form>
+            <button type="submit" id="submitBtn" class="btn-primary">
+              Bekijk geschikte bedrijven
+            </button>
 
-        <ul class="reassurance">
-          <li>Maximaal 5 bedrijven</li>
-          <li>Geen verplichtingen</li>
-          <li>Geen spam</li>
-        </ul>
+            <div id="formStatus" class="status"></div>
+          </form>
+
+          <ul class="reassurance">
+            <li>Maximaal 5 bedrijven</li>
+            <li>Geen verplichtingen</li>
+            <li>Geen spam</li>
+          </ul>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container">
+    <div class="container footer-inner">
       <p>© Irisje.nl</p>
     </div>
   </footer>
