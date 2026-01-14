@@ -6,6 +6,40 @@ const router = express.Router();
 const requestModel = require("../models/request");
 const companyModel = require("../models/company");
 
+/**
+ * POST /api/publicRequests
+ * Doel: publieke aanvraag aanmaken (minimaal).
+ * - Slaat aanvraag op
+ * - Geeft _id terug
+ * - Geen matching, geen e-mail, geen extra logica
+ */
+router.post("/", async (req, res) => {
+  try {
+    const { category, sector, city, description } = req.body || {};
+
+    // Minimale validatie
+    if (!city || (!category && !sector)) {
+      return res.status(400).json({
+        error: "missing required fields"
+      });
+    }
+
+    const request = await requestModel.create({
+      category: category || sector,
+      sector: sector || category,
+      city,
+      description: description || ""
+    });
+
+    return res.json({
+      _id: request._id
+    });
+  } catch (err) {
+    console.error("publicRequests POST error:", err);
+    return res.status(500).json({ error: "server error" });
+  }
+});
+
 // GET /api/publicRequests/:id
 router.get("/:id", async (req, res) => {
   try {
@@ -65,7 +99,7 @@ router.get("/:id", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("publicRequests error:", err);
+    console.error("publicRequests GET error:", err);
     return res.status(500).json({ error: "server error" });
   }
 });
