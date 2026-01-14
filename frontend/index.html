@@ -1,109 +1,109 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>Irisje.nl – Vind betrouwbare bedrijven</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Premium CSS (leidend) -->
+  <!-- Leidende premium CSS -->
   <link rel="stylesheet" href="/css/style.css" />
-  <link rel="stylesheet" href="/css/style-premium-overlay.css" />
 </head>
-<body class="bg-slate-50 text-slate-900">
+
+<body class="irisje-body">
 
   <!-- HEADER -->
-  <header class="sticky top-0 z-40 backdrop-blur bg-white/80 border-b border-slate-200">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-      <a href="/" class="text-xl font-semibold tracking-tight">Irisje.nl</a>
-      <a href="/request.html" class="btn-primary">
-        Start je aanvraag
-      </a>
+  <header class="irisje-header">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+      <nav class="irisje-nav">
+        <a href="/request.html" class="btn-primary">Start je aanvraag</a>
+      </nav>
     </div>
   </header>
 
   <!-- HERO -->
   <main>
-    <section class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600"></div>
+    <section class="irisje-hero">
+      <!-- backdrop + decor die door de CSS verwacht worden -->
+      <div class="irisje-hero-backdrop"></div>
+      <div class="irisje-orbit irisje-orbit--one"></div>
+      <div class="irisje-orbit irisje-orbit--two"></div>
 
-      <div class="relative max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center">
-
-        <!-- HERO TEXT -->
-        <div class="text-white">
-          <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6">
-            Vind betrouwbare bedrijven,<br>
-            zonder gedoe
+      <div class="irisje-container irisje-hero-grid">
+        <!-- COPY -->
+        <div class="hero-copy">
+          <h1 class="hero-title">
+            Vind betrouwbare bedrijven,
+            <span class="hero-title-gradient">zonder gedoe</span>
           </h1>
-          <p class="text-lg text-white/90 mb-8 max-w-xl">
+
+          <p class="hero-subtitle">
             Eén aanvraag. Meerdere passende bedrijven.
             Vergelijk rustig en kies zelf met wie je verdergaat.
           </p>
 
-          <a href="/request.html" class="btn-primary btn-large">
-            Start je aanvraag
-          </a>
-        </div>
-
-        <!-- HERO CARD (VERVANGT FORMULIER) -->
-        <div class="glass-card p-8">
-          <h2 class="text-xl font-semibold mb-4">
-            Zo werkt Irisje
-          </h2>
-
-          <ul class="space-y-3 text-slate-700">
-            <li class="flex gap-3">
-              <span class="font-semibold text-indigo-600">1.</span>
-              Vertel wat je zoekt en waar
-            </li>
-            <li class="flex gap-3">
-              <span class="font-semibold text-indigo-600">2.</span>
-              Bekijk passende bedrijven
-            </li>
-            <li class="flex gap-3">
-              <span class="font-semibold text-indigo-600">3.</span>
-              Kies met wie je contact wilt
-            </li>
+          <ul class="hero-bullets">
+            <li>Eén aanvraag, geen spam</li>
+            <li>Bedrijven gecontroleerd</li>
+            <li>Jij kiest wie contact opneemt</li>
           </ul>
 
-          <div class="mt-6">
-            <a href="/request.html" class="btn-primary w-full text-center">
+          <div class="hero-actions">
+            <a href="/request.html" class="btn-primary btn-large">
               Start je aanvraag
             </a>
           </div>
         </div>
 
+        <!-- GLASS CARD -->
+        <div class="glass-card hero-card">
+          <h2 class="hero-card-title">Zo werkt Irisje</h2>
+
+          <ol class="hero-steps">
+            <li>
+              <span class="hero-step-index">1</span>
+              <span class="hero-step-text">Vertel wat je zoekt en waar</span>
+            </li>
+            <li>
+              <span class="hero-step-index">2</span>
+              <span class="hero-step-text">Bekijk passende bedrijven</span>
+            </li>
+            <li>
+              <span class="hero-step-index">3</span>
+              <span class="hero-step-text">Kies met wie je contact wilt</span>
+            </li>
+          </ol>
+
+          <a href="/request.html" class="btn-secondary btn-block">
+            Start je aanvraag
+          </a>
+        </div>
       </div>
     </section>
 
     <!-- USP / TRUST -->
-    <section class="py-20">
-      <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
-        <div>
-          <h3 class="font-semibold text-lg mb-2">Eén aanvraag</h3>
-          <p class="text-slate-600">
-            Je hoeft je aanvraag maar één keer te doen.
-          </p>
+    <section class="irisje-section irisje-section--light">
+      <div class="irisje-container irisje-usp-grid">
+        <div class="irisje-usp">
+          <h3>Eén aanvraag</h3>
+          <p>Je hoeft je aanvraag maar één keer te doen.</p>
         </div>
-        <div>
-          <h3 class="font-semibold text-lg mb-2">Zelf kiezen</h3>
-          <p class="text-slate-600">
-            Jij bepaalt met welke bedrijven je contact opneemt.
-          </p>
+        <div class="irisje-usp">
+          <h3>Zelf kiezen</h3>
+          <p>Vergelijk bedrijven en bepaal zelf wie contact opneemt.</p>
         </div>
-        <div>
-          <h3 class="font-semibold text-lg mb-2">Betrouwbaar</h3>
-          <p class="text-slate-600">
-            Bedrijven worden gecontroleerd en beoordeeld.
-          </p>
+        <div class="irisje-usp">
+          <h3>Betrouwbaar</h3>
+          <p>Bedrijven worden gecontroleerd en beoordeeld.</p>
         </div>
       </div>
     </section>
   </main>
 
   <!-- FOOTER -->
-  <footer class="border-t border-slate-200 py-8">
-    <div class="max-w-7xl mx-auto px-6 text-sm text-slate-500">
-      © Irisje.nl
+  <footer class="irisje-footer">
+    <div class="irisje-container">
+      <p class="irisje-footer-text">© Irisje.nl</p>
     </div>
   </footer>
 
