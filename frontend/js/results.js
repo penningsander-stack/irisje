@@ -1,167 +1,136 @@
 // frontend/js/results.js
 (function () {
-  const API_BASE = "https://irisje-backend.onrender.com/api/publicRequests";
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const els = {
-    contextBlock: document.getElementById("contextBlock"),
-    contextText: document.getElementById("contextText"),
+  const listEl = document.getElementById("companiesList");
+  const stateEl = document.getElementById("resultsState");
+  const subtitleEl = document.getElementById("resultsSubtitle");
+  const countEl = document.getElementById("selectedCount");
+  const sendBtn = document.getElementById("sendBtn");
 
-    stateLoading: document.getElementById("stateLoading"),
-    stateError: document.getElementById("stateError"),
-    stateEmpty: document.getElementById("stateEmpty"),
-    stateResults: document.getElementById("stateResults"),
-
-    resultsList: document.getElementById("resultsList"),
-
-    actionBar: document.getElementById("actionBar"),
-    selectedCount: document.getElementById("selectedCount"),
-    sendBtn: document.getElementById("sendBtn"),
-    retryBtn: document.getElementById("retryBtn")
-  };
-
-  let selectedCompanyIds = [];
-  let requestId = null;
+  const selected = new Set();
+  let requestData = null;
 
   init();
 
-  function init() {
-    hideAllStates();
-    show(els.stateLoading);
-
-    requestId = getRequestId();
-    if (!requestId) {
-      return renderError("missing_request");
-    }
-
-    fetchResults(requestId);
-    if (els.retryBtn) {
-      els.retryBtn.addEventListener("click", () => {
-        hideAllStates();
-        show(els.stateLoading);
-        fetchResults(requestId);
-      });
-    }
-  }
-
-  function getRequestId() {
+  async function init() {
     const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get("requestId");
-    if (fromUrl) {
-      sessionStorage.setItem("requestId", fromUrl);
-      return fromUrl;
-    }
-    return sessionStorage.getItem("requestId");
-  }
+    const requestId = params.get("requestId");
 
-  async function fetchResults(id) {
+    if (!requestId) {
+      return showError("Aanvraag niet gevonden.");
+    }
+
+    showLoading();
+
     try {
-      const res = await fetch(`${API_BASE}/${id}`);
-      if (!res.ok) throw new Error("fetch_failed");
-
+      const res = await fetch(`${API_BASE}/publicRequests/${requestId}`);
+      if (!res.ok) throw new Error("load_failed");
       const data = await res.json();
-      if (!data || !data.request) throw new Error("invalid_response");
 
-      renderContext(data.request);
+      requestData = data.request;
+      subtitleEl.textContent =
+        `Gebaseerd op jouw aanvraag voor ${requestData.category || requestData.sector} in ${requestData.city}.`;
 
-      const companies = Array.isArray(data.companies) ? data.companies : [];
-      if (companies.length === 0) {
-        hideAllStates();
-        show(els.stateEmpty);
-        return;
-      }
-
-      renderResults(companies);
-    } catch (e) {
-      renderError(e.message);
-    }
-  }
-
-  function renderContext(request) {
-    els.contextText.textContent = `Gebaseerd op je aanvraag in ${request.city || "jouw regio"}.`;
-    show(els.contextBlock);
-  }
-
-  function renderResults(companies) {
-    els.resultsList.innerHTML = "";
-    selectedCompanyIds = [];
-    updateSelectionUI();
-
-    companies.forEach(company => {
-      const card = document.createElement("div");
-      card.className = "surface-card flex items-center justify-between";
-
-      const info = document.createElement("div");
-      info.innerHTML = `
-        <strong>${escapeHtml(company.name || "Bedrijf")}</strong><br/>
-        <span class="text-sm text-slate-500">${escapeHtml(company.city || "")}</span>
-      `;
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.addEventListener("change", () =>
-        toggleSelection(company._id, checkbox.checked)
+      const relevant = getRelevantCompanies(
+        data.companies,
+        requestData
       );
 
-      card.appendChild(info);
-      card.appendChild(checkbox);
-      els.resultsList.appendChild(card);
-    });
-
-    hideAllStates();
-    show(els.stateResults);
-    show(els.actionBar);
-  }
-
-  function toggleSelection(id, checked) {
-    if (checked) {
-      if (selectedCompanyIds.length >= 5) {
-        alert("Je kunt maximaal 5 bedrijven selecteren.");
+      if (!relevant.length) {
+        showEmpty();
         return;
       }
-      if (!selectedCompanyIds.includes(id)) {
-        selectedCompanyIds.push(id);
-      }
-    } else {
-      selectedCompanyIds = selectedCompanyIds.filter(x => x !== id);
+
+      renderCompanies(relevant);
+      updateFooter();
+      clearState();
+    } catch {
+      showError("Het laden van bedrijven is mislukt. Probeer het opnieuw.");
     }
-    updateSelectionUI();
   }
 
-  function updateSelectionUI() {
-    els.selectedCount.textContent = selectedCompanyIds.length;
-    els.sendBtn.disabled = selectedCompanyIds.length === 0;
+  function getRelevantCompanies(companies, request) {
+    const category = (request.category || request.sector || "").toLowerCase();
+    const city = (request.city || "").toLowerCase();
+
+    // 1) filter op categorie
+    let filtered = companies.filter(c =>
+      (c.category || c.sector || "").toLowerCase() === category
+    );
+
+    // 2) filter op stad (fallback als leeg)
+    const cityMatches = filtered.filter(c =>
+      (c.city || "").toLowerCase() === city
+    );
+    if (cityMatches.length) filtered = cityMatches;
+
+    // 3) sorteer stabiel (toekomstvast)
+    filtered.sort((a, b) => {
+      const ar = a.googleRating || 0;
+      const br = b.googleRating || 0;
+      return br - ar;
+    });
+
+    return filtered;
   }
 
-  function renderError() {
-    hideAllStates();
-    show(els.stateError);
+  function renderCompanies(companies) {
+    listEl.innerHTML = "";
+    companies.forEach(c => {
+      const card = document.createElement("div");
+      card.className = "company-card";
+      card.innerHTML = `
+        <label>
+          <input type="checkbox" />
+          <strong>${c.name}</strong><br/>
+          <span class="muted">${c.city || ""}</span>
+        </label>
+      `;
+
+      const checkbox = card.querySelector("input");
+      checkbox.addEventListener("change", () =>
+        toggleSelect(c._id, checkbox)
+      );
+
+      listEl.appendChild(card);
+    });
   }
 
-  function hideAllStates() {
-    [
-      els.stateLoading,
-      els.stateError,
-      els.stateEmpty,
-      els.stateResults,
-      els.actionBar
-    ].forEach(hide);
+  function toggleSelect(id, checkbox) {
+    if (checkbox.checked) {
+      if (selected.size >= 5) {
+        checkbox.checked = false;
+        return;
+      }
+      selected.add(id);
+    } else {
+      selected.delete(id);
+    }
+    updateFooter();
   }
 
-  function show(el) {
-    if (el) el.classList.remove("hidden");
+  function updateFooter() {
+    countEl.textContent = `${selected.size} van 5 geselecteerd`;
+    sendBtn.disabled = selected.size === 0;
   }
 
-  function hide(el) {
-    if (el) el.classList.add("hidden");
+  function showLoading() {
+    stateEl.textContent = "Geschikte bedrijven worden geladen…";
   }
 
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, s => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[s]));
+  function showEmpty() {
+    stateEl.innerHTML = `
+      <h2>Geen geschikte bedrijven gevonden</h2>
+      <p>We tonen daarom geen resultaten voor deze aanvraag.</p>
+    `;
+  }
+
+  function showError(msg) {
+    stateEl.textContent = msg;
+  }
+
+  function clearState() {
+    stateEl.textContent = "";
   }
 })();

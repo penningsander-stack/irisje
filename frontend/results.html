@@ -2,85 +2,31 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Irisje.nl – Geschikte bedrijven</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- LEIDENDE CSS -->
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/style.css">
 </head>
-
-<body class="irisje-body min-h-screen">
-
-  <!-- HERO BACKDROP (decoratief) -->
-  <div class="irisje-hero-backdrop">
-    <div class="irisje-orbit irisje-orbit--one"></div>
-    <div class="irisje-orbit irisje-orbit--two"></div>
-    <div class="irisje-orbit irisje-orbit--three"></div>
-  </div>
-
-  <!-- HEADER -->
-  <header class="irisje-header sticky top-0 z-40">
-    <div class="section-shell flex items-center justify-between">
-      <div class="font-bold text-indigo-900">Irisje.nl</div>
-      <nav class="flex items-center space-x-6 text-sm">
-        <a href="index.html#start-aanvraag" class="nav-link">Nieuwe aanvraag</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="section-shell">
-
-    <!-- CONTEXT / BEVESTIGING -->
-    <section id="contextBlock" class="mb-6 hidden">
-      <h1 class="text-xl font-semibold mb-1">
-        Geschikte bedrijven voor jouw aanvraag
-      </h1>
-      <p id="contextText" class="text-sm text-slate-500"></p>
-    </section>
-
-    <!-- LOADING STATE -->
-    <section id="stateLoading" class="grid gap-6 hidden">
-      <div class="surface-card skeleton h-24"></div>
-      <div class="surface-card skeleton h-24"></div>
-      <div class="surface-card skeleton h-24"></div>
-      <p class="text-sm text-slate-500">We zoeken geschikte bedrijven…</p>
-    </section>
-
-    <!-- ERROR STATE -->
-    <section id="stateError" class="glass-card hidden">
-      <h2 class="text-lg font-semibold mb-2">Er ging iets mis</h2>
-      <p class="text-sm text-slate-600 mb-4">
-        We konden de resultaten niet laden. Probeer het opnieuw.
+<body>
+  <main class="container">
+    <header class="results-header">
+      <h1>Geschikte bedrijven voor jouw aanvraag</h1>
+      <p id="resultsSubtitle" class="subtitle"></p>
+      <p class="hint">
+        Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
       </p>
-      <button id="retryBtn" class="btn-primary btn-sm">Opnieuw proberen</button>
-    </section>
+    </header>
 
-    <!-- EMPTY STATE -->
-    <section id="stateEmpty" class="glass-card hidden">
-      <h2 class="text-lg font-semibold mb-2">Nog geen resultaten</h2>
-      <p class="text-sm text-slate-600">
-        Op dit moment zijn er nog geen bedrijven beschikbaar die exact aansluiten
-        op je aanvraag. We blijven zoeken.
-      </p>
-    </section>
+    <section id="resultsState" class="state"></section>
 
-    <!-- RESULTS STATE -->
-    <section id="stateResults" class="hidden">
-      <div id="resultsList" class="grid gap-6"></div>
-    </section>
+    <section id="companiesList" class="companies-list"></section>
 
-  </main>
-
-  <!-- STICKY ACTION BAR -->
-  <div id="actionBar" class="sticky bottom-0 z-40 hidden">
-    <div class="section-shell flex items-center justify-between glass-card">
-      <div class="text-sm">
-        <strong id="selectedCount">0</strong> / 5 geselecteerd
-      </div>
-      <button id="sendBtn" class="btn-primary btn-sm" disabled>
-        Verstuur aanvraag
+    <footer class="results-footer">
+      <span id="selectedCount">0 van 5 geselecteerd</span>
+      <button id="sendBtn" class="btn-primary" disabled>
+        Verstuur aanvraag naar geselecteerde bedrijven
       </button>
-    </div>
-  </div>
+    </footer>
+  </main>
 
   <script src="js/results.js"></script>
 </body>
