@@ -5,6 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const submitBtn = document.getElementById("submitBtn");
   const statusEl = document.getElementById("formStatus");
 
+  if (!form) return;
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearErrors();
@@ -19,12 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
       showError("sector", "Kies een categorie.");
       hasError = true;
     }
-
     if (!city) {
       showError("city", "Vul een plaats of postcode in.");
       hasError = true;
     }
-
     if (hasError) return;
 
     submitBtn.disabled = true;
@@ -36,29 +36,25 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sector,
-            city,
-            description
-          })
+          body: JSON.stringify({ sector, city, description })
         }
       );
 
       if (!response.ok) {
-        throw new Error("Aanvraag mislukt");
+        throw new Error("request_failed");
       }
 
       const data = await response.json();
 
       if (!data || !data._id) {
-        throw new Error("Ongeldige serverrespons");
+        throw new Error("invalid_response");
       }
 
       sessionStorage.setItem("requestId", data._id);
       window.location.href = `results.html?requestId=${data._id}`;
-
     } catch (err) {
-      statusEl.textContent = "Er ging iets mis. Probeer het opnieuw.";
+      statusEl.textContent =
+        "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw.";
       submitBtn.disabled = false;
     }
   });
@@ -69,7 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function clearErrors() {
-    document.querySelectorAll(".error").forEach(e => e.textContent = "");
-    statusEl.textContent = "";
+    document.querySelectorAll(".error").forEach(e => (e.textContent = ""));
+    if (statusEl) statusEl.textContent = "";
   }
 });

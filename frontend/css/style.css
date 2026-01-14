@@ -1,19 +1,92 @@
+/* Basis */
 body {
   font-family: system-ui, sans-serif;
   background: #f7f7f7;
   margin: 0;
+  color: #111;
 }
 
 .container {
-  max-width: 600px;
-  margin: 40px auto;
-  background: #ffffff;
-  padding: 32px;
-  border-radius: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
-h1 {
-  margin-top: 0;
+/* Header */
+.site-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+
+.logo {
+  font-weight: 700;
+}
+
+.nav a {
+  margin-left: 16px;
+  text-decoration: none;
+  color: #111;
+}
+
+.nav .cta-link {
+  color: #2563eb;
+}
+
+/* Hero */
+.hero {
+  background: #ffffff;
+  padding: 80px 0;
+}
+
+.hero-sub {
+  color: #555;
+  max-width: 600px;
+}
+
+.primary-cta {
+  display: inline-block;
+  margin-top: 24px;
+  padding: 14px 22px;
+  background: #2563eb;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+/* Steps */
+.steps {
+  padding: 60px 0;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.step-number {
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* Request */
+.request-section {
+  padding: 80px 0;
+}
+
+.request-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 32px;
+  max-width: 600px;
 }
 
 .subtitle {
@@ -47,6 +120,7 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+  border-radius: 6px;
 }
 
 button:disabled {
@@ -63,4 +137,18 @@ button:disabled {
 .status {
   margin-top: 16px;
   font-size: 15px;
+}
+
+.reassurance {
+  margin-top: 24px;
+  padding-left: 18px;
+  color: #444;
+}
+
+/* Footer */
+.site-footer {
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  padding: 24px 0;
+  margin-top: 80px;
 }

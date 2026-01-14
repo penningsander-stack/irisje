@@ -2,46 +2,109 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Irisje.nl – Start je aanvraag</title>
+  <title>Irisje.nl – Vind betrouwbare vakmensen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
 
-  <main class="container">
-    <h1>Start je aanvraag</h1>
-    <p class="subtitle">
-      In een paar stappen koppelen we je aan passende bedrijven.
-      Je zit nog nergens aan vast.
-    </p>
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo">Irisje.nl</div>
+      <nav class="nav">
+        <a href="#hoe-werkt-het">Hoe werkt het</a>
+        <a href="#start-aanvraag" class="cta-link">Start aanvraag</a>
+      </nav>
+    </div>
+  </header>
 
-    <form id="requestForm" novalidate>
-      <div class="field">
-        <label for="sector">Waar kunnen we mee helpen?</label>
-        <select id="sector" required>
-          <option value="">Kies een categorie</option>
-        </select>
-        <div class="error" data-error-for="sector"></div>
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <h1>Vind betrouwbare vakmensen bij jou in de buurt</h1>
+        <p class="hero-sub">
+          Eén aanvraag, meerdere reacties. Vergelijk bedrijven en kies zelf.
+        </p>
+        <a href="#start-aanvraag" class="primary-cta">
+          Start je aanvraag
+        </a>
       </div>
+    </section>
 
-      <div class="field">
-        <label for="city">Plaats of postcode</label>
-        <input type="text" id="city" required />
-        <div class="error" data-error-for="city"></div>
+    <!-- HOE WERKT HET -->
+    <section id="hoe-werkt-het" class="steps">
+      <div class="container">
+        <h2>Hoe werkt Irisje?</h2>
+        <div class="step-grid">
+          <div class="step">
+            <span class="step-number">1</span>
+            <h3>Plaats je aanvraag</h3>
+            <p>Vertel wat je nodig hebt en waar.</p>
+          </div>
+          <div class="step">
+            <span class="step-number">2</span>
+            <h3>Vergelijk bedrijven</h3>
+            <p>Bekijk geschikte bedrijven en kies er maximaal vijf.</p>
+          </div>
+          <div class="step">
+            <span class="step-number">3</span>
+            <h3>Ontvang reacties</h3>
+            <p>Bedrijven nemen contact met je op.</p>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="field">
-        <label for="description">Korte toelichting (optioneel)</label>
-        <textarea id="description" rows="4"></textarea>
+    <!-- START AANVRAAG -->
+    <section id="start-aanvraag" class="request-section">
+      <div class="container request-card">
+        <h2>Start je aanvraag</h2>
+        <p class="subtitle">
+          Dit kost maar een paar minuten. Je zit nog nergens aan vast.
+        </p>
+
+        <form id="requestForm" novalidate>
+          <div class="field">
+            <label for="sector">Waar kunnen we mee helpen?</label>
+            <select id="sector" required>
+              <option value="">Kies een categorie</option>
+            </select>
+            <div class="error" data-error-for="sector"></div>
+          </div>
+
+          <div class="field">
+            <label for="city">Plaats of postcode</label>
+            <input type="text" id="city" required />
+            <div class="error" data-error-for="city"></div>
+          </div>
+
+          <div class="field">
+            <label for="description">Korte toelichting (optioneel)</label>
+            <textarea id="description" rows="4"></textarea>
+          </div>
+
+          <button type="submit" id="submitBtn">
+            Bekijk geschikte bedrijven
+          </button>
+
+          <div id="formStatus" class="status"></div>
+        </form>
+
+        <ul class="reassurance">
+          <li>Maximaal 5 bedrijven</li>
+          <li>Geen verplichtingen</li>
+          <li>Geen spam</li>
+        </ul>
       </div>
-
-      <button type="submit" id="submitBtn">
-        Bekijk geschikte bedrijven
-      </button>
-
-      <div id="formStatus" class="status"></div>
-    </form>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© Irisje.nl</p>
+    </div>
+  </footer>
 
   <script src="js/request.js"></script>
 </body>
