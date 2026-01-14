@@ -1,10 +1,9 @@
 // frontend/js/request.js
 // TEMPORARY FRONTEND FALLBACK FOR CATEGORIES
 // --------------------------------------------------
-// Dit is een EXPLICIETE, TIJDELIJKE oplossing om de
-// aanvraagflow te kunnen testen zonder backend-endpoint.
-// Te verwijderen zodra een publiek categorie-endpoint
-// beschikbaar is.
+// Tijdelijke categoriebron om de flow te testen.
+// Payload stuurt zowel `category` als `sector`
+// voor backend-compatibiliteit.
 // --------------------------------------------------
 
 (function () {
@@ -57,7 +56,6 @@
     const description = document.getElementById("description").value.trim();
 
     let hasError = false;
-
     if (!sector) {
       showError("sector", "Kies een categorie.");
       hasError = true;
@@ -75,7 +73,13 @@
       const response = await fetch(`${API_BASE}/publicRequests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sector, city, description })
+        body: JSON.stringify({
+          // BELANGRIJK: stuur beide velden voor compatibiliteit
+          category: sector,
+          sector: sector,
+          city: city,
+          description: description
+        })
       });
 
       if (!response.ok) throw new Error("request_failed");
