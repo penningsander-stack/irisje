@@ -1,7 +1,10 @@
-// frontend/js/request.js
+// js/request.js
+// Verantwoordelijk voor:
+// - plaats-autocomplete
+// - validatie
+// - starten van een aanvraag
 
-// Vast ingestelde, gestandaardiseerde plaatsnamen
-// (kan later uitgebreid of extern geladen worden)
+// Vast ingestelde plaatsnamen (kan later dynamisch)
 const PLACES = [
   "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
   "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
@@ -10,6 +13,7 @@ const PLACES = [
   "Burgh-Haamstede"
 ];
 
+// DOM references (defensief)
 const form = document.getElementById("requestForm");
 const categorySelect = document.getElementById("category");
 const cityInput = document.getElementById("cityInput");
@@ -17,12 +21,18 @@ const cityHidden = document.getElementById("city");
 const suggestionsBox = document.getElementById("citySuggestions");
 const errorBox = document.getElementById("formError");
 
-// ---------- Autocomplete ----------
+if (!form || !categorySelect || !cityInput || !cityHidden) {
+  console.error("Request form elements missing");
+  return;
+}
+
+// --------------------
+// Autocomplete plaats
+// --------------------
 
 cityInput.addEventListener("input", () => {
   const query = cityInput.value.trim().toLowerCase();
   suggestionsBox.innerHTML = "";
-
   cityHidden.value = "";
 
   if (!query) {
@@ -30,8 +40,8 @@ cityInput.addEventListener("input", () => {
     return;
   }
 
-  const matches = PLACES.filter(p =>
-    p.toLowerCase().startsWith(query)
+  const matches = PLACES.filter(place =>
+    place.toLowerCase().startsWith(query)
   );
 
   if (matches.length === 0) {
@@ -64,7 +74,9 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// ---------- Form submit ----------
+// --------------------
+// Form submit
+// --------------------
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -73,29 +85,44 @@ form.addEventListener("submit", async (e) => {
   const category = categorySelect.value;
   const city = cityHidden.value;
 
-  if (!category || !city) {
-    errorBox.textContent = "Kies een categorie en een plaats uit de lijst.";
+  if (!category) {
+    errorBox.textContent = "Kies eerst een categorie.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+
+  if (!city) {
+    errorBox.textContent = "Kies een plaats uit de lijst.";
     errorBox.classList.remove("hidden");
     return;
   }
 
   try {
-    const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ category, city })
-    });
+    const res = await fetch(
+      "https://irisje-backend.onrender.com/api/publicRequests",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, city })
+      }
+    );
 
-    if (!res.ok) throw new Error("Request failed");
+    if (!res.ok) {
+      throw new Error("Request failed");
+    }
 
     const data = await res.json();
-    if (!data || !data.requestId) throw new Error("No requestId");
+
+    if (!data || !data.requestId) {
+      throw new Error("Invalid response");
+    }
 
     window.location.href = `/results.html?requestId=${data.requestId}`;
 
   } catch (err) {
     console.error(err);
-    errorBox.textContent = "Er ging iets mis bij het starten van je aanvraag.";
+    errorBox.textContent =
+      "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw.";
     errorBox.classList.remove("hidden");
   }
 });

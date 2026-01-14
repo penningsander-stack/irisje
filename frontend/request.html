@@ -6,60 +6,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
 
-<header class="site-header">
-  <div class="container">
-    <a href="/" class="logo">Irisje.nl</a>
-  </div>
-</header>
+<body class="irisje-body">
 
-<main class="container">
-  <section class="card card--large">
-    <h1>Nieuwe aanvraag</h1>
-    <p class="muted">
-      Vertel ons wat je zoekt. Wij tonen passende bedrijven.
-    </p>
+  <!-- HEADER (consistent met homepage) -->
+  <header class="irisje-header">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+    </div>
+  </header>
 
-    <form id="requestForm" novalidate>
+  <main>
+    <section class="irisje-section">
+      <div class="irisje-container">
 
-      <div class="form-group">
-        <label for="category">Wat heb je nodig?</label>
-        <select id="category" required>
-          <option value="">Kies een categorie</option>
-          <option value="Hovenier">Hovenier</option>
-          <option value="Loodgieter">Loodgieter</option>
-          <option value="Elektricien">Elektricien</option>
-          <option value="Schilder">Schilder</option>
-          <option value="Advocaat">Advocaat</option>
-        </select>
+        <!-- Card container (hergebruikt bestaande card classes zonder CSS aan te passen) -->
+        <section class="card card--large">
+          <h1>Start je aanvraag</h1>
+          <p class="muted">
+            Vertel kort wat je zoekt en in welke plaats. Daarna tonen we passende bedrijven.
+          </p>
+
+          <form id="requestForm" novalidate>
+
+            <div class="form-group">
+              <label for="category">Wat heb je nodig?</label>
+              <select id="category" name="category" required>
+                <option value="">Kies een categorie</option>
+                <option value="Hovenier">Hovenier</option>
+                <option value="Loodgieter">Loodgieter</option>
+                <option value="Elektricien">Elektricien</option>
+                <option value="Schilder">Schilder</option>
+                <option value="Advocaat">Advocaat</option>
+              </select>
+            </div>
+
+            <div class="form-group autocomplete">
+              <label for="cityInput">Plaats</label>
+              <input
+                id="cityInput"
+                name="cityInput"
+                type="text"
+                placeholder="Begin met typen…"
+                autocomplete="off"
+                required
+              />
+              <input type="hidden" id="city" name="city" />
+              <div id="citySuggestions" class="autocomplete-list"></div>
+              <small class="muted">Kies een plaats uit de lijst.</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                Bekijk geschikte bedrijven
+              </button>
+            </div>
+
+            <p id="formError" class="error hidden"></p>
+
+          </form>
+        </section>
+
       </div>
+    </section>
+  </main>
 
-      <div class="form-group autocomplete">
-        <label for="cityInput">Plaats</label>
-        <input
-          id="cityInput"
-          type="text"
-          placeholder="Begin met typen…"
-          autocomplete="off"
-        />
-        <input type="hidden" id="city" />
-        <div id="citySuggestions" class="autocomplete-list"></div>
-        <small class="muted">Kies een plaats uit de lijst.</small>
-      </div>
+  <!-- FOOTER (consistent met homepage) -->
+  <footer class="irisje-footer">
+    <div class="irisje-container">
+      <p class="irisje-footer-text">© Irisje.nl</p>
+    </div>
+  </footer>
 
-      <div class="form-actions">
-        <button type="submit" class="btn-primary">
-          Bekijk geschikte bedrijven
-        </button>
-      </div>
-
-      <p id="formError" class="error hidden"></p>
-
-    </form>
-  </section>
-</main>
-
-<script src="/frontend/js/request.js"></script>
+  <script src="/js/request.js"></script>
 </body>
 </html>
