@@ -16,12 +16,10 @@ router.get("/:id", async (req, res) => {
     }
 
     // 2) bedrijven ophalen
-    // ⚠️ BELANGRIJK:
-    // - sector wél filteren
-    // - city/postcode NIET hier filteren
-    const companies = await companyModel.find({
-      sector: request.sector
-    }).lean();
+    // BELANGRIJK:
+    // - GEEN sector/city filtering hier
+    // - deze endpoint moet altijd bedrijven kunnen tonen
+    const companies = await companyModel.find({}).lean();
 
     // 3) startbedrijf bepalen (optioneel)
     let startCompany = null;
@@ -46,7 +44,7 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // 4) startbedrijf bovenaan zetten
+    // 4) startbedrijf bovenaan zetten (geen duplicaat)
     let finalCompanies = companies;
     if (startCompany) {
       finalCompanies = [
