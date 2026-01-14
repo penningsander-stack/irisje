@@ -3,7 +3,6 @@
 const express = require("express");
 const router = express.Router();
 
-// MODELLEN — ALLES LOWERCASE (zoals jouw repo)
 const requestModel = require("../models/request");
 const companyModel = require("../models/company");
 
@@ -16,30 +15,29 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "request not found" });
     }
 
-    // 2) bedrijven ophalen (laat criteria exact zoals ze bij jou werken)
+    // 2) bedrijven ophalen
+    // ⚠️ BELANGRIJK:
+    // - sector wél filteren
+    // - city/postcode NIET hier filteren
     const companies = await companyModel.find({
-      sector: request.sector,
-      city: request.city
+      sector: request.sector
     }).lean();
 
-    // 3) startbedrijf bepalen
+    // 3) startbedrijf bepalen (optioneel)
     let startCompany = null;
     const reqCompanyId = request.companyId ? String(request.companyId) : "";
     const reqCompanySlug = request.companySlug ? String(request.companySlug) : "";
 
-    // 3a) match via companyId binnen companies[]
     if (reqCompanyId) {
       startCompany =
         companies.find(c => String(c._id) === reqCompanyId) || null;
     }
 
-    // 3b) fallback via slug
     if (!startCompany && reqCompanySlug) {
       startCompany =
         companies.find(c => String(c.slug) === reqCompanySlug) || null;
     }
 
-    // 3c) laatste fallback: expliciet uit DB halen
     if (!startCompany && reqCompanyId) {
       try {
         startCompany = await companyModel.findById(reqCompanyId).lean();
@@ -48,7 +46,7 @@ router.get("/:id", async (req, res) => {
       }
     }
 
-    // 4) startbedrijf bovenaan zetten (geen duplicaat)
+    // 4) startbedrijf bovenaan zetten
     let finalCompanies = companies;
     if (startCompany) {
       finalCompanies = [
