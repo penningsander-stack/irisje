@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Stap 2B – Advocaat = hoofdcategorie (incl. juridische specialisaties)
+// RESET – alleen filteren op hoofdcategorie (company.category === request.category)
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -12,20 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const footerEl = document.getElementById("resultsFooter");
 
   const selected = new Set();
-
-  const SECTOR_MAP = {
-    advocaat: [
-      // hoofd
-      "advocaat", "advocaten", "advocatuur", "law", "lawyer", "lawyers", "legal",
-      // specialisaties
-      "arbeidsrecht", "strafrecht", "letselschade", "familierecht",
-      "huurrecht", "bestuursrecht", "ondernemingsrecht", "vastgoedrecht",
-      "privacyrecht", "asielrecht", "vreemdelingenrecht"
-    ],
-    hovenier: ["hovenier", "tuin", "tuinen", "tuinaanleg", "tuinonderhoud", "groen"],
-    loodgieter: ["loodgieter", "installateur", "sanitair", "cv", "riolering", "lekkage"],
-    elektricien: ["elektricien", "elektra", "groepenkast", "stroom", "installatietechniek"]
-  };
 
   init();
 
@@ -51,34 +37,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const request = data.request;
       const companies = data.companies;
 
-      const sectorLabel = request.sector || request.category || "";
+      const categoryLabel = request.category || "";
       const cityLabel = request.city || "";
 
       subtitleEl.textContent =
-        sectorLabel && cityLabel
-          ? `Gebaseerd op jouw aanvraag voor ${sectorLabel} in ${cityLabel}.`
+        categoryLabel && cityLabel
+          ? `Gebaseerd op jouw aanvraag voor ${categoryLabel} in ${cityLabel}.`
           : "";
 
-      // 1️⃣ exacte plaats
-      let results = filterCompanies(companies, request, true);
+      const results = filterCompanies(companies, request);
 
-      // 2️⃣ fallback: andere plaatsen
       if (results.length === 0) {
-        results = filterCompanies(companies, request, false);
-
-        if (results.length > 0) {
-          stateEl.innerHTML = `
-            <h2>Geen bedrijven in ${escapeHtml(cityLabel)} gevonden</h2>
-            <p>Deze bedrijven zitten iets verder weg, maar werken ook in jouw regio.</p>
-          `;
-        } else {
-          showEmpty();
-          return;
-        }
-      } else {
-        stateEl.textContent = "";
+        showEmpty();
+        return;
       }
 
+      stateEl.textContent = "";
       renderCompanies(results);
       footerEl.classList.remove("hidden");
       updateFooter();
@@ -89,39 +63,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function filterCompanies(companies, request, exactCity) {
-    const sectorKey = normalize(request.sector || request.category || "");
-    const city = normalize(request.city || "");
-
-    const allowed = SECTOR_MAP[sectorKey] || [];
+  function filterCompanies(companies, request) {
+    const reqCategory = normalize(request.category);
+    const reqCity = normalize(request.city);
 
     return companies
-      .filter(c => {
-        const tokens = getCompanyTokens(c);
-        return tokens.some(t => allowed.includes(t));
-      })
-      .filter(c => {
-        if (!exactCity) return true;
-        return normalize(c.city) === city;
-      })
+      .filter(c => normalize(c.category) === reqCategory)
+      .filter(c => normalize(c.city) === reqCity)
       .sort((a, b) => (b.googleRating || 0) - (a.googleRating || 0));
-  }
-
-  function getCompanyTokens(c) {
-    const values = [];
-    add(values, c.sector);
-    add(values, c.category);
-    return [...new Set(values.map(normalize))].filter(Boolean);
-  }
-
-  function add(arr, val) {
-    if (!val) return;
-    if (Array.isArray(val)) return val.forEach(v => add(arr, v));
-    String(val).split(/[,/|•·–-]/).forEach(v => arr.push(v));
-  }
-
-  function normalize(v) {
-    return String(v || "").toLowerCase().trim();
   }
 
   function renderCompanies(companies) {
@@ -182,6 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <a href="/request.html" class="btn-primary">Start een nieuwe aanvraag</a>
     `;
     footerEl.classList.add("hidden");
+  }
+
+  function normalize(v) {
+    return String(v || "").toLowerCase().trim();
   }
 
   function escapeHtml(str) {
