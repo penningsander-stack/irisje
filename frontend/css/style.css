@@ -1477,3 +1477,67 @@ a {
     0 6px 18px rgba(15, 23, 42, 0.08);
 }
 
+
+
+
+/* =========================================================
+   IRISJE – REQUEST MICRO-POLISH (typografie & hiërarchie)
+   ========================================================= */
+
+/* Hoofdtitel compacter en zakelijker */
+.card--large h1 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+
+/* Stap-titels consistent en iets zwaarder */
+.card--large h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin-bottom: 0.25rem;
+}
+
+/* Helptekst rustiger en duidelijk ondergeschikt */
+.card--large p.muted {
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+
+
+
+
+/* Zachte sectiescheiding (geen harde lijnen) */
+.card--large hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    rgba(79, 70, 229, 0.0),
+    rgba(79, 70, 229, 0.18),
+    rgba(79, 70, 229, 0.0)
+  );
+  margin: 2rem 0;
+}
+
+
+
+
+/* CTA als logisch eindpunt van de flow */
+.card--large .form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card--large .btn-primary {
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+}
+
+
+
+
