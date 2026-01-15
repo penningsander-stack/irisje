@@ -68,26 +68,46 @@ document.addEventListener("DOMContentLoaded", () => {
   // Filtering / sorteren
   // --------------------
   function getRelevantCompanies(companies, request) {
-    const sector = (request.sector || request.category || "").toLowerCase();
-    const city = (request.city || "").toLowerCase();
+  const sector = (request.sector || request.category || "").toLowerCase();
+  const city = (request.city || "").toLowerCase();
 
-    let filtered = companies.filter(c =>
-      (c.sector || c.category || "").toLowerCase() === sector
+  // 1️⃣ Flexibele sector-matching
+  let filtered = companies.filter(c => {
+    const cSector = (c.sector || "").toLowerCase();
+    const cCategory = (c.category || "").toLowerCase();
+
+    return (
+      cSector.includes(sector) ||
+      sector.includes(cSector) ||
+      cCategory.includes(sector) ||
+      sector.includes(cCategory)
     );
+  });
 
-    const cityMatches = filtered.filter(c =>
-      (c.city || "").toLowerCase() === city
-    );
-    if (cityMatches.length) filtered = cityMatches;
+  // 2️⃣ Plaats-voorkeur (geen harde eis)
+  const cityMatches = filtered.filter(c =>
+    (c.city || "").toLowerCase() === city
+  );
 
-    filtered.sort((a, b) => {
-      const ar = Number(a.googleRating) || 0;
-      const br = Number(b.googleRating) || 0;
-      return br - ar;
-    });
-
-    return filtered;
+  if (cityMatches.length) {
+    filtered = cityMatches;
   }
+
+  // 3️⃣ Fallback: toon alles als filtering leeg is
+  if (!filtered.length) {
+    filtered = companies;
+  }
+
+  // 4️⃣ Sorteren op rating
+  filtered.sort((a, b) => {
+    const ar = Number(a.googleRating) || 0;
+    const br = Number(b.googleRating) || 0;
+    return br - ar;
+  });
+
+  return filtered;
+}
+
 
   // --------------------
   // Render
