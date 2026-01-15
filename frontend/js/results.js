@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – bedrijven + Google reviews + top-5 highlight + profiel-link
+// Resultatenpagina – correcte sector + Google reviews + top-5 + profiel-links
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const companies = data.companies || [];
     const request = data.request || {};
 
+    // ✔️ JUISTE VELDEN
     subtitleEl.textContent =
       `Gebaseerd op jouw aanvraag voor ${request.sector} in ${request.city}.`;
 
