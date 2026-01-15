@@ -1,5 +1,4 @@
 // backend/routes/publicRequests.js
-
 const express = require("express");
 const router = express.Router();
 
@@ -7,129 +6,52 @@ const requestModel = require("../models/request");
 const companyModel = require("../models/company");
 
 /**
- * POST /api/publicRequests
- * Publieke aanvraag aanmaken
+ * Aanvraag aanmaken
  */
 router.post("/", async (req, res) => {
   try {
-    const { category, sector, city, description } = req.body || {};
+    const { sector, specialty, city } = req.body;
 
-    if (!city || (!category && !sector)) {
-      return res.status(400).json({
-        error: "missing required fields"
-      });
+    if (!sector) {
+      return res.status(400).json({ error: "Sector ontbreekt" });
     }
 
     const request = await requestModel.create({
-      category: category || sector,
-      sector: sector || category,
-      city,
-      description: description || ""
+      sector,
+      specialty: specialty || "",
+      city: city || "",
     });
 
-    return res.json({
-      requestId: request._id
-    });
+    res.json({ requestId: request._id });
   } catch (err) {
-    console.error("publicRequests POST error:", err);
-    return res.status(500).json({ error: "server error" });
+    console.error("POST /publicRequests error:", err);
+    res.status(500).json({ error: "Aanvraag kon niet worden aangemaakt" });
   }
 });
 
 /**
- * GET /api/publicRequests/latest
- * Haalt de laatst aangemaakte publieke aanvraag op
- * + alle bedrijven
- */
-// GET /api/publicRequests/latest
-router.get("/latest", async (req, res) => {
-  try {
-    // Sorteer op _id (altijd aanwezig, tijdgebaseerd)
-    const request = await requestModel
-      .findOne({})
-      .sort({ _id: -1 })
-      .lean();
-
-    if (!request) {
-      return res.status(404).json({ error: "no requests found" });
-    }
-
-    let companies = [];
-    try {
-      companies = await companyModel.find({}).lean();
-    } catch (err) {
-      console.error("Company query failed:", err);
-      companies = [];
-    }
-
-    return res.json({
-      request,
-      companies
-    });
-
-  } catch (err) {
-    console.error("publicRequests/latest fatal error:", err);
-    return res.status(500).json({ error: "server error" });
-  }
-});
-
-
-/**
- * GET /api/publicRequests/:id
- * Haalt specifieke aanvraag + bedrijven op
+ * Resultaten ophalen
  */
 router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
+    const request = await requestModel.findById(req.params.id).lean();
 
-    // Voorkom Mongo-crash bij ongeldige id
-    if (!id || id.length < 12) {
-      return res.status(400).json({ error: "invalid request id" });
-    }
-
-    const request = await requestModel.findById(id).lean();
     if (!request) {
-      return res.status(404).json({ error: "request not found" });
+      return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
-    const companies = await companyModel.find({}).lean();
+    // MINIMALE filtering: alleen op sector
+    const companies = await companyModel
+      .find({ sector: request.sector })
+      .lean();
 
-    // Startbedrijf bepalen (optioneel)
-    let startCompany = null;
-
-    if (request.companyId) {
-      startCompany =
-        companies.find(c => String(c._id) === String(request.companyId)) || null;
-    }
-
-    if (!startCompany && request.companySlug) {
-      startCompany =
-        companies.find(c => String(c.slug) === String(request.companySlug)) ||
-        null;
-    }
-
-    if (startCompany) {
-      return res.json({
-        request: {
-          ...request,
-          startCompany
-        },
-        companies: [
-          startCompany,
-          ...companies.filter(
-            c => String(c._id) !== String(startCompany._id)
-          )
-        ]
-      });
-    }
-
-    return res.json({
+    res.json({
       request,
-      companies
+      companies,
     });
   } catch (err) {
-    console.error("publicRequests GET error:", err);
-    return res.status(500).json({ error: "server error" });
+    console.error("GET /publicRequests/:id error:", err);
+    res.status(500).json({ error: "Resultaten konden niet worden opgehaald" });
   }
 });
 

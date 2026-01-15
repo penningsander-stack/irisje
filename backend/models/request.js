@@ -1,10 +1,14 @@
 // backend/models/request.js
 const mongoose = require("mongoose");
 
-const RequestSchema = new mongoose.Schema({
+const requestSchema = new mongoose.Schema({
   sector: {
     type: String,
     required: true,
+  },
+  specialty: {
+    type: String,
+    default: "",
   },
   city: {
     type: String,
@@ -16,4 +20,4 @@ const RequestSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("Request", RequestSchema);
+module.exports = mongoose.model("Request", requestSchema);
