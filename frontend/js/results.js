@@ -1,5 +1,6 @@
 // frontend/js/results.js
-// DEFINITIEVE, FOUTLOZE VERSIE
+// Resultatenpagina (stabiel): laad op basis van requestId (primair) en fallback naar /latest (secundair).
+// Inclusief sector-normalisatie (Optie A): synoniemen mappen naar één canonieke sector-key.
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -11,7 +12,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("sendBtn");
   const footerEl = document.getElementById("resultsFooter");
 
+  // Sector-normalisatie (uitbreidbaar)
+  const SECTOR_MAP = {
+    advocaat: ["advocaat", "advocatuur", "juridisch", "law", "lawyer", "lawyers", "legal", "advocaten"],
+    hovenier: ["hovenier", "tuin", "tuinen", "tuinonderhoud", "tuinaanleg", "groen", "groenvoorziening", "tuinier"],
+    loodgieter: ["loodgieter", "installateur", "installatie", "sanitair", "cv", "verwarming", "riolering", "lekkage"],
+    elektricien: ["elektricien", "elektra", "elektrisch", "installatietechniek", "stroom", "groepenkast"]
+  };
+
   const selected = new Set();
+
+  if (!listEl || !stateEl || !subtitleEl || !countEl || !sendBtn || !footerEl) {
+    // Als IDs in HTML niet bestaan, kunnen we niet renderen.
+    // We loggen dit één keer, zonder de pagina te laten crashen.
+    console.error("results.js: vereiste DOM-elementen ontbreken");
+    return;
+  }
 
   init();
 
@@ -41,12 +57,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const request = data.request;
       const companies = data.companies;
 
-      const sector = request.sector || request.category || "";
-      const city = request.city || "";
+      const sectorLabel = (request.sector || request.category || "").toString().trim();
+      const cityLabel = (request.city || "").toString().trim();
 
       subtitleEl.textContent =
-        sector && city
-          ? `Gebaseerd op jouw aanvraag voor ${sector} in ${city}.`
+        sectorLabel && cityLabel
+          ? `Gebaseerd op jouw aanvraag voor ${sectorLabel} in ${cityLabel}.`
           : "";
 
       const relevant = filterCompanies(companies, request);
@@ -60,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
       clearState();
       footerEl.classList.remove("hidden");
       updateFooter();
-
     } catch (err) {
       console.error("RESULTS INIT ERROR:", err);
       showNoRequest();
@@ -68,34 +83,91 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // Filtering
+  // Filtering (met sector-normalisatie)
   // =====================
   function filterCompanies(companies, request) {
-  const sector = (request.sector || request.category || "").toLowerCase().trim();
-  const city = (request.city || "").toLowerCase().trim();
+    const requestSectorRaw = normalizeText(request.sector || request.category || "");
+    const requestCity = normalizeText(request.city || "");
 
-  if (!sector) return [];
+    if (!requestSectorRaw) return [];
 
-  return companies
-    .filter(c => {
-      const cSector = (c.sector || "").toLowerCase().trim();
-      const cCategory = (c.category || "").toLowerCase().trim();
+    const requestKey = findSectorKey(requestSectorRaw);
+    const allowed = requestKey ? new Set(SECTOR_MAP[requestKey]) : null;
 
-      // ✅ STRIKTE MATCH
-      return cSector === sector || cCategory === sector;
-    })
-    .filter(c => {
-      // Plaats is voorkeur, geen harde eis
-      if (!city) return true;
-      return (c.city || "").toLowerCase().trim() === city;
-    })
-    .sort((a, b) => {
-      const ar = Number(a.googleRating) || 0;
-      const br = Number(b.googleRating) || 0;
-      return br - ar;
-    });
-}
+    // Als de aanvraagsector onbekend is, vallen we terug op strikte match van label (veilig, voorspelbaar)
+    const requestFallbackLabel = requestSectorRaw;
 
+    const filtered = companies
+      .filter(c => {
+        const tokens = getCompanyTokens(c);
+
+        if (allowed) {
+          // Match op sector-groep
+          return tokens.some(t => allowed.has(t));
+        }
+
+        // Fallback: strikte label-match (geen fuzzy)
+        return tokens.some(t => t === requestFallbackLabel);
+      })
+      .filter(c => {
+        if (!requestCity) return true;
+        return normalizeText(c.city || "") === requestCity;
+      })
+      .sort((a, b) => {
+        const ar = Number(a.googleRating) || 0;
+        const br = Number(b.googleRating) || 0;
+        return br - ar;
+      });
+
+    return filtered;
+  }
+
+  function findSectorKey(value) {
+    // Exact token match binnen de map (geen includes) om ruis te voorkomen
+    for (const key of Object.keys(SECTOR_MAP)) {
+      if (SECTOR_MAP[key].includes(value)) return key;
+    }
+    return null;
+  }
+
+  function getCompanyTokens(company) {
+    const tokens = [];
+
+    const sector = company && company.sector != null ? company.sector : "";
+    const category = company && company.category != null ? company.category : "";
+
+    // sector/category kunnen string of array zijn
+    addTokens(tokens, sector);
+    addTokens(tokens, category);
+
+    // Dedup + filter lege
+    return Array.from(new Set(tokens)).filter(Boolean);
+  }
+
+  function addTokens(out, value) {
+    if (Array.isArray(value)) {
+      value.forEach(v => addTokens(out, v));
+      return;
+    }
+
+    const s = normalizeText(value);
+    if (!s) return;
+
+    // Split op veelvoorkomende scheidingstekens (komma, slash, bullets)
+    const parts = s
+      .split(/[,/|•·–-]+/g)
+      .map(p => p.trim())
+      .filter(Boolean);
+
+    parts.forEach(p => out.push(p));
+  }
+
+  function normalizeText(v) {
+    return String(v || "")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ");
+  }
 
   // =====================
   // Render
@@ -186,4 +258,3 @@ document.addEventListener("DOMContentLoaded", () => {
       .replace(/'/g, "&#039;");
   }
 });
-

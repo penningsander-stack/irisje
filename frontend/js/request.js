@@ -1,5 +1,5 @@
-// js/request.js
-// Start aanvraag + plaats-autocomplete (PWA-robust)
+// frontend/js/request.js
+// Start aanvraag + plaats-autocomplete (stabiel en eenvoudig)
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -36,11 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const matches = PLACES.filter(p => p.toLowerCase().startsWith(query));
-
-    if (!matches.length) {
-      suggestionsBox.style.display = "none";
-      return;
-    }
+    if (!matches.length) considerHide();
 
     matches.forEach(place => {
       const item = document.createElement("div");
@@ -55,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
       suggestionsBox.appendChild(item);
     });
 
-    suggestionsBox.style.display = "block";
+    suggestionsBox.style.display = matches.length ? "block" : "none";
   });
 
   document.addEventListener("click", (e) => {
@@ -64,23 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --------------------
-  // Helpers
-  // --------------------
-  function extractRequestIdFromText(text) {
-    if (!text || typeof text !== "string") return null;
-
-    // 1) Probeer JSON parse
-    try {
-      const obj = JSON.parse(text);
-      if (obj && obj.requestId && typeof obj.requestId === "string") return obj.requestId;
-    } catch (_) {
-      // ignore
-    }
-
-    // 2) Fallback regex (als SW/body gek doet)
-    const m = text.match(/"requestId"\s*:\s*"([^"]+)"/);
-    return m ? m[1] : null;
+  function considerHide() {
+    suggestionsBox.style.display = "none";
   }
 
   // --------------------
@@ -105,17 +86,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Bewaar alvast wat context (handig voor debugging/fallback)
     try {
-      localStorage.setItem("lastRequestMeta", JSON.stringify({ sector, city, ts: Date.now() }));
-    } catch (_) {
-      // ignore
-    }
-
-    try {
-      // Cachebust + no-store om SW/caching te minimaliseren
-      const url = `https://irisje-backend.onrender.com/api/publicRequests?t=${Date.now()}`;
-
+      const url = "https://irisje-backend.onrender.com/api/publicRequests";
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -130,29 +102,13 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(`Request failed (${res.status})`);
       }
 
-      // Lees body als TEXT (meest robuust in PWA/SW situaties)
-      let requestId = null;
-      try {
-        const text = await res.text();
-        requestId = extractRequestIdFromText(text);
-      } catch (_) {
-        // ignore
+      // Verwacht: { requestId: "..." }
+      const data = await res.json();
+      if (!data || !data.requestId) {
+        throw new Error("Geen requestId ontvangen");
       }
 
-      // Als we een requestId hebben: altijd opslaan voor results fallback
-      if (requestId) {
-        try {
-          localStorage.setItem("lastRequestId", requestId);
-        } catch (_) {
-          // ignore
-        }
-        window.location.href = `/results.html?requestId=${encodeURIComponent(requestId)}`;
-        return;
-      }
-
-      // Geen requestId teruggekregen (SW/body issue): ga naar results zonder query
-      // Results.js moet dan lastRequestId kunnen gebruiken als fallback.
-      window.location.href = `/results.html`;
+      window.location.href = `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
 
     } catch (err) {
       console.error(err);
