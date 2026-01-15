@@ -1305,3 +1305,52 @@ a {
   border-color: transparent;
   box-shadow: 0 14px 32px rgba(79, 70, 229, 0.45);
 }
+
+
+
+
+/* =========================================================
+   IRISJE – SUBTIELE KLEURACCENTEN (request page)
+   Doel: minder zwart/wit, meer richting, premium rust
+   ========================================================= */
+
+/* Zachte sectie-accenten binnen de request-card */
+.card--large section {
+  position: relative;
+}
+
+/* Licht getinte achtergrond voor stap-secties */
+.card--large section::before {
+  content: "";
+  position: absolute;
+  inset: -0.75rem -0.75rem;
+  background: rgba(79, 70, 229, 0.04); /* indigo 4% */
+  border-radius: var(--irisje-radius-lg);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Zorg dat inhoud boven de tint ligt */
+.card--large section > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Stap-labels iets meer accent */
+.card--large span.muted {
+  color: #4f46e5;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Microcopy rustiger maar niet grauw */
+.card--large p.muted {
+  color: #475569; /* slate-600 */
+}
+
+/* CTA-zone subtiel los van content */
+.card--large .form-actions {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(79, 70, 229, 0.15);
+}
