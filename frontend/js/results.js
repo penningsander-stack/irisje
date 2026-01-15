@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// RESET – alleen filteren op hoofdcategorie (company.category === request.category || request.sector)
+// OPTIE A – filteren op hoofdcategorie via company.categories[] ↔ request.sector
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const request = data.request;
       const companies = data.companies;
 
-      const categoryLabel = request.category || request.sector || "";
+      const categoryLabel = request.sector || "";
       const cityLabel = request.city || "";
 
       subtitleEl.textContent =
@@ -64,14 +64,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function filterCompanies(companies, request) {
-    // ⭐ ENIGE LOGISCHE CORRECTIE
-    const reqCategory = normalize(request.category || request.sector);
+    const reqCategory = normalize(request.sector);
     const reqCity = normalize(request.city);
 
     return companies
-      .filter(c => normalize(c.category) === reqCategory)
+      .filter(c => arrayIncludesNormalized(c.categories, reqCategory))
       .filter(c => normalize(c.city) === reqCity)
-      .sort((a, b) => (b.googleRating || 0) - (a.googleRating || 0));
+      .sort((a, b) => (b.avgRating || 0) - (a.avgRating || 0));
+  }
+
+  function arrayIncludesNormalized(arr, value) {
+    if (!Array.isArray(arr)) return false;
+    const needle = normalize(value);
+    return arr.map(normalize).includes(needle);
   }
 
   function renderCompanies(companies) {
