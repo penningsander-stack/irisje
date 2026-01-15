@@ -41,28 +41,38 @@ router.post("/", async (req, res) => {
  * Haalt de laatst aangemaakte publieke aanvraag op
  * + alle bedrijven
  */
+// GET /api/publicRequests/latest
 router.get("/latest", async (req, res) => {
   try {
+    // Sorteer op _id (altijd aanwezig, tijdgebaseerd)
     const request = await requestModel
       .findOne({})
-      .sort({ createdAt: -1 })
+      .sort({ _id: -1 })
       .lean();
 
     if (!request) {
       return res.status(404).json({ error: "no requests found" });
     }
 
-    const companies = await companyModel.find({}).lean();
+    let companies = [];
+    try {
+      companies = await companyModel.find({}).lean();
+    } catch (err) {
+      console.error("Company query failed:", err);
+      companies = [];
+    }
 
     return res.json({
       request,
       companies
     });
+
   } catch (err) {
-    console.error("publicRequests latest error:", err);
+    console.error("publicRequests/latest fatal error:", err);
     return res.status(500).json({ error: "server error" });
   }
 });
+
 
 /**
  * GET /api/publicRequests/:id
