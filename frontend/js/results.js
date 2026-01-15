@@ -1,5 +1,6 @@
 // js/results.js
 // Resultatenpagina – robuust, refresh-safe, service-worker-safe
+// Fix: als requestId ontbreekt (URL/body/SW), maak automatisch opnieuw een request op basis van lastRequestMeta.
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -23,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     let requestId = params.get("requestId");
 
-    // 2) fallback: localStorage (gezet door request.js)
+    // 2) fallback: localStorage.lastRequestId
     if (!requestId) {
       try {
         requestId = localStorage.getItem("lastRequestId");
@@ -32,14 +33,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // 3) geen requestId → nette uitleg
+    // 3) Als nog steeds geen requestId: probeer op basis van lastRequestMeta (sector/city) een nieuw request aan te maken
+    if (!requestId) {
+      requestId = await tryCreateRequestFromLastMeta();
+    }
+
+    // 4) Als het nog steeds ontbreekt: nette uitleg
     if (!requestId) {
       showNoRequest();
       return;
     }
 
+    // 5) Laad request + companies
     try {
-      // Cachebust + no-store om SW/caching te vermijden
       const res = await fetch(
         `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}?t=${Date.now()}`,
         { cache: "no-store" }
@@ -86,11 +92,101 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --------------------
+  // Cruciale fallback: maak request opnieuw op basis van lastRequestMeta
+  // --------------------
+  async function tryCreateRequestFromLastMeta() {
+    // Voorkom oneindig opnieuw aanmaken bij directe bezoeken / refresh loops
+    // (1 poging per pageload sessie)
+    try {
+      const alreadyTried = sessionStorage.getItem("resultsTriedCreateFromMeta");
+      if (alreadyTried === "1") return null;
+      sessionStorage.setItem("resultsTriedCreateFromMeta", "1");
+    } catch (_) {
+      // ignore
+    }
+
+    let meta = null;
+    try {
+      const raw = localStorage.getItem("lastRequestMeta");
+      if (raw) meta = JSON.parse(raw);
+    } catch (_) {
+      // ignore
+    }
+
+    if (!meta || !meta.sector || !meta.city) return null;
+
+    // Informeer gebruiker subtiel dat we herstellen (geen rommel)
+    stateEl.textContent = "Je aanvraag wordt hersteld…";
+
+    try {
+      const url = `${API_BASE}/publicRequests?t=${Date.now()}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store"
+        },
+        cache: "no-store",
+        body: JSON.stringify({
+          sector: String(meta.sector).trim(),
+          city: String(meta.city).trim()
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`Create failed (${res.status})`);
+      }
+
+      // Lees body als text (meest robuust bij SW/PWA)
+      const text = await res.text();
+      const requestId = extractRequestIdFromText(text);
+
+      if (requestId) {
+        try {
+          localStorage.setItem("lastRequestId", requestId);
+        } catch (_) {
+          // ignore
+        }
+
+        // Zorg dat URL ook meteen klopt (handig bij refresh)
+        if (!new URLSearchParams(window.location.search).get("requestId")) {
+          const newUrl = `/results.html?requestId=${encodeURIComponent(requestId)}`;
+          window.history.replaceState({}, "", newUrl);
+        }
+
+        return requestId;
+      }
+
+      return null;
+
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  }
+
+  function extractRequestIdFromText(text) {
+    if (!text || typeof text !== "string") return null;
+
+    // 1) JSON parse
+    try {
+      const obj = JSON.parse(text);
+      if (obj && typeof obj.requestId === "string") return obj.requestId;
+    } catch (_) {
+      // ignore
+    }
+
+    // 2) Regex fallback
+    const m = text.match(/"requestId"\s*:\s*"([^"]+)"/);
+    return m ? m[1] : null;
+  }
+
+  // --------------------
   // Filtering / sorteren
   // --------------------
   function getRelevantCompanies(companies, request) {
-    const sector =
-      (request.sector || request.category || "").toLowerCase();
+    const sector = (request.sector || request.category || "").toLowerCase();
     const city = (request.city || "").toLowerCase();
 
     let filtered = companies.filter(c =>
@@ -131,9 +227,7 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
 
       const checkbox = card.querySelector("input");
-      checkbox.addEventListener("change", () =>
-        toggleSelect(c._id, checkbox)
-      );
+      checkbox.addEventListener("change", () => toggleSelect(c._id, checkbox));
 
       listEl.appendChild(card);
     });
