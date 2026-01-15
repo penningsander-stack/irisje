@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// RESET – alleen filteren op hoofdcategorie (company.category === request.category)
+// RESET – alleen filteren op hoofdcategorie (company.category === request.category || request.sector)
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const request = data.request;
       const companies = data.companies;
 
-      const categoryLabel = request.category || "";
+      const categoryLabel = request.category || request.sector || "";
       const cityLabel = request.city || "";
 
       subtitleEl.textContent =
@@ -64,7 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function filterCompanies(companies, request) {
-    const reqCategory = normalize(request.category);
+    // ⭐ ENIGE LOGISCHE CORRECTIE
+    const reqCategory = normalize(request.category || request.sector);
     const reqCity = normalize(request.city);
 
     return companies
