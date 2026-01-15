@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – bedrijven + Google reviews + top-5 highlight
+// Resultatenpagina – bedrijven + Google reviews + top-5 highlight + profiel-link
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -67,16 +67,40 @@ document.addEventListener("DOMContentLoaded", async () => {
           ? `<span class="top-match-badge">Beste match</span>`
           : "";
 
+      const slug = encodeURIComponent(company.slug || "");
+
       card.innerHTML = `
         <label class="company-select">
           <input type="checkbox" class="company-checkbox" />
           <div class="company-info">
             <div class="company-header">
-              <h3>${escapeHtml(company.name)}</h3>
+              <h3>
+                <a
+                  href="/company.html?slug=${slug}"
+                  target="_blank"
+                  rel="noopener"
+                  class="company-link"
+                >
+                  ${escapeHtml(company.name)}
+                </a>
+              </h3>
               ${badgeHtml}
             </div>
+
             ${ratingHtml}
+
             <div class="company-city">${escapeHtml(company.city)}</div>
+
+            <div class="company-actions">
+              <a
+                href="/company.html?slug=${slug}"
+                target="_blank"
+                rel="noopener"
+                class="company-profile-link"
+              >
+                Bekijk profiel
+              </a>
+            </div>
           </div>
         </label>
       `;
@@ -101,14 +125,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function renderRating(company) {
-    if (!company.avgRating || !company.reviewCount) {
+    const avg = Number(company?.avgRating);
+    const cnt = Number(company?.reviewCount);
+
+    if (!Number.isFinite(avg) || !Number.isFinite(cnt) || cnt <= 0) {
       return `<div class="muted">Nog geen Google-reviews</div>`;
     }
 
     return `
       <div class="company-rating">
-        ⭐ ${Number(company.avgRating).toFixed(1)}
-        <span class="muted">(${company.reviewCount} Google-reviews)</span>
+        ⭐ ${avg.toFixed(1)}
+        <span class="muted">(${cnt} Google-reviews)</span>
       </div>
     `;
   }
