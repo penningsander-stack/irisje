@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const request = data.request || {};
 
     subtitleEl.textContent =
-      `Gebaseerd op jouw aanvraag voor ${request.category} in ${request.city}.`;
+      `Gebaseerd op jouw aanvraag voor ${request.sector} in ${request.city}.`;
 
     if (!companies.length) {
       showState("Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.");
