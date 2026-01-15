@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina met sector-normalisatie + geografische fallback (Stap 2)
+// Stap 2B – Advocaat = hoofdcategorie (incl. juridische specialisaties)
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -11,20 +11,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("sendBtn");
   const footerEl = document.getElementById("resultsFooter");
 
-  // Sector-normalisatie
-  const SECTOR_MAP = {
-    advocaat: ["advocaat", "advocatuur", "juridisch", "law", "lawyer", "lawyers", "legal", "advocaten"],
-    hovenier: ["hovenier", "tuin", "tuinen", "tuinonderhoud", "tuinaanleg", "groen", "groenvoorziening", "tuinier"],
-    loodgieter: ["loodgieter", "installateur", "installatie", "sanitair", "cv", "verwarming", "riolering", "lekkage"],
-    elektricien: ["elektricien", "elektra", "elektrisch", "installatietechniek", "stroom", "groepenkast"]
-  };
-
   const selected = new Set();
 
-  if (!listEl || !stateEl || !subtitleEl || !countEl || !sendBtn || !footerEl) {
-    console.error("results.js: vereiste DOM-elementen ontbreken");
-    return;
-  }
+  const SECTOR_MAP = {
+    advocaat: [
+      // hoofd
+      "advocaat", "advocaten", "advocatuur", "law", "lawyer", "lawyers", "legal",
+      // specialisaties
+      "arbeidsrecht", "strafrecht", "letselschade", "familierecht",
+      "huurrecht", "bestuursrecht", "ondernemingsrecht", "vastgoedrecht",
+      "privacyrecht", "asielrecht", "vreemdelingenrecht"
+    ],
+    hovenier: ["hovenier", "tuin", "tuinen", "tuinaanleg", "tuinonderhoud", "groen"],
+    loodgieter: ["loodgieter", "installateur", "sanitair", "cv", "riolering", "lekkage"],
+    elektricien: ["elektricien", "elektra", "groepenkast", "stroom", "installatietechniek"]
+  };
 
   init();
 
@@ -39,31 +40,31 @@ document.addEventListener("DOMContentLoaded", () => {
       : `${API_BASE}/publicRequests/latest`;
 
     try {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(res.status);
 
-      const data = await response.json();
-      if (!data || !data.request || !Array.isArray(data.companies)) {
-        throw new Error("Invalid response structure");
+      const data = await res.json();
+      if (!data.request || !Array.isArray(data.companies)) {
+        throw new Error("Invalid API response");
       }
 
       const request = data.request;
       const companies = data.companies;
 
-      const sectorLabel = (request.sector || request.category || "").trim();
-      const cityLabel = (request.city || "").trim();
+      const sectorLabel = request.sector || request.category || "";
+      const cityLabel = request.city || "";
 
       subtitleEl.textContent =
         sectorLabel && cityLabel
           ? `Gebaseerd op jouw aanvraag voor ${sectorLabel} in ${cityLabel}.`
           : "";
 
-      // 1️⃣ Exacte match
-      let results = filterBySectorAndCity(companies, request, true);
+      // 1️⃣ exacte plaats
+      let results = filterCompanies(companies, request, true);
 
-      // 2️⃣ Fallback: andere plaatsen binnen dezelfde sector
+      // 2️⃣ fallback: andere plaatsen
       if (results.length === 0) {
-        results = filterBySectorAndCity(companies, request, false);
+        results = filterCompanies(companies, request, false);
 
         if (results.length > 0) {
           stateEl.innerHTML = `
@@ -75,82 +76,54 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
       } else {
-        clearState();
+        stateEl.textContent = "";
       }
 
       renderCompanies(results);
       footerEl.classList.remove("hidden");
       updateFooter();
 
-    } catch (err) {
-      console.error("RESULTS INIT ERROR:", err);
+    } catch (e) {
+      console.error("RESULTS ERROR:", e);
       showNoRequest();
     }
   }
 
-  // =====================
-  // Filtering
-  // =====================
-  function filterBySectorAndCity(companies, request, exactCity) {
-    const requestSector = normalizeText(request.sector || request.category || "");
-    const requestCity = normalizeText(request.city || "");
+  function filterCompanies(companies, request, exactCity) {
+    const sectorKey = normalize(request.sector || request.category || "");
+    const city = normalize(request.city || "");
 
-    if (!requestSector) return [];
-
-    const sectorKey = findSectorKey(requestSector);
-    const allowed = sectorKey ? new Set(SECTOR_MAP[sectorKey]) : null;
+    const allowed = SECTOR_MAP[sectorKey] || [];
 
     return companies
       .filter(c => {
         const tokens = getCompanyTokens(c);
-        return allowed ? tokens.some(t => allowed.has(t)) : false;
+        return tokens.some(t => allowed.includes(t));
       })
       .filter(c => {
         if (!exactCity) return true;
-        return normalizeText(c.city || "") === requestCity;
+        return normalize(c.city) === city;
       })
-      .sort((a, b) => {
-        const ar = Number(a.googleRating) || 0;
-        const br = Number(b.googleRating) || 0;
-        return br - ar;
-      });
+      .sort((a, b) => (b.googleRating || 0) - (a.googleRating || 0));
   }
 
-  function findSectorKey(value) {
-    for (const key of Object.keys(SECTOR_MAP)) {
-      if (SECTOR_MAP[key].includes(value)) return key;
-    }
-    return null;
+  function getCompanyTokens(c) {
+    const values = [];
+    add(values, c.sector);
+    add(values, c.category);
+    return [...new Set(values.map(normalize))].filter(Boolean);
   }
 
-  function getCompanyTokens(company) {
-    const tokens = [];
-    addTokens(tokens, company.sector);
-    addTokens(tokens, company.category);
-    return Array.from(new Set(tokens)).filter(Boolean);
+  function add(arr, val) {
+    if (!val) return;
+    if (Array.isArray(val)) return val.forEach(v => add(arr, v));
+    String(val).split(/[,/|•·–-]/).forEach(v => arr.push(v));
   }
 
-  function addTokens(out, value) {
-    if (Array.isArray(value)) {
-      value.forEach(v => addTokens(out, v));
-      return;
-    }
-    const s = normalizeText(value);
-    if (!s) return;
-
-    s.split(/[,/|•·–-]+/g)
-      .map(p => p.trim())
-      .filter(Boolean)
-      .forEach(p => out.push(p));
+  function normalize(v) {
+    return String(v || "").toLowerCase().trim();
   }
 
-  function normalizeText(v) {
-    return String(v || "").toLowerCase().trim().replace(/\s+/g, " ");
-  }
-
-  // =====================
-  // Render
-  // =====================
   function renderCompanies(companies) {
     listEl.innerHTML = "";
 
@@ -159,24 +132,22 @@ document.addEventListener("DOMContentLoaded", () => {
       card.className = "company-card";
       card.innerHTML = `
         <label>
-          <input type="checkbox" />
-          <strong>${escapeHtml(c.name || "")}</strong><br/>
-          <span class="muted">${escapeHtml(c.city || "")}</span>
+          <input type="checkbox">
+          <strong>${escapeHtml(c.name)}</strong><br>
+          <span class="muted">${escapeHtml(c.city)}</span>
         </label>
       `;
 
-      const checkbox = card.querySelector("input");
-      checkbox.addEventListener("change", () => toggleSelect(c._id, checkbox));
+      const cb = card.querySelector("input");
+      cb.addEventListener("change", () => toggle(c._id, cb));
       listEl.appendChild(card);
     });
   }
 
-  function toggleSelect(id, checkbox) {
-    if (!id) return;
-
-    if (checkbox.checked) {
+  function toggle(id, cb) {
+    if (cb.checked) {
       if (selected.size >= 5) {
-        checkbox.checked = false;
+        cb.checked = false;
         return;
       }
       selected.add(id);
@@ -191,9 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
     sendBtn.disabled = selected.size === 0;
   }
 
-  // =====================
-  // States
-  // =====================
   function showLoading() {
     stateEl.textContent = "Geschikte bedrijven worden geladen…";
     footerEl.classList.add("hidden");
@@ -210,22 +178,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function showNoRequest() {
     stateEl.innerHTML = `
       <h2>Geen aanvraag gevonden</h2>
-      <p>Je bent op deze pagina gekomen zonder actieve aanvraag.</p>
-      <p><a href="/request.html" class="btn-primary">Start een nieuwe aanvraag</a></p>
+      <p>Er is nog geen aanvraag beschikbaar.</p>
+      <a href="/request.html" class="btn-primary">Start een nieuwe aanvraag</a>
     `;
     footerEl.classList.add("hidden");
-  }
-
-  function clearState() {
-    stateEl.textContent = "";
   }
 
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/>/g, "&gt;");
   }
 });
