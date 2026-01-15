@@ -1444,3 +1444,36 @@ a {
 .card--large input[type="text"]:hover {
   border-color: rgba(79, 70, 229, 0.35);
 }
+
+
+
+/* =========================================================
+   IRISJE – SUBTIELE ERROR STATE (request page)
+   Doel: rustig begeleiden, geen schrikmoment
+   ========================================================= */
+
+/* Veld in error */
+.card--large .is-error select,
+.card--large .is-error input[type="text"] {
+  border-color: rgba(185, 28, 28, 0.45); /* warm rood */
+  background-color: rgba(185, 28, 28, 0.03);
+  box-shadow:
+    0 0 0 3px rgba(185, 28, 28, 0.10),
+    0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+/* Error-tekst: kort, rustig */
+.card--large .error {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: #7f1d1d; /* diep rood, niet fel */
+}
+
+/* Als error + focus: geen extra schok */
+.card--large .is-error select:focus,
+.card--large .is-error input[type="text"]:focus {
+  box-shadow:
+    0 0 0 3px rgba(185, 28, 28, 0.14),
+    0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
