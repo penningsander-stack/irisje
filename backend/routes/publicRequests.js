@@ -1,4 +1,5 @@
 // backend/routes/publicRequests.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.post("/", async (req, res) => {
 
     res.json({ requestId: request._id });
   } catch (err) {
-    console.error("POST /publicRequests error:", err);
+    console.error("POST /api/publicRequests error:", err);
     res.status(500).json({ error: "Aanvraag kon niet worden aangemaakt" });
   }
 });
@@ -40,9 +41,13 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
-    // MINIMALE filtering: alleen op sector
+    // ✅ MINIMALE FIX:
+    // match bedrijven waarvan categories de sector bevat
     const companies = await companyModel
-      .find({ sector: request.sector })
+      .find({
+        categories: { $in: [request.sector] },
+        active: true,
+      })
       .lean();
 
     res.json({
@@ -50,7 +55,7 @@ router.get("/:id", async (req, res) => {
       companies,
     });
   } catch (err) {
-    console.error("GET /publicRequests/:id error:", err);
+    console.error("GET /api/publicRequests/:id error:", err);
     res.status(500).json({ error: "Resultaten konden niet worden opgehaald" });
   }
 });
