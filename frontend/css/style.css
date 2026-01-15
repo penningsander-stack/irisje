@@ -1354,3 +1354,37 @@ a {
   padding-top: 1.25rem;
   border-top: 1px solid rgba(79, 70, 229, 0.15);
 }
+
+
+
+
+/* =========================================================
+   IRISJE – PREMIUM FORM FIELD PROPORTIONS (request page)
+   Doel: minder breed, meer hoogte, rustiger uitstraling
+   ========================================================= */
+
+/* Beperk maximale breedte van form fields */
+.card--large .form-group {
+  max-width: 520px;
+}
+
+/* Select & input: meer verticale ademruimte */
+.card--large select,
+.card--large input[type="text"] {
+  padding: 0.75rem 0.9rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Autocomplete-velden niet volle breedte laten schreeuwen */
+.card--large .autocomplete {
+  max-width: 520px;
+}
+
+/* Op mobiel wel volledig benutten */
+@media (max-width: 640px) {
+  .card--large .form-group,
+  .card--large .autocomplete {
+    max-width: 100%;
+  }
+}
