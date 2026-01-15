@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Irisje.nl – Geschikte bedrijven</title>
-  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- BELANGRIJK: relatief pad -->
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body class="irisje-body">
 
-  <!-- HEADER (consistent) -->
   <header class="irisje-header">
     <div class="irisje-container irisje-header-inner">
       <a href="/" class="irisje-logo">Irisje.nl</a>
@@ -28,13 +29,9 @@
           </p>
         </header>
 
-        <!-- STATE -->
         <section id="resultsState" class="state"></section>
-
-        <!-- RESULTATEN -->
         <section id="companiesList" class="companies-list"></section>
 
-        <!-- FOOTER / CTA (standaard verborgen via JS) -->
         <footer id="resultsFooter" class="results-footer hidden">
           <span id="selectedCount">0 van 5 geselecteerd</span>
           <button id="sendBtn" class="btn-primary" disabled>
@@ -52,6 +49,6 @@
     </div>
   </footer>
 
-  <script src="/js/results.js"></script>
+  <script src="js/results.js"></script>
 </body>
 </html>

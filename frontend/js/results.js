@@ -47,10 +47,19 @@
         requestData
       );
 
-      if (!relevant.length) {
-        showEmpty();
-        return;
-      }
+      function showEmptyStateWithoutRequest() {
+  stateEl.innerHTML = `
+    <h2>Geen aanvraag gevonden</h2>
+    <p>Je bent op deze pagina gekomen zonder actieve aanvraag.</p>
+    <p>
+      <a href="/request.html" class="btn-primary">
+        Start een nieuwe aanvraag
+      </a>
+    </p>
+  `;
+  footerEl.classList.add("hidden");
+}
+
 
       renderCompanies(relevant);
       footerEl.classList.remove("hidden");
