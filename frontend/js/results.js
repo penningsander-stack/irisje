@@ -1,5 +1,5 @@
-// js/results.js
-// Definitieve, robuuste versie – GEEN afhankelijkheid meer van requestId
+// frontend/js/results.js
+// DEFINITIEVE STABIELE VERSIE – NIET MEER AANZITTEN
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -18,78 +18,31 @@ document.addEventListener("DOMContentLoaded", () => {
   async function init() {
     showLoading();
 
-    try {
-      // ✅ ENIGE BRON: laatste publieke aanvraag
-      async function init() {
-  showLoading();
+    const params = new URLSearchParams(window.location.search);
+    const requestId = params.get("requestId");
 
-  const params = new URLSearchParams(window.location.search);
-  const requestId = params.get("requestId");
-
-  try {
     let url;
-
-    // ✅ JUISTE VOLGORDE
     if (requestId) {
-      url = `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}?t=${Date.now()}`;
+      url = `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`;
     } else {
-      url = `${API_BASE}/publicRequests/latest?t=${Date.now()}`;
+      url = `${API_BASE}/publicRequests/latest`;
     }
 
-    const res = await fetch(url, { cache: "no-store" });
-
-    if (!res.ok) {
-      throw new Error(`load_failed_${res.status}`);
-    }
-
-    const data = await res.json();
-
-    if (!data || !data.request) {
-      throw new Error("invalid_response");
-    }
-
-    const request = data.request;
-    const companies = Array.isArray(data.companies) ? data.companies : [];
-
-    const sector = request.sector || request.category || "";
-    const city = request.city || "";
-
-    subtitleEl.textContent =
-      sector && city
-        ? `Gebaseerd op jouw aanvraag voor ${sector} in ${city}.`
-        : "";
-
-    const relevant = getRelevantCompanies(companies, request);
-
-    if (!relevant.length) {
-      showEmpty();
-      return;
-    }
-
-    renderCompanies(relevant);
-    clearState();
-    footerEl.classList.remove("hidden");
-    updateFooter();
-
-  } catch (err) {
-    console.error(err);
-    showNoRequest();
-  }
-}
-
+    try {
+      const res = await fetch(url, { cache: "no-store" });
 
       if (!res.ok) {
-        throw new Error(`latest_failed_${res.status}`);
+        throw new Error(`HTTP ${res.status}`);
       }
 
       const data = await res.json();
 
-      if (!data || !data.request) {
-        throw new Error("invalid_latest_response");
+      if (!data || !data.request || !Array.isArray(data.companies)) {
+        throw new Error("Invalid response structure");
       }
 
       const request = data.request;
-      const companies = Array.isArray(data.companies) ? data.companies : [];
+      const companies = data.companies;
 
       const sector = request.sector || request.category || "";
       const city = request.city || "";
@@ -99,9 +52,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ? `Gebaseerd op jouw aanvraag voor ${sector} in ${city}.`
           : "";
 
-      const relevant = getRelevantCompanies(companies, request);
+      const relevant = filterCompanies(companies, request);
 
-      if (!relevant.length) {
+      if (relevant.length === 0) {
         showEmpty();
         return;
       }
@@ -112,54 +65,43 @@ document.addEventListener("DOMContentLoaded", () => {
       updateFooter();
 
     } catch (err) {
-      console.error(err);
+      console.error("RESULTS INIT ERROR:", err);
       showNoRequest();
     }
   }
 
-  // --------------------
-  // Filtering / sorteren
-  // --------------------
-  function getRelevantCompanies(companies, request) {
-  const sector = (request.sector || request.category || "").toLowerCase();
-  const city = (request.city || "").toLowerCase();
+  // =====================
+  // Filtering (streng maar logisch)
+  // =====================
+  function filterCompanies(companies, request) {
+    const sector = (request.sector || request.category || "").toLowerCase();
+    const city = (request.city || "").toLowerCase();
 
-  // 1️⃣ Flexibele sector-matching (maar wel inhoudelijk)
-  let filtered = companies.filter(c => {
-    const cSector = (c.sector || "").toLowerCase();
-    const cCategory = (c.category || "").toLowerCase();
+    return companies
+      .filter(c => {
+        const cSector = (c.sector || "").toLowerCase();
+        const cCategory = (c.category || "").toLowerCase();
 
-    return (
-      cSector.includes(sector) ||
-      sector.includes(cSector) ||
-      cCategory.includes(sector) ||
-      sector.includes(cCategory)
-    );
-  });
-
-  // 2️⃣ Plaats-voorkeur (geen harde eis)
-  const cityMatches = filtered.filter(c =>
-    (c.city || "").toLowerCase() === city
-  );
-
-  if (cityMatches.length) {
-    filtered = cityMatches;
+        return (
+          cSector.includes(sector) ||
+          sector.includes(cSector) ||
+          cCategory.includes(sector) ||
+          sector.includes(cCategory)
+        );
+      })
+      .filter(c => {
+        return !city || (c.city || "").toLowerCase() === city;
+      })
+      .sort((a, b) => {
+        const ar = Number(a.googleRating) || 0;
+        const br = Number(b.googleRating) || 0;
+        return br - ar;
+      });
   }
 
-  // ❌ GEEN fallback naar “alles”
-  // Als er geen inhoudelijke matches zijn, tonen we niets
-  return filtered.sort((a, b) => {
-    const ar = Number(a.googleRating) || 0;
-    const br = Number(b.googleRating) || 0;
-    return br - ar;
-  });
-}
-
-
-
-  // --------------------
+  // =====================
   // Render
-  // --------------------
+  // =====================
   function renderCompanies(companies) {
     listEl.innerHTML = "";
 
@@ -201,9 +143,9 @@ document.addEventListener("DOMContentLoaded", () => {
     sendBtn.disabled = selected.size === 0;
   }
 
-  // --------------------
+  // =====================
   // States
-  // --------------------
+  // =====================
   function showLoading() {
     stateEl.textContent = "Geschikte bedrijven worden geladen…";
     footerEl.classList.add("hidden");
@@ -220,12 +162,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function showNoRequest() {
     stateEl.innerHTML = `
       <h2>Geen aanvraag gevonden</h2>
-      <p>Er is nog geen aanvraag beschikbaar.</p>
-      <p>
-        <a href="/request.html" class="btn-primary">
-          Start een nieuwe aanvraag
-        </a>
-      </p>
+      <p>Je bent op deze pagina gekomen zonder actieve aanvraag.</p>
+      <p><a href="/request.html" class="btn-primary">Start een nieuwe aanvraag</a></p>
     `;
     footerEl.classList.add("hidden");
   }
@@ -234,9 +172,9 @@ document.addEventListener("DOMContentLoaded", () => {
     stateEl.textContent = "";
   }
 
-  // --------------------
+  // =====================
   // Utils
-  // --------------------
+  // =====================
   function escapeHtml(str) {
     return String(str)
       .replace(/&/g, "&amp;")
