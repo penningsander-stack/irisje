@@ -9,7 +9,7 @@
 
 <body class="irisje-body">
 
-  <!-- HEADER (consistent met homepage) -->
+  <!-- HEADER -->
   <header class="irisje-header">
     <div class="irisje-container irisje-header-inner">
       <a href="/" class="irisje-logo">Irisje.nl</a>
@@ -20,15 +20,16 @@
     <section class="irisje-section">
       <div class="irisje-container">
 
-        <!-- Card container (hergebruikt bestaande card classes zonder CSS aan te passen) -->
         <section class="card card--large">
           <h1>Start je aanvraag</h1>
           <p class="muted">
-            Vertel kort wat je zoekt en in welke plaats. Daarna tonen we passende bedrijven.
+            Vertel wat je zoekt, waar je zoekt en welk specialisme nodig is.
+            Alleen passende bedrijven ontvangen je aanvraag.
           </p>
 
           <form id="requestForm" novalidate>
 
+            <!-- CATEGORIE -->
             <div class="form-group">
               <label for="category">Wat heb je nodig?</label>
               <select id="category" name="category" required>
@@ -41,6 +42,30 @@
               </select>
             </div>
 
+            <!-- SPECIALISME (verplicht) -->
+            <div class="form-group" id="specialtyGroup">
+              <label>Kies een specialisme</label>
+              <p class="muted">
+                Bedrijven ontvangen alleen aanvragen binnen hun specialisme.
+              </p>
+
+              <!-- Chips / radiobuttons -->
+              <div id="specialtyOptions" class="flex flex-wrap gap-2"></div>
+
+              <!-- Anders -->
+              <div id="specialtyOtherWrap" class="mt-3 hidden">
+                <label for="specialtyOther">Anders, namelijk</label>
+                <input
+                  type="text"
+                  id="specialtyOther"
+                  name="specialtyOther"
+                  placeholder="Bijv. arbeidsrecht, strafrecht, lekkage…"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+
+            <!-- PLAATS -->
             <div class="form-group autocomplete">
               <label for="cityInput">Plaats</label>
               <input
@@ -56,6 +81,7 @@
               <small class="muted">Kies een plaats uit de lijst.</small>
             </div>
 
+            <!-- ACTIES -->
             <div class="form-actions">
               <button type="submit" class="btn-primary">
                 Bekijk geschikte bedrijven
@@ -71,7 +97,7 @@
     </section>
   </main>
 
-  <!-- FOOTER (consistent met homepage) -->
+  <!-- FOOTER -->
   <footer class="irisje-footer">
     <div class="irisje-container">
       <p class="irisje-footer-text">© Irisje.nl</p>
@@ -81,4 +107,3 @@
   <script src="/js/request.js"></script>
 </body>
 </html>
-
