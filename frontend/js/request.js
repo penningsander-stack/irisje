@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Start aanvraag + plaats-autocomplete + VERPLICHT specialisme (keuze via radiobuttons/chips + optioneel "Anders")
+// Aanvraag starten met VERPLICHT specialisme (HTML-gedreven)
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -10,8 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "Burgh-Haamstede"
   ];
 
-  // Alleen voor advocaat geven we een set "chips" mee.
-  // Voor alle overige sectoren kan de gebruiker via "Anders" verplicht invullen.
   const SPECIALTIES_BY_SECTOR = {
     advocaat: [
       "Arbeidsrecht",
@@ -30,148 +28,100 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("requestForm");
   const categorySelect = document.getElementById("category");
+
+  const specialtyOptions = document.getElementById("specialtyOptions");
+  const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
+  const specialtyOtherInput = document.getElementById("specialtyOther");
+
   const cityInput = document.getElementById("cityInput");
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
   const errorBox = document.getElementById("formError");
 
-  if (!form || !categorySelect || !cityInput || !cityHidden || !suggestionsBox || !errorBox) {
-    console.error("request.js: formulier-elementen niet gevonden");
+  if (
+    !form ||
+    !categorySelect ||
+    !specialtyOptions ||
+    !specialtyOtherWrap ||
+    !specialtyOtherInput ||
+    !cityInput ||
+    !cityHidden ||
+    !suggestionsBox ||
+    !errorBox
+  ) {
+    console.error("request.js: vereiste form-elementen ontbreken");
     return;
   }
 
+  let selectedSpecialty = "";
+
   // --------------------
-  // Specialisme UI (radiobuttons/chips)
+  // Specialisme chips
   // --------------------
-  let specialtyValue = ""; // definitieve gekozen waarde die we versturen
-  let otherInputEl = null;
+  function renderSpecialties() {
+    const sector = normalize(categorySelect.value);
+    specialtyOptions.innerHTML = "";
+    specialtyOtherWrap.classList.add("hidden");
+    specialtyOtherInput.value = "";
+    selectedSpecialty = "";
 
-  const specialtyWrap = document.createElement("div");
-  specialtyWrap.className = "mt-4";
+    if (!sector) return;
 
-  const specialtyTitle = document.createElement("label");
-  specialtyTitle.className = "block text-sm font-medium mb-2";
-  specialtyTitle.textContent = "Kies een specialisme";
+    const list = SPECIALTIES_BY_SECTOR[sector] || [];
 
-  const specialtyHint = document.createElement("p");
-  specialtyHint.className = "text-sm text-slate-600 mb-2";
-  specialtyHint.textContent = "Bedrijven ontvangen alleen aanvragen binnen hun specialisme.";
-
-  const radiosContainer = document.createElement("div");
-  radiosContainer.className = "flex flex-wrap gap-2";
-
-  const otherWrap = document.createElement("div");
-  otherWrap.className = "mt-3 hidden";
-
-  const otherLabel = document.createElement("label");
-  otherLabel.className = "block text-sm font-medium mb-1";
-  otherLabel.textContent = "Vul je specialisme in";
-
-  otherInputEl = document.createElement("input");
-  otherInputEl.type = "text";
-  otherInputEl.className = "w-full";
-  otherInputEl.placeholder = "Bijv. contracten, echtscheiding, lekkage, groepenkast…";
-  otherInputEl.autocomplete = "off";
-
-  otherWrap.appendChild(otherLabel);
-  otherWrap.appendChild(otherInputEl);
-
-  specialtyWrap.appendChild(specialtyTitle);
-  specialtyWrap.appendChild(specialtyHint);
-  specialtyWrap.appendChild(radiosContainer);
-  specialtyWrap.appendChild(otherWrap);
-
-  // Plaats specialtyWrap direct ná de categorie-select (zonder HTML aan te passen)
-  categorySelect.parentElement?.appendChild(specialtyWrap);
-
-  // Bouw de “chips” opnieuw bij wijziging van sector
-  function renderSpecialtyOptions() {
-    const sectorRaw = (categorySelect.value || "").trim();
-    const sectorKey = normalize(sectorRaw);
-
-    specialtyValue = "";
-    radiosContainer.innerHTML = "";
-    otherWrap.classList.add("hidden");
-    otherInputEl.value = "";
-
-    if (!sectorRaw) {
-      // Nog geen sector gekozen: laat niets selecteerbaars zien
-      return;
-    }
-
-    const list = SPECIALTIES_BY_SECTOR[sectorKey] || [];
-
-    // 1) Presets (alleen als we ze hebben)
-    list.forEach((label) => {
-      radiosContainer.appendChild(makeChipRadio(label, label, false));
+    list.forEach(label => {
+      specialtyOptions.appendChild(createChip(label, false));
     });
 
-    // 2) Altijd: "Anders" optie met verplicht invulveld
-    radiosContainer.appendChild(makeChipRadio("Anders (invullen)", "__OTHER__", true));
+    specialtyOptions.appendChild(createChip("Anders", true));
   }
 
-  function makeChipRadio(labelText, value, isOther) {
+  function createChip(label, isOther) {
     const id = `spec_${Math.random().toString(16).slice(2)}`;
 
     const wrapper = document.createElement("div");
-    wrapper.className = "inline-flex";
 
     const input = document.createElement("input");
     input.type = "radio";
-    input.name = "specialtyChoice";
+    input.name = "specialty";
     input.id = id;
-    input.value = value;
     input.className = "sr-only";
 
-    const label = document.createElement("label");
-    label.setAttribute("for", id);
-    label.className =
-      "cursor-pointer select-none rounded-full border px-3 py-1 text-sm " +
-      "hover:bg-slate-50";
-
-    label.textContent = labelText;
+    const chip = document.createElement("label");
+    chip.setAttribute("for", id);
+    chip.className = "chip";
+    chip.textContent = label;
 
     input.addEventListener("change", () => {
-      // visuele “selected” state
-      [...radiosContainer.querySelectorAll("label")].forEach(l => {
-        l.classList.remove("bg-slate-900", "text-white", "border-slate-900");
-      });
-      label.classList.add("bg-slate-900", "text-white", "border-slate-900");
+      [...specialtyOptions.querySelectorAll(".chip")].forEach(c =>
+        c.classList.remove("chip--active")
+      );
+      chip.classList.add("chip--active");
 
       if (isOther) {
-        otherWrap.classList.remove("hidden");
-        specialtyValue = ""; // wordt pas geldig bij invullen
-        // focus voor snelheid
-        setTimeout(() => otherInputEl.focus(), 0);
+        specialtyOtherWrap.classList.remove("hidden");
+        selectedSpecialty = "";
+        setTimeout(() => specialtyOtherInput.focus(), 0);
       } else {
-        otherWrap.classList.add("hidden");
-        otherInputEl.value = "";
-        specialtyValue = labelText;
+        specialtyOtherWrap.classList.add("hidden");
+        specialtyOtherInput.value = "";
+        selectedSpecialty = label;
       }
     });
 
     wrapper.appendChild(input);
-    wrapper.appendChild(label);
+    wrapper.appendChild(chip);
     return wrapper;
   }
 
-  otherInputEl.addEventListener("input", () => {
-    // Alleen als “Anders” geselecteerd is
-    const chosen = form.querySelector('input[name="specialtyChoice"]:checked');
-    if (chosen && chosen.value === "__OTHER__") {
-      specialtyValue = (otherInputEl.value || "").trim();
-    }
+  specialtyOtherInput.addEventListener("input", () => {
+    selectedSpecialty = specialtyOtherInput.value.trim();
   });
 
-  categorySelect.addEventListener("change", () => {
-    renderSpecialtyOptions();
-  });
-
-  // Initial render
-  renderSpecialtyOptions();
+  categorySelect.addEventListener("change", renderSpecialties);
 
   // --------------------
-  // Autocomplete
+  // Plaats autocomplete
   // --------------------
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim().toLowerCase();
@@ -183,8 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const matches = PLACES.filter(p => p.toLowerCase().startsWith(query));
-    if (!matches.length) considerHide();
+    const matches = PLACES.filter(p =>
+      p.toLowerCase().startsWith(query)
+    );
 
     matches.forEach(place => {
       const item = document.createElement("div");
@@ -202,10 +153,64 @@ document.addEventListener("DOMContentLoaded", () => {
     suggestionsBox.style.display = matches.length ? "block" : "none";
   });
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", e => {
     if (!e.target.closest(".autocomplete")) {
       suggestionsBox.style.display = "none";
     }
   });
 
-  func
+  // --------------------
+  // Submit
+  // --------------------
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    errorBox.classList.add("hidden");
+
+    const sector = categorySelect.value.trim();
+    const city = cityHidden.value.trim();
+    const specialty = selectedSpecialty.trim();
+
+    if (!sector) {
+      return showError("Kies een categorie.");
+    }
+    if (!specialty) {
+      return showError("Kies een specialisme.");
+    }
+    if (!city) {
+      return showError("Kies een plaats uit de lijst.");
+    }
+
+    try {
+      const res = await fetch(
+        "https://irisje-backend.onrender.com/api/publicRequests",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ sector, specialty, city })
+        }
+      );
+
+      if (!res.ok) throw new Error(res.status);
+
+      const data = await res.json();
+      if (!data.requestId) throw new Error("Geen requestId");
+
+      window.location.href =
+        `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
+
+    } catch (err) {
+      console.error(err);
+      showError("Er ging iets mis bij het starten van je aanvraag.");
+    }
+  });
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.remove("hidden");
+  }
+
+  function normalize(v) {
+    return String(v || "").toLowerCase().trim();
+  }
+});
