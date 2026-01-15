@@ -1244,3 +1244,64 @@ a {
   font-size: 0.7rem;
   color: rgb(79 70 229);
 }
+
+
+
+/* =========================================================
+   IRISJE – GENERIC CARD (premium basis)
+   Wordt gebruikt door request / onboarding / formulieren
+   ========================================================= */
+
+.card {
+  background: var(--irisje-surface);
+  border-radius: var(--irisje-radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: var(--irisje-shadow-soft);
+}
+
+/* Grote primaire kaart (request page) */
+.card--large {
+  padding: 2.25rem 2.25rem 2.1rem;
+}
+
+@media (max-width: 639px) {
+  .card--large {
+    padding: 1.6rem 1.25rem 1.5rem;
+  }
+}
+
+/* =========================================================
+   IRISJE – SPECIALISME CHIPS (request page)
+   ========================================================= */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  border-radius: var(--irisje-radius-pill);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease,
+    transform 0.12s ease;
+}
+
+.chip:hover {
+  border-color: rgba(79, 70, 229, 0.55);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.chip--active {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 14px 32px rgba(79, 70, 229, 0.45);
+}
