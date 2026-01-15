@@ -1541,3 +1541,64 @@ a {
 
 
 
+
+
+/* =========================================================
+   IRISJE – RESULTS PAGE PREMIUM LOOK
+   Zelfde visuele taal als request
+   ========================================================= */
+
+/* Container rustiger */
+.results-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Resultaatkaart */
+.result-card {
+  background: var(--irisje-surface);
+  border-radius: var(--irisje-radius-lg);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: var(--irisje-shadow-soft);
+  padding: 1.25rem 1.25rem 1.1rem;
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* Hover: zelfde rust als request */
+.result-card:hover {
+  border-color: rgba(79, 70, 229, 0.45);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.10);
+  transform: translateY(-2px);
+}
+
+/* Bedrijfsnaam */
+.result-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.15rem;
+}
+
+/* Plaats */
+.result-card .company-city {
+  font-size: 0.8rem;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+/* Specialisme / badges */
+.result-card .badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--irisje-radius-pill);
+  background: rgba(79, 70, 229, 0.08);
+  color: #4338ca;
+  margin-right: 0.3rem;
+  margin-top: 0.25rem;
+}
+

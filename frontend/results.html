@@ -6,43 +6,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
+
 <body class="irisje-body min-h-screen">
 
+  <!-- HEADER -->
+  <header class="irisje-header">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+    </div>
+  </header>
 
-<header class="irisje-header">
-  <div class="container header-inner">
-    <a href="/" class="logo">Irisje.nl</a>
-  </div>
-</header>
+  <main>
+    <section class="irisje-section">
+      <div class="irisje-container">
 
-<main class="container results-page">
-  <h1>Geschikte bedrijven voor jouw aanvraag</h1>
-  <p id="resultsSubtitle" class="subtitle"></p>
+        <!-- SINGLE PREMIUM CARD -->
+        <section class="card card--large">
 
-  <p class="intro">
-    Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
-  </p>
+          <header class="mb-4">
+            <h1>Geschikte bedrijven voor jouw aanvraag</h1>
+            <p id="resultsSubtitle" class="muted"></p>
+          </header>
 
-  <div id="resultsState" class="results-state"></div>
+          <p class="muted mb-6">
+            Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
+          </p>
 
-  <div id="companiesList" class="companies-list"></div>
-</main>
+          <!-- STATUS (laden / geen resultaten) -->
+          <div id="resultsState" class="results-state mb-6"></div>
 
-<footer id="resultsFooter" class="results-footer hidden">
-  <div class="container footer-inner">
-    <span id="selectedCount">0 van 5 geselecteerd</span>
-    <button id="sendBtn" class="btn-primary" disabled>
-      Verstuur aanvraag naar geselecteerde bedrijven
-    </button>
-  </div>
-</footer>
+          <!-- RESULTATEN -->
+          <div id="companiesList" class="results-container"></div>
 
-<footer class="site-footer">
-  <div class="container">
-    © Irisje.nl
-  </div>
-</footer>
+        </section>
 
-<script src="/js/results.js"></script>
+      </div>
+    </section>
+  </main>
+
+  <!-- SELECTIE FOOTER -->
+  <footer id="resultsFooter" class="results-footer hidden">
+    <div class="irisje-container footer-inner">
+      <span id="selectedCount">0 van 5 geselecteerd</span>
+      <button id="sendBtn" class="btn-primary" disabled>
+        Verstuur aanvraag naar geselecteerde bedrijven
+      </button>
+    </div>
+  </footer>
+
+  <!-- SITE FOOTER -->
+  <footer class="site-footer">
+    <div class="irisje-container">
+      © Irisje.nl
+    </div>
+  </footer>
+
+  <script src="/js/results.js"></script>
 </body>
 </html>
