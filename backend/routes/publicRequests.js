@@ -8,16 +8,12 @@ const companyModel = require("../models/company");
 
 /**
  * POST /api/publicRequests
- * Doel: publieke aanvraag aanmaken (minimaal).
- * - Slaat aanvraag op
- * - Geeft _id terug
- * - Geen matching, geen e-mail, geen extra logica
+ * Publieke aanvraag aanmaken
  */
 router.post("/", async (req, res) => {
   try {
     const { category, sector, city, description } = req.body || {};
 
-    // Minimale validatie
     if (!city || (!category && !sector)) {
       return res.status(400).json({
         error: "missing required fields"
@@ -32,7 +28,7 @@ router.post("/", async (req, res) => {
     });
 
     return res.json({
-      _id: request._id
+      requestId: request._id
     });
   } catch (err) {
     console.error("publicRequests POST error:", err);
@@ -40,64 +36,87 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /api/publicRequests/:id
+/**
+ * GET /api/publicRequests/latest
+ * Haalt de laatst aangemaakte publieke aanvraag op
+ * + alle bedrijven
+ */
+router.get("/latest", async (req, res) => {
+  try {
+    const request = await requestModel
+      .findOne({})
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!request) {
+      return res.status(404).json({ error: "no requests found" });
+    }
+
+    const companies = await companyModel.find({}).lean();
+
+    return res.json({
+      request,
+      companies
+    });
+  } catch (err) {
+    console.error("publicRequests latest error:", err);
+    return res.status(500).json({ error: "server error" });
+  }
+});
+
+/**
+ * GET /api/publicRequests/:id
+ * Haalt specifieke aanvraag + bedrijven op
+ */
 router.get("/:id", async (req, res) => {
   try {
-    // 1) aanvraag ophalen
-    const request = await requestModel.findById(req.params.id).lean();
+    const { id } = req.params;
+
+    // Voorkom Mongo-crash bij ongeldige id
+    if (!id || id.length < 12) {
+      return res.status(400).json({ error: "invalid request id" });
+    }
+
+    const request = await requestModel.findById(id).lean();
     if (!request) {
       return res.status(404).json({ error: "request not found" });
     }
 
-    // 2) bedrijven ophalen
-    // BELANGRIJK:
-    // - GEEN sector/city filtering hier
-    // - deze endpoint moet altijd bedrijven kunnen tonen
     const companies = await companyModel.find({}).lean();
 
-    // 3) startbedrijf bepalen (optioneel)
+    // Startbedrijf bepalen (optioneel)
     let startCompany = null;
-    const reqCompanyId = request.companyId ? String(request.companyId) : "";
-    const reqCompanySlug = request.companySlug ? String(request.companySlug) : "";
 
-    if (reqCompanyId) {
+    if (request.companyId) {
       startCompany =
-        companies.find(c => String(c._id) === reqCompanyId) || null;
+        companies.find(c => String(c._id) === String(request.companyId)) || null;
     }
 
-    if (!startCompany && reqCompanySlug) {
+    if (!startCompany && request.companySlug) {
       startCompany =
-        companies.find(c => String(c.slug) === reqCompanySlug) || null;
+        companies.find(c => String(c.slug) === String(request.companySlug)) ||
+        null;
     }
 
-    if (!startCompany && reqCompanyId) {
-      try {
-        startCompany = await companyModel.findById(reqCompanyId).lean();
-      } catch {
-        startCompany = null;
-      }
-    }
-
-    // 4) startbedrijf bovenaan zetten (geen duplicaat)
-    let finalCompanies = companies;
     if (startCompany) {
-      finalCompanies = [
-        startCompany,
-        ...companies.filter(
-          c => String(c._id) !== String(startCompany._id)
-        )
-      ];
+      return res.json({
+        request: {
+          ...request,
+          startCompany
+        },
+        companies: [
+          startCompany,
+          ...companies.filter(
+            c => String(c._id) !== String(startCompany._id)
+          )
+        ]
+      });
     }
 
-    // 5) response
     return res.json({
-      request: {
-        ...request,
-        startCompany: startCompany || null
-      },
-      companies: finalCompanies
+      request,
+      companies
     });
-
   } catch (err) {
     console.error("publicRequests GET error:", err);
     return res.status(500).json({ error: "server error" });
@@ -105,4 +124,3 @@ router.get("/:id", async (req, res) => {
 });
 
 module.exports = router;
-
