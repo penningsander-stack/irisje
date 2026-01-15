@@ -20,10 +20,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // ✅ ENIGE BRON: laatste publieke aanvraag
-      const res = await fetch(
-        `${API_BASE}/publicRequests/latest?t=${Date.now()}`,
-        { cache: "no-store" }
-      );
+      async function init() {
+  showLoading();
+
+  const params = new URLSearchParams(window.location.search);
+  const requestId = params.get("requestId");
+
+  try {
+    let url;
+
+    // ✅ JUISTE VOLGORDE
+    if (requestId) {
+      url = `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}?t=${Date.now()}`;
+    } else {
+      url = `${API_BASE}/publicRequests/latest?t=${Date.now()}`;
+    }
+
+    const res = await fetch(url, { cache: "no-store" });
+
+    if (!res.ok) {
+      throw new Error(`load_failed_${res.status}`);
+    }
+
+    const data = await res.json();
+
+    if (!data || !data.request) {
+      throw new Error("invalid_response");
+    }
+
+    const request = data.request;
+    const companies = Array.isArray(data.companies) ? data.companies : [];
+
+    const sector = request.sector || request.category || "";
+    const city = request.city || "";
+
+    subtitleEl.textContent =
+      sector && city
+        ? `Gebaseerd op jouw aanvraag voor ${sector} in ${city}.`
+        : "";
+
+    const relevant = getRelevantCompanies(companies, request);
+
+    if (!relevant.length) {
+      showEmpty();
+      return;
+    }
+
+    renderCompanies(relevant);
+    clearState();
+    footerEl.classList.remove("hidden");
+    updateFooter();
+
+  } catch (err) {
+    console.error(err);
+    showNoRequest();
+  }
+}
+
 
       if (!res.ok) {
         throw new Error(`latest_failed_${res.status}`);
