@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Aanvraag starten met VERPLICHT specialisme (HTML-gedreven)
+// Aanvraag starten met VERPLICHT specialisme + city
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("requestForm");
   const categorySelect = document.getElementById("category");
+  const nameInput = document.getElementById("name");
+  const emailInput = document.getElementById("email");
 
   const specialtyOptions = document.getElementById("specialtyOptions");
   const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
@@ -41,6 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (
     !form ||
     !categorySelect ||
+    !nameInput ||
+    !emailInput ||
     !specialtyOptions ||
     !specialtyOtherWrap ||
     !specialtyOtherInput ||
@@ -166,19 +170,17 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
     errorBox.classList.add("hidden");
 
-    const sector = categorySelect.value.trim();
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const category = categorySelect.value.trim();
     const city = cityHidden.value.trim();
     const specialty = selectedSpecialty.trim();
 
-    if (!sector) {
-      return showError("Kies een categorie.");
-    }
-    if (!specialty) {
-      return showError("Kies een specialisme.");
-    }
-    if (!city) {
-      return showError("Kies een plaats uit de lijst.");
-    }
+    if (!name) return showError("Vul je naam in.");
+    if (!email) return showError("Vul je e-mailadres in.");
+    if (!category) return showError("Kies een categorie.");
+    if (!specialty) return showError("Kies een specialisme.");
+    if (!city) return showError("Kies een plaats uit de lijst.");
 
     try {
       const res = await fetch(
@@ -187,17 +189,25 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-          body: JSON.stringify({ sector, specialty, city })
+          body: JSON.stringify({
+            name,
+            email,
+            category,
+            specialty,
+            city
+          })
         }
       );
 
       if (!res.ok) throw new Error(res.status);
 
       const data = await res.json();
-      if (!data.requestId) throw new Error("Geen requestId");
+      if (!data.request || !data.request._id) {
+        throw new Error("Geen request-id ontvangen");
+      }
 
       window.location.href =
-        `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
+        `/results.html?requestId=${encodeURIComponent(data.request._id)}`;
 
     } catch (err) {
       console.error(err);
