@@ -1388,3 +1388,26 @@ a {
     max-width: 100%;
   }
 }
+
+
+
+
+/* =========================================================
+   IRISJE – STERKERE FORM LABELS (request page)
+   Doel: duidelijker hiërarchie, premium uitstraling
+   ========================================================= */
+
+.card--large label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #334155; /* slate-700 */
+}
+
+/* Labels iets losser van veld */
+.card--large .form-group label {
+  margin-bottom: 0.45rem;
+}
