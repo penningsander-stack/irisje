@@ -1,9 +1,7 @@
 // js/request.js
-// Start aanvraag + plaats-autocomplete
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Vast ingestelde plaatsnamen
   const PLACES = [
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
     "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
@@ -12,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "Burgh-Haamstede"
   ];
 
-  // DOM references
   const form = document.getElementById("requestForm");
   const categorySelect = document.getElementById("category");
   const cityInput = document.getElementById("cityInput");
@@ -20,16 +17,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const suggestionsBox = document.getElementById("citySuggestions");
   const errorBox = document.getElementById("formError");
 
-  // Als formulier ontbreekt: niets doen (geen crash)
   if (!form || !categorySelect || !cityInput || !cityHidden) {
     console.error("request.js: formulier-elementen niet gevonden");
     return;
   }
 
-  // --------------------
-  // Autocomplete plaats
-  // --------------------
-
+  // Autocomplete
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim().toLowerCase();
     suggestionsBox.innerHTML = "";
@@ -40,8 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const matches = PLACES.filter(place =>
-      place.toLowerCase().startsWith(query)
+    const matches = PLACES.filter(p =>
+      p.toLowerCase().startsWith(query)
     );
 
     if (matches.length === 0) {
@@ -67,25 +60,21 @@ document.addEventListener("DOMContentLoaded", () => {
     suggestionsBox.style.display = "block";
   });
 
-  // Klik buiten autocomplete → sluiten
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".autocomplete")) {
       suggestionsBox.style.display = "none";
     }
   });
 
-  // --------------------
-  // Form submit
-  // --------------------
-
+  // Submit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorBox.classList.add("hidden");
 
-    const category = categorySelect.value;
+    const sector = categorySelect.value;
     const city = cityHidden.value;
 
-    if (!category) {
+    if (!sector) {
       errorBox.textContent = "Kies eerst een categorie.";
       errorBox.classList.remove("hidden");
       return;
@@ -103,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category, city })
+          body: JSON.stringify({ sector, city })
         }
       );
 
@@ -128,4 +117,3 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
 });
-
