@@ -71,30 +71,31 @@ document.addEventListener("DOMContentLoaded", () => {
   // Filtering
   // =====================
   function filterCompanies(companies, request) {
-    const sector = (request.sector || request.category || "").toLowerCase();
-    const city = (request.city || "").toLowerCase();
+  const sector = (request.sector || request.category || "").toLowerCase().trim();
+  const city = (request.city || "").toLowerCase().trim();
 
-    return companies
-      .filter(c => {
-        const cSector = (c.sector || "").toLowerCase();
-        const cCategory = (c.category || "").toLowerCase();
+  if (!sector) return [];
 
-        return (
-          cSector.includes(sector) ||
-          sector.includes(cSector) ||
-          cCategory.includes(sector) ||
-          sector.includes(cCategory)
-        );
-      })
-      .filter(c => {
-        return !city || (c.city || "").toLowerCase() === city;
-      })
-      .sort((a, b) => {
-        const ar = Number(a.googleRating) || 0;
-        const br = Number(b.googleRating) || 0;
-        return br - ar;
-      });
-  }
+  return companies
+    .filter(c => {
+      const cSector = (c.sector || "").toLowerCase().trim();
+      const cCategory = (c.category || "").toLowerCase().trim();
+
+      // ✅ STRIKTE MATCH
+      return cSector === sector || cCategory === sector;
+    })
+    .filter(c => {
+      // Plaats is voorkeur, geen harde eis
+      if (!city) return true;
+      return (c.city || "").toLowerCase().trim() === city;
+    })
+    .sort((a, b) => {
+      const ar = Number(a.googleRating) || 0;
+      const br = Number(b.googleRating) || 0;
+      return br - ar;
+    });
+}
+
 
   // =====================
   // Render
