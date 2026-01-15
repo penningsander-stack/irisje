@@ -1,151 +1,226 @@
 // frontend/js/request.js
+// Aanvraag starten met VERPLICHT specialisme + city
 
 document.addEventListener("DOMContentLoaded", () => {
+  const PLACES = [
+    "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
+    "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
+    "Breda", "Tilburg", "Haarlem", "Alkmaar", "Amersfoort",
+    "Apeldoorn", "Leiden", "Dordrecht", "Gouda", "Middelburg",
+    "Burgh-Haamstede"
+  ];
 
-  const SPECIALTIES = {
+  const SPECIALTIES_BY_SECTOR = {
     advocaat: [
       "Arbeidsrecht",
       "Strafrecht",
       "Letselschade",
       "Familierecht",
       "Huurrecht",
-      "Bestuursrecht"
+      "Bestuursrecht",
+      "Ondernemingsrecht",
+      "Vastgoedrecht",
+      "Privacyrecht",
+      "Asielrecht",
+      "Vreemdelingenrecht"
     ]
   };
 
-  const PLACES = [
-    "Amsterdam","Rotterdam","Utrecht","Den Haag","Eindhoven",
-    "Groningen","Leeuwarden","Zwolle","Arnhem","Nijmegen"
-  ];
-
   const form = document.getElementById("requestForm");
-  const category = document.getElementById("category");
-  const specialtyOptions = document.getElementById("specialtyOptions");
-  const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
-  const specialtyOther = document.getElementById("specialtyOther");
-  const specialtyHidden = document.getElementById("specialty");
-  const cityInput = document.getElementById("cityInput");
-  const cityHidden = document.getElementById("city");
-  const citySuggestions = document.getElementById("citySuggestions");
+  const categorySelect = document.getElementById("category");
   const nameInput = document.getElementById("name");
   const emailInput = document.getElementById("email");
+
+  const specialtyOptions = document.getElementById("specialtyOptions");
+  const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
+  const specialtyOtherInput = document.getElementById("specialtyOther");
+
+  const cityInput = document.getElementById("cityInput");
+  const cityHidden = document.getElementById("city");
+  const suggestionsBox = document.getElementById("citySuggestions");
   const errorBox = document.getElementById("formError");
 
   if (
-    !form || !category || !specialtyOptions || !specialtyHidden ||
-    !cityInput || !cityHidden || !nameInput || !emailInput
+    !form ||
+    !categorySelect ||
+    !nameInput ||
+    !emailInput ||
+    !specialtyOptions ||
+    !specialtyOtherWrap ||
+    !specialtyOtherInput ||
+    !cityInput ||
+    !cityHidden ||
+    !suggestionsBox ||
+    !errorBox
   ) {
     console.error("request.js: vereiste form-elementen ontbreken");
     return;
   }
 
-  /* ----------------- SPECIALISMEN ----------------- */
-  category.addEventListener("change", () => {
+  let selectedSpecialty = "";
+
+  // --------------------
+  // Specialisme chips
+  // --------------------
+  function renderSpecialties() {
+    const sector = normalize(categorySelect.value);
     specialtyOptions.innerHTML = "";
-    specialtyHidden.value = "";
-    specialtyOther.value = "";
     specialtyOtherWrap.classList.add("hidden");
+    specialtyOtherInput.value = "";
+    selectedSpecialty = "";
 
-    const list = SPECIALTIES[category.value];
-    if (!list) return;
+    if (!sector) return;
 
-    list.forEach(label => addChip(label));
-    addChip("Anders", true);
-  });
+    const list = SPECIALTIES_BY_SECTOR[sector] || [];
 
-  function addChip(label, isOther = false) {
-    const id = "spec_" + Math.random().toString(16).slice(2);
+    list.forEach(label => {
+      specialtyOptions.appendChild(createChip(label, false));
+    });
+
+    specialtyOptions.appendChild(createChip("Anders", true));
+  }
+
+  function createChip(label, isOther) {
+    const id = `spec_${Math.random().toString(16).slice(2)}`;
+
+    const wrapper = document.createElement("div");
 
     const input = document.createElement("input");
     input.type = "radio";
-    input.name = "specialtyRadio";
+    input.name = "specialty";
     input.id = id;
-    input.hidden = true;
+    input.className = "sr-only";
 
     const chip = document.createElement("label");
+    chip.setAttribute("for", id);
     chip.className = "chip";
-    chip.htmlFor = id;
     chip.textContent = label;
 
     input.addEventListener("change", () => {
-      document.querySelectorAll(".chip").forEach(c => c.classList.remove("chip--active"));
+      [...specialtyOptions.querySelectorAll(".chip")].forEach(c =>
+        c.classList.remove("chip--active")
+      );
       chip.classList.add("chip--active");
 
       if (isOther) {
         specialtyOtherWrap.classList.remove("hidden");
-        specialtyHidden.value = "";
+        selectedSpecialty = "";
+        setTimeout(() => specialtyOtherInput.focus(), 0);
       } else {
         specialtyOtherWrap.classList.add("hidden");
-        specialtyOther.value = "";
-        specialtyHidden.value = label;
+        specialtyOtherInput.value = "";
+        selectedSpecialty = label;
       }
     });
 
-    specialtyOptions.appendChild(input);
-    specialtyOptions.appendChild(chip);
+    wrapper.appendChild(input);
+    wrapper.appendChild(chip);
+    return wrapper;
   }
 
-  specialtyOther.addEventListener("input", () => {
-    specialtyHidden.value = specialtyOther.value.trim();
+  specialtyOtherInput.addEventListener("input", () => {
+    selectedSpecialty = specialtyOtherInput.value.trim();
   });
 
-  /* ----------------- PLAATS ----------------- */
+  categorySelect.addEventListener("change", renderSpecialties);
+
+  // --------------------
+  // Plaats autocomplete
+  // --------------------
   cityInput.addEventListener("input", () => {
-    const q = cityInput.value.toLowerCase();
-    citySuggestions.innerHTML = "";
+    const query = cityInput.value.trim().toLowerCase();
+    suggestionsBox.innerHTML = "";
     cityHidden.value = "";
 
-    if (!q) return;
+    if (!query) {
+      suggestionsBox.style.display = "none";
+      return;
+    }
 
-    PLACES.filter(p => p.toLowerCase().startsWith(q)).forEach(place => {
-      const div = document.createElement("div");
-      div.className = "autocomplete-item";
-      div.textContent = place;
-      div.onclick = () => {
+    const matches = PLACES.filter(p =>
+      p.toLowerCase().startsWith(query)
+    );
+
+    matches.forEach(place => {
+      const item = document.createElement("div");
+      item.className = "autocomplete-item";
+      item.textContent = place;
+      item.addEventListener("click", () => {
         cityInput.value = place;
         cityHidden.value = place;
-        citySuggestions.innerHTML = "";
-      };
-      citySuggestions.appendChild(div);
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "none";
+      });
+      suggestionsBox.appendChild(item);
     });
+
+    suggestionsBox.style.display = matches.length ? "block" : "none";
   });
 
-  /* ----------------- SUBMIT ----------------- */
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".autocomplete")) {
+      suggestionsBox.style.display = "none";
+    }
+  });
+
+  // --------------------
+  // Submit
+  // --------------------
   form.addEventListener("submit", async e => {
     e.preventDefault();
     errorBox.classList.add("hidden");
 
-    if (!category.value) return showError("Kies een categorie.");
-    if (!specialtyHidden.value) return showError("Kies een specialisme.");
-    if (!cityHidden.value) return showError("Kies een plaats.");
-    if (!nameInput.value.trim()) return showError("Vul je naam in.");
-    if (!emailInput.value.trim()) return showError("Vul je e-mailadres in.");
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const category = categorySelect.value.trim();
+    const city = cityHidden.value.trim();
+    const specialty = selectedSpecialty.trim();
+
+    if (!name) return showError("Vul je naam in.");
+    if (!email) return showError("Vul je e-mailadres in.");
+    if (!category) return showError("Kies een categorie.");
+    if (!specialty) return showError("Kies een specialisme.");
+    if (!city) return showError("Kies een plaats uit de lijst.");
 
     try {
-      const res = await fetch("https://irisje-backend.onrender.com/api/publicRequests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: nameInput.value.trim(),
-          email: emailInput.value.trim(),
-          category: category.value,
-          specialty: specialtyHidden.value,
-          city: cityHidden.value
-        })
-      });
+      const res = await fetch(
+        "https://irisje-backend.onrender.com/api/publicRequests",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            name,
+            email,
+            category,
+            specialty,
+            city
+          })
+        }
+      );
 
       if (!res.ok) throw new Error(res.status);
+
       const data = await res.json();
+      if (!data.request || !data.request._id) {
+        throw new Error("Geen request-id ontvangen");
+      }
 
-      window.location.href = `/results.html?requestId=${data.request._id}`;
+      window.location.href =
+        `/results.html?requestId=${encodeURIComponent(data.request._id)}`;
 
-    } catch {
-      showError("Er ging iets mis. Probeer het opnieuw.");
+    } catch (err) {
+      console.error(err);
+      showError("Er ging iets mis bij het starten van je aanvraag.");
     }
   });
 
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.classList.remove("hidden");
+  }
+
+  function normalize(v) {
+    return String(v || "").toLowerCase().trim();
   }
 });
