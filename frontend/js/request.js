@@ -2,7 +2,6 @@
 // Start aanvraag + plaats-autocomplete (PWA-robust)
 
 document.addEventListener("DOMContentLoaded", () => {
-
   const PLACES = [
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
     "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
@@ -18,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const suggestionsBox = document.getElementById("citySuggestions");
   const errorBox = document.getElementById("formError");
 
-  if (!form || !categorySelect || !cityInput || !cityHidden) {
+  if (!form || !categorySelect || !cityInput || !cityHidden || !suggestionsBox || !errorBox) {
     console.error("request.js: formulier-elementen niet gevonden");
     return;
   }
@@ -36,9 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const matches = PLACES.filter(p =>
-      p.toLowerCase().startsWith(query)
-    );
+    const matches = PLACES.filter(p => p.toLowerCase().startsWith(query));
 
     if (!matches.length) {
       suggestionsBox.style.display = "none";
@@ -68,14 +65,33 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --------------------
+  // Helpers
+  // --------------------
+  function extractRequestIdFromText(text) {
+    if (!text || typeof text !== "string") return null;
+
+    // 1) Probeer JSON parse
+    try {
+      const obj = JSON.parse(text);
+      if (obj && obj.requestId && typeof obj.requestId === "string") return obj.requestId;
+    } catch (_) {
+      // ignore
+    }
+
+    // 2) Fallback regex (als SW/body gek doet)
+    const m = text.match(/"requestId"\s*:\s*"([^"]+)"/);
+    return m ? m[1] : null;
+  }
+
+  // --------------------
   // Submit
   // --------------------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorBox.classList.add("hidden");
 
-    const sector = categorySelect.value;
-    const city = cityHidden.value;
+    const sector = (categorySelect.value || "").trim();
+    const city = (cityHidden.value || "").trim();
 
     if (!sector) {
       errorBox.textContent = "Kies eerst een categorie.";
@@ -89,46 +105,59 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Bewaar alvast wat context (handig voor debugging/fallback)
     try {
-      const res = await fetch(
-        "https://irisje-backend.onrender.com/api/publicRequests",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sector, city })
-        }
-      );
+      localStorage.setItem("lastRequestMeta", JSON.stringify({ sector, city, ts: Date.now() }));
+    } catch (_) {
+      // ignore
+    }
 
-      // Succes = HTTP OK, ongeacht body (PWA-proof)
+    try {
+      // Cachebust + no-store om SW/caching te minimaliseren
+      const url = `https://irisje-backend.onrender.com/api/publicRequests?t=${Date.now()}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store"
+        },
+        cache: "no-store",
+        body: JSON.stringify({ sector, city })
+      });
+
       if (!res.ok) {
-        throw new Error("Request failed");
+        throw new Error(`Request failed (${res.status})`);
       }
 
-      // Probeer requestId te lezen, maar faal hier niet op
+      // Lees body als TEXT (meest robuust in PWA/SW situaties)
       let requestId = null;
       try {
-        const data = await res.json();
-        if (data && data.requestId) {
-          requestId = data.requestId;
-        }
+        const text = await res.text();
+        requestId = extractRequestIdFromText(text);
       } catch (_) {
-        // body kan leeg/gewijzigd zijn door Service Worker
+        // ignore
       }
 
-      // Redirect altijd bij succes
+      // Als we een requestId hebben: altijd opslaan voor results fallback
       if (requestId) {
-        window.location.href = `/results.html?requestId=${requestId}`;
-      } else {
-        // Fallback: results laat zelf de laatste aanvraag ophalen
-        window.location.href = `/results.html`;
+        try {
+          localStorage.setItem("lastRequestId", requestId);
+        } catch (_) {
+          // ignore
+        }
+        window.location.href = `/results.html?requestId=${encodeURIComponent(requestId)}`;
+        return;
       }
+
+      // Geen requestId teruggekregen (SW/body issue): ga naar results zonder query
+      // Results.js moet dan lastRequestId kunnen gebruiken als fallback.
+      window.location.href = `/results.html`;
 
     } catch (err) {
       console.error(err);
-      errorBox.textContent =
-        "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw.";
+      errorBox.textContent = "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw.";
       errorBox.classList.remove("hidden");
     }
   });
-
 });
