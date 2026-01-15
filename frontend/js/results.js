@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// DEFINITIEVE STABIELE VERSIE – NIET MEER AANZITTEN
+// DEFINITIEVE, FOUTLOZE VERSIE
 
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "https://irisje-backend.onrender.com/api";
@@ -21,21 +21,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
     const requestId = params.get("requestId");
 
-    let url;
-    if (requestId) {
-      url = `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`;
-    } else {
-      url = `${API_BASE}/publicRequests/latest`;
-    }
+    const url = requestId
+      ? `${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`
+      : `${API_BASE}/publicRequests/latest`;
 
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const response = await fetch(url, { cache: "no-store" });
 
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const data = await res.json();
+      const data = await response.json();
 
       if (!data || !data.request || !Array.isArray(data.companies)) {
         throw new Error("Invalid response structure");
@@ -71,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =====================
-  // Filtering (streng maar logisch)
+  // Filtering
   // =====================
   function filterCompanies(companies, request) {
     const sector = (request.sector || request.category || "").toLowerCase();
@@ -163,7 +160,11 @@ document.addEventListener("DOMContentLoaded", () => {
     stateEl.innerHTML = `
       <h2>Geen aanvraag gevonden</h2>
       <p>Je bent op deze pagina gekomen zonder actieve aanvraag.</p>
-      <p><a href="/request.html" class="btn-primary">Start een nieuwe aanvraag</a></p>
+      <p>
+        <a href="/request.html" class="btn-primary">
+          Start een nieuwe aanvraag
+        </a>
+      </p>
     `;
     footerEl.classList.add("hidden");
   }
