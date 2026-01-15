@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sector = (request.sector || request.category || "").toLowerCase();
   const city = (request.city || "").toLowerCase();
 
-  // 1️⃣ Flexibele sector-matching
+  // 1️⃣ Flexibele sector-matching (maar wel inhoudelijk)
   let filtered = companies.filter(c => {
     const cSector = (c.sector || "").toLowerCase();
     const cCategory = (c.category || "").toLowerCase();
@@ -93,20 +93,15 @@ document.addEventListener("DOMContentLoaded", () => {
     filtered = cityMatches;
   }
 
-  // 3️⃣ Fallback: toon alles als filtering leeg is
-  if (!filtered.length) {
-    filtered = companies;
-  }
-
-  // 4️⃣ Sorteren op rating
-  filtered.sort((a, b) => {
+  // ❌ GEEN fallback naar “alles”
+  // Als er geen inhoudelijke matches zijn, tonen we niets
+  return filtered.sort((a, b) => {
     const ar = Number(a.googleRating) || 0;
     const br = Number(b.googleRating) || 0;
     return br - ar;
   });
-
-  return filtered;
 }
+
 
 
   // --------------------
