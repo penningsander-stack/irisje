@@ -4,30 +4,54 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Irisje.nl – Geschikte bedrijven</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-  <main class="container">
-    <header class="results-header">
-      <h1>Geschikte bedrijven voor jouw aanvraag</h1>
-      <p id="resultsSubtitle" class="subtitle"></p>
-      <p class="hint">
-        Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
-      </p>
-    </header>
 
-    <section id="resultsState" class="state"></section>
+<body class="irisje-body">
 
-    <section id="companiesList" class="companies-list"></section>
+  <!-- HEADER (consistent) -->
+  <header class="irisje-header">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+    </div>
+  </header>
 
-    <footer class="results-footer">
-      <span id="selectedCount">0 van 5 geselecteerd</span>
-      <button id="sendBtn" class="btn-primary" disabled>
-        Verstuur aanvraag naar geselecteerde bedrijven
-      </button>
-    </footer>
+  <main>
+    <section class="irisje-section">
+      <div class="irisje-container">
+
+        <header class="results-header">
+          <h1>Geschikte bedrijven voor jouw aanvraag</h1>
+          <p id="resultsSubtitle" class="subtitle"></p>
+          <p class="hint">
+            Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
+          </p>
+        </header>
+
+        <!-- STATE -->
+        <section id="resultsState" class="state"></section>
+
+        <!-- RESULTATEN -->
+        <section id="companiesList" class="companies-list"></section>
+
+        <!-- FOOTER / CTA (standaard verborgen via JS) -->
+        <footer id="resultsFooter" class="results-footer hidden">
+          <span id="selectedCount">0 van 5 geselecteerd</span>
+          <button id="sendBtn" class="btn-primary" disabled>
+            Verstuur aanvraag naar geselecteerde bedrijven
+          </button>
+        </footer>
+
+      </div>
+    </section>
   </main>
 
-  <script src="js/results.js"></script>
+  <footer class="irisje-footer">
+    <div class="irisje-container">
+      <p class="irisje-footer-text">© Irisje.nl</p>
+    </div>
+  </footer>
+
+  <script src="/js/results.js"></script>
 </body>
 </html>

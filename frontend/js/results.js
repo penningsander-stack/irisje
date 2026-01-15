@@ -1,4 +1,6 @@
-// frontend/js/results.js
+// js/results.js
+// Resultatenpagina – robuust, refresh-safe, PWA-safe
+
 (function () {
   const API_BASE = "https://irisje-backend.onrender.com/api";
 
@@ -7,6 +9,7 @@
   const subtitleEl = document.getElementById("resultsSubtitle");
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
+  const footerEl = document.getElementById("resultsFooter");
 
   const selected = new Set();
   let requestData = null;
@@ -17,23 +20,30 @@
     const params = new URLSearchParams(window.location.search);
     const requestId = params.get("requestId");
 
-    if (!requestId) {
-      return showError("Aanvraag niet gevonden.");
-    }
-
     showLoading();
 
     try {
-      const res = await fetch(`${API_BASE}/publicRequests/${requestId}`);
-      if (!res.ok) throw new Error("load_failed");
-      const data = await res.json();
+      let data;
+
+      if (requestId) {
+        const res = await fetch(`${API_BASE}/publicRequests/${requestId}`);
+        if (!res.ok) throw new Error("load_failed");
+        data = await res.json();
+      } else {
+        // Fallback: geen requestId → geen resultaten mogelijk
+        showError("Geen aanvraag gevonden. Start een nieuwe aanvraag.");
+        return;
+      }
 
       requestData = data.request;
+      const sector =
+        requestData.sector || requestData.category || "";
+
       subtitleEl.textContent =
-        `Gebaseerd op jouw aanvraag voor ${requestData.category || requestData.sector} in ${requestData.city}.`;
+        `Gebaseerd op jouw aanvraag voor ${sector} in ${requestData.city}.`;
 
       const relevant = getRelevantCompanies(
-        data.companies,
+        data.companies || [],
         requestData
       );
 
@@ -43,29 +53,30 @@
       }
 
       renderCompanies(relevant);
+      footerEl.classList.remove("hidden");
       updateFooter();
       clearState();
-    } catch {
+
+    } catch (err) {
+      console.error(err);
       showError("Het laden van bedrijven is mislukt. Probeer het opnieuw.");
     }
   }
 
   function getRelevantCompanies(companies, request) {
-    const category = (request.category || request.sector || "").toLowerCase();
+    const sector =
+      (request.sector || request.category || "").toLowerCase();
     const city = (request.city || "").toLowerCase();
 
-    // 1) filter op categorie
     let filtered = companies.filter(c =>
-      (c.category || c.sector || "").toLowerCase() === category
+      (c.sector || c.category || "").toLowerCase() === sector
     );
 
-    // 2) filter op stad (fallback als leeg)
     const cityMatches = filtered.filter(c =>
       (c.city || "").toLowerCase() === city
     );
     if (cityMatches.length) filtered = cityMatches;
 
-    // 3) sorteer stabiel (toekomstvast)
     filtered.sort((a, b) => {
       const ar = a.googleRating || 0;
       const br = b.googleRating || 0;
@@ -77,6 +88,7 @@
 
   function renderCompanies(companies) {
     listEl.innerHTML = "";
+
     companies.forEach(c => {
       const card = document.createElement("div");
       card.className = "company-card";
@@ -117,17 +129,20 @@
 
   function showLoading() {
     stateEl.textContent = "Geschikte bedrijven worden geladen…";
+    footerEl.classList.add("hidden");
   }
 
   function showEmpty() {
     stateEl.innerHTML = `
       <h2>Geen geschikte bedrijven gevonden</h2>
-      <p>We tonen daarom geen resultaten voor deze aanvraag.</p>
+      <p>Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.</p>
     `;
+    footerEl.classList.add("hidden");
   }
 
   function showError(msg) {
     stateEl.textContent = msg;
+    footerEl.classList.add("hidden");
   }
 
   function clearState() {
