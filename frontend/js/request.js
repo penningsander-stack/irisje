@@ -1,4 +1,5 @@
 // js/request.js
+// Start aanvraag + plaats-autocomplete (PWA-robust)
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -22,7 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // --------------------
   // Autocomplete
+  // --------------------
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim().toLowerCase();
     suggestionsBox.innerHTML = "";
@@ -37,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
       p.toLowerCase().startsWith(query)
     );
 
-    if (matches.length === 0) {
+    if (!matches.length) {
       suggestionsBox.style.display = "none";
       return;
     }
@@ -46,14 +49,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const item = document.createElement("div");
       item.className = "autocomplete-item";
       item.textContent = place;
-
       item.addEventListener("click", () => {
         cityInput.value = place;
         cityHidden.value = place;
         suggestionsBox.innerHTML = "";
         suggestionsBox.style.display = "none";
       });
-
       suggestionsBox.appendChild(item);
     });
 
@@ -66,7 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // --------------------
   // Submit
+  // --------------------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     errorBox.classList.add("hidden");
@@ -96,17 +99,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
+      // Succes = HTTP OK, ongeacht body (PWA-proof)
       if (!res.ok) {
         throw new Error("Request failed");
       }
 
-      const data = await res.json();
-
-      if (!data || !data.requestId) {
-        throw new Error("Invalid response");
+      // Probeer requestId te lezen, maar faal hier niet op
+      let requestId = null;
+      try {
+        const data = await res.json();
+        if (data && data.requestId) {
+          requestId = data.requestId;
+        }
+      } catch (_) {
+        // body kan leeg/gewijzigd zijn door Service Worker
       }
 
-      window.location.href = `/results.html?requestId=${data.requestId}`;
+      // Redirect altijd bij succes
+      if (requestId) {
+        window.location.href = `/results.html?requestId=${requestId}`;
+      } else {
+        // Fallback: results laat zelf de laatste aanvraag ophalen
+        window.location.href = `/results.html`;
+      }
 
     } catch (err) {
       console.error(err);
