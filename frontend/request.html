@@ -1,83 +1,130 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="utf-8" />
-  <title>Irisje.nl – Nieuwe aanvraag</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="/css/style.css" />
-</head>
+// js/request.js
+// Start aanvraag + plaats-autocomplete
 
-<body class="irisje-body">
+document.addEventListener("DOMContentLoaded", () => {
 
-  <!-- HEADER (consistent met homepage) -->
-  <header class="irisje-header">
-    <div class="irisje-container irisje-header-inner">
-      <a href="/" class="irisje-logo">Irisje.nl</a>
-    </div>
-  </header>
+  // Vast ingestelde plaatsnamen
+  const PLACES = [
+    "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
+    "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
+    "Breda", "Tilburg", "Haarlem", "Alkmaar", "Amersfoort",
+    "Apeldoorn", "Leiden", "Dordrecht", "Gouda", "Middelburg",
+    "Burgh-Haamstede"
+  ];
 
-  <main>
-    <section class="irisje-section">
-      <div class="irisje-container">
+  // DOM references
+  const form = document.getElementById("requestForm");
+  const categorySelect = document.getElementById("category");
+  const cityInput = document.getElementById("cityInput");
+  const cityHidden = document.getElementById("city");
+  const suggestionsBox = document.getElementById("citySuggestions");
+  const errorBox = document.getElementById("formError");
 
-        <!-- Card container (hergebruikt bestaande card classes zonder CSS aan te passen) -->
-        <section class="card card--large">
-          <h1>Start je aanvraag</h1>
-          <p class="muted">
-            Vertel kort wat je zoekt en in welke plaats. Daarna tonen we passende bedrijven.
-          </p>
+  // Als formulier ontbreekt: niets doen (geen crash)
+  if (!form || !categorySelect || !cityInput || !cityHidden) {
+    console.error("request.js: formulier-elementen niet gevonden");
+    return;
+  }
 
-          <form id="requestForm" novalidate>
+  // --------------------
+  // Autocomplete plaats
+  // --------------------
 
-            <div class="form-group">
-              <label for="category">Wat heb je nodig?</label>
-              <select id="category" name="category" required>
-                <option value="">Kies een categorie</option>
-                <option value="Hovenier">Hovenier</option>
-                <option value="Loodgieter">Loodgieter</option>
-                <option value="Elektricien">Elektricien</option>
-                <option value="Schilder">Schilder</option>
-                <option value="Advocaat">Advocaat</option>
-              </select>
-            </div>
+  cityInput.addEventListener("input", () => {
+    const query = cityInput.value.trim().toLowerCase();
+    suggestionsBox.innerHTML = "";
+    cityHidden.value = "";
 
-            <div class="form-group autocomplete">
-              <label for="cityInput">Plaats</label>
-              <input
-                id="cityInput"
-                name="cityInput"
-                type="text"
-                placeholder="Begin met typen…"
-                autocomplete="off"
-                required
-              />
-              <input type="hidden" id="city" name="city" />
-              <div id="citySuggestions" class="autocomplete-list"></div>
-              <small class="muted">Kies een plaats uit de lijst.</small>
-            </div>
+    if (!query) {
+      suggestionsBox.style.display = "none";
+      return;
+    }
 
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">
-                Bekijk geschikte bedrijven
-              </button>
-            </div>
+    const matches = PLACES.filter(place =>
+      place.toLowerCase().startsWith(query)
+    );
 
-            <p id="formError" class="error hidden"></p>
+    if (matches.length === 0) {
+      suggestionsBox.style.display = "none";
+      return;
+    }
 
-          </form>
-        </section>
+    matches.forEach(place => {
+      const item = document.createElement("div");
+      item.className = "autocomplete-item";
+      item.textContent = place;
 
-      </div>
-    </section>
-  </main>
+      item.addEventListener("click", () => {
+        cityInput.value = place;
+        cityHidden.value = place;
+        suggestionsBox.innerHTML = "";
+        suggestionsBox.style.display = "none";
+      });
 
-  <!-- FOOTER (consistent met homepage) -->
-  <footer class="irisje-footer">
-    <div class="irisje-container">
-      <p class="irisje-footer-text">© Irisje.nl</p>
-    </div>
-  </footer>
+      suggestionsBox.appendChild(item);
+    });
 
-  <script src="/js/request.js"></script>
-</body>
-</html>
+    suggestionsBox.style.display = "block";
+  });
+
+  // Klik buiten autocomplete → sluiten
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".autocomplete")) {
+      suggestionsBox.style.display = "none";
+    }
+  });
+
+  // --------------------
+  // Form submit
+  // --------------------
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorBox.classList.add("hidden");
+
+    const category = categorySelect.value;
+    const city = cityHidden.value;
+
+    if (!category) {
+      errorBox.textContent = "Kies eerst een categorie.";
+      errorBox.classList.remove("hidden");
+      return;
+    }
+
+    if (!city) {
+      errorBox.textContent = "Kies een plaats uit de lijst.";
+      errorBox.classList.remove("hidden");
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        "https://irisje-backend.onrender.com/api/publicRequests",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ category, city })
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Request failed");
+      }
+
+      const data = await res.json();
+
+      if (!data || !data.requestId) {
+        throw new Error("Invalid response");
+      }
+
+      window.location.href = `/results.html?requestId=${data.requestId}`;
+
+    } catch (err) {
+      console.error(err);
+      errorBox.textContent =
+        "Er ging iets mis bij het starten van je aanvraag. Probeer het opnieuw.";
+      errorBox.classList.remove("hidden");
+    }
+  });
+
+});
