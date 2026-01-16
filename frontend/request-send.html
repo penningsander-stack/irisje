@@ -4,70 +4,112 @@
   <meta charset="UTF-8" />
   <title>Aanvraag versturen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bestaande Irisje styling -->
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
 
-<h1>Verstuur je aanvraag</h1>
+<body class="irisje-body">
 
-<form id="sendForm">
-  <div>
-    <label>Naam</label><br />
-    <input type="text" id="name" required />
-  </div>
+  <!-- HEADER -->
+  <header class="irisje-header">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+    </div>
+  </header>
 
-  <div>
-    <label>E-mail</label><br />
-    <input type="email" id="email" required />
-  </div>
+  <main>
+    <section class="irisje-section">
+      <div class="irisje-container">
 
-  <div>
-    <label>Omschrijving</label><br />
-    <textarea id="message" required></textarea>
-  </div>
+        <!-- Card in Irisje-stijl -->
+        <section class="card card--large">
 
-  <button type="submit">Aanvraag versturen</button>
-</form>
+          <header class="mb-6">
+            <h1>Verstuur je aanvraag</h1>
+            <p class="muted">
+              Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
+            </p>
+          </header>
 
-<script>
-// frontend/request-send.html (inline script, bewust minimaal)
+          <form id="sendForm" class="form">
 
-document.getElementById("sendForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+            <div class="form-group">
+              <label for="name">Naam</label>
+              <input type="text" id="name" required />
+            </div>
 
-  const companyIds = JSON.parse(
-    sessionStorage.getItem("selectedCompanyIds") || "[]"
-  );
+            <div class="form-group">
+              <label for="email">E-mailadres</label>
+              <input type="email" id="email" required />
+            </div>
 
-  if (!companyIds.length) {
-    alert("Geen bedrijven geselecteerd.");
-    return;
-  }
+            <div class="form-group">
+              <label for="message">Omschrijving van je aanvraag</label>
+              <textarea id="message" rows="5" required></textarea>
+            </div>
 
-  const payload = {
-    name: document.getElementById("name").value.trim(),
-    email: document.getElementById("email").value.trim(),
-    message: document.getElementById("message").value.trim(),
-    companyIds
-  };
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                Aanvraag versturen
+              </button>
+            </div>
 
-  const res = await fetch(
-    "https://irisje-backend.onrender.com/api/requests",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+          </form>
+
+        </section>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="irisje-container">
+      © Irisje.nl
+    </div>
+  </footer>
+
+  <script>
+  // frontend/request-send.html – functionele logica (ongewijzigd)
+
+  document.getElementById("sendForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const companyIds = JSON.parse(
+      sessionStorage.getItem("selectedCompanyIds") || "[]"
+    );
+
+    if (!companyIds.length) {
+      alert("Geen bedrijven geselecteerd.");
+      return;
     }
-  );
 
-  if (!res.ok) {
-    alert("Versturen mislukt.");
-    return;
-  }
+    const payload = {
+      name: document.getElementById("name").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      message: document.getElementById("message").value.trim(),
+      companyIds
+    };
 
-  sessionStorage.removeItem("selectedCompanyIds");
-  alert("Aanvraag succesvol verstuurd.");
-});
-</script>
+    const res = await fetch(
+      "https://irisje-backend.onrender.com/api/requests",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!res.ok) {
+      alert("Versturen mislukt.");
+      return;
+    }
+
+    sessionStorage.removeItem("selectedCompanyIds");
+    alert("Aanvraag succesvol verstuurd.");
+  });
+  </script>
 
 </body>
 </html>
