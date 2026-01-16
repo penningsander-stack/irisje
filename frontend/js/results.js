@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – stabiele selectie + verzendvoorbereiding
+// Stap 3: selectie verzenden naar backend (definitief, opgeschoond)
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -12,13 +12,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
 
-  if (!stateEl || !listEl) {
-    console.error("results.js: verplichte elementen ontbreken");
-    return;
-  }
-
   if (!requestId) {
-    stateEl.textContent = "Ongeldige aanvraag.";
+    showState("Ongeldige aanvraag.");
     return;
   }
 
@@ -31,28 +26,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!res.ok) throw new Error(res.status);
 
     const data = await res.json();
-    const companies = Array.isArray(data.companies) ? data.companies : [];
+    const companies = data.companies || [];
     const request = data.request || {};
 
-    if (subtitleEl) {
-      subtitleEl.textContent =
-        `Gebaseerd op jouw aanvraag voor ${request.sector || ""} in ${request.city || ""}.`;
-    }
+    subtitleEl.textContent =
+      `Gebaseerd op jouw aanvraag voor ${request.sector} in ${request.city}.`;
 
     if (!companies.length) {
-      stateEl.textContent =
-        "Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.";
+      showState("Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.");
       return;
     }
 
-    stateEl.textContent = "";
     renderCompanies(companies);
-
-    if (footerEl) footerEl.classList.remove("hidden");
-
+    footerEl.classList.remove("hidden");
   } catch (err) {
     console.error(err);
-    stateEl.textContent = "Resultaten konden niet worden geladen.";
+    showState("Resultaten konden niet worden geladen.");
+  }
+
+  function showState(text) {
+    stateEl.textContent = text;
   }
 
   function renderCompanies(companies) {
@@ -63,52 +56,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       const card = document.createElement("div");
       card.className = "result-card";
 
-      const slug = encodeURIComponent(company?.slug || "");
-      const badge =
-        index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
+      if (index < 5) card.classList.add("is-top-match");
 
-      const companyId = company?._id ? String(company._id) : "";
+      const slug = encodeURIComponent(company.slug || "");
 
       card.innerHTML = `
         <label class="company-select">
           <input
             type="checkbox"
             class="company-checkbox"
-            ${companyId ? `data-company-id="${escapeHtml(companyId)}"` : ""}
+            data-company-id="${company._id}"
           />
           <div class="company-info">
             <div class="company-header">
               <h3>
                 <a href="/company.html?slug=${slug}" target="_blank" rel="noopener">
-                  ${escapeHtml(company?.name)}
+                  ${escapeHtml(company.name)}
                 </a>
               </h3>
-              ${badge}
+              ${index < 5 ? `<span class="top-match-badge">Beste match</span>` : ""}
             </div>
-            <div class="company-city">${escapeHtml(company?.city)}</div>
+
+            ${renderRating(company)}
+
+            <div class="company-city">${escapeHtml(company.city)}</div>
           </div>
         </label>
       `;
-
-      const checkbox = card.querySelector(".company-checkbox");
-
-      checkbox.addEventListener("change", () => {
-        const checked = document.querySelectorAll(".company-checkbox:checked");
-        if (checked.length > 5) {
-          checkbox.checked = false;
-          return;
-        }
-        updateSelectionUI();
-      });
 
       listEl.appendChild(card);
     });
   }
 
-  function updateSelectionUI() {
-    const selected = document.querySelectorAll(".company-checkbox:checked").length;
-    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
-    if (sendBtn) sendBtn.disabled = selected === 0;
+  function renderRating(company) {
+    const avg = Number(company?.avgRating);
+    const cnt = Number(company?.reviewCount);
+
+    if (!Number.isFinite(avg) || !Number.isFinite(cnt) || cnt <= 0) {
+      return `<div class="muted">Nog geen Google-reviews</div>`;
+    }
+
+    return `
+      <div class="company-rating">
+        ⭐ ${avg.toFixed(1)}
+        <span class="muted">(${cnt} Google-reviews)</span>
+      </div>
+    `;
   }
 
   function escapeHtml(str) {
@@ -120,27 +113,59 @@ document.addEventListener("DOMContentLoaded", async () => {
       "'": "&#39;"
     })[s]);
   }
-});
 
-
-// === DEFINITIEVE CLICK-HANDLER (werkt altijd) ===
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest("#stickySubmitBtn");
-  if (!btn) return;
-
-  console.log("STICKY SUBMIT CLICK GEDTECTEERD");
-
-  const selectedCheckboxes =
-    document.querySelectorAll(".company-checkbox:checked");
-
-  if (!selectedCheckboxes.length) {
-    alert("Selecteer minimaal één bedrijf.");
-    return;
+  // === SELECTIE LOGICA ===
+  function updateSelectionUI() {
+    const selected = document.querySelectorAll(".company-checkbox:checked").length;
+    countEl.textContent = `${selected} van 5 geselecteerd`;
+    sendBtn.disabled = selected === 0;
   }
 
-  const companyIds = Array.from(selectedCheckboxes)
-    .map(cb => cb.dataset.companyId)
-    .filter(Boolean);
+  document.addEventListener("change", e => {
+    if (e.target.classList.contains("company-checkbox")) {
+      const checked = document.querySelectorAll(".company-checkbox:checked");
+      if (checked.length > 5) {
+        e.target.checked = false;
+        return;
+      }
+      updateSelectionUI();
+    }
+  });
 
-  console.log("Geselecteerde bedrijven:", companyIds);
+  // === DEFINITIEVE SUBMIT (STAP 3) ===
+  sendBtn.addEventListener("click", async () => {
+    const selectedCheckboxes =
+      document.querySelectorAll(".company-checkbox:checked");
+
+    if (selectedCheckboxes.length === 0) return;
+
+    const companyIds = Array.from(selectedCheckboxes)
+      .map(cb => cb.dataset.companyId)
+      .filter(Boolean);
+
+    console.log("STAP 3 – VERZENDEN", { requestId, companyIds });
+
+    try {
+      const res = await fetch(
+        `https://irisje-backend.onrender.com/api/publicRequests/${requestId}/submit`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ companyIds })
+        }
+      );
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || res.status);
+      }
+
+      // Succes → eenvoudige bevestiging (volgende UX-stap komt later)
+      alert("Aanvraag succesvol verstuurd naar geselecteerde bedrijven.");
+      sendBtn.disabled = true;
+    } catch (err) {
+      console.error("VERZENDEN MISLUKT", err);
+      alert("Verzenden mislukt. Probeer het opnieuw.");
+    }
+  });
 });
