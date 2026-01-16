@@ -34,7 +34,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // --------------------
   // Modal helpers
+  // --------------------
   function openCompanyModal(url, titleText) {
     if (!modalOverlay || !modalFrame || !modalTitle) return;
     modalUrl = url;
@@ -97,14 +99,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     sessionStorage.setItem("selectedCompanyIds", JSON.stringify(companyIds));
     sessionStorage.setItem("requestId", String(requestId));
 
-    // Doorsturen naar volgende stap
-    window.location.href = `/request-send.html?requestId=${encodeURIComponent(requestId)}`;
+    window.location.href =
+      `/request-send.html?requestId=${encodeURIComponent(requestId)}`;
   }
 
-  // Bind aan beide knoppen (als ze bestaan)
   if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
   if (stickySubmitBtn) stickySubmitBtn.addEventListener("click", handleSendClick);
 
+  // --------------------
+  // Data ophalen
+  // --------------------
   try {
     const res = await fetch(
       `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`,
@@ -117,9 +121,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const companies = Array.isArray(data.companies) ? data.companies : [];
     const request = data.request || {};
 
+    // ⭐ CRUCIAAL: sector/category vastleggen voor vervolgflow
+    if (request.category) {
+      sessionStorage.setItem("requestSector", request.category);
+    } else {
+      console.error("results.js: request.category ontbreekt");
+    }
+
     if (subtitleEl) {
       subtitleEl.textContent =
-        `Gebaseerd op jouw aanvraag voor ${request.sector || ""} in ${request.city || ""}.`;
+        `Gebaseerd op jouw aanvraag voor ${request.category || ""} in ${request.city || ""}.`;
     }
 
     if (!companies.length) {
@@ -137,6 +148,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "Resultaten konden niet worden geladen.";
   }
 
+  // --------------------
+  // Render helpers
+  // --------------------
   function renderCompanies(companies) {
     listEl.innerHTML = "";
     updateSelectionUI();
@@ -149,7 +163,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const badge = index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
       const companyId = company?._id ? String(company._id) : "";
       const companyName = escapeHtml(company?.name);
-
       const profileUrl = `/company.html?slug=${slug}`;
 
       card.innerHTML = `
@@ -189,7 +202,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       listEl.appendChild(card);
     });
 
-    // Intercept profielklik: open modal i.p.v. navigatie
+    // Profiel openen in modal
     listEl.addEventListener("click", (e) => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
