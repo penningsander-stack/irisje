@@ -151,3 +151,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     })[s]);
   }
 });
+
+
+
+
+const stickyBtn = document.getElementById("stickySubmitBtn");
+const mainSubmitBtn = document.getElementById("submitRequestBtn");
+
+if (stickyBtn && mainSubmitBtn) {
+  stickyBtn.addEventListener("click", () => {
+    mainSubmitBtn.click();
+  });
+}
