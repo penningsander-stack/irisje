@@ -120,6 +120,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   categorySelect.addEventListener("change", renderSpecialties);
 
+  // ✅ Bij load meteen renderen (als category al geselecteerd is)
+  renderSpecialties();
+
   // --------------------
   // Plaats autocomplete
   // --------------------
@@ -188,14 +191,24 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(res.status);
 
       const data = await res.json();
-      if (!data.requestId) throw new Error("Geen requestId");
 
-sessionStorage.setItem("requestSector", sector);
+      // ✅ requestId robuust afleiden (verschillende response-vormen opvangen)
+      let requestId = null;
 
+      // Verwachte vorm: { requestId: "..." }
+      if (data && data.requestId) requestId = data.requestId;
 
+      // Alternatieve vorm: { request: { _id: "..." } } of { item: { _id: "..." } }
+      if (!requestId && data?.request?._id) requestId = data.request._id;
+      if (!requestId && data?.item?._id) requestId = data.item._id;
+
+      if (!requestId) throw new Error("Geen requestId");
+
+      // ✅ Pas nu sector vastleggen (consistente state)
+      sessionStorage.setItem("requestSector", sector);
 
       window.location.href =
-        `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
+        `/results.html?requestId=${encodeURIComponent(requestId)}`;
 
     } catch (err) {
       console.error(err);
