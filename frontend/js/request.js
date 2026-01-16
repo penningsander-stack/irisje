@@ -178,7 +178,12 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-          body: JSON.stringify({ sector, specialty, city })
+          body: JSON.stringify({
+  category: sector,
+  specialty: specialty,
+  city: city
+})
+
         }
       );
 
