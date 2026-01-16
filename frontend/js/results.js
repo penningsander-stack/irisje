@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – stabiele selectie + verzendvoorbereiding
+// Resultatenpagina – selectie + doorsturen naar aanvraagstap (Optie A)
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -59,13 +59,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     listEl.innerHTML = "";
     updateSelectionUI();
 
-    companies.forEach((company, index) => {
+    companies.forEach((company) => {
       const card = document.createElement("div");
       card.className = "result-card";
-
-      const slug = encodeURIComponent(company?.slug || "");
-      const badge =
-        index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
 
       const companyId = company?._id ? String(company._id) : "";
 
@@ -74,17 +70,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           <input
             type="checkbox"
             class="company-checkbox"
-            ${companyId ? `data-company-id="${escapeHtml(companyId)}"` : ""}
+            data-company-id="${escapeHtml(companyId)}"
           />
           <div class="company-info">
-            <div class="company-header">
-              <h3>
-                <a href="/company.html?slug=${slug}" target="_blank" rel="noopener">
-                  ${escapeHtml(company?.name)}
-                </a>
-              </h3>
-              ${badge}
-            </div>
+            <h3>${escapeHtml(company?.name)}</h3>
             <div class="company-city">${escapeHtml(company?.city)}</div>
           </div>
         </label>
@@ -122,25 +111,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-
-// === DEFINITIEVE CLICK-HANDLER (werkt altijd) ===
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest("#stickySubmitBtn");
+// === DOORSTUREN NAAR TUSSENSTAP ===
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("#sendBtn");
   if (!btn) return;
 
-  console.log("STICKY SUBMIT CLICK GEDTECTEERD");
+  const selected = Array.from(
+    document.querySelectorAll(".company-checkbox:checked")
+  ).map(cb => cb.dataset.companyId).filter(Boolean);
 
-  const selectedCheckboxes =
-    document.querySelectorAll(".company-checkbox:checked");
-
-  if (!selectedCheckboxes.length) {
+  if (!selected.length) {
     alert("Selecteer minimaal één bedrijf.");
     return;
   }
 
-  const companyIds = Array.from(selectedCheckboxes)
-    .map(cb => cb.dataset.companyId)
-    .filter(Boolean);
+  // Opslaan in sessionStorage (minimaal en tijdelijk)
+  sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selected));
 
-  console.log("Geselecteerde bedrijven:", companyIds);
+  window.location.href = "/request-send.html";
 });
