@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – stabiele selectie + profiel in modal + verzendvoorbereiding
+// Resultatenpagina – stabiele selectie + profiel in modal + doorsturen naar request-send
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
+
+  // Sticky submit button (extra CTA)
+  const stickySubmitBtn = document.getElementById("stickySubmitBtn");
 
   // Modal elements
   const modalOverlay = document.getElementById("companyModalOverlay");
@@ -55,7 +58,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (modalOverlay) {
     modalOverlay.addEventListener("click", (e) => {
-      // klikken op overlay (buiten modal) sluit
       if (e.target === modalOverlay) closeCompanyModal();
     });
   }
@@ -70,6 +72,38 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.open(modalUrl, "_blank", "noopener");
     });
   }
+
+  // --------------------
+  // Verzenden (shared handler)
+  // --------------------
+  function handleSendClick() {
+    const selectedCheckboxes = document.querySelectorAll(".company-checkbox:checked");
+
+    if (!selectedCheckboxes.length) {
+      alert("Selecteer minimaal één bedrijf.");
+      return;
+    }
+
+    const companyIds = Array.from(selectedCheckboxes)
+      .map((cb) => cb.dataset.companyId)
+      .filter(Boolean);
+
+    if (!companyIds.length) {
+      alert("Selectie is ongeldig. Probeer opnieuw.");
+      return;
+    }
+
+    // Opslaan voor volgende stap (request-send pagina)
+    sessionStorage.setItem("selectedCompanyIds", JSON.stringify(companyIds));
+    sessionStorage.setItem("requestId", String(requestId));
+
+    // Doorsturen naar volgende stap
+    window.location.href = `/request-send.html?requestId=${encodeURIComponent(requestId)}`;
+  }
+
+  // Bind aan beide knoppen (als ze bestaan)
+  if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
+  if (stickySubmitBtn) stickySubmitBtn.addEventListener("click", handleSendClick);
 
   try {
     const res = await fetch(
@@ -116,7 +150,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const companyId = company?._id ? String(company._id) : "";
       const companyName = escapeHtml(company?.name);
 
-      // URL naar profiel (same-origin pagina, in iframe)
       const profileUrl = `/company.html?slug=${slug}`;
 
       card.innerHTML = `
@@ -161,7 +194,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
 
-      // Belangrijk: voorkomen dat label/checkbox toggelt en voorkomen navigatie
       e.preventDefault();
       e.stopPropagation();
 
@@ -188,23 +220,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       "'": "&#39;"
     })[s]);
   }
-});
-
-// === DEFINITIEVE CLICK-HANDLER (werkt altijd) ===
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest("#stickySubmitBtn");
-  if (!btn) return;
-
-  const selectedCheckboxes = document.querySelectorAll(".company-checkbox:checked");
-
-  if (!selectedCheckboxes.length) {
-    alert("Selecteer minimaal één bedrijf.");
-    return;
-  }
-
-  const companyIds = Array.from(selectedCheckboxes)
-    .map((cb) => cb.dataset.companyId)
-    .filter(Boolean);
-
-  console.log("Geselecteerde bedrijven:", companyIds);
 });
