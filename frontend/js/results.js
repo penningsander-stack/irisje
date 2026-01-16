@@ -1,6 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – premium cards + selectie + teller + doorsturen (Optie A)
-// + Duidelijke bronlabels voor reviews (Google / Irisje) op basis van aanwezige velden.
+// Resultatenpagina – stabiele selectie + profiel in modal + verzendvoorbereiding
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -8,9 +7,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const stateEl = document.getElementById("resultsState");
   const listEl = document.getElementById("companiesList");
-  const countEl = document.getElementById("selectedCount");
-  const subtitleEl = document.getElementById("resultsSubtitle");
   const footerEl = document.getElementById("resultsFooter");
+  const countEl = document.getElementById("selectedCount");
+  const sendBtn = document.getElementById("sendBtn");
+  const subtitleEl = document.getElementById("resultsSubtitle");
+
+  // Modal elements
+  const modalOverlay = document.getElementById("companyModalOverlay");
+  const modalCloseBtn = document.getElementById("companyModalClose");
+  const modalOpenNewTabBtn = document.getElementById("companyModalOpenNewTab");
+  const modalTitle = document.getElementById("companyModalTitle");
+  const modalFrame = document.getElementById("companyModalFrame");
+
+  let modalUrl = "";
 
   if (!stateEl || !listEl) {
     console.error("results.js: verplichte elementen ontbreken");
@@ -20,6 +29,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (!requestId) {
     stateEl.textContent = "Ongeldige aanvraag.";
     return;
+  }
+
+  // Modal helpers
+  function openCompanyModal(url, titleText) {
+    if (!modalOverlay || !modalFrame || !modalTitle) return;
+    modalUrl = url;
+    modalTitle.textContent = titleText || "Bedrijfsprofiel";
+    modalFrame.src = url;
+    modalOverlay.style.display = "block";
+    modalOverlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCompanyModal() {
+    if (!modalOverlay || !modalFrame) return;
+    modalOverlay.style.display = "none";
+    modalOverlay.setAttribute("aria-hidden", "true");
+    modalFrame.src = "about:blank";
+    modalUrl = "";
+    document.body.style.overflow = "";
+  }
+
+  if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", (e) => {
+      // klikken op overlay (buiten modal) sluit
+      if (e.target === modalOverlay) closeCompanyModal();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompanyModal();
+  });
+
+  if (modalOpenNewTabBtn) {
+    modalOpenNewTabBtn.addEventListener("click", () => {
+      if (!modalUrl) return;
+      window.open(modalUrl, "_blank", "noopener");
+    });
   }
 
   try {
@@ -46,10 +95,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     stateEl.textContent = "";
-    if (footerEl) footerEl.classList.remove("hidden");
-
     renderCompanies(companies);
-    updateSelectionUI();
+
+    if (footerEl) footerEl.classList.remove("hidden");
   } catch (err) {
     console.error(err);
     stateEl.textContent = "Resultaten konden niet worden geladen.";
@@ -57,45 +105,45 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderCompanies(companies) {
     listEl.innerHTML = "";
+    updateSelectionUI();
 
     companies.forEach((company, index) => {
       const card = document.createElement("div");
       card.className = "result-card";
 
+      const slug = encodeURIComponent(company?.slug || "");
+      const badge = index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
       const companyId = company?._id ? String(company._id) : "";
-      const badge =
-        index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
+      const companyName = escapeHtml(company?.name);
 
-      const reviewsHtml = buildReviewsHtml(company);
+      // URL naar profiel (same-origin pagina, in iframe)
+      const profileUrl = `/company.html?slug=${slug}`;
 
       card.innerHTML = `
         <label class="company-select">
           <input
             type="checkbox"
             class="company-checkbox"
-            data-company-id="${escapeHtml(companyId)}"
+            ${companyId ? `data-company-id="${escapeHtml(companyId)}"` : ""}
           />
-
-          <div class="company-card-inner">
+          <div class="company-info">
             <div class="company-header">
-              <div class="company-title">
-                <h3 class="company-name">${escapeHtml(company?.name)}</h3>
-                <div class="company-city muted">${escapeHtml(company?.city)}</div>
-              </div>
-              <div class="company-badge">
-                ${badge}
-              </div>
+              <h3>
+                <a
+                  href="${profileUrl}"
+                  class="company-profile-link"
+                  data-profile-url="${profileUrl}"
+                  data-company-name="${companyName}"
+                >${companyName}</a>
+              </h3>
+              ${badge}
             </div>
-
-            <div class="company-meta">
-              ${reviewsHtml}
-            </div>
+            <div class="company-city">${escapeHtml(company?.city)}</div>
           </div>
         </label>
       `;
 
       const checkbox = card.querySelector(".company-checkbox");
-
       checkbox.addEventListener("change", () => {
         const checked = document.querySelectorAll(".company-checkbox:checked");
         if (checked.length > 5) {
@@ -107,88 +155,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       listEl.appendChild(card);
     });
-  }
 
-  function buildReviewsHtml(company) {
-    // Toon alleen wat daadwerkelijk aanwezig is.
-    // Belangrijk: avgRating/reviewCount (legacy) labelen we als "Google reviews"
-    // om te voorkomen dat Google als Irisje wordt getoond (jouw huidige situatie).
+    // Intercept profielklik: open modal i.p.v. navigatie
+    listEl.addEventListener("click", (e) => {
+      const link = e.target.closest(".company-profile-link");
+      if (!link) return;
 
-    const google = pickRating(company, [
-      ["googleAvgRating", "googleReviewCount"],
-      ["googleRating", "googleReviewCount"],
-      ["googleAvgRating", "googleReviews"],
-      ["googleRating", "googleReviews"]
-    ]);
+      // Belangrijk: voorkomen dat label/checkbox toggelt en voorkomen navigatie
+      e.preventDefault();
+      e.stopPropagation();
 
-    const irisje = pickRating(company, [
-      ["irisjeAvgRating", "irisjeReviewCount"],
-      ["irisjeRating", "irisjeReviewCount"],
-      ["irisjeAvgRating", "irisjeReviews"],
-      ["irisjeRating", "irisjeReviews"],
-      ["platformAvgRating", "platformReviewCount"]
-    ]);
+      const url = link.getAttribute("data-profile-url");
+      const name = link.getAttribute("data-company-name") || "Bedrijfsprofiel";
+      if (!url) return;
 
-    const legacy = pickRating(company, [["avgRating", "reviewCount"]]);
-
-    const blocks = [];
-
-    if (google) {
-      blocks.push(renderRatingBlock("Google reviews", google.rating, google.count));
-    }
-
-    if (irisje) {
-      blocks.push(renderRatingBlock("Irisje reviews", irisje.rating, irisje.count));
-    }
-
-    // Legacy alleen tonen als het niet exact dezelfde bron al is.
-    // Regel:
-    // - Als er expliciete google is: legacy niet tonen (voorkomt dubbele regels)
-    // - Als er expliciete irisje is maar geen google: legacy kan Google zijn, dus tonen als Google
-    // - Als er niets expliciet is: legacy tonen als Google (minimal correct volgens jouw observatie)
-    if (legacy && !google) {
-      blocks.push(renderRatingBlock("Google reviews", legacy.rating, legacy.count));
-    }
-
-    if (!blocks.length) return "";
-
-    return `<div class="reviews-stack">${blocks.join("")}</div>`;
-  }
-
-  function pickRating(obj, candidates) {
-    for (const [ratingKey, countKey] of candidates) {
-      const ratingRaw = obj?.[ratingKey];
-      const countRaw = obj?.[countKey];
-
-      const rating = typeof ratingRaw === "number" ? ratingRaw : Number(ratingRaw);
-      const count = typeof countRaw === "number" ? countRaw : Number(countRaw);
-
-      const ratingOk = Number.isFinite(rating) && rating > 0;
-      const countOk = Number.isFinite(count) && count > 0;
-
-      if (ratingOk && countOk) return { rating, count };
-    }
-    return null;
-  }
-
-  function renderRatingBlock(label, rating, count) {
-    const r = Number(rating);
-    const c = Number(count);
-    const ratingText = Number.isFinite(r) ? r.toFixed(1) : "";
-    const countText = Number.isFinite(c) ? String(c) : "";
-
-    return `
-      <div class="company-rating">
-        <span class="muted">${escapeHtml(label)}:</span>
-        <span class="stars">⭐ ${escapeHtml(ratingText)}</span>
-        <span class="muted">(${escapeHtml(countText)})</span>
-      </div>
-    `;
+      openCompanyModal(url, name);
+    });
   }
 
   function updateSelectionUI() {
     const selected = document.querySelectorAll(".company-checkbox:checked").length;
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+    if (sendBtn) sendBtn.disabled = selected === 0;
   }
 
   function escapeHtml(str) {
@@ -202,22 +190,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// === LEIDENDE SUBMITKNOP ===
-document.addEventListener("click", (e) => {
+// === DEFINITIEVE CLICK-HANDLER (werkt altijd) ===
+document.addEventListener("click", function (e) {
   const btn = e.target.closest("#stickySubmitBtn");
   if (!btn) return;
 
-  const selected = Array.from(
-    document.querySelectorAll(".company-checkbox:checked")
-  )
-    .map((cb) => cb.dataset.companyId)
-    .filter(Boolean);
+  const selectedCheckboxes = document.querySelectorAll(".company-checkbox:checked");
 
-  if (!selected.length) {
+  if (!selectedCheckboxes.length) {
     alert("Selecteer minimaal één bedrijf.");
     return;
   }
 
-  sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selected));
-  window.location.href = "/request-send.html";
+  const companyIds = Array.from(selectedCheckboxes)
+    .map((cb) => cb.dataset.companyId)
+    .filter(Boolean);
+
+  console.log("Geselecteerde bedrijven:", companyIds);
 });
