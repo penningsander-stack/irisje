@@ -6,6 +6,26 @@ const router = express.Router();
 const requestModel = require("../models/request");
 const companyModel = require("../models/company");
 
+// Helper: normaliseer sector naar string
+function normalizeSector(sector) {
+  if (!sector) return null;
+
+  if (typeof sector === "string") {
+    return sector.trim();
+  }
+
+  if (Array.isArray(sector) && sector.length > 0) {
+    return String(sector[0]).trim();
+  }
+
+  if (typeof sector === "object") {
+    if (sector.value) return String(sector.value).trim();
+    if (sector.label) return String(sector.label).trim();
+  }
+
+  return null;
+}
+
 // GET public request + matching companies
 router.get("/:id", async (req, res) => {
   try {
@@ -15,12 +35,12 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
-    const sector = request.sector;
+    const sector = normalizeSector(request.sector);
     const city = request.city;
 
     if (!sector || !city) {
       return res.status(400).json({
-        error: "Aanvraag bevat geen sector of plaats"
+        error: "Aanvraag bevat geen geldige sector of plaats"
       });
     }
 
