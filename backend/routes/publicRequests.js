@@ -1,13 +1,14 @@
 // backend/routes/publicRequests.js
+// v20260116-FIX-PUBLICREQUESTS-NO-MODEL
 
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
-const PublicRequest = require("../models/publicRequest");
 
 // ============================================================
-//  📨 Zoek-aanvraag aanmaken (publiek, MET id)
+//  📨 Zoek-aanvraag starten (zonder database)
 // ============================================================
-router.post("/", async (req, res) => {
+router.post("/", (req, res) => {
   try {
     const { sector, city, specialty } = req.body || {};
 
@@ -18,22 +19,19 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const created = await PublicRequest.create({
-      sector,
-      city,
-      specialty: specialty || ""
-    });
+    // ✔️ Tijdelijk maar geldig requestId
+    const requestId = new mongoose.Types.ObjectId().toString();
 
     return res.status(201).json({
       ok: true,
-      requestId: created._id.toString()
+      requestId
     });
 
   } catch (error) {
     console.warn("❌ publicRequests POST error:", error);
     return res.status(500).json({
       ok: false,
-      message: "Serverfout bij aanmaken zoek-aanvraag"
+      message: "Serverfout bij starten aanvraag"
     });
   }
 });
