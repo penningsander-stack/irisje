@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – selectie + doorsturen naar aanvraagstap (Optie A)
+// Resultatenpagina – bedrijven tonen + selectie + doorsturen (Optie A, hersteld)
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -45,6 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     stateEl.textContent = "";
     renderCompanies(companies);
+    updateSelectionUI();
 
   } catch (err) {
     console.error(err);
@@ -53,13 +54,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderCompanies(companies) {
     listEl.innerHTML = "";
-    updateSelectionUI();
 
-    companies.forEach((company) => {
+    companies.forEach((company, index) => {
       const card = document.createElement("div");
       card.className = "result-card";
 
       const companyId = company?._id ? String(company._id) : "";
+      const badge =
+        index < 5
+          ? `<span class="top-match-badge">Beste match</span>`
+          : "";
+
+      const rating =
+        company?.avgRating && company?.reviewCount
+          ? `
+            <div class="company-rating">
+              ⭐ ${company.avgRating.toFixed(1)}
+              <span class="muted">(${company.reviewCount} reviews)</span>
+            </div>
+          `
+          : "";
 
       card.innerHTML = `
         <label class="company-select">
@@ -69,8 +83,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             data-company-id="${escapeHtml(companyId)}"
           />
           <div class="company-info">
-            <h3>${escapeHtml(company?.name)}</h3>
+            <div class="company-header">
+              <h3>${escapeHtml(company?.name)}</h3>
+              ${badge}
+            </div>
             <div class="company-city">${escapeHtml(company?.city)}</div>
+            ${rating}
           </div>
         </label>
       `;
@@ -78,7 +96,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const checkbox = card.querySelector(".company-checkbox");
 
       checkbox.addEventListener("change", () => {
-        const checked = document.querySelectorAll(".company-checkbox:checked");
+        const checked =
+          document.querySelectorAll(".company-checkbox:checked");
         if (checked.length > 5) {
           checkbox.checked = false;
           return;
@@ -91,8 +110,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateSelectionUI() {
-    const selected = document.querySelectorAll(".company-checkbox:checked").length;
-    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+    const selected =
+      document.querySelectorAll(".company-checkbox:checked").length;
+    if (countEl) {
+      countEl.textContent = `${selected} van 5 geselecteerd`;
+    }
   }
 
   function escapeHtml(str) {
@@ -113,13 +135,19 @@ document.addEventListener("click", (e) => {
 
   const selected = Array.from(
     document.querySelectorAll(".company-checkbox:checked")
-  ).map(cb => cb.dataset.companyId).filter(Boolean);
+  )
+    .map(cb => cb.dataset.companyId)
+    .filter(Boolean);
 
   if (!selected.length) {
     alert("Selecteer minimaal één bedrijf.");
     return;
   }
 
-  sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selected));
+  sessionStorage.setItem(
+    "selectedCompanyIds",
+    JSON.stringify(selected)
+  );
+
   window.location.href = "/request-send.html";
 });
