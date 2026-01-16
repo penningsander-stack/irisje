@@ -13,6 +13,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const subtitleEl = document.getElementById("resultsSubtitle");
   const stickyBtn = document.getElementById("stickySubmitBtn");
 
+  // Basis DOM checks (voorkomt "er gebeurt niets" door JS crash)
+  if (!stateEl || !listEl) {
+    // Zonder state/list kunnen we niets betrouwbaar renderen
+    console.error("results.js: Vereiste elementen ontbreken (#resultsState of #companiesList).");
+    return;
+  }
+
   if (!requestId) {
     stateEl.textContent = "Ongeldige aanvraag.";
     return;
@@ -24,14 +31,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       { cache: "no-store" }
     );
 
-    if (!res.ok) throw new Error(res.status);
+    if (!res.ok) throw new Error(String(res.status));
 
     const data = await res.json();
-    const companies = data.companies || [];
+    const companies = Array.isArray(data.companies) ? data.companies : [];
     const request = data.request || {};
 
-    subtitleEl.textContent =
-      `Gebaseerd op jouw aanvraag voor ${request.sector} in ${request.city}.`;
+    // Subtitle (alleen als element bestaat)
+    if (subtitleEl) {
+      subtitleEl.textContent =
+        `Gebaseerd op jouw aanvraag voor ${request.sector || ""} in ${request.city || ""}.`;
+    }
 
     if (!companies.length) {
       stateEl.textContent =
@@ -39,8 +49,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // Succes: state leegmaken
+    stateEl.textContent = "";
+
     renderCompanies(companies);
-    footerEl.classList.remove("hidden");
+
+    // Footer tonen (alleen als element bestaat)
+    if (footerEl) footerEl.classList.remove("hidden");
 
   } catch (err) {
     console.error(err);
@@ -55,28 +70,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       const card = document.createElement("div");
       card.className = "result-card";
 
-      const slug = encodeURIComponent(company.slug || "");
+      const slug = encodeURIComponent(company?.slug || "");
       const badge =
         index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
+
+      const companyId = company?._id ? String(company._id) : "";
 
       card.innerHTML = `
         <label class="company-select">
           <input
             type="checkbox"
             class="company-checkbox"
-            data-company-id="${company._id}"
+            ${companyId ? `data-company-id="${escapeHtml(companyId)}"` : ""}
           />
           <div class="company-info">
             <div class="company-header">
               <h3>
                 <a href="/company.html?slug=${slug}" target="_blank" rel="noopener">
-                  ${escapeHtml(company.name)}
+                  ${escapeHtml(company?.name)}
                 </a>
               </h3>
               ${badge}
             </div>
 
-            <div class="company-city">${escapeHtml(company.city)}</div>
+            <div class="company-city">${escapeHtml(company?.city)}</div>
           </div>
         </label>
       `;
@@ -98,8 +115,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function updateSelectionUI() {
     const selected = document.querySelectorAll(".company-checkbox:checked").length;
-    countEl.textContent = `${selected} van 5 geselecteerd`;
-    sendBtn.disabled = selected === 0;
+
+    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+    if (sendBtn) sendBtn.disabled = selected === 0;
   }
 
   if (stickyBtn) {
@@ -112,13 +130,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      const companyIds = Array.from(selectedCheckboxes).map(
-        cb => cb.dataset.companyId
-      );
+      const companyIds = Array.from(selectedCheckboxes)
+        .map(cb => cb.dataset.companyId)
+        .filter(Boolean);
 
       console.log("VERZENDEN AANGEKLIKT");
       console.log("Geselecteerde bedrijven:", companyIds);
     });
+  } else {
+    // Niet fatal, maar helpt bij debuggen
+    console.warn("results.js: #stickySubmitBtn niet gevonden.");
   }
 
   function escapeHtml(str) {
