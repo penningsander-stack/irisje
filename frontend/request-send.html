@@ -7,7 +7,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-
 <body class="irisje-body">
 
 <header class="irisje-header">
@@ -19,135 +18,75 @@
 <main>
   <section class="irisje-section">
     <div class="irisje-container">
-
       <section class="card card--large">
         <header class="mb-6">
           <h1>Aanvraag versturen</h1>
-          <p class="muted">
-            Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
-          </p>
+          <p class="muted">Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.</p>
         </header>
 
-        <form id="sendForm" class="form" novalidate>
-
+        <form id="sendForm" novalidate>
           <div class="form-group">
             <label for="name">Volledige naam</label>
             <input type="text" id="name" required />
           </div>
-
           <div class="form-group">
             <label for="email">E-mailadres</label>
             <input type="email" id="email" required />
           </div>
-
           <div class="form-group">
             <label for="message">Waarmee kunnen we je helpen?</label>
             <textarea id="message" rows="5" required></textarea>
           </div>
-
           <div class="form-actions">
-            <button id="sendBtn" type="submit" class="btn-primary">
-              Aanvraag versturen
-            </button>
+            <button id="sendBtn" type="submit" class="btn-primary">Aanvraag versturen</button>
           </div>
-
         </form>
       </section>
-
     </div>
   </section>
 </main>
 
-<footer class="site-footer">
-  <div class="irisje-container">
-    © Irisje.nl
-  </div>
-</footer>
+<footer class="site-footer"><div class="irisje-container">© Irisje.nl</div></footer>
 
 <script>
-/*
-  frontend/request-send.html
-  FIX: correcte POST naar /api/requests
-*/
+function safe(v,f){ try{return JSON.parse(v)}catch{return f} }
 
-function safeJsonParse(value, fallback) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
-document.getElementById("sendForm").addEventListener("submit", async (e) => {
+document.getElementById("sendForm").addEventListener("submit", async e=>{
   e.preventDefault();
+  const btn=document.getElementById("sendBtn");
+  const name=document.getElementById("name").value.trim();
+  const email=document.getElementById("email").value.trim();
+  const message=document.getElementById("message").value.trim();
+  if(!name||!email||!message){ alert("Vul alle velden in."); return; }
 
-  const btn = document.getElementById("sendBtn");
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const message = document.getElementById("message").value.trim();
+  const ctx = safe(sessionStorage.getItem("requestContext"), {});
+  const companyIds = safe(sessionStorage.getItem("selectedCompanyIds"), []);
+  if(!companyIds.length){ alert("Geen bedrijven geselecteerd."); return; }
 
-  if (!name || !email || !message) {
-    alert("Vul alle velden in.");
-    return;
-  }
-
-  const sector = sessionStorage.getItem("requestSector");
-  if (!sector) {
-    alert("Interne fout: sector ontbreekt. Start de aanvraag opnieuw.");
-    return;
-  }
-
-  const companyIds = safeJsonParse(
-    sessionStorage.getItem("selectedCompanyIds"),
-    []
-  );
-
-  if (!Array.isArray(companyIds) || companyIds.length === 0) {
-    alert("Geen bedrijven geselecteerd.");
-    return;
-  }
-
-  const payload = {
-    name,
-    email,
-    message,
-    category: sector,
-    companyIds
-  };
-
-  btn.disabled = true;
-  btn.textContent = "Aanvraag versturen…";
-
-  try {
-    const res = await fetch(
-      "https://irisje-backend.onrender.com/api/requests",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }
-    );
-
+  btn.disabled=true; btn.textContent="Aanvraag versturen…";
+  try{
+    const res = await fetch("https://irisje-backend.onrender.com/api/requests",{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ name,email,message, category: ctx.category, companyIds })
+    });
     const data = await res.json();
+    if(!res.ok){ alert(data.message||"Versturen mislukt."); return; }
 
-    if (!res.ok) {
-      alert(data.message || "Versturen mislukt.");
-      return;
-    }
+    // ✔ context voor thank-you
+    sessionStorage.setItem("irisje_thankyou", JSON.stringify({
+      ok:true,
+      request:{ name,email,message, category: ctx.category, city: ctx.city },
+      sentTo: Array.isArray(data.sentTo)?data.sentTo:[]
+    }));
 
-    sessionStorage.removeItem("selectedCompanyIds");
-
-    window.location.href = "/thank-you.html";
-
-  } catch (err) {
-    console.error(err);
-    alert("Netwerkfout bij versturen.");
+    window.location.href="/thank-you.html";
+  } catch(err){
+    console.error(err); alert("Netwerkfout bij versturen.");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Aanvraag versturen";
+    btn.disabled=false; btn.textContent="Aanvraag versturen";
   }
 });
 </script>
-
 </body>
 </html>
