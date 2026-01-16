@@ -1,85 +1,84 @@
 // frontend/js/request.js
-// Verstuurt aanvraag → POST /api/requests
+// Definitieve aanvraag – stuurt exact wat backend verwacht
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("requestForm");
-  if (!form) {
-    console.error("❌ requestForm niet gevonden");
-    return;
-  }
-
-  const errorBox = document.getElementById("requestError");
-  const submitBtn = form.querySelector("button[type='submit']");
+  if (!form) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (errorBox) errorBox.textContent = "";
-    if (submitBtn) submitBtn.disabled = true;
+    // --- VELDEN UIT FORM ---
+    const name = form.querySelector('[name="name"]')?.value.trim();
+    const email = form.querySelector('[name="email"]')?.value.trim();
+    const city = form.querySelector('[name="city"]')?.value.trim();
+    const category = form.querySelector('[name="category"]')?.value.trim();
+    const specialty = form.querySelector('[name="specialty"]')?.value.trim();
 
-    // 🔴 VELDEN – exact zoals in jouw HTML
-    const name = form.querySelector("input[name='name']")?.value.trim();
-    const email = form.querySelector("input[name='email']")?.value.trim();
-    const city = form.querySelector("input[name='city']")?.value.trim();
-    const sector = form.querySelector("select[name='sector']")?.value.trim();
-    const specialty = form.querySelector("select[name='specialty']")?.value.trim();
-    const description = form.querySelector("textarea[name='message']")?.value.trim();
+    // ⬅️ DIT WAS HET GROTE PROBLEEM
+    // Backend verwacht "message", geen "description"
+    const message =
+      form.querySelector('[name="description"]')?.value.trim() ||
+      form.querySelector('[name="message"]')?.value.trim();
 
-    // === VALIDATIE ===
-    if (!name || !email || !city || !sector || !description) {
-      const msg = "Vul alle verplichte velden in.";
-      if (errorBox) errorBox.textContent = msg;
-      else alert(msg);
+    // Geselecteerde bedrijven (uit results pagina)
+    const selectedCompanies = JSON.parse(
+      localStorage.getItem("selectedCompanyIds") || "[]"
+    );
 
-      if (submitBtn) submitBtn.disabled = false;
+    // --- VALIDATIE (BACKEND COMPATIBEL) ---
+    if (!name || !email || !message) {
+      alert("Naam, e-mailadres en omschrijving zijn verplicht.");
       return;
     }
 
-    // === PAYLOAD ===
+    if (!category || !city) {
+      alert("Categorie en plaats zijn verplicht.");
+      return;
+    }
+
+    // --- PAYLOAD EXACT ZOALS BACKEND VERWACHT ---
     const payload = {
       name,
       email,
-      city,                 // ✅ plaats
-      sector,               // ✅ categorie
-      specialty: specialty || null, // ✅ specialisme
-      description           // ✅ backend-verplicht
+      city,
+      category,
+      specialty,
+      message,              // ⬅️ VERPLICHT
+      companyIds: selectedCompanies
     };
 
-    console.log("📤 REQUEST PAYLOAD", payload);
+    console.log("➡️ VERZEND REQUEST:", payload);
 
     try {
       const res = await fetch(
         "https://irisje-backend.onrender.com/api/requests",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(payload)
         }
       );
 
       if (!res.ok) {
-        console.error("❌ STATUS:", res.status);
-        throw new Error(res.status);
+        throw new Error(`HTTP ${res.status}`);
       }
 
       const data = await res.json();
 
-      if (!data.requestId) {
-        throw new Error("requestId ontbreekt");
-      }
+      console.log("✅ AANVRAAG AANGEMAAKT:", data);
 
-      console.log("✅ REQUEST AANGEMAAKT:", data.requestId);
+      // Opschonen
+      localStorage.removeItem("selectedCompanyIds");
 
-      window.location.href = `/results.html?requestId=${data.requestId}`;
+      // Door naar succespagina
+      window.location.href = "/request-success.html";
 
     } catch (err) {
-      console.error("❌ AANVRAAG FOUT:", err);
-
-      const msg = "Aanvraag mislukt. Probeer het opnieuw.";
-      if (errorBox) errorBox.textContent = msg;
-      else alert(msg);
-
-      if (submitBtn) submitBtn.disabled = false;
+      console.error("❌ Aanvraag mislukt:", err);
+      alert("Aanvraag kon niet worden verstuurd. Probeer het opnieuw.");
     }
   });
 });
