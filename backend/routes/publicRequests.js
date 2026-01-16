@@ -38,12 +38,12 @@ router.get("/:id", async (req, res) => {
     }
 
     const companies = await companyModel.find({
-      categories: {
-        $regex: request.sector,
-        $options: "i",
-      },
-      active: true,
-    }).lean();
+  categories: {
+    $regex: request.sector,
+    $options: "i",
+  }
+}).lean();
+
 
     console.log("🔥 MATCH sector:", request.sector);
     console.log("🔥 FOUND companies:", companies.length);
