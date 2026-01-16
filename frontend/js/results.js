@@ -11,12 +11,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
-  const stickyBtn = document.getElementById("stickySubmitBtn");
 
-  // Basis DOM checks (voorkomt "er gebeurt niets" door JS crash)
   if (!stateEl || !listEl) {
-    // Zonder state/list kunnen we niets betrouwbaar renderen
-    console.error("results.js: Vereiste elementen ontbreken (#resultsState of #companiesList).");
+    console.error("results.js: verplichte elementen ontbreken");
     return;
   }
 
@@ -31,13 +28,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       { cache: "no-store" }
     );
 
-    if (!res.ok) throw new Error(String(res.status));
+    if (!res.ok) throw new Error(res.status);
 
     const data = await res.json();
     const companies = Array.isArray(data.companies) ? data.companies : [];
     const request = data.request || {};
 
-    // Subtitle (alleen als element bestaat)
     if (subtitleEl) {
       subtitleEl.textContent =
         `Gebaseerd op jouw aanvraag voor ${request.sector || ""} in ${request.city || ""}.`;
@@ -49,12 +45,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Succes: state leegmaken
     stateEl.textContent = "";
-
     renderCompanies(companies);
 
-    // Footer tonen (alleen als element bestaat)
     if (footerEl) footerEl.classList.remove("hidden");
 
   } catch (err) {
@@ -92,7 +85,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               </h3>
               ${badge}
             </div>
-
             <div class="company-city">${escapeHtml(company?.city)}</div>
           </div>
         </label>
@@ -115,31 +107,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function updateSelectionUI() {
     const selected = document.querySelectorAll(".company-checkbox:checked").length;
-
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
     if (sendBtn) sendBtn.disabled = selected === 0;
-  }
-
-  if (stickyBtn) {
-    stickyBtn.addEventListener("click", () => {
-      const selectedCheckboxes =
-        document.querySelectorAll(".company-checkbox:checked");
-
-      if (!selectedCheckboxes.length) {
-        alert("Selecteer minimaal één bedrijf.");
-        return;
-      }
-
-      const companyIds = Array.from(selectedCheckboxes)
-        .map(cb => cb.dataset.companyId)
-        .filter(Boolean);
-
-      console.log("VERZENDEN AANGEKLIKT");
-      console.log("Geselecteerde bedrijven:", companyIds);
-    });
-  } else {
-    // Niet fatal, maar helpt bij debuggen
-    console.warn("results.js: #stickySubmitBtn niet gevonden.");
   }
 
   function escapeHtml(str) {
@@ -151,4 +120,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       "'": "&#39;"
     })[s]);
   }
+});
+
+
+// === DEFINITIEVE CLICK-HANDLER (werkt altijd) ===
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest("#stickySubmitBtn");
+  if (!btn) return;
+
+  console.log("STICKY SUBMIT CLICK GEDTECTEERD");
+
+  const selectedCheckboxes =
+    document.querySelectorAll(".company-checkbox:checked");
+
+  if (!selectedCheckboxes.length) {
+    alert("Selecteer minimaal één bedrijf.");
+    return;
+  }
+
+  const companyIds = Array.from(selectedCheckboxes)
+    .map(cb => cb.dataset.companyId)
+    .filter(Boolean);
+
+  console.log("Geselecteerde bedrijven:", companyIds);
 });
