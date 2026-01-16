@@ -167,3 +167,28 @@ if (stickyBtn && mainSubmitBtn) {
 
 
 
+// --- FORCE enable/disable send button based on selection ---
+
+function updateSendButtonState() {
+  const sendBtn = document.getElementById("sendBtn");
+  const selectedCountEl = document.getElementById("selectedCount");
+
+  if (!sendBtn || !selectedCountEl) return;
+
+  // verwacht tekst: "X van 5 geselecteerd"
+  const match = selectedCountEl.textContent.match(/^(\d+)/);
+  const selectedCount = match ? parseInt(match[1], 10) : 0;
+
+  sendBtn.disabled = selectedCount === 0;
+}
+
+// Elke keer als de teller wijzigt → knopstatus opnieuw bepalen
+const observer = new MutationObserver(updateSendButtonState);
+
+const selectedCountEl = document.getElementById("selectedCount");
+if (selectedCountEl) {
+  observer.observe(selectedCountEl, { childList: true, subtree: true });
+}
+
+// Initial check
+updateSendButtonState();
