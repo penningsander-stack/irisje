@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch(
-        "https://irisje-backend.onrender.com/api/publicRequests",
+        "https://irisje-backend.onrender.com/api/requests",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
