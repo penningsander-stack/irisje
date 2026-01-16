@@ -1,29 +1,23 @@
 // backend/models/request.js
-
 const mongoose = require("mongoose");
 
-const RequestSchema = new mongoose.Schema({
-  sector: String,
-  specialty: String,
-  city: String,
-
-  // ✅ NIEUW
-  selectedCompanies: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Company",
-    },
-  ],
-
-  status: {
+const requestSchema = new mongoose.Schema({
+  sector: {
     type: String,
-    default: "open",
+    required: true,
   },
-
+  specialty: {
+    type: String,
+    default: "",
+  },
+  city: {
+    type: String,
+    default: "",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-module.exports = mongoose.model("Request", RequestSchema);
+module.exports = mongoose.model("Request", requestSchema);

@@ -1,104 +1,55 @@
 // backend/routes/publicRequests.js
+// v2026-01-16 – step 1 COMPLETE: category + city matching
+
 const express = require("express");
 const router = express.Router();
 
-const Request = require("../models/request");
-const Company = require("../models/company");
+const requestModel = require("../models/request");
+const companyModel = require("../models/company");
 
-// =====================================================
-// POST /api/publicRequests
-// Start een nieuwe (publieke) aanvraag – lichte variant
-// =====================================================
 router.post("/", async (req, res) => {
   try {
     const { sector, specialty, city } = req.body;
 
-    if (!sector || !specialty || !city) {
-      return res.status(400).json({
-        ok: false,
-        message: "Sector, specialisme en plaats zijn verplicht."
-      });
+    if (!sector || !city) {
+      return res.status(400).json({ error: "Sector en plaats zijn verplicht" });
     }
 
-    const request = await Request.create({
+    const request = await requestModel.create({
       sector,
-      specialty,
+      specialty: specialty || "",
       city,
-      status: "open"
     });
 
-    res.json({
-      ok: true,
-      requestId: request._id
-    });
+    res.json({ requestId: request._id });
   } catch (err) {
-    console.error("POST /api/publicRequests fout:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Kon aanvraag niet starten."
-    });
+    console.error("❌ POST /publicRequests error:", err);
+    res.status(500).json({ error: "Aanvraag kon niet worden aangemaakt" });
   }
 });
 
-// =====================================================
-// GET /api/publicRequests/:id
-// Haal aanvraag + gematchte bedrijven op
-// =====================================================
 router.get("/:id", async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id);
+    const request = await requestModel.findById(req.params.id).lean();
     if (!request) {
-      return res.status(404).json({ message: "Aanvraag niet gevonden" });
+      return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
-    // Match bedrijven op sector + plaats
-    const companies = await Company.find({
-      sector: new RegExp(`^${request.sector}$`, "i"),
-      city: new RegExp(`^${request.city}$`, "i"),
-      verified: true
-    });
+    const companies = await companyModel.find({
+      categories: {
+        $regex: request.sector,
+        $options: "i",
+      },
+      city: {
+        $regex: `^${request.city}$`,
+        $options: "i",
+      },
+    }).lean();
 
-    res.json({
-      request,
-      companies
-    });
+    res.json({ request, companies });
   } catch (err) {
-    console.error("GET /api/publicRequests fout:", err);
-    res.status(500).json({ message: "Fout bij ophalen aanvraag" });
-  }
-});
-
-// =====================================================
-// POST /api/publicRequests/:id/submit
-// Koppel geselecteerde bedrijven aan aanvraag
-// =====================================================
-router.post("/:id/submit", async (req, res) => {
-  try {
-    const { companyIds } = req.body;
-
-    if (!Array.isArray(companyIds) || companyIds.length === 0) {
-      return res.status(400).json({
-        ok: false,
-        message: "Geen bedrijven geselecteerd."
-      });
-    }
-
-    const request = await Request.findById(req.params.id);
-    if (!request) {
-      return res.status(404).json({ message: "Aanvraag niet gevonden" });
-    }
-
-    request.selectedCompanies = companyIds;
-    request.status = "submitted";
-    await request.save();
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("POST /api/publicRequests/:id/submit fout:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Kon aanvraag niet verzenden."
-    });
+    console.error("❌ GET /publicRequests/:id error:", err);
+    res.status(500).json({ error: "Resultaten konden niet worden opgehaald" });
   }
 });
 
