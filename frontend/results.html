@@ -1,144 +1,125 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8" />
-  <title>Geschikte bedrijven – Irisje.nl</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/css/style.css" />
+// frontend/js/results.js
+// Resultatenpagina – selectie + doorsturen naar aanvraagstap (Optie A)
 
-<style>
-  body {
-    padding-bottom: 110px; /* ruimte voor vaste footer */
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const requestId = params.get("requestId");
+
+  const stateEl = document.getElementById("resultsState");
+  const listEl = document.getElementById("companiesList");
+  const countEl = document.getElementById("selectedCount");
+  const subtitleEl = document.getElementById("resultsSubtitle");
+
+  if (!stateEl || !listEl) {
+    console.error("results.js: verplichte elementen ontbreken");
+    return;
   }
-</style>
 
+  if (!requestId) {
+    stateEl.textContent = "Ongeldige aanvraag.";
+    return;
+  }
 
+  try {
+    const res = await fetch(
+      `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`,
+      { cache: "no-store" }
+    );
 
-</head>
+    if (!res.ok) throw new Error(res.status);
 
-<body class="irisje-body min-h-screen">
+    const data = await res.json();
+    const companies = Array.isArray(data.companies) ? data.companies : [];
+    const request = data.request || {};
 
-  <!-- HEADER -->
-  <header class="irisje-header">
-    <div class="irisje-container irisje-header-inner">
-      <a href="/" class="irisje-logo">Irisje.nl</a>
-    </div>
-  </header>
+    if (subtitleEl) {
+      subtitleEl.textContent =
+        `Gebaseerd op jouw aanvraag voor ${request.sector || ""} in ${request.city || ""}.`;
+    }
 
-  <main>
-    <section class="irisje-section">
-      <div class="irisje-container">
+    if (!companies.length) {
+      stateEl.textContent =
+        "Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.";
+      return;
+    }
 
-        <!-- SINGLE PREMIUM CARD -->
-        <section class="card card--large">
+    stateEl.textContent = "";
+    renderCompanies(companies);
 
-          <header class="mb-4">
-            <h1>Geschikte bedrijven voor jouw aanvraag</h1>
-            <p id="resultsSubtitle" class="muted"></p>
-          </header>
+  } catch (err) {
+    console.error(err);
+    stateEl.textContent = "Resultaten konden niet worden geladen.";
+  }
 
-          <p class="muted mb-6">
-            Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
-          </p>
+  function renderCompanies(companies) {
+    listEl.innerHTML = "";
+    updateSelectionUI();
 
-          <!-- STATUS (laden / geen resultaten) -->
-          <div id="resultsState" class="results-state mb-6"></div>
+    companies.forEach((company) => {
+      const card = document.createElement("div");
+      card.className = "result-card";
 
-          <!-- RESULTATEN -->
-          <div id="companiesList" class="results-container"></div>
+      const companyId = company?._id ? String(company._id) : "";
 
-        </section>
+      card.innerHTML = `
+        <label class="company-select">
+          <input
+            type="checkbox"
+            class="company-checkbox"
+            data-company-id="${escapeHtml(companyId)}"
+          />
+          <div class="company-info">
+            <h3>${escapeHtml(company?.name)}</h3>
+            <div class="company-city">${escapeHtml(company?.city)}</div>
+          </div>
+        </label>
+      `;
 
-      </div>
-    </section>
-  </main>
+      const checkbox = card.querySelector(".company-checkbox");
 
- <!-- SELECTIE FOOTER (STICKY) -->
-<footer
-  id="resultsFooter"
-  class="results-footer hidden"
-  style="
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
-    z-index: 1100;
-  "
->
-  <div
-    class="irisje-container footer-inner"
-    style="
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 12px 16px;
-      max-width: 640px;
-      margin: 0 auto;
-    "
-  >
-    <span
-      id="selectedCount"
-      style="
-        font-size: 14px;
-        font-weight: 500;
-        text-align: center;
-      "
-    >
-      0 van 5 geselecteerd
-    </span>
+      checkbox.addEventListener("change", () => {
+        const checked = document.querySelectorAll(".company-checkbox:checked");
+        if (checked.length > 5) {
+          checkbox.checked = false;
+          return;
+        }
+        updateSelectionUI();
+      });
 
-    <button
-      id="sendBtn"
-      class="btn-primary"
-      disabled
-      style="width: 100%;"
-    >
-      Verstuur aanvraag naar geselecteerde bedrijven
-    </button>
-  </div>
-</footer>
+      listEl.appendChild(card);
+    });
+  }
 
+  function updateSelectionUI() {
+    const selected = document.querySelectorAll(".company-checkbox:checked").length;
+    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+  }
 
-  <!-- SITE FOOTER -->
-  <footer class="site-footer">
-    <div class="irisje-container">
-      © Irisje.nl
-    </div>
-  </footer>
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, s => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[s]);
+  }
+});
 
-  <script src="/js/results.js"></script>
+// === LEIDENDE SUBMITKNOP ===
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("#stickySubmitBtn");
+  if (!btn) return;
 
+  const selected = Array.from(
+    document.querySelectorAll(".company-checkbox:checked")
+  ).map(cb => cb.dataset.companyId).filter(Boolean);
 
-<div id="stickySubmitBar" style="
-  position: fixed;
-  inset: auto 0 0 0;
-  background: #ffffff;
-  border-top: 1px solid #e5e7eb;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: center;
-  z-index: 2147483647;
-  pointer-events: none;
-">
-  <button
-    id="stickySubmitBtn"
-    type="button"
-    class="btn-primary"
-    style="
-      max-width: 480px;
-      width: 100%;
-      pointer-events: auto;
-    "
-  >
-    Aanvraag verzenden
-  </button>
-</div>
+  if (!selected.length) {
+    alert("Selecteer minimaal één bedrijf.");
+    return;
+  }
 
-
-
-
-
-</body>
-</html>
+  sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selected));
+  window.location.href = "/request-send.html";
+});
