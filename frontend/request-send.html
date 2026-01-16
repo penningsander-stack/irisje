@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Aanvraag versturen – Irisje.nl</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+
+<h1>Verstuur je aanvraag</h1>
+
+<form id="sendForm">
+  <div>
+    <label>Naam</label><br />
+    <input type="text" id="name" required />
+  </div>
+
+  <div>
+    <label>E-mail</label><br />
+    <input type="email" id="email" required />
+  </div>
+
+  <div>
+    <label>Omschrijving</label><br />
+    <textarea id="message" required></textarea>
+  </div>
+
+  <button type="submit">Aanvraag versturen</button>
+</form>
+
+<script>
+// frontend/request-send.html (inline script, bewust minimaal)
+
+document.getElementById("sendForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const companyIds = JSON.parse(
+    sessionStorage.getItem("selectedCompanyIds") || "[]"
+  );
+
+  if (!companyIds.length) {
+    alert("Geen bedrijven geselecteerd.");
+    return;
+  }
+
+  const payload = {
+    name: document.getElementById("name").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    message: document.getElementById("message").value.trim(),
+    companyIds
+  };
+
+  const res = await fetch(
+    "https://irisje-backend.onrender.com/api/requests",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }
+  );
+
+  if (!res.ok) {
+    alert("Versturen mislukt.");
+    return;
+  }
+
+  sessionStorage.removeItem("selectedCompanyIds");
+  alert("Aanvraag succesvol verstuurd.");
+});
+</script>
+
+</body>
+</html>
