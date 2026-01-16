@@ -1,14 +1,18 @@
 // backend/routes/publicRequests.js
-// v20260116-FIX-PUBLICREQUESTS-NO-MODEL
+// v20260116-PUBLICREQUESTS-WITH-COMPANY-MATCHING
+// Uitbreiding: match bedrijven en stuur ze direct terug in de POST-response
+// GEEN nieuwe routes, GEEN nieuw model
 
 const express = require("express");
 const mongoose = require("mongoose");
 const router = express.Router();
 
+const Company = require("../models/company");
+
 // ============================================================
-//  📨 Zoek-aanvraag starten (zonder database)
+//  📨 Zoek-aanvraag starten + bedrijven matchen (zonder Request-opslag)
 // ============================================================
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const { sector, city, specialty } = req.body || {};
 
@@ -19,12 +23,52 @@ router.post("/", (req, res) => {
       });
     }
 
-    // ✔️ Tijdelijk maar geldig requestId
+    // ✔️ Tijdelijk maar geldig requestId (frontend verwacht dit)
     const requestId = new mongoose.Types.ObjectId().toString();
+
+    // ----------------------------------------------------------
+    // Company matching
+    // ----------------------------------------------------------
+    // Criteria:
+    // - actief en geverifieerd
+    // - categorie matcht sector
+    // - (optioneel) specialisme matcht
+    // - regio/stad matcht of werkt landelijk
+    // ----------------------------------------------------------
+
+    const sectorNorm = String(sector).trim();
+    const cityNorm = String(city).trim();
+    const specialtyNorm = String(specialty || "").trim();
+
+    // Basisquery
+    const query = {
+      active: true,
+      isVerified: true,
+      categories: sectorNorm
+    };
+
+    // Specialisme (alleen toevoegen als ingevuld)
+    if (specialtyNorm) {
+      query.specialties = specialtyNorm;
+    }
+
+    // Stad / regio / landelijk
+    query.$or = [
+      { city: cityNorm },
+      { regions: cityNorm },
+      { worksNationwide: true }
+    ];
+
+    // Query uitvoeren
+    const companies = await Company.find(query)
+      .select("_id name slug city avgRating reviewCount")
+      .limit(10)
+      .lean();
 
     return res.status(201).json({
       ok: true,
-      requestId
+      requestId,
+      companies: Array.isArray(companies) ? companies : []
     });
 
   } catch (error) {
