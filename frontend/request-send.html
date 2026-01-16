@@ -1,3 +1,4 @@
+<!-- frontend/request-send.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -27,7 +28,7 @@
           </p>
         </header>
 
-        <form id="sendForm" class="form">
+        <form id="sendForm" class="form" novalidate>
 
           <div class="form-group">
             <label for="name">Volledige naam</label>
@@ -66,19 +67,38 @@
 <script>
 /*
   frontend/request-send.html
-  FIX: sector verplicht meesturen om Mongoose ValidationError te voorkomen
+  FIX: correcte POST naar /api/requests
 */
 
-function safeJsonParse(str, fallback) {
-  try { return JSON.parse(str); } catch { return fallback; }
+function safeJsonParse(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
 }
 
 document.getElementById("sendForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const btn = document.getElementById("sendBtn");
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const message = document.getElementById("message").value.trim();
+
+  if (!name || !email || !message) {
+    alert("Vul alle velden in.");
+    return;
+  }
+
+  const sector = sessionStorage.getItem("requestSector");
+  if (!sector) {
+    alert("Interne fout: sector ontbreekt. Start de aanvraag opnieuw.");
+    return;
+  }
+
   const companyIds = safeJsonParse(
-    sessionStorage.getItem("selectedCompanyIds") || "[]",
+    sessionStorage.getItem("selectedCompanyIds"),
     []
   );
 
@@ -87,28 +107,16 @@ document.getElementById("sendForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const message = document.getElementById("message").value.trim();
-
-  // 🔴 CRUCIAAL: sector is verplicht in backend schema
-  const sector = sessionStorage.getItem("requestSector") || "";
-
-  if (!sector) {
-    alert("Interne fout: sector ontbreekt. Ga terug en start de aanvraag opnieuw.");
-    return;
-  }
-
   const payload = {
     name,
     email,
     message,
-    sector,
+    category: sector,
     companyIds
   };
 
   btn.disabled = true;
-  btn.textContent = "Bezig met versturen...";
+  btn.textContent = "Aanvraag versturen…";
 
   try {
     const res = await fetch(
@@ -120,37 +128,20 @@ document.getElementById("sendForm").addEventListener("submit", async (e) => {
       }
     );
 
-    const contentType = res.headers.get("content-type") || "";
-    const body = contentType.includes("application/json")
-      ? await res.json()
-      : null;
+    const data = await res.json();
 
     if (!res.ok) {
-      const msg =
-        (body && (body.message || body.error)) ||
-        `Versturen mislukt (status ${res.status}).`;
-      alert(msg);
+      alert(data.message || "Versturen mislukt.");
       return;
     }
 
-    // context bewaren voor thank-you
-    sessionStorage.setItem("sentCompanyIds", JSON.stringify(companyIds));
     sessionStorage.removeItem("selectedCompanyIds");
 
-    const requestId =
-      new URLSearchParams(window.location.search).get("requestId") ||
-      sessionStorage.getItem("requestId") ||
-      "";
-
-    const target = requestId
-      ? `/thank-you.html?requestId=${encodeURIComponent(requestId)}`
-      : `/thank-you.html`;
-
-    window.location.href = target;
+    window.location.href = "/thank-you.html";
 
   } catch (err) {
     console.error(err);
-    alert("Netwerkfout bij versturen. Probeer het opnieuw.");
+    alert("Netwerkfout bij versturen.");
   } finally {
     btn.disabled = false;
     btn.textContent = "Aanvraag versturen";
