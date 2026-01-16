@@ -220,3 +220,34 @@ if (countEl) {
 
 // Eerste check bij laden
 forceUpdateSendButton();
+
+
+
+
+// === DEFINITIEVE FIX: selectie → teller → knop ===
+
+function updateSelectionUI() {
+  const checkboxes = document.querySelectorAll(".company-checkbox:checked");
+  const count = checkboxes.length;
+
+  const countEl = document.getElementById("selectedCount");
+  const sendBtn = document.getElementById("sendBtn");
+
+  if (countEl) {
+    countEl.textContent = `${count} van 5 geselecteerd`;
+  }
+
+  if (sendBtn) {
+    sendBtn.disabled = count === 0;
+  }
+}
+
+// Luister naar wijzigingen op ALLE company checkboxes
+document.addEventListener("change", function (e) {
+  if (e.target && e.target.classList.contains("company-checkbox")) {
+    updateSelectionUI();
+  }
+});
+
+// Initial sync bij laden
+updateSelectionUI();
