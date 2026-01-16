@@ -1,5 +1,5 @@
 // backend/routes/publicRequests.js
-// v2026-01-16 – FINAL FIX: categories stored as STRING (not array)
+// v2026-01-16 – step 1 COMPLETE: category + city matching
 
 const express = require("express");
 const router = express.Router();
@@ -11,14 +11,14 @@ router.post("/", async (req, res) => {
   try {
     const { sector, specialty, city } = req.body;
 
-    if (!sector) {
-      return res.status(400).json({ error: "Sector ontbreekt" });
+    if (!sector || !city) {
+      return res.status(400).json({ error: "Sector en plaats zijn verplicht" });
     }
 
     const request = await requestModel.create({
       sector,
       specialty: specialty || "",
-      city: city || "",
+      city,
     });
 
     res.json({ requestId: request._id });
@@ -30,23 +30,21 @@ router.post("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    console.log("🔥 publicRequests route HIT");
-
     const request = await requestModel.findById(req.params.id).lean();
     if (!request) {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
     const companies = await companyModel.find({
-  categories: {
-    $regex: request.sector,
-    $options: "i",
-  }
-}).lean();
-
-
-    console.log("🔥 MATCH sector:", request.sector);
-    console.log("🔥 FOUND companies:", companies.length);
+      categories: {
+        $regex: request.sector,
+        $options: "i",
+      },
+      city: {
+        $regex: `^${request.city}$`,
+        $options: "i",
+      },
+    }).lean();
 
     res.json({ request, companies });
   } catch (err) {
