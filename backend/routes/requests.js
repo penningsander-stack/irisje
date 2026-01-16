@@ -23,13 +23,25 @@ router.post("/", async (req, res) => {
       approach,
       involvement,
       companyId,
-      companyIds
+      companyIds,
+      sector // ← toegevoegd (uit payload)
     } = req.body || {};
 
     if (!name || !email || !message) {
       return res.status(400).json({
         ok: false,
         message: "Naam, e-mail en omschrijving zijn verplicht."
+      });
+    }
+
+    // -----------------------------
+    // Sector resolven (ENIGE FIX)
+    // -----------------------------
+    const resolvedSector = sector || category || "";
+    if (!resolvedSector) {
+      return res.status(400).json({
+        ok: false,
+        message: "Sector ontbreekt in aanvraag."
       });
     }
 
@@ -51,6 +63,7 @@ router.post("/", async (req, res) => {
       email,
       city: city || "",
       message,
+      sector: resolvedSector, // ← HIER zat het probleem
       category: category || "",
       specialty: specialty || "",
       communication: communication || "",
