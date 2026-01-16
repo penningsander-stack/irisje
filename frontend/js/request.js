@@ -190,6 +190,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json();
       if (!data.requestId) throw new Error("Geen requestId");
 
+sessionStorage.setItem("requestSector", sector);
+
+
+
       window.location.href =
         `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
 
