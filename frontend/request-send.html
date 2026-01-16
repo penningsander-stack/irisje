@@ -1,156 +1,162 @@
-<!-- // frontend/request-send.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <title>Aanvraag versturen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Bestaande Irisje styling -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 
 <body class="irisje-body">
 
-  <!-- HEADER -->
-  <header class="irisje-header">
-    <div class="irisje-container irisje-header-inner">
-      <a href="/" class="irisje-logo">Irisje.nl</a>
-    </div>
-  </header>
+<header class="irisje-header">
+  <div class="irisje-container irisje-header-inner">
+    <a href="/" class="irisje-logo">Irisje.nl</a>
+  </div>
+</header>
 
-  <main>
-    <section class="irisje-section">
-      <div class="irisje-container">
-
-        <!-- Card in Irisje-stijl -->
-        <section class="card card--large">
-
-          <header class="mb-6">
-            <h1>Aanvraag versturen</h1>
-            <p class="muted">
-              Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
-              Zij nemen alleen contact met je op als jij dat wilt.
-            </p>
-          </header>
-
-          <form id="sendForm" class="form">
-
-            <div class="form-group">
-              <label for="name">Volledige naam</label>
-              <input type="text" id="name" required />
-            </div>
-
-            <div class="form-group">
-              <label for="email">E-mailadres</label>
-              <input type="email" id="email" required />
-            </div>
-
-            <div class="form-group">
-              <label for="message">Waarmee kunnen we je helpen?</label>
-              <textarea id="message" rows="5" required></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button id="sendBtn" type="submit" class="btn-primary">
-                Aanvraag versturen
-              </button>
-            </div>
-
-          </form>
-
-        </section>
-
-      </div>
-    </section>
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="site-footer">
+<main>
+  <section class="irisje-section">
     <div class="irisje-container">
-      © Irisje.nl
+
+      <section class="card card--large">
+        <header class="mb-6">
+          <h1>Aanvraag versturen</h1>
+          <p class="muted">
+            Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
+          </p>
+        </header>
+
+        <form id="sendForm" class="form">
+
+          <div class="form-group">
+            <label for="name">Volledige naam</label>
+            <input type="text" id="name" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">E-mailadres</label>
+            <input type="email" id="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="message">Waarmee kunnen we je helpen?</label>
+            <textarea id="message" rows="5" required></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button id="sendBtn" type="submit" class="btn-primary">
+              Aanvraag versturen
+            </button>
+          </div>
+
+        </form>
+      </section>
+
     </div>
-  </footer>
+  </section>
+</main>
 
-  <script>
-  // frontend/request-send.html – minimale robuustheid + redirect naar thank-you
+<footer class="site-footer">
+  <div class="irisje-container">
+    © Irisje.nl
+  </div>
+</footer>
 
-  function safeJsonParse(str, fallback) {
-    try { return JSON.parse(str); } catch { return fallback; }
+<script>
+/*
+  frontend/request-send.html
+  FIX: sector verplicht meesturen om Mongoose ValidationError te voorkomen
+*/
+
+function safeJsonParse(str, fallback) {
+  try { return JSON.parse(str); } catch { return fallback; }
+}
+
+document.getElementById("sendForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const btn = document.getElementById("sendBtn");
+  const companyIds = safeJsonParse(
+    sessionStorage.getItem("selectedCompanyIds") || "[]",
+    []
+  );
+
+  if (!Array.isArray(companyIds) || companyIds.length === 0) {
+    alert("Geen bedrijven geselecteerd.");
+    return;
   }
 
-  document.getElementById("sendForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const message = document.getElementById("message").value.trim();
 
-    const btn = document.getElementById("sendBtn");
-    const companyIds = safeJsonParse(sessionStorage.getItem("selectedCompanyIds") || "[]", []);
+  // 🔴 CRUCIAAL: sector is verplicht in backend schema
+  const sector = sessionStorage.getItem("requestSector") || "";
 
-    if (!Array.isArray(companyIds) || companyIds.length === 0) {
-      alert("Geen bedrijven geselecteerd.");
+  if (!sector) {
+    alert("Interne fout: sector ontbreekt. Ga terug en start de aanvraag opnieuw.");
+    return;
+  }
+
+  const payload = {
+    name,
+    email,
+    message,
+    sector,
+    companyIds
+  };
+
+  btn.disabled = true;
+  btn.textContent = "Bezig met versturen...";
+
+  try {
+    const res = await fetch(
+      "https://irisje-backend.onrender.com/api/requests",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    const contentType = res.headers.get("content-type") || "";
+    const body = contentType.includes("application/json")
+      ? await res.json()
+      : null;
+
+    if (!res.ok) {
+      const msg =
+        (body && (body.message || body.error)) ||
+        `Versturen mislukt (status ${res.status}).`;
+      alert(msg);
       return;
     }
 
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const message = document.getElementById("message").value.trim();
+    // context bewaren voor thank-you
+    sessionStorage.setItem("sentCompanyIds", JSON.stringify(companyIds));
+    sessionStorage.removeItem("selectedCompanyIds");
 
-    const payload = { name, email, message, companyIds };
+    const requestId =
+      new URLSearchParams(window.location.search).get("requestId") ||
+      sessionStorage.getItem("requestId") ||
+      "";
 
-    // requestId (voor context op thank-you)
-    const urlParams = new URLSearchParams(window.location.search);
-    const requestId = urlParams.get("requestId") || sessionStorage.getItem("requestId") || "";
+    const target = requestId
+      ? `/thank-you.html?requestId=${encodeURIComponent(requestId)}`
+      : `/thank-you.html`;
 
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Bezig met versturen...";
-    }
+    window.location.href = target;
 
-    try {
-      const res = await fetch(
-        "https://irisje-backend.onrender.com/api/requests",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        }
-      );
-
-      const contentType = res.headers.get("content-type") || "";
-      const body = contentType.includes("application/json") ? await res.json() : null;
-
-      if (!res.ok) {
-        const msg =
-          (body && (body.message || body.error)) ||
-          `Versturen mislukt (status ${res.status}).`;
-        alert(msg);
-        return;
-      }
-
-      // Bewaar context voor thank-you pagina (zodat /js/thank-you.js dit kan gebruiken)
-      sessionStorage.setItem("sentCompanyIds", JSON.stringify(companyIds));
-      if (requestId) sessionStorage.setItem("sentRequestId", String(requestId));
-
-      // Voorkom dubbel versturen vanuit results
-      sessionStorage.removeItem("selectedCompanyIds");
-
-      // Door naar bestaande bedankpagina
-      const target = requestId
-        ? `/thank-you.html?requestId=${encodeURIComponent(requestId)}`
-        : `/thank-you.html`;
-
-      window.location.href = target;
-
-    } catch (err) {
-      console.error(err);
-      alert("Versturen mislukt door een netwerkfout. Probeer het opnieuw.");
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = "Aanvraag versturen";
-      }
-    }
-  });
-  </script>
+  } catch (err) {
+    console.error(err);
+    alert("Netwerkfout bij versturen. Probeer het opnieuw.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Aanvraag versturen";
+  }
+});
+</script>
 
 </body>
 </html>
