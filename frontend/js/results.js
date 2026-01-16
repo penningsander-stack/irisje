@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – correcte sector + Google reviews + top-5 + profiel-links
+// Resultatenpagina – stabiele selectie + verzendvoorbereiding
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -11,9 +11,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
+  const stickyBtn = document.getElementById("stickySubmitBtn");
 
   if (!requestId) {
-    showState("Ongeldige aanvraag.");
+    stateEl.textContent = "Ongeldige aanvraag.";
     return;
   }
 
@@ -29,12 +30,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const companies = data.companies || [];
     const request = data.request || {};
 
-    // ✔️ JUISTE VELDEN
     subtitleEl.textContent =
       `Gebaseerd op jouw aanvraag voor ${request.sector} in ${request.city}.`;
 
     if (!companies.length) {
-      showState("Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.");
+      stateEl.textContent =
+        "Er zijn op dit moment geen bedrijven beschikbaar voor deze aanvraag.";
       return;
     }
 
@@ -43,65 +44,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   } catch (err) {
     console.error(err);
-    showState("Resultaten konden niet worden geladen.");
-  }
-
-  function showState(text) {
-    stateEl.textContent = text;
+    stateEl.textContent = "Resultaten konden niet worden geladen.";
   }
 
   function renderCompanies(companies) {
     listEl.innerHTML = "";
-    let selected = 0;
+    updateSelectionUI();
 
     companies.forEach((company, index) => {
       const card = document.createElement("div");
       card.className = "result-card";
 
-      if (index < 5) {
-        card.classList.add("is-top-match");
-      }
-
-      const ratingHtml = renderRating(company);
-      const badgeHtml =
-        index < 5
-          ? `<span class="top-match-badge">Beste match</span>`
-          : "";
-
       const slug = encodeURIComponent(company.slug || "");
+      const badge =
+        index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
 
       card.innerHTML = `
         <label class="company-select">
-          <input type="checkbox" class="company-checkbox" />
+          <input
+            type="checkbox"
+            class="company-checkbox"
+            data-company-id="${company._id}"
+          />
           <div class="company-info">
             <div class="company-header">
               <h3>
-                <a
-                  href="/company.html?slug=${slug}"
-                  target="_blank"
-                  rel="noopener"
-                  class="company-link"
-                >
+                <a href="/company.html?slug=${slug}" target="_blank" rel="noopener">
                   ${escapeHtml(company.name)}
                 </a>
               </h3>
-              ${badgeHtml}
+              ${badge}
             </div>
-
-            ${ratingHtml}
 
             <div class="company-city">${escapeHtml(company.city)}</div>
-
-            <div class="company-actions">
-              <a
-                href="/company.html?slug=${slug}"
-                target="_blank"
-                rel="noopener"
-                class="company-profile-link"
-              >
-                Bekijk profiel
-              </a>
-            </div>
           </div>
         </label>
       `;
@@ -109,36 +84,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       const checkbox = card.querySelector(".company-checkbox");
 
       checkbox.addEventListener("change", () => {
-        selected += checkbox.checked ? 1 : -1;
-
-        if (selected > 5) {
+        const checked = document.querySelectorAll(".company-checkbox:checked");
+        if (checked.length > 5) {
           checkbox.checked = false;
-          selected--;
           return;
         }
-
-        countEl.textContent = `${selected} van 5 geselecteerd`;
-        sendBtn.disabled = selected === 0;
+        updateSelectionUI();
       });
 
       listEl.appendChild(card);
     });
   }
 
-  function renderRating(company) {
-    const avg = Number(company?.avgRating);
-    const cnt = Number(company?.reviewCount);
+  function updateSelectionUI() {
+    const selected = document.querySelectorAll(".company-checkbox:checked").length;
+    countEl.textContent = `${selected} van 5 geselecteerd`;
+    sendBtn.disabled = selected === 0;
+  }
 
-    if (!Number.isFinite(avg) || !Number.isFinite(cnt) || cnt <= 0) {
-      return `<div class="muted">Nog geen Google-reviews</div>`;
-    }
+  if (stickyBtn) {
+    stickyBtn.addEventListener("click", () => {
+      const selectedCheckboxes =
+        document.querySelectorAll(".company-checkbox:checked");
 
-    return `
-      <div class="company-rating">
-        ⭐ ${avg.toFixed(1)}
-        <span class="muted">(${cnt} Google-reviews)</span>
-      </div>
-    `;
+      if (!selectedCheckboxes.length) {
+        alert("Selecteer minimaal één bedrijf.");
+        return;
+      }
+
+      const companyIds = Array.from(selectedCheckboxes).map(
+        cb => cb.dataset.companyId
+      );
+
+      console.log("VERZENDEN AANGEKLIKT");
+      console.log("Geselecteerde bedrijven:", companyIds);
+    });
   }
 
   function escapeHtml(str) {
@@ -151,103 +131,3 @@ document.addEventListener("DOMContentLoaded", async () => {
     })[s]);
   }
 });
-
-
-
-
-const stickyBtn = document.getElementById("stickySubmitBtn");
-const mainSubmitBtn = document.getElementById("submitRequestBtn");
-
-if (stickyBtn && mainSubmitBtn) {
-  stickyBtn.addEventListener("click", () => {
-    mainSubmitBtn.click();
-  });
-}
-
-
-
-
-// --- FORCE enable/disable send button based on selection ---
-
-function updateSendButtonState() {
-  const sendBtn = document.getElementById("sendBtn");
-  const selectedCountEl = document.getElementById("selectedCount");
-
-  if (!sendBtn || !selectedCountEl) return;
-
-  // verwacht tekst: "X van 5 geselecteerd"
-  const match = selectedCountEl.textContent.match(/^(\d+)/);
-  const selectedCount = match ? parseInt(match[1], 10) : 0;
-
-  sendBtn.disabled = selectedCount === 0;
-}
-
-// Elke keer als de teller wijzigt → knopstatus opnieuw bepalen
-const observer = new MutationObserver(updateSendButtonState);
-
-const selectedCountEl = document.getElementById("selectedCount");
-if (selectedCountEl) {
-  observer.observe(selectedCountEl, { childList: true, subtree: true });
-}
-
-// Initial check
-updateSendButtonState();
-
-
-
-
-// --- HARD FIX: enable send button zodra er selectie is ---
-
-function forceUpdateSendButton() {
-  const sendBtn = document.getElementById("sendBtn");
-  const selectedCountEl = document.getElementById("selectedCount");
-
-  if (!sendBtn || !selectedCountEl) return;
-
-  const text = selectedCountEl.textContent || "";
-  const match = text.match(/^(\d+)/);
-  const count = match ? parseInt(match[1], 10) : 0;
-
-  sendBtn.disabled = count === 0;
-}
-
-// Observeer wijzigingen in de teller
-const countEl = document.getElementById("selectedCount");
-if (countEl) {
-  const observer = new MutationObserver(forceUpdateSendButton);
-  observer.observe(countEl, { childList: true, characterData: true, subtree: true });
-}
-
-// Eerste check bij laden
-forceUpdateSendButton();
-
-
-
-
-// === DEFINITIEVE FIX: selectie → teller → knop ===
-
-function updateSelectionUI() {
-  const checkboxes = document.querySelectorAll(".company-checkbox:checked");
-  const count = checkboxes.length;
-
-  const countEl = document.getElementById("selectedCount");
-  const sendBtn = document.getElementById("sendBtn");
-
-  if (countEl) {
-    countEl.textContent = `${count} van 5 geselecteerd`;
-  }
-
-  if (sendBtn) {
-    sendBtn.disabled = count === 0;
-  }
-}
-
-// Luister naar wijzigingen op ALLE company checkboxes
-document.addEventListener("change", function (e) {
-  if (e.target && e.target.classList.contains("company-checkbox")) {
-    updateSelectionUI();
-  }
-});
-
-// Initial sync bij laden
-updateSelectionUI();
