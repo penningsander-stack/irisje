@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Aanvraag starten met VERPLICHT specialisme (HTML-gedreven)
+// Aanvraag starten – gecontroleerde en gecorrigeerde versie
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -28,11 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("requestForm");
   const categorySelect = document.getElementById("category");
-
   const specialtyOptions = document.getElementById("specialtyOptions");
   const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
   const specialtyOtherInput = document.getElementById("specialtyOther");
-
   const cityInput = document.getElementById("cityInput");
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
@@ -56,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedSpecialty = "";
 
   // --------------------
-  // Specialisme chips
+  // Specialisme selectie
   // --------------------
   function renderSpecialties() {
     const sector = normalize(categorySelect.value);
@@ -78,7 +76,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createChip(label, isOther) {
     const id = `spec_${Math.random().toString(16).slice(2)}`;
-
     const wrapper = document.createElement("div");
 
     const input = document.createElement("input");
@@ -160,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --------------------
-  // Submit
+  // Submit aanvraag
   // --------------------
   form.addEventListener("submit", async e => {
     e.preventDefault();
@@ -170,19 +167,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const city = cityHidden.value.trim();
     const specialty = selectedSpecialty.trim();
 
-    if (!sector) {
-      return showError("Kies een categorie.");
-    }
-    if (!specialty) {
-      return showError("Kies een specialisme.");
-    }
-    if (!city) {
-      return showError("Kies een plaats uit de lijst.");
-    }
+    if (!sector) return showError("Kies een categorie.");
+    if (!specialty) return showError("Kies een specialisme.");
+    if (!city) return showError("Kies een plaats uit de lijst.");
 
     try {
       const res = await fetch(
-        "https://irisje-backend.onrender.com/api/publicRequests",
+        "https://irisje-backend.onrender.com/api/requests",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -194,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(res.status);
 
       const data = await res.json();
-      if (!data.requestId) throw new Error("Geen requestId");
+      if (!data.requestId) throw new Error("Geen requestId ontvangen");
 
       window.location.href =
         `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
