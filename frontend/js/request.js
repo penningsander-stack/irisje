@@ -1,32 +1,69 @@
 // frontend/js/request.js
-// Definitieve aanvraag – stuurt exact wat backend verwacht
+// Definitieve, robuuste aanvraaglogica (plaats + specialisme gefixt)
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("requestForm");
   if (!form) return;
 
+  function getValue(selectors) {
+    for (const sel of selectors) {
+      const el = form.querySelector(sel);
+      if (el && el.value && el.value.trim()) {
+        return el.value.trim();
+      }
+    }
+    return "";
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // --- VELDEN UIT FORM ---
-    const name = form.querySelector('[name="name"]')?.value.trim();
-    const email = form.querySelector('[name="email"]')?.value.trim();
-    const city = form.querySelector('[name="city"]')?.value.trim();
-    const category = form.querySelector('[name="category"]')?.value.trim();
-    const specialty = form.querySelector('[name="specialty"]')?.value.trim();
+    // --- VELDEN (ROBUUST) ---
+    const name = getValue([
+      '[name="name"]',
+      '#name'
+    ]);
 
-    // ⬅️ DIT WAS HET GROTE PROBLEEM
-    // Backend verwacht "message", geen "description"
-    const message =
-      form.querySelector('[name="description"]')?.value.trim() ||
-      form.querySelector('[name="message"]')?.value.trim();
+    const email = getValue([
+      '[name="email"]',
+      '#email'
+    ]);
 
-    // Geselecteerde bedrijven (uit results pagina)
+    const city = getValue([
+      '[name="city"]',
+      '[name="place"]',
+      '[name="plaats"]',
+      '#city',
+      '#place',
+      '#plaats'
+    ]);
+
+    const category = getValue([
+      '[name="category"]',
+      '#category'
+    ]);
+
+    const specialty = getValue([
+      '[name="specialty"]',
+      '[name="specialism"]',
+      '[name="specialisme"]',
+      '#specialty',
+      '#specialism',
+      '#specialisme'
+    ]);
+
+    const message = getValue([
+      '[name="message"]',
+      '[name="description"]',
+      '#message',
+      '#description'
+    ]);
+
     const selectedCompanies = JSON.parse(
       localStorage.getItem("selectedCompanyIds") || "[]"
     );
 
-    // --- VALIDATIE (BACKEND COMPATIBEL) ---
+    // --- HARD VALIDATIE ---
     if (!name || !email || !message) {
       alert("Naam, e-mailadres en omschrijving zijn verplicht.");
       return;
@@ -37,27 +74,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // --- PAYLOAD EXACT ZOALS BACKEND VERWACHT ---
+    // --- PAYLOAD (EXACT BACKEND-COMPATIBEL) ---
     const payload = {
       name,
       email,
       city,
       category,
       specialty,
-      message,              // ⬅️ VERPLICHT
+      message,
       companyIds: selectedCompanies
     };
 
-    console.log("➡️ VERZEND REQUEST:", payload);
+    console.log("➡️ AANVRAAG PAYLOAD:", payload);
 
     try {
       const res = await fetch(
         "https://irisje-backend.onrender.com/api/requests",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload)
         }
       );
@@ -67,18 +102,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const data = await res.json();
+      console.log("✅ AANVRAAG OK:", data);
 
-      console.log("✅ AANVRAAG AANGEMAAKT:", data);
-
-      // Opschonen
       localStorage.removeItem("selectedCompanyIds");
-
-      // Door naar succespagina
       window.location.href = "/request-success.html";
 
     } catch (err) {
-      console.error("❌ Aanvraag mislukt:", err);
-      alert("Aanvraag kon niet worden verstuurd. Probeer het opnieuw.");
+      console.error("❌ AANVRAAG FOUT:", err);
+      alert("Aanvraag kon niet worden verstuurd.");
     }
   });
 });
