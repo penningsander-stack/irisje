@@ -7,9 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const stateEl = document.getElementById("resultsState");
   const listEl = document.getElementById("companiesList");
-  const footerEl = document.getElementById("resultsFooter");
   const countEl = document.getElementById("selectedCount");
-  const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
 
   if (!stateEl || !listEl) {
@@ -47,8 +45,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     stateEl.textContent = "";
     renderCompanies(companies);
-
-    if (footerEl) footerEl.classList.remove("hidden");
 
   } catch (err) {
     console.error(err);
@@ -97,7 +93,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateSelectionUI() {
     const selected = document.querySelectorAll(".company-checkbox:checked").length;
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
-    if (sendBtn) sendBtn.disabled = selected === 0;
   }
 
   function escapeHtml(str) {
@@ -111,9 +106,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// === DOORSTUREN NAAR TUSSENSTAP ===
+// === LEIDENDE SUBMITKNOP ===
 document.addEventListener("click", (e) => {
-  const btn = e.target.closest("#sendBtn");
+  const btn = e.target.closest("#stickySubmitBtn");
   if (!btn) return;
 
   const selected = Array.from(
@@ -125,8 +120,6 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  // Opslaan in sessionStorage (minimaal en tijdelijk)
   sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selected));
-
   window.location.href = "/request-send.html";
 });
