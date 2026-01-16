@@ -1,12 +1,11 @@
 // backend/routes/publicRequests.js
-// v20260116-FIX-PUBLIC-REQUEST-FLOW
 
 const express = require("express");
 const router = express.Router();
-const Request = require("../models/request");
+const PublicRequest = require("../models/publicRequest");
 
 // ============================================================
-//  🔍 Zoek-aanvraag ophalen (GEEN nieuwe Request maken)
+//  📨 Zoek-aanvraag aanmaken (publiek, MET id)
 // ============================================================
 router.post("/", async (req, res) => {
   try {
@@ -19,23 +18,22 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // ❗️Hier GEEN Request.create()
-    // Deze endpoint is alleen bedoeld voor zoeken / matchen
+    const created = await PublicRequest.create({
+      sector,
+      city,
+      specialty: specialty || ""
+    });
 
-    return res.json({
+    return res.status(201).json({
       ok: true,
-      search: {
-        sector,
-        city,
-        specialty: specialty || ""
-      }
+      requestId: created._id.toString()
     });
 
   } catch (error) {
     console.warn("❌ publicRequests POST error:", error);
     return res.status(500).json({
       ok: false,
-      message: "Serverfout bij zoek-aanvraag"
+      message: "Serverfout bij aanmaken zoek-aanvraag"
     });
   }
 });
