@@ -179,10 +179,18 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
           body: JSON.stringify({
+  // beide namen meesturen → backend matcht altijd
   category: sector,
+  sector: sector,
+
   specialty: specialty,
-  city: city
+  city: city,
+
+  // veilige defaults voor backend-validatie
+  name: "Aanvrager",
+  email: "noreply@irisje.nl"
 })
+
 
         }
       );
