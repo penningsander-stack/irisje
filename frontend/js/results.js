@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – bedrijven tonen + selectie + teller + doorsturen (Optie A)
+// Resultatenpagina – premium cards + selectie + teller + doorsturen (Optie A)
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -46,10 +46,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     stateEl.textContent = "";
 
-    // 👉 FOOTER ZICHTBAAR MAKEN
-    if (footerEl) {
-      footerEl.classList.remove("hidden");
-    }
+    // Footer zichtbaar maken voor teller + submit
+    if (footerEl) footerEl.classList.remove("hidden");
 
     renderCompanies(companies);
     updateSelectionUI();
@@ -76,12 +74,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         company?.avgRating && company?.reviewCount
           ? `
             <div class="company-rating">
-              ⭐ ${company.avgRating.toFixed(1)}
+              <span class="stars">⭐ ${company.avgRating.toFixed(1)}</span>
               <span class="muted">(${company.reviewCount} reviews)</span>
             </div>
           `
           : "";
 
+      // Premium markup die bestaande CSS benut
       card.innerHTML = `
         <label class="company-select">
           <input
@@ -89,13 +88,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             class="company-checkbox"
             data-company-id="${escapeHtml(companyId)}"
           />
-          <div class="company-info">
+
+          <div class="company-card-inner">
             <div class="company-header">
-              <h3>${escapeHtml(company?.name)}</h3>
-              ${badge}
+              <div class="company-title">
+                <h3 class="company-name">${escapeHtml(company?.name)}</h3>
+                <div class="company-city muted">${escapeHtml(company?.city)}</div>
+              </div>
+              <div class="company-badge">
+                ${badge}
+              </div>
             </div>
-            <div class="company-city">${escapeHtml(company?.city)}</div>
-            ${rating}
+
+            <div class="company-meta">
+              ${rating}
+            </div>
           </div>
         </label>
       `;
