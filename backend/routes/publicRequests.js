@@ -1,5 +1,5 @@
 // backend/routes/publicRequests.js
-// v2026-01-16 – FINAL FIX: tolerant category matching
+// v2026-01-16 – FINAL FIX: categories stored as STRING (not array)
 
 const express = require("express");
 const router = express.Router();
@@ -39,10 +39,8 @@ router.get("/:id", async (req, res) => {
 
     const companies = await companyModel.find({
       categories: {
-        $elemMatch: {
-          $regex: request.sector,
-          $options: "i",
-        },
+        $regex: request.sector,
+        $options: "i",
       },
       active: true,
     }).lean();
