@@ -1,6 +1,6 @@
 // frontend/js/results.js
 // Resultatenpagina – premium cards + selectie + teller + doorsturen (Optie A)
-// + Duidelijke bronlabels voor reviews (Google / Irisje) als data aanwezig is.
+// + Duidelijke bronlabels voor reviews (Google / Irisje) op basis van aanwezige velden.
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     stateEl.textContent = "";
-
     if (footerEl) footerEl.classList.remove("hidden");
 
     renderCompanies(companies);
@@ -64,7 +63,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.className = "result-card";
 
       const companyId = company?._id ? String(company._id) : "";
-
       const badge =
         index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
 
@@ -112,29 +110,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function buildReviewsHtml(company) {
-    // Doel: toon Google + Irisje als die velden bestaan.
-    // Geen aannames: we tonen alleen wat we daadwerkelijk in company aantreffen.
+    // Toon alleen wat daadwerkelijk aanwezig is.
+    // Belangrijk: avgRating/reviewCount (legacy) labelen we als "Google reviews"
+    // om te voorkomen dat Google als Irisje wordt getoond (jouw huidige situatie).
 
     const google = pickRating(company, [
       ["googleAvgRating", "googleReviewCount"],
-      ["googleRating", "googleReviews"],
       ["googleRating", "googleReviewCount"],
-      ["googleAvgRating", "googleReviews"]
+      ["googleAvgRating", "googleReviews"],
+      ["googleRating", "googleReviews"]
     ]);
 
     const irisje = pickRating(company, [
       ["irisjeAvgRating", "irisjeReviewCount"],
-      ["platformAvgRating", "platformReviewCount"],
-      ["irisjeRating", "irisjeReviews"]
+      ["irisjeRating", "irisjeReviewCount"],
+      ["irisjeAvgRating", "irisjeReviews"],
+      ["irisjeRating", "irisjeReviews"],
+      ["platformAvgRating", "platformReviewCount"]
     ]);
 
-    // Backwards compatibility / huidige situatie:
-    // Als er maar één set bestaat via avgRating/reviewCount, tonen we die als "Irisje reviews"
-    // (want dat zijn platformvelden in je Company-model), tenzij Google al expliciet aanwezig is.
-    let legacy = null;
-    if (!google && !irisje) {
-      legacy = pickRating(company, [["avgRating", "reviewCount"]]);
-    }
+    const legacy = pickRating(company, [["avgRating", "reviewCount"]]);
 
     const blocks = [];
 
@@ -146,8 +141,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       blocks.push(renderRatingBlock("Irisje reviews", irisje.rating, irisje.count));
     }
 
-    if (legacy) {
-      blocks.push(renderRatingBlock("Irisje reviews", legacy.rating, legacy.count));
+    // Legacy alleen tonen als het niet exact dezelfde bron al is.
+    // Regel:
+    // - Als er expliciete google is: legacy niet tonen (voorkomt dubbele regels)
+    // - Als er expliciete irisje is maar geen google: legacy kan Google zijn, dus tonen als Google
+    // - Als er niets expliciet is: legacy tonen als Google (minimal correct volgens jouw observatie)
+    if (legacy && !google) {
+      blocks.push(renderRatingBlock("Google reviews", legacy.rating, legacy.count));
     }
 
     if (!blocks.length) return "";
@@ -166,15 +166,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const ratingOk = Number.isFinite(rating) && rating > 0;
       const countOk = Number.isFinite(count) && count > 0;
 
-      if (ratingOk && countOk) {
-        return { rating, count };
-      }
+      if (ratingOk && countOk) return { rating, count };
     }
     return null;
   }
 
   function renderRatingBlock(label, rating, count) {
-    // Compact, label duidelijk; gebruikt bestaande styling (muted) waar mogelijk.
     const r = Number(rating);
     const c = Number(count);
     const ratingText = Number.isFinite(r) ? r.toFixed(1) : "";
