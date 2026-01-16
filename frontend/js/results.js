@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – bedrijven tonen + selectie + doorsturen (Optie A, hersteld)
+// Resultatenpagina – bedrijven tonen + selectie + teller + doorsturen (Optie A)
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const listEl = document.getElementById("companiesList");
   const countEl = document.getElementById("selectedCount");
   const subtitleEl = document.getElementById("resultsSubtitle");
+  const footerEl = document.getElementById("resultsFooter");
 
   if (!stateEl || !listEl) {
     console.error("results.js: verplichte elementen ontbreken");
@@ -44,6 +45,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     stateEl.textContent = "";
+
+    // 👉 FOOTER ZICHTBAAR MAKEN
+    if (footerEl) {
+      footerEl.classList.remove("hidden");
+    }
+
     renderCompanies(companies);
     updateSelectionUI();
 
