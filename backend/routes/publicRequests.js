@@ -1,5 +1,5 @@
 // backend/routes/publicRequests.js
-// v2026-01-16 – FINAL: case-insensitive category matching + proof log
+// v2026-01-16 – FINAL FIX: tolerant category matching
 
 const express = require("express");
 const router = express.Router();
@@ -7,9 +7,6 @@ const router = express.Router();
 const requestModel = require("../models/request");
 const companyModel = require("../models/company");
 
-/**
- * Aanvraag aanmaken
- */
 router.post("/", async (req, res) => {
   try {
     const { sector, specialty, city } = req.body;
@@ -31,37 +28,29 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * Resultaten ophalen
- */
 router.get("/:id", async (req, res) => {
   try {
-    console.log("🔥 publicRequests route HIT"); // 👈 bewijs dat deze code draait
+    console.log("🔥 publicRequests route HIT");
 
     const request = await requestModel.findById(req.params.id).lean();
-
     if (!request) {
       return res.status(404).json({ error: "Aanvraag niet gevonden" });
     }
 
     const companies = await companyModel.find({
       categories: {
-  $elemMatch: {
-    $regex: request.sector,
-    $options: "i",
-  },
-},
-
+        $elemMatch: {
+          $regex: request.sector,
+          $options: "i",
+        },
+      },
       active: true,
     }).lean();
 
     console.log("🔥 MATCH sector:", request.sector);
     console.log("🔥 FOUND companies:", companies.length);
 
-    res.json({
-      request,
-      companies,
-    });
+    res.json({ request, companies });
   } catch (err) {
     console.error("❌ GET /publicRequests/:id error:", err);
     res.status(500).json({ error: "Resultaten konden niet worden opgehaald" });
