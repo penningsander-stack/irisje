@@ -170,19 +170,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const city = cityHidden.value.trim();
     const specialty = selectedSpecialty.trim();
 
-    if (!sector) {
-      return showError("Kies een categorie.");
-    }
-    if (!specialty) {
-      return showError("Kies een specialisme.");
-    }
-    if (!city) {
-      return showError("Kies een plaats uit de lijst.");
-    }
+    if (!sector) return showError("Kies een categorie.");
+    if (!specialty) return showError("Kies een specialisme.");
+    if (!city) return showError("Kies een plaats uit de lijst.");
 
     try {
       const res = await fetch(
-        "https://irisje-backend.onrender.com/api/requests",
+        "https://irisje-backend.onrender.com/api/publicRequests",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
