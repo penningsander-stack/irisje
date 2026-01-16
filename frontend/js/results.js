@@ -192,3 +192,31 @@ if (selectedCountEl) {
 
 // Initial check
 updateSendButtonState();
+
+
+
+
+// --- HARD FIX: enable send button zodra er selectie is ---
+
+function forceUpdateSendButton() {
+  const sendBtn = document.getElementById("sendBtn");
+  const selectedCountEl = document.getElementById("selectedCount");
+
+  if (!sendBtn || !selectedCountEl) return;
+
+  const text = selectedCountEl.textContent || "";
+  const match = text.match(/^(\d+)/);
+  const count = match ? parseInt(match[1], 10) : 0;
+
+  sendBtn.disabled = count === 0;
+}
+
+// Observeer wijzigingen in de teller
+const countEl = document.getElementById("selectedCount");
+if (countEl) {
+  const observer = new MutationObserver(forceUpdateSendButton);
+  observer.observe(countEl, { childList: true, characterData: true, subtree: true });
+}
+
+// Eerste check bij laden
+forceUpdateSendButton();
