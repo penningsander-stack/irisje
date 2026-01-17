@@ -1,4 +1,3 @@
-<!-- frontend/request-send.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -17,7 +16,6 @@
 </header>
 
 <main class="container">
-
   <div style="
     max-width: 560px;
     margin: 70px auto 0 auto;
@@ -26,13 +24,12 @@
     border-radius: 12px;
     box-shadow: 0 18px 45px rgba(0,0,0,0.10);
   ">
-
     <h1 style="margin-bottom: 10px;">Aanvraag versturen</h1>
-
     <p style="margin-bottom: 22px; color:#666;">
       Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
     </p>
 
+    <!-- Geselecteerde bedrijven -->
     <div id="selectedCompaniesBox" style="
       display:none;
       margin-bottom: 28px;
@@ -46,80 +43,38 @@
     </div>
 
     <form id="requestForm">
-
       <div style="margin-bottom: 26px;">
         <label for="name" style="display:block; margin-bottom:6px;">Naam</label>
-        <input
-          type="text"
-          id="name"
-          required
-          style="
-            width: 100%;
-            max-width: 440px;
-            min-height: 52px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            font-size: 15px;
-          ">
+        <input id="name" type="text" required style="
+          width:100%; max-width:440px; min-height:52px;
+          padding:12px 16px; border-radius:8px; border:1px solid #ccc;
+          background:#fafafa; font-size:15px;">
       </div>
 
       <div style="margin-bottom: 26px;">
         <label for="email" style="display:block; margin-bottom:6px;">E-mailadres</label>
-        <input
-          type="email"
-          id="email"
-          required
-          style="
-            width: 100%;
-            max-width: 440px;
-            min-height: 52px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            font-size: 15px;
-          ">
+        <input id="email" type="email" required style="
+          width:100%; max-width:440px; min-height:52px;
+          padding:12px 16px; border-radius:8px; border:1px solid #ccc;
+          background:#fafafa; font-size:15px;">
       </div>
 
       <div style="margin-bottom: 34px;">
         <label for="message" style="display:block; margin-bottom:6px;">Omschrijving van je aanvraag</label>
-        <textarea
-          id="message"
-          rows="4"
-          required
-          style="
-            width: 100%;
-            max-width: 440px;
-            min-height: 120px;
-            padding: 14px 16px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            font-size: 15px;
-            resize: vertical;
-          "></textarea>
+        <textarea id="message" rows="4" required style="
+          width:100%; max-width:440px; min-height:120px;
+          padding:14px 16px; border-radius:8px; border:1px solid #ccc;
+          background:#fafafa; font-size:15px; resize:vertical;"></textarea>
       </div>
 
-      <button
-        type="submit"
-        class="btn-primary"
-        style="
-          width: 100%;
-          max-width: 440px;
-          min-height: 52px;
-          font-size: 15px;
-        ">
+      <button type="submit" class="btn-primary" style="
+        width:100%; max-width:440px; min-height:52px; font-size:15px;">
         Aanvraag indienen
       </button>
-
     </form>
 
     <p id="statusMessage" class="status-message" style="margin-top:18px;"></p>
-
   </div>
-
 </main>
 
 <footer class="site-footer">
@@ -129,93 +84,73 @@
 </footer>
 
 <script>
-  // ----------------------------------------------------------
-  // requestId verplicht uit URL
-  // ----------------------------------------------------------
+  // --- helpers ---
+  function safeJsonParse(raw){ try{ return JSON.parse(raw); }catch(e){ return null; } }
+
+  // --- requestId verplicht ---
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
 
-  const statusEl = document.getElementById("statusMessage");
   const formEl = document.getElementById("requestForm");
+  const statusEl = document.getElementById("statusMessage");
 
   if (!requestId) {
     statusEl.textContent = "Fout: aanvraagcontext ontbreekt (requestId).";
     formEl.style.display = "none";
-    throw new Error("requestId ontbreekt in URL");
+    throw new Error("requestId ontbreekt");
   }
 
-  // ----------------------------------------------------------
-  // Geselecteerde bedrijven ophalen uit sessionStorage (van results)
-  // ----------------------------------------------------------
-  function safeJsonParse(raw) {
-    try { return JSON.parse(raw); } catch (e) { return null; }
-  }
-
-  const selectedCompaniesRaw = sessionStorage.getItem("selectedCompanies");
-  const selectedCompanyIdsRaw = sessionStorage.getItem("selectedCompanyIds");
-
-  const selectedCompanies = Array.isArray(safeJsonParse(selectedCompaniesRaw))
-    ? safeJsonParse(selectedCompaniesRaw)
+  // --- geselecteerde bedrijven uit sessionStorage ---
+  const selectedCompanies = Array.isArray(safeJsonParse(sessionStorage.getItem("selectedCompanies")))
+    ? safeJsonParse(sessionStorage.getItem("selectedCompanies"))
     : [];
 
-  const selectedCompanyIds = Array.isArray(safeJsonParse(selectedCompanyIdsRaw))
-    ? safeJsonParse(selectedCompanyIdsRaw)
+  const selectedCompanyIds = Array.isArray(safeJsonParse(sessionStorage.getItem("selectedCompanyIds")))
+    ? safeJsonParse(sessionStorage.getItem("selectedCompanyIds"))
     : [];
 
-  // Toon lijst (premium UX)
   const boxEl = document.getElementById("selectedCompaniesBox");
   const listEl = document.getElementById("selectedCompaniesList");
 
   if (boxEl && listEl && selectedCompanies.length) {
     boxEl.style.display = "block";
     listEl.innerHTML = "";
-    selectedCompanies.forEach((c) => {
+    selectedCompanies.forEach(c => {
       const li = document.createElement("li");
-      const name = (c && c.name) ? String(c.name) : "Onbekend bedrijf";
-      const city = (c && c.city) ? ` (${String(c.city)})` : "";
-      li.textContent = name + city;
+      li.textContent = (c?.name || "Onbekend bedrijf") + (c?.city ? ` (${c.city})` : "");
       listEl.appendChild(li);
     });
   }
 
-  // ----------------------------------------------------------
-  // Submit → POST /api/requests
-  // - Belangrijk: backend verwacht companyIds (niet requestId)
-  // - requestId blijft alleen voor flow/URL-consistentie
-  // ----------------------------------------------------------
-  formEl.addEventListener("submit", async function (e) {
+  // --- submit ---
+  formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const payload = {
+      requestId: requestId,                 // ✅ FIX: requestId wordt meegestuurd
       name: document.getElementById("name").value.trim(),
       email: document.getElementById("email").value.trim(),
       message: document.getElementById("message").value.trim(),
-      companyIds: selectedCompanyIds.length ? selectedCompanyIds : undefined
+      companyIds: selectedCompanyIds
     };
 
     try {
-      const response = await fetch("https://irisje-backend.onrender.com/api/requests", {
+      const res = await fetch("https://irisje-backend.onrender.com/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      const result = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Versturen mislukt");
 
-      if (!response.ok) {
-        throw new Error(result.message || "Versturen mislukt");
-      }
-
-      // ------------------------------------------------------
-      // Optie A: thank-you moet kunnen tonen naar welke bedrijven
-      // ------------------------------------------------------
+      // context voor thank-you (optie A)
       sessionStorage.setItem("requestSent", "1");
       sessionStorage.setItem("sentCompanies", JSON.stringify(selectedCompanies));
 
       window.location.href = "/thank-you.html";
-
-    } catch (error) {
-      statusEl.textContent = "Versturen mislukt: " + error.message;
+    } catch (err) {
+      statusEl.textContent = "Versturen mislukt: " + err.message;
     }
   });
 </script>
