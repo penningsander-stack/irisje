@@ -4,14 +4,11 @@
   <meta charset="UTF-8" />
   <title>Aanvraag versturen – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Bestaande Irisje styling -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 
 <body class="irisje-body">
 
-  <!-- HEADER -->
   <header class="irisje-header">
     <div class="irisje-container irisje-header-inner">
       <a href="/" class="irisje-logo">Irisje.nl</a>
@@ -22,14 +19,11 @@
     <section class="irisje-section">
       <div class="irisje-container">
 
-        <!-- Card in Irisje-stijl -->
         <section class="card card--large">
-
           <header class="mb-6">
             <h1>Aanvraag versturen</h1>
             <p class="muted">
               Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
-              Zij nemen alleen contact met je op als jij dat wilt.
             </p>
           </header>
 
@@ -57,14 +51,12 @@
             </div>
 
           </form>
-
         </section>
 
       </div>
     </section>
   </main>
 
-  <!-- FOOTER -->
   <footer class="site-footer">
     <div class="irisje-container">
       © Irisje.nl
@@ -72,44 +64,54 @@
   </footer>
 
   <script>
-  // frontend/request-send.html – functionele logica (ongewijzigd)
+    document.getElementById("sendForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
 
-  document.getElementById("sendForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+      const companyIds = JSON.parse(
+        sessionStorage.getItem("selectedCompanyIds") || "[]"
+      );
 
-    const companyIds = JSON.parse(
-      sessionStorage.getItem("selectedCompanyIds") || "[]"
-    );
-
-    if (!companyIds.length) {
-      alert("Geen bedrijven geselecteerd.");
-      return;
-    }
-
-    const payload = {
-      name: document.getElementById("name").value.trim(),
-      email: document.getElementById("email").value.trim(),
-      message: document.getElementById("message").value.trim(),
-      companyIds
-    };
-
-    const res = await fetch(
-      "https://irisje-backend.onrender.com/api/requests",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+      if (!companyIds.length) {
+        alert("Geen bedrijven geselecteerd.");
+        return;
       }
-    );
 
-    if (!res.ok) {
-      alert("Versturen mislukt.");
-      return;
-    }
+      const payload = {
+        name: document.getElementById("name").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        message: document.getElementById("message").value.trim(),
+        companyIds
+      };
 
-    sessionStorage.removeItem("selectedCompanyIds");
-    alert("Aanvraag succesvol verstuurd.");
-  });
+      const res = await fetch(
+        "https://irisje-backend.onrender.com/api/requests",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      if (!res.ok) {
+        alert("Versturen mislukt.");
+        return;
+      }
+
+      // ✔️ Context voor thank-you
+      sessionStorage.setItem(
+        "irisje_thankyou",
+        JSON.stringify({
+          name: payload.name,
+          email: payload.email,
+          totalCompanies: companyIds.length
+        })
+      );
+
+      sessionStorage.removeItem("selectedCompanyIds");
+
+      // ✔️ Flow afronden
+      window.location.href = "/thank-you.html";
+    });
   </script>
 
 </body>
