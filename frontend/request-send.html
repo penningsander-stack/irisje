@@ -17,40 +17,45 @@
 
 <main class="container">
 
-  <!-- Premium gecentreerde layout -->
-  <div style="max-width: 560px; margin: 0 auto; padding-top: 40px;">
+  <!-- Premium focuskaart -->
+  <div style="
+    max-width: 640px;
+    margin: 60px auto 0 auto;
+    background: #ffffff;
+    padding: 40px 40px 32px 40px;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  ">
 
     <h1 style="margin-bottom: 12px;">
       Je aanvraag versturen
     </h1>
 
-    <p style="margin-bottom: 24px;">
+    <p style="margin-bottom: 28px; color: #555;">
       Vul hieronder je gegevens in. Je aanvraag wordt verstuurd naar de door jou
       geselecteerde bedrijven.
     </p>
 
     <form id="requestForm">
 
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom: 20px;">
         <label for="name">Naam</label>
-        <input type="text" id="name" required>
+        <input type="text" id="name" required style="width:100%;">
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom: 20px;">
         <label for="email">E-mailadres</label>
-        <input type="email" id="email" required>
+        <input type="email" id="email" required style="width:100%;">
       </div>
 
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom: 28px;">
         <label for="message">Omschrijving van je aanvraag</label>
-        <textarea id="message" rows="5" required></textarea>
+        <textarea id="message" rows="5" required style="width:100%;"></textarea>
       </div>
 
-      <div style="margin-top: 24px;">
-        <button type="submit" class="btn-primary">
-          Aanvraag versturen
-        </button>
-      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">
+        Aanvraag versturen
+      </button>
 
     </form>
 
@@ -67,9 +72,6 @@
 </footer>
 
 <script>
-  // ----------------------------------------------------------
-  // requestId verplicht ophalen uit URL
-  // ----------------------------------------------------------
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
 
@@ -80,9 +82,6 @@
     throw new Error("requestId ontbreekt in URL");
   }
 
-  // ----------------------------------------------------------
-  // Form submit
-  // ----------------------------------------------------------
   document.getElementById("requestForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
