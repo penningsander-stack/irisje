@@ -1637,3 +1637,68 @@ a {
   color: #4338ca;
   border: 1px solid rgba(79, 70, 229, 0.25);
 }
+
+
+
+
+/* =========================================================
+   Irisje – Stap 1D: Plaatsenlijst (autocomplete) verduidelijken
+   Alleen toevoeging – geen bestaande CSS vervangen
+   ========================================================= */
+
+/* Container van de autocomplete-lijst */
+.place-suggestions,
+.city-suggestions,
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* Individuele plaats-items */
+.place-suggestions li,
+.city-suggestions li,
+.autocomplete-list li {
+  padding: 14px 18px;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Hover / focus state */
+.place-suggestions li:hover,
+.city-suggestions li:hover,
+.autocomplete-list li:hover {
+  background-color: #f3f4f6;
+}
+
+/* Actief geselecteerd item (bij toetsenbordgebruik) */
+.place-suggestions li.active,
+.city-suggestions li.active,
+.autocomplete-list li.active {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+/* Placeholder / hinttekst bij plaats-input */
+input::placeholder {
+  font-size: 15.5px;
+  color: #6b7280;
+}
+
+/* Input zelf iets rustiger en duidelijker */
+input[type="text"],
+input[type="search"] {
+  font-size: 16.5px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
