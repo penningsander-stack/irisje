@@ -84,9 +84,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    const companyIds = Array.from(selectedCheckboxes)
-      .map((cb) => cb.dataset.companyId)
-      .filter(Boolean);
+    const selectedCompanies = Array.from(selectedCheckboxes)
+      .map((cb) => {
+        const id = cb.dataset.companyId || "";
+        const name = cb.dataset.companyName || "";
+        const city = cb.dataset.companyCity || "";
+        const slug = cb.dataset.companySlug || "";
+        return { id, name, city, slug };
+      })
+      .filter((c) => c.id);
+
+    const companyIds = selectedCompanies.map((c) => c.id).filter(Boolean);
 
     if (!companyIds.length) {
       alert("Selectie is ongeldig. Probeer opnieuw.");
@@ -95,6 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Opslaan voor volgende stap (request-send pagina)
     sessionStorage.setItem("selectedCompanyIds", JSON.stringify(companyIds));
+    sessionStorage.setItem("selectedCompanies", JSON.stringify(selectedCompanies));
     sessionStorage.setItem("requestId", String(requestId));
 
     // Doorsturen naar volgende stap
@@ -146,9 +155,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       card.className = "result-card";
 
       const slug = encodeURIComponent(company?.slug || "");
+      const rawSlug = company?.slug ? String(company.slug) : "";
       const badge = index < 5 ? `<span class="top-match-badge">Beste match</span>` : "";
       const companyId = company?._id ? String(company._id) : "";
       const companyName = escapeHtml(company?.name);
+      const companyCity = escapeHtml(company?.city);
 
       const profileUrl = `/company.html?slug=${slug}`;
 
@@ -158,6 +169,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             type="checkbox"
             class="company-checkbox"
             ${companyId ? `data-company-id="${escapeHtml(companyId)}"` : ""}
+            ${companyName ? `data-company-name="${companyName}"` : ""}
+            ${companyCity ? `data-company-city="${companyCity}"` : ""}
+            ${rawSlug ? `data-company-slug="${escapeHtml(rawSlug)}"` : ""}
           />
           <div class="company-info">
             <div class="company-header">
@@ -171,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               </h3>
               ${badge}
             </div>
-            <div class="company-city">${escapeHtml(company?.city)}</div>
+            <div class="company-city">${companyCity}</div>
           </div>
         </label>
       `;

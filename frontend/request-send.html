@@ -1,3 +1,4 @@
+<!-- frontend/request-send.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -26,21 +27,28 @@
     box-shadow: 0 18px 45px rgba(0,0,0,0.10);
   ">
 
-    <h1 style="margin-bottom: 10px;">
-      Aanvraag versturen
-    </h1>
+    <h1 style="margin-bottom: 10px;">Aanvraag versturen</h1>
 
-    <p style="margin-bottom: 34px; color:#666;">
+    <p style="margin-bottom: 22px; color:#666;">
       Je aanvraag wordt verstuurd naar de door jou geselecteerde bedrijven.
     </p>
 
+    <div id="selectedCompaniesBox" style="
+      display:none;
+      margin-bottom: 28px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: #fafafa;
+      border: 1px solid #e6e6e6;
+    ">
+      <div style="font-weight: 600; margin-bottom: 8px;">Geselecteerde bedrijven</div>
+      <ul id="selectedCompaniesList" style="margin:0; padding-left: 18px;"></ul>
+    </div>
+
     <form id="requestForm">
 
-      <!-- Naam -->
       <div style="margin-bottom: 26px;">
-        <label for="name" style="display:block; margin-bottom:6px;">
-          Naam
-        </label>
+        <label for="name" style="display:block; margin-bottom:6px;">Naam</label>
         <input
           type="text"
           id="name"
@@ -57,11 +65,8 @@
           ">
       </div>
 
-      <!-- Email -->
       <div style="margin-bottom: 26px;">
-        <label for="email" style="display:block; margin-bottom:6px;">
-          E-mailadres
-        </label>
+        <label for="email" style="display:block; margin-bottom:6px;">E-mailadres</label>
         <input
           type="email"
           id="email"
@@ -78,11 +83,8 @@
           ">
       </div>
 
-      <!-- Omschrijving -->
       <div style="margin-bottom: 34px;">
-        <label for="message" style="display:block; margin-bottom:6px;">
-          Omschrijving van je aanvraag
-        </label>
+        <label for="message" style="display:block; margin-bottom:6px;">Omschrijving van je aanvraag</label>
         <textarea
           id="message"
           rows="4"
@@ -114,7 +116,7 @@
 
     </form>
 
-    <p id="statusMessage" style="margin-top:18px;"></p>
+    <p id="statusMessage" class="status-message" style="margin-top:18px;"></p>
 
   </div>
 
@@ -127,24 +129,68 @@
 </footer>
 
 <script>
+  // ----------------------------------------------------------
+  // requestId verplicht uit URL
+  // ----------------------------------------------------------
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
 
+  const statusEl = document.getElementById("statusMessage");
+  const formEl = document.getElementById("requestForm");
+
   if (!requestId) {
-    document.getElementById("statusMessage").textContent =
-      "Fout: aanvraagcontext ontbreekt.";
-    document.getElementById("requestForm").style.display = "none";
-    throw new Error("requestId ontbreekt");
+    statusEl.textContent = "Fout: aanvraagcontext ontbreekt (requestId).";
+    formEl.style.display = "none";
+    throw new Error("requestId ontbreekt in URL");
   }
 
-  document.getElementById("requestForm").addEventListener("submit", async function (e) {
+  // ----------------------------------------------------------
+  // Geselecteerde bedrijven ophalen uit sessionStorage (van results)
+  // ----------------------------------------------------------
+  function safeJsonParse(raw) {
+    try { return JSON.parse(raw); } catch (e) { return null; }
+  }
+
+  const selectedCompaniesRaw = sessionStorage.getItem("selectedCompanies");
+  const selectedCompanyIdsRaw = sessionStorage.getItem("selectedCompanyIds");
+
+  const selectedCompanies = Array.isArray(safeJsonParse(selectedCompaniesRaw))
+    ? safeJsonParse(selectedCompaniesRaw)
+    : [];
+
+  const selectedCompanyIds = Array.isArray(safeJsonParse(selectedCompanyIdsRaw))
+    ? safeJsonParse(selectedCompanyIdsRaw)
+    : [];
+
+  // Toon lijst (premium UX)
+  const boxEl = document.getElementById("selectedCompaniesBox");
+  const listEl = document.getElementById("selectedCompaniesList");
+
+  if (boxEl && listEl && selectedCompanies.length) {
+    boxEl.style.display = "block";
+    listEl.innerHTML = "";
+    selectedCompanies.forEach((c) => {
+      const li = document.createElement("li");
+      const name = (c && c.name) ? String(c.name) : "Onbekend bedrijf";
+      const city = (c && c.city) ? ` (${String(c.city)})` : "";
+      li.textContent = name + city;
+      listEl.appendChild(li);
+    });
+  }
+
+  // ----------------------------------------------------------
+  // Submit → POST /api/requests
+  // - Belangrijk: backend verwacht companyIds (niet requestId)
+  // - requestId blijft alleen voor flow/URL-consistentie
+  // ----------------------------------------------------------
+  formEl.addEventListener("submit", async function (e) {
     e.preventDefault();
 
     const payload = {
-      requestId,
       name: document.getElementById("name").value.trim(),
       email: document.getElementById("email").value.trim(),
-      message: document.getElementById("message").value.trim()
+      message: document.getElementById("message").value.trim(),
+      companyIds: selectedCompanyIds.length ? selectedCompanyIds : undefined
     };
 
     try {
@@ -155,14 +201,21 @@
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Versturen mislukt");
 
+      if (!response.ok) {
+        throw new Error(result.message || "Versturen mislukt");
+      }
+
+      // ------------------------------------------------------
+      // Optie A: thank-you moet kunnen tonen naar welke bedrijven
+      // ------------------------------------------------------
       sessionStorage.setItem("requestSent", "1");
+      sessionStorage.setItem("sentCompanies", JSON.stringify(selectedCompanies));
+
       window.location.href = "/thank-you.html";
 
-    } catch (err) {
-      document.getElementById("statusMessage").textContent =
-        "Versturen mislukt: " + err.message;
+    } catch (error) {
+      statusEl.textContent = "Versturen mislukt: " + error.message;
     }
   });
 </script>
