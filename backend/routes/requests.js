@@ -1,10 +1,10 @@
 // backend/routes/requests.js
-// v20260117-REQUESTS-HOTFIX-SECTOR-FROM-PUBLICREQUEST
+// v20260117-REQUESTS-HOTFIX-SECTOR-FROM-REQUEST
 
 const express = require("express");
 const router = express.Router();
-const Request = require("../models/request");
-const PublicRequest = require("../models/publicRequest"); // bestaand model
+
+const Request = require("../models/request"); // hetzelfde model als publicRequests
 const verifyToken = require("../middleware/auth");
 
 // ============================================================
@@ -13,12 +13,11 @@ const verifyToken = require("../middleware/auth");
 router.post("/", async (req, res) => {
   try {
     const {
-      requestId,            // ← nodig om sector te herleiden
+      requestId,            // ← ID van public request
       name,
       email,
       city,
       message,
-      category,
       specialty,
       communication,
       experience,
@@ -36,28 +35,34 @@ router.post("/", async (req, res) => {
     }
 
     // ----------------------------------------------------------
-    // 🔧 HOTFIX: sector halen uit bestaande publicRequest
+    // 🔧 sector ophalen uit bestaand request (publicRequests)
     // ----------------------------------------------------------
-    let sector = "";
-
-    if (requestId) {
-      const publicReq = await PublicRequest.findById(requestId)
-        .select("sector")
-        .lean();
-
-      if (publicReq && publicReq.sector) {
-        sector = String(publicReq.sector);
-      }
-    }
-
-    if (!sector) {
+    if (!requestId) {
       return res.status(400).json({
         ok: false,
-        message: "Aanvraagcontext ontbreekt (sector niet gevonden)."
+        message: "requestId ontbreekt."
       });
     }
 
-    // Bepaal voor welke bedrijven de aanvraag wordt aangemaakt
+    const sourceRequest = await Request.findById(requestId).lean();
+    if (!sourceRequest || !sourceRequest.sector) {
+      return res.status(400).json({
+        ok: false,
+        message: "Ongeldige aanvraagcontext (sector niet gevonden)."
+      });
+    }
+
+    const sector = String(sourceRequest.sector).trim();
+    if (!sector) {
+      return res.status(400).json({
+        ok: false,
+        message: "Ongeldige sector in aanvraag."
+      });
+    }
+
+    // ----------------------------------------------------------
+    // Bepaal doelbedrijven
+    // ----------------------------------------------------------
     let targets = [];
     if (Array.isArray(companyIds) && companyIds.length) {
       targets = companyIds.filter(Boolean);
@@ -66,24 +71,21 @@ router.post("/", async (req, res) => {
     }
 
     const baseData = {
-      sector,                       // ← nu altijd geldig
+      sector,
       name,
       email,
-      city: city || "",
+      city: city || sourceRequest.city || "",
       message,
-      category: category || "",
-      specialty: specialty || "",
+      specialty: specialty || sourceRequest.specialty || "",
       communication: communication || "",
       experience: experience || "",
       approach: approach || "",
       involvement: involvement || ""
-      // status en date via defaults in het model
     };
 
     let created;
 
     if (targets.length) {
-      // Maak één aanvraag per gekozen bedrijf (Trustoo-stijl)
       const docs = targets.map((id) => ({
         ...baseData,
         company: id
@@ -98,7 +100,6 @@ router.post("/", async (req, res) => {
         items: created
       });
     } else {
-      // Algemene aanvraag zonder gekoppeld bedrijf
       created = await Request.create(baseData);
 
       return res.status(201).json({
@@ -107,11 +108,13 @@ router.post("/", async (req, res) => {
         item: created
       });
     }
+
   } catch (error) {
     console.error("❌ Fout bij aanmaken aanvraag:", error);
-    res
-      .status(500)
-      .json({ ok: false, message: "Serverfout bij aanmaken aanvraag" });
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout bij aanmaken aanvraag"
+    });
   }
 });
 
@@ -131,68 +134,10 @@ router.get("/", verifyToken, async (req, res) => {
     res.json({ ok: true, total: requests.length, items: requests });
   } catch (error) {
     console.error("❌ Fout bij ophalen aanvragen:", error);
-    res
-      .status(500)
-      .json({ ok: false, error: "Serverfout bij ophalen aanvragen" });
-  }
-});
-
-// ============================================================
-//  📋 Aanvragen per bedrijf ophalen (publiek endpoint)
-// ============================================================
-router.get("/company/:id", async (req, res) => {
-  try {
-    const companyId = req.params.id;
-
-    const requests = await Request.find({
-      $or: [{ company: companyId }, { company: null }]
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-
-    if (!requests?.length) {
-      return res
-        .status(404)
-        .json({ ok: false, message: "Geen aanvragen gevonden." });
-    }
-
-    res.json({ ok: true, total: requests.length, items: requests });
-  } catch (error) {
-    console.error("❌ Fout bij ophalen aanvragen per bedrijf:", error);
     res.status(500).json({
       ok: false,
-      error: "Serverfout bij ophalen aanvragen per bedrijf"
+      error: "Serverfout bij ophalen aanvragen"
     });
-  }
-});
-
-// ============================================================
-//  📦 Aanvraagstatus bijwerken (alleen eigenaar)
-// ============================================================
-router.put("/:id/status", verifyToken, async (req, res) => {
-  try {
-    const { status } = req.body;
-    const request = await Request.findById(req.params.id);
-
-    if (!request) {
-      return res
-        .status(404)
-        .json({ ok: false, message: "Aanvraag niet gevonden." });
-    }
-
-    if (request.company?.toString() !== req.user.id) {
-      return res.status(403).json({ ok: false, message: "Geen toegang." });
-    }
-
-    request.status = status;
-    await request.save();
-
-    res.json({ ok: true, message: "Status bijgewerkt.", request });
-  } catch (error) {
-    console.error("❌ Fout bij updaten status:", error);
-    res
-      .status(500)
-      .json({ ok: false, error: "Serverfout bij updaten status" });
   }
 });
 
