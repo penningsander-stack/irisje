@@ -37,15 +37,16 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // ✔️ request aanmaken
     const request = await Request.create({
-      name,
-      email,
-      message,
-      category,
-      city,
-      companies: companies.map(c => c._id)
-    });
+  name,
+  email,
+  message,
+  sector,        // ← deze regel toevoegen
+  category,
+  city,
+  companies: companies.map(c => c._id)
+});
+
 
     return res.json({
       ok: true,
