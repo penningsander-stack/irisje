@@ -6,51 +6,49 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
+
+<!-- 🔑 VERPLICHT voor Irisje-layout -->
+<body class="irisje-body">
 
 <header class="site-header">
-  <div class="container header-inner">
+  <div class="container">
     <a href="/" class="logo">Irisje.nl</a>
   </div>
 </header>
 
 <main class="container">
-  <section class="card">
 
-    <h1 id="title">Aanvraag verstuurd</h1>
+  <h1>Aanvraag verstuurd</h1>
 
-    <!-- Succes na echte aanvraag -->
-    <div id="successMessage" style="display:none;">
-      <p>
-        Je aanvraag is succesvol verstuurd naar de door jou geselecteerde bedrijven.
-      </p>
+  <!-- Succesbericht na echte aanvraag -->
+  <div id="successMessage" style="display:none;">
+    <p>
+      Je aanvraag is succesvol verstuurd naar de door jou geselecteerde bedrijven.
+    </p>
+    <p>
+      Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
+      Controleer ook even je spamfolder als je nog niets hoort.
+    </p>
 
-      <p>
-        Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
-        Controleer ook even je spamfolder als je nog niets hoort.
-      </p>
+    <p>
+      <a href="/" class="btn-primary">Terug naar de startpagina</a>
+    </p>
+  </div>
 
-      <div class="actions">
-        <a href="/" class="btn-primary">Terug naar de startpagina</a>
-      </div>
-    </div>
+  <!-- Pagina handmatig geopend zonder context -->
+  <div id="noContextMessage" style="display:none;">
+    <p>
+      Deze pagina wordt normaal gesproken getoond nadat je een aanvraag hebt verstuurd.
+    </p>
+    <p>
+      Wil je een nieuwe aanvraag doen, ga dan terug naar de startpagina.
+    </p>
 
-    <!-- Pagina handmatig geopend -->
-    <div id="noContextMessage" style="display:none;">
-      <p>
-        Deze pagina wordt normaal gesproken getoond nadat je een aanvraag hebt verstuurd.
-      </p>
+    <p>
+      <a href="/" class="btn-primary">Naar de startpagina</a>
+    </p>
+  </div>
 
-      <p>
-        Wil je een nieuwe aanvraag doen, ga dan terug naar de startpagina.
-      </p>
-
-      <div class="actions">
-        <a href="/" class="btn-primary">Naar de startpagina</a>
-      </div>
-    </div>
-
-  </section>
 </main>
 
 <footer class="site-footer">
@@ -61,7 +59,7 @@
 
 <script>
   // ----------------------------------------------------------
-  // UX-logica: alleen succes tonen bij echte flow
+  // UX-logica: alleen succes tonen bij echte aanvraagflow
   // ----------------------------------------------------------
   const wasRequestSent = sessionStorage.getItem("requestSent");
 
