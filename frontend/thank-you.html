@@ -1,4 +1,3 @@
-<!-- frontend/thank-you.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -17,57 +16,38 @@
 </header>
 
 <main class="container">
-
-  <div style="
-    max-width: 560px;
-    margin: 70px auto 0 auto;
-    background: #ffffff;
-    padding: 46px;
-    border-radius: 12px;
-    box-shadow: 0 18px 45px rgba(0,0,0,0.10);
-  ">
-
-    <h1 style="margin-bottom: 10px;">Aanvraag verstuurd</h1>
+  <div class="card-premium">
+    <h1 class="card-title">Aanvraag verstuurd</h1>
 
     <div id="successMessage" style="display:none;">
-      <p style="margin-bottom: 10px; color:#444;">
+      <p class="card-subtitle">
         Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
       </p>
 
-      <p style="margin-bottom: 18px; color:#666;">
+      <p class="hint">
         Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
         Controleer ook even je spamfolder als je nog niets hoort.
       </p>
 
-      <div id="sentCompaniesBox" style="
-        display:none;
-        margin-top: 18px;
-        padding: 14px 16px;
-        border-radius: 10px;
-        background: #fafafa;
-        border: 1px solid #e6e6e6;
-      ">
-        <div style="font-weight: 600; margin-bottom: 8px;">
-          Naar deze bedrijven is je aanvraag verstuurd
-        </div>
-        <ul id="sentCompaniesList" style="margin:0; padding-left: 18px;"></ul>
+      <div id="sentCompaniesBox" class="selected-box" style="display:none;">
+        <div class="selected-title">Naar deze bedrijven is je aanvraag verstuurd</div>
+        <ul id="sentCompaniesList" class="selected-list"></ul>
       </div>
 
-      <div style="margin-top: 26px;">
+      <div class="actions">
         <a href="/" class="btn-primary">Terug naar de startpagina</a>
       </div>
     </div>
 
     <div id="noContextMessage" style="display:none;">
-      <p style="margin-bottom: 14px; color:#444;">
+      <p class="hint">
         We konden geen recente aanvraag vinden. Probeer het opnieuw vanaf de beginpagina.
       </p>
-
-      <a href="/" class="btn-primary">Naar de startpagina</a>
+      <div class="actions">
+        <a href="/" class="btn-primary">Naar de startpagina</a>
+      </div>
     </div>
-
   </div>
-
 </main>
 
 <footer class="site-footer">
@@ -76,20 +56,46 @@
   </div>
 </footer>
 
-<script>
-  function safeJsonParse(raw) {
-    try { return JSON.parse(raw); } catch (e) { return null; }
+<style>
+  /* ---------- Premium polish (lokale scope) ---------- */
+  .card-premium{
+    max-width:560px;
+    margin:72px auto 0;
+    background:#fff;
+    padding:48px;
+    border-radius:14px;
+    box-shadow:0 22px 50px rgba(0,0,0,.12);
   }
+  .card-title{margin-bottom:10px;}
+  .card-subtitle{margin-bottom:18px;color:#444;}
+  .hint{margin-bottom:22px;color:#666;}
+
+  .actions{margin-top:28px;}
+
+  .selected-box{
+    margin-top:22px;
+    padding:16px 18px;
+    border-radius:12px;
+    background:#fafafa;
+    border:1px solid #e6e6e6;
+  }
+  .selected-title{font-weight:600;margin-bottom:8px;}
+  .selected-list{margin:0;padding-left:18px;}
+</style>
+
+<script>
+  function safeJsonParse(raw){ try{ return JSON.parse(raw); }catch(e){ return null; } }
 
   const wasRequestSent = sessionStorage.getItem("requestSent");
+  const successEl = document.getElementById("successMessage");
+  const noCtxEl = document.getElementById("noContextMessage");
 
   if (wasRequestSent === "1") {
-    document.getElementById("successMessage").style.display = "block";
+    successEl.style.display = "block";
     sessionStorage.removeItem("requestSent");
 
-    const sentCompaniesRaw = sessionStorage.getItem("sentCompanies");
-    const sentCompanies = Array.isArray(safeJsonParse(sentCompaniesRaw))
-      ? safeJsonParse(sentCompaniesRaw)
+    const sentCompanies = Array.isArray(safeJsonParse(sessionStorage.getItem("sentCompanies")))
+      ? safeJsonParse(sessionStorage.getItem("sentCompanies"))
       : [];
 
     const boxEl = document.getElementById("sentCompaniesBox");
@@ -98,21 +104,16 @@
     if (boxEl && listEl && sentCompanies.length) {
       boxEl.style.display = "block";
       listEl.innerHTML = "";
-
-      sentCompanies.forEach((c) => {
+      sentCompanies.forEach(c => {
         const li = document.createElement("li");
-        const name = (c && c.name) ? String(c.name) : "Onbekend bedrijf";
-        const city = (c && c.city) ? ` (${String(c.city)})` : "";
-        li.textContent = name + city;
+        li.textContent = (c?.name || "Onbekend bedrijf") + (c?.city ? ` (${c.city})` : "");
         listEl.appendChild(li);
       });
     }
 
-    // Opschonen (zodat een nieuw tabblad later niet ‘oude’ bedrijven toont)
     sessionStorage.removeItem("sentCompanies");
-
   } else {
-    document.getElementById("noContextMessage").style.display = "block";
+    noCtxEl.style.display = "block";
   }
 </script>
 
