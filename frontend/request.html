@@ -15,6 +15,18 @@
   </div>
 </header>
 
+
+<script>
+  const selected = JSON.parse(sessionStorage.getItem("selectedCompanyIds") || "[]");
+
+  if (!Array.isArray(selected) || selected.length === 0) {
+    // geen selectie → terug naar resultaten
+    window.location.href = "/results.html";
+  }
+</script>
+
+
+
 <main>
   <section class="irisje-section">
     <div class="irisje-container">
