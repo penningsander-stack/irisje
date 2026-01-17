@@ -17,47 +17,61 @@
 
 <main class="container">
 
-  <!-- Premium focuskaart -->
+  <!-- Premium intake-kaart -->
   <div style="
-    max-width: 640px;
-    margin: 60px auto 0 auto;
+    max-width: 580px;
+    margin: 70px auto 0 auto;
     background: #ffffff;
-    padding: 40px 40px 32px 40px;
-    border-radius: 10px;
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    padding: 44px 44px 36px 44px;
+    border-radius: 12px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.08);
   ">
 
-    <h1 style="margin-bottom: 12px;">
+    <h1 style="margin-bottom: 8px;">
       Je aanvraag versturen
     </h1>
 
-    <p style="margin-bottom: 28px; color: #555;">
-      Vul hieronder je gegevens in. Je aanvraag wordt verstuurd naar de door jou
-      geselecteerde bedrijven.
+    <p style="margin-bottom: 28px; color: #666; line-height: 1.5;">
+      Met deze aanvraag nemen geschikte bedrijven rechtstreeks contact met je op.
+      Jij bepaalt met wie je verdergaat.
     </p>
+
+    <hr style="border: none; border-top: 1px solid #eee; margin: 0 0 32px 0;">
 
     <form id="requestForm">
 
-      <div class="form-group" style="margin-bottom: 20px;">
+      <div class="form-group" style="margin-bottom: 22px;">
         <label for="name">Naam</label>
         <input type="text" id="name" required style="width:100%;">
       </div>
 
-      <div class="form-group" style="margin-bottom: 20px;">
+      <div class="form-group" style="margin-bottom: 22px;">
         <label for="email">E-mailadres</label>
         <input type="email" id="email" required style="width:100%;">
       </div>
 
-      <div class="form-group" style="margin-bottom: 28px;">
+      <div class="form-group" style="margin-bottom: 30px;">
         <label for="message">Omschrijving van je aanvraag</label>
         <textarea id="message" rows="5" required style="width:100%;"></textarea>
       </div>
 
       <button type="submit" class="btn-primary" style="width:100%;">
-        Aanvraag versturen
+        Aanvraag indienen
       </button>
 
     </form>
+
+    <!-- Vertrouwen / geruststelling -->
+    <div style="
+      margin-top: 28px;
+      font-size: 14px;
+      color: #777;
+      line-height: 1.6;
+    ">
+      <p style="margin-bottom: 6px;">✓ Eén aanvraag, geen spam</p>
+      <p style="margin-bottom: 6px;">✓ Alleen gecontroleerde bedrijven</p>
+      <p>✓ Jij kiest wie contact met je opneemt</p>
+    </div>
 
     <p id="statusMessage" class="status-message" style="margin-top: 16px;"></p>
 
