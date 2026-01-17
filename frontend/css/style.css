@@ -1702,3 +1702,43 @@ input[type="search"] {
   padding-top: 14px;
   padding-bottom: 14px;
 }
+
+
+
+
+/* =========================================================
+   Irisje – Stap 1D (versterkt)
+   Plaatsnamen expliciet groter en beter leesbaar
+   ========================================================= */
+
+/* Plaatsen dropdown – items duidelijk groter */
+.place-suggestions li,
+.city-suggestions li,
+.autocomplete-list li {
+  font-size: 19px !important;
+  line-height: 1.5 !important;
+  padding: 16px 20px !important;
+  font-weight: 500;
+}
+
+/* Extra: eerste item iets meer ademruimte */
+.place-suggestions li:first-child,
+.city-suggestions li:first-child,
+.autocomplete-list li:first-child {
+  padding-top: 18px !important;
+}
+
+/* Hover duidelijker, maar rustig */
+.place-suggestions li:hover,
+.city-suggestions li:hover,
+.autocomplete-list li:hover {
+  background-color: #eef2f7;
+}
+
+/* Actief item (toetsenbord) */
+.place-suggestions li.active,
+.city-suggestions li.active,
+.autocomplete-list li.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
