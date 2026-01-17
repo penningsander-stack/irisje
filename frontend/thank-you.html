@@ -9,36 +9,55 @@
 <body>
 
 <header class="site-header">
-  <div class="container">
+  <div class="container header-inner">
     <a href="/" class="logo">Irisje.nl</a>
   </div>
 </header>
 
 <main class="container">
-  <h1 id="title">Aanvraag verstuurd</h1>
+  <section class="card">
 
-  <div id="successMessage" style="display:none;">
-    <p>
-      Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
-    </p>
-    <p>
-      Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
-      Controleer ook even je spamfolder als je nog niets hoort.
-    </p>
-  </div>
+    <h1 id="title">Aanvraag verstuurd</h1>
 
-  <div id="noContextMessage" style="display:none;">
-    <p>
-      Deze pagina wordt normaal gesproken getoond nadat je een aanvraag hebt verstuurd.
-    </p>
-    <p>
-      Wil je een nieuwe aanvraag doen, ga dan terug naar de startpagina.
-    </p>
-    <p>
-      <a href="/" class="btn-primary">Naar de startpagina</a>
-    </p>
-  </div>
+    <!-- Succes na echte aanvraag -->
+    <div id="successMessage" style="display:none;">
+      <p>
+        Je aanvraag is succesvol verstuurd naar de door jou geselecteerde bedrijven.
+      </p>
+
+      <p>
+        Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
+        Controleer ook even je spamfolder als je nog niets hoort.
+      </p>
+
+      <div class="actions">
+        <a href="/" class="btn-primary">Terug naar de startpagina</a>
+      </div>
+    </div>
+
+    <!-- Pagina handmatig geopend -->
+    <div id="noContextMessage" style="display:none;">
+      <p>
+        Deze pagina wordt normaal gesproken getoond nadat je een aanvraag hebt verstuurd.
+      </p>
+
+      <p>
+        Wil je een nieuwe aanvraag doen, ga dan terug naar de startpagina.
+      </p>
+
+      <div class="actions">
+        <a href="/" class="btn-primary">Naar de startpagina</a>
+      </div>
+    </div>
+
+  </section>
 </main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p>© Irisje.nl</p>
+  </div>
+</footer>
 
 <script>
   // ----------------------------------------------------------
@@ -48,7 +67,7 @@
 
   if (wasRequestSent === "1") {
     document.getElementById("successMessage").style.display = "block";
-    sessionStorage.removeItem("requestSent"); // éénmalig
+    sessionStorage.removeItem("requestSent");
   } else {
     document.getElementById("noContextMessage").style.display = "block";
   }
