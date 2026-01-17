@@ -1,5 +1,11 @@
 // backend/routes/requests.js
-// v20260116-FIX-REQUESTS-500
+// v20251213-REQUESTS-WITH-CREATE
+//
+// Routes voor offerte-aanvragen:
+// - POST   /api/requests              → nieuwe aanvraag / meerdere aanvragen
+// - GET    /api/requests              → alle aanvragen voor ingelogd bedrijf
+// - GET    /api/requests/company/:id  → aanvragen per bedrijf (publiek)
+// - PUT    /api/requests/:id/status   → status bijwerken (ingelogd bedrijf)
 
 const express = require("express");
 const router = express.Router();
@@ -23,8 +29,7 @@ router.post("/", async (req, res) => {
       approach,
       involvement,
       companyId,
-      companyIds,
-      sector // ← toegevoegd (uit payload)
+      companyIds
     } = req.body || {};
 
     if (!name || !email || !message) {
@@ -34,28 +39,12 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // -----------------------------
-    // Sector resolven (ENIGE FIX)
-    // -----------------------------
-    const resolvedSector = sector || category || "";
-    if (!resolvedSector) {
-      return res.status(400).json({
-        ok: false,
-        message: "Sector ontbreekt in aanvraag."
-      });
-    }
-
-    // -----------------------------
-    // Targets normaliseren
-    // -----------------------------
+    // Bepaal voor welke bedrijven de aanvraag wordt aangemaakt
     let targets = [];
-
-    if (Array.isArray(companyIds)) {
-      targets = companyIds
-        .map((id) => String(id || "").trim())
-        .filter(Boolean);
+    if (Array.isArray(companyIds) && companyIds.length) {
+      targets = companyIds.filter(Boolean);
     } else if (companyId) {
-      targets = [String(companyId).trim()];
+      targets = [companyId];
     }
 
     const baseData = {
@@ -63,23 +52,23 @@ router.post("/", async (req, res) => {
       email,
       city: city || "",
       message,
-      sector: resolvedSector, // ← HIER zat het probleem
       category: category || "",
       specialty: specialty || "",
       communication: communication || "",
       experience: experience || "",
       approach: approach || "",
       involvement: involvement || ""
+      // status en date worden via defaults in het model gezet
     };
 
     let created;
 
-    if (targets.length > 0) {
+    if (targets.length) {
+      // Maak één aanvraag per gekozen bedrijf (Trustoo-stijl, max ~5)
       const docs = targets.map((id) => ({
         ...baseData,
         company: id
       }));
-
       created = await Request.insertMany(docs);
 
       return res.status(201).json({
@@ -88,23 +77,21 @@ router.post("/", async (req, res) => {
         total: created.length,
         items: created
       });
+    } else {
+      // Algemene aanvraag zonder gekoppeld bedrijf (company = null)
+      created = await Request.create(baseData);
+
+      return res.status(201).json({
+        ok: true,
+        type: "single",
+        item: created
+      });
     }
-
-    // Algemene aanvraag zonder gekoppeld bedrijf
-    created = await Request.create(baseData);
-
-    return res.status(201).json({
-      ok: true,
-      type: "single",
-      item: created
-    });
-
   } catch (error) {
     console.error("❌ Fout bij aanmaken aanvraag:", error);
-    res.status(500).json({
-      ok: false,
-      message: "Serverfout bij aanmaken aanvraag"
-    });
+    res
+      .status(500)
+      .json({ ok: false, message: "Serverfout bij aanmaken aanvraag" });
   }
 });
 
@@ -115,6 +102,7 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     const companyId = req.user?.id;
 
+    // Alleen aanvragen van dit bedrijf of algemene aanvragen
     const requests = await Request.find({
       $or: [{ company: companyId }, { company: null }]
     })
@@ -124,10 +112,9 @@ router.get("/", verifyToken, async (req, res) => {
     res.json({ ok: true, total: requests.length, items: requests });
   } catch (error) {
     console.error("❌ Fout bij ophalen aanvragen:", error);
-    res.status(500).json({
-      ok: false,
-      error: "Serverfout bij ophalen aanvragen"
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "Serverfout bij ophalen aanvragen" });
   }
 });
 
@@ -144,11 +131,10 @@ router.get("/company/:id", async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    if (!requests.length) {
-      return res.status(404).json({
-        ok: false,
-        message: "Geen aanvragen gevonden."
-      });
+    if (!requests?.length) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Geen aanvragen gevonden." });
     }
 
     res.json({ ok: true, total: requests.length, items: requests });
@@ -170,17 +156,14 @@ router.put("/:id/status", verifyToken, async (req, res) => {
     const request = await Request.findById(req.params.id);
 
     if (!request) {
-      return res.status(404).json({
-        ok: false,
-        message: "Aanvraag niet gevonden."
-      });
+      return res
+        .status(404)
+        .json({ ok: false, message: "Aanvraag niet gevonden." });
     }
 
+    // Alleen eigenaar (bedrijf) mag de eigen aanvraagstatus wijzigen
     if (request.company?.toString() !== req.user.id) {
-      return res.status(403).json({
-        ok: false,
-        message: "Geen toegang."
-      });
+      return res.status(403).json({ ok: false, message: "Geen toegang." });
     }
 
     request.status = status;
@@ -189,10 +172,9 @@ router.put("/:id/status", verifyToken, async (req, res) => {
     res.json({ ok: true, message: "Status bijgewerkt.", request });
   } catch (error) {
     console.error("❌ Fout bij updaten status:", error);
-    res.status(500).json({
-      ok: false,
-      error: "Serverfout bij updaten status"
-    });
+    res
+      .status(500)
+      .json({ ok: false, error: "Serverfout bij updaten status" });
   }
 });
 
