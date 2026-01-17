@@ -1,9 +1,10 @@
 // backend/routes/requests.js
-// v20251213-REQUESTS-WITH-CREATE (hotfix: sector mappen)
+// v20260117-REQUESTS-HOTFIX-SECTOR-FROM-PUBLICREQUEST
 
 const express = require("express");
 const router = express.Router();
 const Request = require("../models/request");
+const PublicRequest = require("../models/publicRequest"); // bestaand model
 const verifyToken = require("../middleware/auth");
 
 // ============================================================
@@ -12,6 +13,7 @@ const verifyToken = require("../middleware/auth");
 router.post("/", async (req, res) => {
   try {
     const {
+      requestId,            // ← nodig om sector te herleiden
       name,
       email,
       city,
@@ -33,6 +35,28 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // ----------------------------------------------------------
+    // 🔧 HOTFIX: sector halen uit bestaande publicRequest
+    // ----------------------------------------------------------
+    let sector = "";
+
+    if (requestId) {
+      const publicReq = await PublicRequest.findById(requestId)
+        .select("sector")
+        .lean();
+
+      if (publicReq && publicReq.sector) {
+        sector = String(publicReq.sector);
+      }
+    }
+
+    if (!sector) {
+      return res.status(400).json({
+        ok: false,
+        message: "Aanvraagcontext ontbreekt (sector niet gevonden)."
+      });
+    }
+
     // Bepaal voor welke bedrijven de aanvraag wordt aangemaakt
     let targets = [];
     if (Array.isArray(companyIds) && companyIds.length) {
@@ -41,11 +65,8 @@ router.post("/", async (req, res) => {
       targets = [companyId];
     }
 
-    // 🔧 HOTFIX: sector is verplicht in het model → map category → sector
-    const sector = category || "";
-
     const baseData = {
-      sector,                         // ← cruciaal
+      sector,                       // ← nu altijd geldig
       name,
       email,
       city: city || "",
@@ -62,11 +83,12 @@ router.post("/", async (req, res) => {
     let created;
 
     if (targets.length) {
-      // Maak één aanvraag per gekozen bedrijf (Trustoo-stijl, max ~5)
+      // Maak één aanvraag per gekozen bedrijf (Trustoo-stijl)
       const docs = targets.map((id) => ({
         ...baseData,
         company: id
       }));
+
       created = await Request.insertMany(docs);
 
       return res.status(201).json({
@@ -76,7 +98,7 @@ router.post("/", async (req, res) => {
         items: created
       });
     } else {
-      // Algemene aanvraag zonder gekoppeld bedrijf (company = null)
+      // Algemene aanvraag zonder gekoppeld bedrijf
       created = await Request.create(baseData);
 
       return res.status(201).json({
@@ -100,7 +122,6 @@ router.get("/", verifyToken, async (req, res) => {
   try {
     const companyId = req.user?.id;
 
-    // Alleen aanvragen van dit bedrijf of algemene aanvragen
     const requests = await Request.find({
       $or: [{ company: companyId }, { company: null }]
     })
@@ -159,7 +180,6 @@ router.put("/:id/status", verifyToken, async (req, res) => {
         .json({ ok: false, message: "Aanvraag niet gevonden." });
     }
 
-    // Alleen eigenaar (bedrijf) mag de eigen aanvraagstatus wijzigen
     if (request.company?.toString() !== req.user.id) {
       return res.status(403).json({ ok: false, message: "Geen toegang." });
     }
