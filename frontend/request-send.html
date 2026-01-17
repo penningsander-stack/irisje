@@ -85,7 +85,9 @@
       // ------------------------------------------------------
       // ✅ Succes → door naar thank-you
       // ------------------------------------------------------
-      window.location.href = "/thank-you.html";
+     sessionStorage.setItem("requestSent", "1");
+
+ window.location.href = "/thank-you.html";
 
     } catch (error) {
       document.getElementById("statusMessage").textContent =
