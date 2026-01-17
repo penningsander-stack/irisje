@@ -1,11 +1,5 @@
 // backend/routes/requests.js
-// v20251213-REQUESTS-WITH-CREATE
-//
-// Routes voor offerte-aanvragen:
-// - POST   /api/requests              → nieuwe aanvraag / meerdere aanvragen
-// - GET    /api/requests              → alle aanvragen voor ingelogd bedrijf
-// - GET    /api/requests/company/:id  → aanvragen per bedrijf (publiek)
-// - PUT    /api/requests/:id/status   → status bijwerken (ingelogd bedrijf)
+// v20251213-REQUESTS-WITH-CREATE (hotfix: sector mappen)
 
 const express = require("express");
 const router = express.Router();
@@ -47,7 +41,11 @@ router.post("/", async (req, res) => {
       targets = [companyId];
     }
 
+    // 🔧 HOTFIX: sector is verplicht in het model → map category → sector
+    const sector = category || "";
+
     const baseData = {
+      sector,                         // ← cruciaal
       name,
       email,
       city: city || "",
@@ -58,7 +56,7 @@ router.post("/", async (req, res) => {
       experience: experience || "",
       approach: approach || "",
       involvement: involvement || ""
-      // status en date worden via defaults in het model gezet
+      // status en date via defaults in het model
     };
 
     let created;
