@@ -1779,3 +1779,16 @@ input[type="search"] {
   position: relative;
   z-index: 2;
 }
+
+
+
+
+label[for="city"] {
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+label[for="city"]::before,
+label[for="city"]::after {
+  content: none !important;
+}
