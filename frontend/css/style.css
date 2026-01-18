@@ -1742,3 +1742,25 @@ input[type="search"] {
   background-color: #dbeafe;
   color: #1e3a8a;
 }
+
+
+
+
+/* =========================================================
+   Irisje – Stap 1D (definitief)
+   Plaatsen in autocomplete groter en duidelijker
+   ========================================================= */
+
+.autocomplete-item {
+  font-size: 20px;
+  line-height: 1.5;
+  padding: 14px 18px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* Hover / focus voor betere leesbaarheid */
+.autocomplete-item:hover,
+.autocomplete-item.active {
+  background-color: #eef2f7;
+}
