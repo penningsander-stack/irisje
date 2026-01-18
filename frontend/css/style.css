@@ -1763,4 +1763,14 @@ input[type="search"] {
 .autocomplete-item:hover,
 .autocomplete-item.active {
   background-color: #eef2f7;
+
+
+
+
+/* Voorkomt dat input-border door het label heen zichtbaar is */
+.form-group label,
+.field-label {
+  background-color: #f9fafb; /* zelfde kleur als pagina */
+  padding: 0 6px;
+}
 }
