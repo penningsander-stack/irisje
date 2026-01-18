@@ -1745,50 +1745,53 @@ input[type="search"] {
 
 
 
-
 /* =========================================================
    Irisje – Stap 1D (definitief)
    Plaatsen in autocomplete groter en duidelijker
+   (request.html gebruikt: <div id="citySuggestions" class="autocomplete-list">
+   met <div class="autocomplete-item">)
    ========================================================= */
 
-.autocomplete-item {
-  font-size: 20px;
-  line-height: 1.5;
-  padding: 14px 18px;
+/* Dropdown container (blijft hetzelfde idee) */
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* JOUW ECHTE ITEMS: div.autocomplete-item (niet li) */
+.autocomplete-list .autocomplete-item {
+  padding: 16px 20px;
+  font-size: 19px;
   font-weight: 500;
+  line-height: 1.5;
+  color: #111827;
   cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Hover / focus voor betere leesbaarheid */
-.autocomplete-item:hover,
-.autocomplete-item.active {
-  background-color: #eef2f7;
-
-
-
-/* Autocomplete item hover */
-.autocomplete-item:hover,
-.autocomplete-item.active {
+.autocomplete-list .autocomplete-item:hover,
+.autocomplete-list .autocomplete-item.active {
   background-color: #eef2f7;
 }
 
-/* Fix: label mag niet door input-border gesneden worden */
-.form-group label {
-  background-color: var(--irisje-bg-soft);
-  padding: 0 6px;
-  position: relative;
-  z-index: 2;
+/* Actieve (toetsenbord) state iets duidelijker */
+.autocomplete-list .autocomplete-item.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
 }
 
-
-
-
-label[for="city"] {
-  text-decoration: none !important;
-  border-bottom: none !important;
-}
-
-label[for="city"]::before,
-label[for="city"]::after {
-  content: none !important;
+/* FIX voor “lijn door Plaats”: label krijgt een eigen achtergrondlaagje
+   (in jouw request-sectie staat een zachte indigo tint achter de content) */
+.card--large .form-group > label {
+  display: inline-block;
+  background: rgba(79, 70, 229, 0.04);
+  padding: 0 8px;
+  border-radius: 999px;
 }
