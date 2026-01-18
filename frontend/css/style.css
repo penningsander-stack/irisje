@@ -1766,11 +1766,16 @@ input[type="search"] {
 
 
 
-
-/* Voorkomt dat input-border door het label heen zichtbaar is */
-.form-group label,
-.field-label {
-  background-color: #f9fafb; /* zelfde kleur als pagina */
-  padding: 0 6px;
+/* Autocomplete item hover */
+.autocomplete-item:hover,
+.autocomplete-item.active {
+  background-color: #eef2f7;
 }
+
+/* Fix: label mag niet door input-border gesneden worden */
+.form-group label {
+  background-color: var(--irisje-bg-soft);
+  padding: 0 6px;
+  position: relative;
+  z-index: 2;
 }
