@@ -1799,121 +1799,58 @@ input[type="search"] {
 
 
 
-/* ===============================
-   FIX: border-top snijdt door label "Plaats"
-   =============================== */
+/* =========================================================
+   Irisje – Request (definitief)
+   1) Autocomplete plaatsenlijst: groter/duidelijker
+   2) FIX: geen “streep door Plaats”-label (geen pseudo-lijnen/border-trucs)
+   ========================================================= */
 
-.form-group {
-  position: relative;
-}
-
-/* Het label zelf */
-.form-group label {
-  position: relative;
-  z-index: 2;
-}
-
-/* Masker tegen de input-border */
-.form-group label::before {
-  content: "";
+/* Dropdown container */
+.autocomplete-list {
   position: absolute;
-  left: -6px;
-  right: -6px;
-  top: 50%;
-  height: 1.2em;
-  background-color: var(--irisje-bg-soft);
-  z-index: -1;
-  transform: translateY(-50%);
-  pointer-events: none;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
 }
 
-
-
-
-/* ===============================
-   FIX: fieldset/legend lijn door "Plaats"
-   =============================== */
-
-fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
+/* Items (request.html gebruikt: <div class="autocomplete-item">) */
+.autocomplete-list .autocomplete-item {
+  padding: 16px 20px;
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-legend {
-  padding: 0 6px;
+.autocomplete-list .autocomplete-item:hover {
+  background-color: #eef2f7;
 }
 
+.autocomplete-list .autocomplete-item.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
 
-
-
-/* Fix: lijn (hr) die visueel door label "Plaats" loopt */
+/* FIX: label “Plaats” mag nooit een lijn “door zich heen” tonen
+   (geen ::before-maskers, geen border-top hacks). */
 .card--large .form-group label {
-  display: inline-block;
-  position: relative;
-  z-index: 2;
-  background: var(--irisje-surface); /* = #ffffff */
-  padding: 0 0.45rem;
+  display: inline-flex;
+  align-items: center;
+
+  /* Matcht de subtiele sectietint achter de content (section::before) */
+  background: rgba(79, 70, 229, 0.04);
+
+  /* Net genoeg padding zodat alles achter het label afgedekt is */
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+
+  /* Houd je bestaande uppercase/letter-spacing uit je eerdere CSS intact */
   line-height: 1.2;
-}
-
-
-
-
-/* === FIX: input-border zichtbaar door label "Plaats" === */
-
-/* Zorg dat label een eigen masker heeft */
-.card--large .form-group label {
-  position: relative;
-  z-index: 2;
-}
-
-/* Masker achter label dat input-border afdekt */
-.card--large .form-group label::before {
-  content: "";
-  position: absolute;
-  left: -6px;
-  right: -6px;
-  top: 50%;
-  height: 1.6em;
-  transform: translateY(-50%);
-  background: var(--irisje-surface); /* #ffffff */
-  z-index: -1;
-}
-
-
-
-
-/* === FIX: streep door label 'Plaats' (input border-top) === */
-
-/* Verwijder bovenrand van inputs */
-.card--large input[type="text"],
-.card--large input[type="search"],
-.card--large select {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  border-top: none;
-}
-
-/* Voeg visuele bovenrand toe via container */
-.card--large .form-group {
-  position: relative;
-}
-
-.card--large .form-group::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(0.9rem + 0.75rem); /* label + spacing */
-  height: 1px;
-  background: rgba(148, 163, 184, 0.45); /* irisje-border */
-  z-index: 0;
-}
-
-/* Input boven pseudo-border houden */
-.card--large .form-group input,
-.card--large .form-group select {
-  position: relative;
-  z-index: 1;
 }
