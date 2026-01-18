@@ -1826,3 +1826,20 @@ input[type="search"] {
   transform: translateY(-50%);
   pointer-events: none;
 }
+
+
+
+
+/* ===============================
+   FIX: fieldset/legend lijn door "Plaats"
+   =============================== */
+
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+legend {
+  padding: 0 6px;
+}
