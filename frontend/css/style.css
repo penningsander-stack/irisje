@@ -1795,3 +1795,34 @@ input[type="search"] {
   padding: 0 8px;
   border-radius: 999px;
 }
+
+
+
+
+/* ===============================
+   FIX: border-top snijdt door label "Plaats"
+   =============================== */
+
+.form-group {
+  position: relative;
+}
+
+/* Het label zelf */
+.form-group label {
+  position: relative;
+  z-index: 2;
+}
+
+/* Masker tegen de input-border */
+.form-group label::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 50%;
+  height: 1.2em;
+  background-color: var(--irisje-bg-soft);
+  z-index: -1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
