@@ -1856,3 +1856,27 @@ legend {
   padding: 0 0.45rem;
   line-height: 1.2;
 }
+
+
+
+
+/* === FIX: input-border zichtbaar door label "Plaats" === */
+
+/* Zorg dat label een eigen masker heeft */
+.card--large .form-group label {
+  position: relative;
+  z-index: 2;
+}
+
+/* Masker achter label dat input-border afdekt */
+.card--large .form-group label::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  right: -6px;
+  top: 50%;
+  height: 1.6em;
+  transform: translateY(-50%);
+  background: var(--irisje-surface); /* #ffffff */
+  z-index: -1;
+}
