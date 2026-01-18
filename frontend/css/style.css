@@ -1843,3 +1843,16 @@ fieldset {
 legend {
   padding: 0 6px;
 }
+
+
+
+
+/* Fix: lijn (hr) die visueel door label "Plaats" loopt */
+.card--large .form-group label {
+  display: inline-block;
+  position: relative;
+  z-index: 2;
+  background: var(--irisje-surface); /* = #ffffff */
+  padding: 0 0.45rem;
+  line-height: 1.2;
+}
