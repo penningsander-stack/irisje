@@ -1880,3 +1880,40 @@ legend {
   background: var(--irisje-surface); /* #ffffff */
   z-index: -1;
 }
+
+
+
+
+/* === FIX: streep door label 'Plaats' (input border-top) === */
+
+/* Verwijder bovenrand van inputs */
+.card--large input[type="text"],
+.card--large input[type="search"],
+.card--large select {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-top: none;
+}
+
+/* Voeg visuele bovenrand toe via container */
+.card--large .form-group {
+  position: relative;
+}
+
+.card--large .form-group::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(0.9rem + 0.75rem); /* label + spacing */
+  height: 1px;
+  background: rgba(148, 163, 184, 0.45); /* irisje-border */
+  z-index: 0;
+}
+
+/* Input boven pseudo-border houden */
+.card--large .form-group input,
+.card--large .form-group select {
+  position: relative;
+  z-index: 1;
+}
