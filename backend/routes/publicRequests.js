@@ -174,9 +174,11 @@ router.get("/:id", async (req, res) => {
   } catch (error) {
     console.error("publicRequests GET error:", error);
     return res.status(500).json({
-      ok: false,
-      message: "Interne serverfout"
-    });
+  ok: false,
+  error: error.message,
+  stack: error.stack
+});
+
   }
 });
 
