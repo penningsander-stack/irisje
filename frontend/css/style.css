@@ -1856,3 +1856,23 @@ input[type="search"] {
   /* Houd je bestaande uppercase/letter-spacing uit je eerdere CSS intact */
   line-height: 1.2;
 }
+
+
+
+/* FIX: input-border mag nooit door label heen lopen */
+.card--large .form-group > label {
+  position: relative;
+  z-index: 2;
+  margin-bottom: -0.35rem; /* trekt label over input-border heen */
+  background: var(--irisje-surface); /* #ffffff */
+  padding: 0 0.5rem;
+}
+
+
+
+
+.card--large .form-input {
+  position: relative;
+  z-index: 1;
+}
+
