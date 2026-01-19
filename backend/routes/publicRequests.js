@@ -6,8 +6,6 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-const FALLBACK_LIMIT = 10;
-
 /*
   POST /api/publicRequests
   - Fase 1: public request aanmaken
@@ -52,9 +50,11 @@ router.post("/", async (req, res) => {
 
 /*
   GET /api/publicRequests/:id
-  - Prioriteit:
+  - Alle matchende bedrijven tonen
+  - Sortering (zonder reviews):
       1) zelfde stad
-      2) fallback (begrensd) met melding
+      2) heeft specialismen ingevuld
+      3) alfabetisch op naam
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -88,33 +88,28 @@ router.get("/:id", async (req, res) => {
       ]
     };
 
-    // 1) Lokale resultaten
-    let localCompanies = await Company.find({
-      ...baseFilter,
-      city: city
-    })
+    let companies = await Company.find(baseFilter)
       .select("-password")
       .lean();
 
-    let companies = [...localCompanies];
-    let noLocalResults = localCompanies.length === 0;
+    // 🔽 Sortering (deterministisch, zonder reviews)
+    companies.sort((a, b) => {
+      // 1) zelfde stad eerst
+      const aLocal = a.city === city;
+      const bLocal = b.city === city;
+      if (aLocal !== bLocal) return aLocal ? -1 : 1;
 
-    // 2) Fallback (begrensd)
-    if (noLocalResults) {
-      const fallback = await Company.find({
-        ...baseFilter,
-        city: { $ne: city }
-      })
-        .select("-password")
-        .limit(FALLBACK_LIMIT)
-        .lean();
+      // 2) bedrijven met ingevulde specialismen eerst
+      const aHasSpecs = Array.isArray(a.specialties) && a.specialties.length > 0;
+      const bHasSpecs = Array.isArray(b.specialties) && b.specialties.length > 0;
+      if (aHasSpecs !== bHasSpecs) return aHasSpecs ? -1 : 1;
 
-      companies = fallback;
-    }
+      // 3) alfabetisch (stabiel)
+      return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
+    });
 
     return res.json({
       ok: true,
-      noLocalResults,
       request: {
         _id: request._id,
         sector: category,
