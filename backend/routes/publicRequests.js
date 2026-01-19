@@ -7,54 +7,10 @@ const Request = require("../models/request");
 const Company = require("../models/company");
 
 /*
-  POST /api/publicRequests
-  - Fase 1: public request aanmaken
-  - Vereist: sector, specialty, city
-*/
-router.post("/", async (req, res) => {
-  try {
-    const { sector, category, specialty, city } = req.body || {};
-    const finalSector = sector || category;
-
-    if (!finalSector || !specialty || !city) {
-      return res.status(400).json({
-        ok: false,
-        message: "Sector, specialisme en plaats zijn verplicht."
-      });
-    }
-
-    const created = await Request.create({
-      sector: finalSector,
-      category: finalSector, // compatibiliteit
-      specialty,
-      city
-    });
-
-    return res.status(201).json({
-      ok: true,
-      request: {
-        _id: created._id,
-        sector: created.sector,
-        specialty: created.specialty,
-        city: created.city
-      }
-    });
-  } catch (error) {
-    console.error("publicRequests POST error:", error);
-    return res.status(500).json({
-      ok: false,
-      message: "Serverfout bij aanmaken aanvraag"
-    });
-  }
-});
-
-/*
   GET /api/publicRequests/:id
-  - Alle matchende bedrijven tonen
-  - Sortering (zonder reviews):
-      1) zelfde stad
-      2) heeft specialismen ingevuld
-      3) alfabetisch op naam
+  - Alle matchende bedrijven
+  - Reviews via aggregation ($lookup)
+  - Ranking uitgebreid (O2A)
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -62,10 +18,7 @@ router.get("/:id", async (req, res) => {
 
     const request = await Request.findById(requestId).lean();
     if (!request) {
-      return res.status(404).json({
-        ok: false,
-        message: "Aanvraag niet gevonden"
-      });
+      return res.status(404).json({ ok: false, message: "Aanvraag niet gevonden" });
     }
 
     const category = request.sector || request.category;
@@ -79,32 +32,91 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const baseFilter = {
-      categories: { $in: [category] },
-      $or: [
-        { specialties: { $exists: false } },
-        { specialties: { $size: 0 } },
-        { specialties: { $in: [specialty] } }
-      ]
-    };
+    const pipeline = [
+      // Basis match (categorie + specialty, maar bedrijven zonder specialties niet uitsluiten)
+      {
+        $match: {
+          categories: { $in: [category] },
+          $or: [
+            { specialties: { $exists: false } },
+            { specialties: { $size: 0 } },
+            { specialties: { $in: [specialty] } }
+          ]
+        }
+      },
+      // Reviews ophalen (alleen goedgekeurd)
+      {
+        $lookup: {
+          from: "reviews",
+          let: { companyId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$company", "$$companyId"] },
+                isApproved: true
+              }
+            },
+            {
+              $project: {
+                rating: 1
+              }
+            }
+          ],
+          as: "reviews"
+        }
+      },
+      // Review-metrics berekenen
+      {
+        $addFields: {
+          reviewCount: { $size: "$reviews" },
+          averageRating: {
+            $cond: [
+              { $gt: [{ $size: "$reviews" }, 0] },
+              { $avg: "$reviews.rating" },
+              null
+            ]
+          }
+        }
+      },
+      // Opruimen
+      {
+        $project: {
+          password: 0,
+          reviews: 0
+        }
+      }
+    ];
 
-    let companies = await Company.find(baseFilter)
-      .select("-password")
-      .lean();
+    let companies = await Company.aggregate(pipeline);
 
-    // 🔽 Sortering (deterministisch, zonder reviews)
+    // 🔽 Ranking (uitgebreid)
     companies.sort((a, b) => {
       // 1) zelfde stad eerst
       const aLocal = a.city === city;
       const bLocal = b.city === city;
       if (aLocal !== bLocal) return aLocal ? -1 : 1;
 
-      // 2) bedrijven met ingevulde specialismen eerst
+      // 2) bedrijven met reviews eerst
+      const aHasReviews = (a.reviewCount || 0) > 0;
+      const bHasReviews = (b.reviewCount || 0) > 0;
+      if (aHasReviews !== bHasReviews) return aHasReviews ? -1 : 1;
+
+      // 3) hoogste gemiddelde rating
+      const aRating = a.averageRating ?? -1;
+      const bRating = b.averageRating ?? -1;
+      if (aRating !== bRating) return bRating - aRating;
+
+      // 4) meeste reviews
+      const aCnt = a.reviewCount || 0;
+      const bCnt = b.reviewCount || 0;
+      if (aCnt !== bCnt) return bCnt - aCnt;
+
+      // 5) heeft specialismen
       const aHasSpecs = Array.isArray(a.specialties) && a.specialties.length > 0;
       const bHasSpecs = Array.isArray(b.specialties) && b.specialties.length > 0;
       if (aHasSpecs !== bHasSpecs) return aHasSpecs ? -1 : 1;
 
-      // 3) alfabetisch (stabiel)
+      // 6) alfabetisch
       return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
     });
 
@@ -120,10 +132,7 @@ router.get("/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("publicRequests GET error:", error);
-    return res.status(500).json({
-      ok: false,
-      message: "Interne serverfout"
-    });
+    return res.status(500).json({ ok: false, message: "Interne serverfout" });
   }
 });
 
