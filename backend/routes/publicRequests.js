@@ -6,6 +6,8 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
+const FALLBACK_LIMIT = 10;
+
 /*
   POST /api/publicRequests
   - Fase 1: public request aanmaken
@@ -50,15 +52,9 @@ router.post("/", async (req, res) => {
 
 /*
   GET /api/publicRequests/:id
-  - Ophalen aanvraag + bedrijven
   - Prioriteit:
       1) zelfde stad
-      2) aanvullen met overige steden (zelfde categorie)
-  - Match:
-      * categorie via categories[] (array)
-      * specialismen:
-          - leeg -> meenemen
-          - gevuld -> matchen
+      2) fallback (begrensd) met melding
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -92,29 +88,33 @@ router.get("/:id", async (req, res) => {
       ]
     };
 
-    // 1) Eerst: zelfde stad
-    let companies = await Company.find({
+    // 1) Lokale resultaten
+    let localCompanies = await Company.find({
       ...baseFilter,
       city: city
     })
       .select("-password")
       .lean();
 
-    // 2) Aanvullen indien nodig
-    if (companies.length < 5) {
-      const excludeIds = companies.map(c => c._id);
-      const remaining = await Company.find({
+    let companies = [...localCompanies];
+    let noLocalResults = localCompanies.length === 0;
+
+    // 2) Fallback (begrensd)
+    if (noLocalResults) {
+      const fallback = await Company.find({
         ...baseFilter,
-        _id: { $nin: excludeIds }
+        city: { $ne: city }
       })
         .select("-password")
+        .limit(FALLBACK_LIMIT)
         .lean();
 
-      companies = companies.concat(remaining);
+      companies = fallback;
     }
 
     return res.json({
       ok: true,
+      noLocalResults,
       request: {
         _id: request._id,
         sector: category,
