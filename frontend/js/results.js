@@ -122,9 +122,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!res.ok) throw new Error(res.status);
 
-    const data = await res.json();
-    const companies = Array.isArray(data.companies) ? data.companies : [];
-    const request = data.request || {};
+   const data = await res.json();
+const companies = Array.isArray(data.companies) ? data.companies : [];
+const request = data.request || {};
+
+// 👇 HIER PLAATSEN
+const notice = document.getElementById("noLocalNotice");
+
+if (data.noLocalResults === true) {
+  notice.textContent =
+    `Geen ${request.sector.toLowerCase()} in ${request.city}. Hieronder tonen we ${request.sector.toLowerCase()} uit andere plaatsen.`;
+  notice.classList.remove("hidden");
+} else {
+  notice.classList.add("hidden");
+}
+
+// 👇 DAARNA pas: bestaande code die bedrijven toont
+
 
     if (subtitleEl) {
       subtitleEl.textContent =
