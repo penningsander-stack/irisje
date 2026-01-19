@@ -52,6 +52,9 @@ router.post("/", async (req, res) => {
   GET /api/publicRequests/:id
   - Ophalen aanvraag + bedrijven
   - LEIDEND: request.sector
+  - Specialismen:
+      * specialties leeg  -> meenemen
+      * specialties gevuld -> alleen matchende meenemen
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -65,7 +68,6 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // ✅ Consistent: sector is leidend, category is fallback
     const category = request.sector || request.category;
     const specialty = request.specialty;
 
@@ -78,8 +80,12 @@ router.get("/:id", async (req, res) => {
 
     const companies = await Company.find({
       category: category,
-      specialties: { $in: [specialty] },
-      isActive: true
+      isActive: true,
+      $or: [
+        { specialties: { $exists: false } },
+        { specialties: { $size: 0 } },
+        { specialties: { $in: [specialty] } }
+      ]
     })
       .select("-password")
       .lean();
