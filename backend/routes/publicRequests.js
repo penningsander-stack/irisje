@@ -7,6 +7,52 @@ const Request = require("../models/request");
 const Company = require("../models/company");
 
 /*
+  POST /api/publicRequests
+
+  Doel:
+  - Public request aanmaken (fase 1)
+  - Opslaan van: category, specialty, city
+  - requestId teruggeven
+*/
+router.post("/", async (req, res) => {
+  try {
+    const { sector, category, specialty, city } = req.body || {};
+
+    // Sta zowel 'sector' als 'category' toe (frontend gebruikt 'sector')
+    const finalCategory = category || sector || "";
+
+    if (!finalCategory || !specialty || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Categorie, specialisme en plaats zijn verplicht."
+      });
+    }
+
+    const created = await Request.create({
+      category: finalCategory,
+      specialty,
+      city
+    });
+
+    return res.status(201).json({
+      ok: true,
+      request: {
+        _id: created._id,
+        category: created.category,
+        specialty: created.specialty,
+        city: created.city
+      }
+    });
+  } catch (error) {
+    console.error("publicRequests POST error:", error);
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout bij aanmaken aanvraag"
+    });
+  }
+});
+
+/*
   GET /api/publicRequests/:id
 
   Doel:
@@ -19,7 +65,6 @@ const Company = require("../models/company");
   - company.category === request.category
   - request.specialty moet voorkomen in company.specialties[]
 */
-
 router.get("/:id", async (req, res) => {
   try {
     const requestId = req.params.id;
@@ -64,7 +109,7 @@ router.get("/:id", async (req, res) => {
       companies
     });
   } catch (error) {
-    console.error("publicRequests error:", error);
+    console.error("publicRequests GET error:", error);
     return res.status(500).json({
       ok: false,
       message: "Interne serverfout"
