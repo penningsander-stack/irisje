@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Aanvraag starten met VERPLICHT specialisme (hersteld)
+// Aanvraag starten (FASE 1) via /api/publicRequests — specialismen behouden
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -132,9 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const matches = PLACES.filter(p =>
-      p.toLowerCase().startsWith(query)
-    );
+    const matches = PLACES.filter(p => p.toLowerCase().startsWith(query));
 
     matches.forEach(place => {
       const item = document.createElement("div");
@@ -159,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --------------------
-  // Submit
+  // Submit — FASE 1
   // --------------------
   form.addEventListener("submit", async e => {
     e.preventDefault();
@@ -175,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch(
-        "https://irisje-backend.onrender.com/api/requests",
+        "https://irisje-backend.onrender.com/api/publicRequests",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -187,11 +185,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(res.status);
 
       const data = await res.json();
-      if (!data.requestId) throw new Error("Geen requestId");
+      const requestId = data?.request?._id || data?.requestId;
+      if (!requestId) throw new Error("Geen requestId ontvangen");
 
       window.location.href =
-        `/results.html?requestId=${encodeURIComponent(data.requestId)}`;
-
+        `/results.html?requestId=${encodeURIComponent(requestId)}`;
     } catch (err) {
       console.error(err);
       showError("Er ging iets mis bij het starten van je aanvraag.");
