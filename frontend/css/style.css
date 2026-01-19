@@ -203,3 +203,168 @@ footer {
   color: #6b7280;
   margin: 3rem 0 1.5rem;
 }
+<<<<<<< HEAD
+=======
+
+/* Input zelf iets rustiger en duidelijker */
+input[type="text"],
+input[type="search"] {
+  font-size: 16.5px;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+
+
+
+/* =========================================================
+   Irisje – Stap 1D (versterkt)
+   Plaatsnamen expliciet groter en beter leesbaar
+   ========================================================= */
+
+/* Plaatsen dropdown – items duidelijk groter */
+.place-suggestions li,
+.city-suggestions li,
+.autocomplete-list li {
+  font-size: 19px !important;
+  line-height: 1.5 !important;
+  padding: 16px 20px !important;
+  font-weight: 500;
+}
+
+/* Extra: eerste item iets meer ademruimte */
+.place-suggestions li:first-child,
+.city-suggestions li:first-child,
+.autocomplete-list li:first-child {
+  padding-top: 18px !important;
+}
+
+/* Hover duidelijker, maar rustig */
+.place-suggestions li:hover,
+.city-suggestions li:hover,
+.autocomplete-list li:hover {
+  background-color: #eef2f7;
+}
+
+/* Actief item (toetsenbord) */
+.place-suggestions li.active,
+.city-suggestions li.active,
+.autocomplete-list li.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+
+
+/* =========================================================
+   Irisje – Stap 1D (definitief)
+   Plaatsen in autocomplete groter en duidelijker
+   (request.html gebruikt: <div id="citySuggestions" class="autocomplete-list">
+   met <div class="autocomplete-item">)
+   ========================================================= */
+
+/* Dropdown container (blijft hetzelfde idee) */
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* JOUW ECHTE ITEMS: div.autocomplete-item (niet li) */
+.autocomplete-list .autocomplete-item {
+  padding: 16px 20px;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.autocomplete-list .autocomplete-item:hover,
+.autocomplete-list .autocomplete-item.active {
+  background-color: #eef2f7;
+}
+
+/* Actieve (toetsenbord) state iets duidelijker */
+.autocomplete-list .autocomplete-item.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* FIX voor “lijn door Plaats”: label krijgt een eigen achtergrondlaagje
+   (in jouw request-sectie staat een zachte indigo tint achter de content) */
+.card--large .form-group > label {
+  display: inline-block;
+  background: var(--irisje-surface); /* = #ffffff */
+  padding: 0 8px;
+  border-radius: 999px;
+}
+
+
+
+
+
+
+/* =========================================================
+   Irisje – Request (definitief)
+   1) Autocomplete plaatsenlijst: groter/duidelijker
+   2) FIX: geen “streep door Plaats”-label (geen pseudo-lijnen/border-trucs)
+   ========================================================= */
+
+/* Dropdown container */
+.autocomplete-list {
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  margin-top: 6px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+/* Items (request.html gebruikt: <div class="autocomplete-item">) */
+.autocomplete-list .autocomplete-item {
+  padding: 16px 20px;
+  font-size: 19px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.autocomplete-list .autocomplete-item:hover {
+  background-color: #eef2f7;
+}
+
+.autocomplete-list .autocomplete-item.active {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+/* FIX: label “Plaats” mag nooit een lijn “door zich heen” tonen
+   (geen ::before-maskers, geen border-top hacks). */
+.card--large .form-group label {
+  display: inline-flex;
+  align-items: center;
+
+  /* Matcht de subtiele sectietint achter de content (section::before) */
+  background: rgba(79, 70, 229, 0.04);
+
+  /* Net genoeg padding zodat alles achter het label afgedekt is */
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+
+  /* Houd je bestaande uppercase/letter-spacing uit je eerdere CSS intact */
+  line-height: 1.2;
+}
+>>>>>>> parent of d1252bd (Update style.css)
