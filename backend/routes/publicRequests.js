@@ -130,6 +130,61 @@ router.get("/:id", async (req, res) => {
 
     let companies = await Company.aggregate(pipeline);
 
+
+
+// Na: let companies = await Company.aggregate(pipeline);
+
+// 1) Bepaal lokale vs. niet-lokale bedrijven
+const localCompanies = companies.filter(c => c.city === city);
+const hasLocal = localCompanies.length > 0;
+
+// 2) Kies set: alleen lokaal als die er zijn, anders fallback (alles)
+let finalCompanies = hasLocal ? localCompanies : companies;
+
+// 3) Ranking toepassen op de gekozen set
+finalCompanies.sort((a, b) => {
+  // 1) bedrijven met reviews eerst
+  const aHasReviews = (a.reviewCount || 0) > 0;
+  const bHasReviews = (b.reviewCount || 0) > 0;
+  if (aHasReviews !== bHasReviews) return aHasReviews ? -1 : 1;
+
+  // 2) hoogste gemiddelde rating
+  const aRating = a.averageRating ?? -1;
+  const bRating = b.averageRating ?? -1;
+  if (aRating !== bRating) return bRating - aRating;
+
+  // 3) meeste reviews
+  const aCnt = a.reviewCount || 0;
+  const bCnt = b.reviewCount || 0;
+  if (aCnt !== bCnt) return bCnt - aCnt;
+
+  // 4) heeft specialismen
+  const aHasSpecs = Array.isArray(a.specialties) && a.specialties.length > 0;
+  const bHasSpecs = Array.isArray(b.specialties) && b.specialties.length > 0;
+  if (aHasSpecs !== bHasSpecs) return aHasSpecs ? -1 : 1;
+
+  // 5) alfabetisch
+  return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
+});
+
+// 4) Response (let op noLocalResults-flag)
+return res.json({
+  ok: true,
+  noLocalResults: !hasLocal,
+  request: {
+    _id: request._id,
+    sector: category,
+    specialty: request.specialty,
+    city: request.city
+  },
+  companies: finalCompanies
+});
+
+
+
+
+
+
     // Ranking (uitgebreid)
     companies.sort((a, b) => {
       // 1) zelfde stad eerst
