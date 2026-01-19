@@ -14,8 +14,6 @@ const Company = require("../models/company");
 router.post("/", async (req, res) => {
   try {
     const { sector, category, specialty, city } = req.body || {};
-
-    // sector is verplicht in het Request-model
     const finalSector = sector || category;
 
     if (!finalSector || !specialty || !city) {
@@ -53,6 +51,7 @@ router.post("/", async (req, res) => {
 /*
   GET /api/publicRequests/:id
   - Ophalen aanvraag + bedrijven
+  - LEIDEND: request.sector
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -66,7 +65,10 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const { category, specialty } = request;
+    // ✅ Consistent: sector is leidend, category is fallback
+    const category = request.sector || request.category;
+    const specialty = request.specialty;
+
     if (!category || !specialty) {
       return res.status(400).json({
         ok: false,
@@ -86,7 +88,7 @@ router.get("/:id", async (req, res) => {
       ok: true,
       request: {
         _id: request._id,
-        category: request.category,
+        sector: category,
         specialty: request.specialty,
         city: request.city
       },
