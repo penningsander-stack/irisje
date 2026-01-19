@@ -7,6 +7,48 @@ const Request = require("../models/request");
 const Company = require("../models/company");
 
 /*
+  POST /api/publicRequests
+  - Public aanvraag aanmaken
+  - Vereist: sector (of category), specialty, city
+*/
+router.post("/", async (req, res) => {
+  try {
+    const { sector, category, specialty, city } = req.body || {};
+    const finalSector = sector || category;
+
+    if (!finalSector || !specialty || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Sector, specialisme en plaats zijn verplicht."
+      });
+    }
+
+    const created = await Request.create({
+      sector: finalSector,
+      category: finalSector, // compatibiliteit
+      specialty,
+      city
+    });
+
+    return res.status(201).json({
+      ok: true,
+      request: {
+        _id: created._id,
+        sector: created.sector,
+        specialty: created.specialty,
+        city: created.city
+      }
+    });
+  } catch (error) {
+    console.error("publicRequests POST error:", error);
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout bij aanmaken aanvraag"
+    });
+  }
+});
+
+/*
   GET /api/publicRequests/:id
   - Alle matchende bedrijven
   - Reviews via aggregation ($lookup)
@@ -18,7 +60,10 @@ router.get("/:id", async (req, res) => {
 
     const request = await Request.findById(requestId).lean();
     if (!request) {
-      return res.status(404).json({ ok: false, message: "Aanvraag niet gevonden" });
+      return res.status(404).json({
+        ok: false,
+        message: "Aanvraag niet gevonden"
+      });
     }
 
     const category = request.sector || request.category;
@@ -33,7 +78,7 @@ router.get("/:id", async (req, res) => {
     }
 
     const pipeline = [
-      // Basis match (categorie + specialty, maar bedrijven zonder specialties niet uitsluiten)
+      // Basis match: categorie + specialty (bedrijven zonder specialties niet uitsluiten)
       {
         $match: {
           categories: { $in: [category] },
@@ -56,16 +101,12 @@ router.get("/:id", async (req, res) => {
                 isApproved: true
               }
             },
-            {
-              $project: {
-                rating: 1
-              }
-            }
+            { $project: { rating: 1 } }
           ],
           as: "reviews"
         }
       },
-      // Review-metrics berekenen
+      // Review-metrics
       {
         $addFields: {
           reviewCount: { $size: "$reviews" },
@@ -78,7 +119,7 @@ router.get("/:id", async (req, res) => {
           }
         }
       },
-      // Opruimen
+      // Opschonen
       {
         $project: {
           password: 0,
@@ -89,7 +130,7 @@ router.get("/:id", async (req, res) => {
 
     let companies = await Company.aggregate(pipeline);
 
-    // 🔽 Ranking (uitgebreid)
+    // Ranking (uitgebreid)
     companies.sort((a, b) => {
       // 1) zelfde stad eerst
       const aLocal = a.city === city;
@@ -132,7 +173,10 @@ router.get("/:id", async (req, res) => {
     });
   } catch (error) {
     console.error("publicRequests GET error:", error);
-    return res.status(500).json({ ok: false, message: "Interne serverfout" });
+    return res.status(500).json({
+      ok: false,
+      message: "Interne serverfout"
+    });
   }
 });
 
