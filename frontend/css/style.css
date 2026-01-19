@@ -1791,10 +1791,11 @@ input[type="search"] {
    (in jouw request-sectie staat een zachte indigo tint achter de content) */
 .card--large .form-group > label {
   display: inline-block;
-  background: rgba(79, 70, 229, 0.04);
+  background: var(--irisje-surface); /* = #ffffff */
   padding: 0 8px;
   border-radius: 999px;
 }
+
 
 
 
