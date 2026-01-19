@@ -1,5 +1,5 @@
 // frontend/js/request.js
-// Aanvraag starten met VERPLICHT specialisme (HTML-gedreven)
+// Aanvraag starten – specialisme tijdelijk uitgeschakeld (alleen categorie + plaats)
 
 document.addEventListener("DOMContentLoaded", () => {
   const PLACES = [
@@ -10,25 +10,11 @@ document.addEventListener("DOMContentLoaded", () => {
     "Burgh-Haamstede"
   ];
 
-  const SPECIALTIES_BY_SECTOR = {
-    advocaat: [
-      "Arbeidsrecht",
-      "Strafrecht",
-      "Letselschade",
-      "Familierecht",
-      "Huurrecht",
-      "Bestuursrecht",
-      "Ondernemingsrecht",
-      "Vastgoedrecht",
-      "Privacyrecht",
-      "Asielrecht",
-      "Vreemdelingenrecht"
-    ]
-  };
-
   const form = document.getElementById("requestForm");
   const categorySelect = document.getElementById("category");
 
+  // Specialisme-elementen blijven bestaan in HTML,
+  // maar worden functioneel niet meer gebruikt
   const specialtyOptions = document.getElementById("specialtyOptions");
   const specialtyOtherWrap = document.getElementById("specialtyOtherWrap");
   const specialtyOtherInput = document.getElementById("specialtyOther");
@@ -41,9 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (
     !form ||
     !categorySelect ||
-    !specialtyOptions ||
-    !specialtyOtherWrap ||
-    !specialtyOtherInput ||
     !cityInput ||
     !cityHidden ||
     !suggestionsBox ||
@@ -53,72 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  let selectedSpecialty = "";
-
   // --------------------
-  // Specialisme chips
+  // Specialisme UI verbergen (veilig)
   // --------------------
-  function renderSpecialties() {
-    const sector = normalize(categorySelect.value);
-    specialtyOptions.innerHTML = "";
-    specialtyOtherWrap.classList.add("hidden");
-    specialtyOtherInput.value = "";
-    selectedSpecialty = "";
-
-    if (!sector) return;
-
-    const list = SPECIALTIES_BY_SECTOR[sector] || [];
-
-    list.forEach(label => {
-      specialtyOptions.appendChild(createChip(label, false));
-    });
-
-    specialtyOptions.appendChild(createChip("Anders", true));
-  }
-
-  function createChip(label, isOther) {
-    const id = `spec_${Math.random().toString(16).slice(2)}`;
-
-    const wrapper = document.createElement("div");
-
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = "specialty";
-    input.id = id;
-    input.className = "sr-only";
-
-    const chip = document.createElement("label");
-    chip.setAttribute("for", id);
-    chip.className = "chip";
-    chip.textContent = label;
-
-    input.addEventListener("change", () => {
-      [...specialtyOptions.querySelectorAll(".chip")].forEach(c =>
-        c.classList.remove("chip--active")
-      );
-      chip.classList.add("chip--active");
-
-      if (isOther) {
-        specialtyOtherWrap.classList.remove("hidden");
-        selectedSpecialty = "";
-        setTimeout(() => specialtyOtherInput.focus(), 0);
-      } else {
-        specialtyOtherWrap.classList.add("hidden");
-        specialtyOtherInput.value = "";
-        selectedSpecialty = label;
-      }
-    });
-
-    wrapper.appendChild(input);
-    wrapper.appendChild(chip);
-    return wrapper;
-  }
-
-  specialtyOtherInput.addEventListener("input", () => {
-    selectedSpecialty = specialtyOtherInput.value.trim();
-  });
-
-  categorySelect.addEventListener("change", renderSpecialties);
+  if (specialtyOptions) specialtyOptions.innerHTML = "";
+  if (specialtyOtherWrap) specialtyOtherWrap.classList.add("hidden");
+  if (specialtyOtherInput) specialtyOtherInput.value = "";
 
   // --------------------
   // Plaats autocomplete
@@ -168,10 +91,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const sector = categorySelect.value.trim();
     const city = cityHidden.value.trim();
-    const specialty = selectedSpecialty.trim();
 
     if (!sector) return showError("Kies een categorie.");
-    if (!specialty) return showError("Kies een specialisme.");
     if (!city) return showError("Kies een plaats uit de lijst.");
 
     try {
@@ -181,7 +102,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
-          body: JSON.stringify({ sector, specialty, city })
+          body: JSON.stringify({ sector, city })
         }
       );
 
@@ -202,9 +123,5 @@ document.addEventListener("DOMContentLoaded", () => {
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.classList.remove("hidden");
-  }
-
-  function normalize(v) {
-    return String(v || "").toLowerCase().trim();
   }
 });
