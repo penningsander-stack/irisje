@@ -1,6 +1,65 @@
 // frontend/js/results.js
 // Resultatenpagina – stabiele selectie + profiel in modal + doorsturen naar request-send
 
+
+
+
+function renderStars(rating) {
+  if (typeof rating !== "number" || rating <= 0) return "";
+
+  const rounded = Math.round(rating * 2) / 2;
+  const fullStars = Math.floor(rounded);
+  const halfStar = rounded % 1 === 0.5;
+
+  let stars = "★".repeat(fullStars);
+  if (halfStar) stars += "½";
+  stars = stars.padEnd(5, "☆");
+
+  return `${stars} (${rounded.toString().replace(".", ",")})`;
+}
+
+
+
+function renderReviewBlock(company) {
+  const googleRating =
+    typeof company.avgRating === "number" ? company.avgRating : null;
+
+  const irisjeRating =
+    typeof company.averageRating === "number" ? company.averageRating : null;
+
+  const irisjeCount =
+    Number.isInteger(company.reviewCount) ? company.reviewCount : 0;
+
+  let html = `<div class="company-reviews text-sm text-gray-700 mt-2">`;
+
+  if (googleRating) {
+    html += `
+      <div class="google-reviews">
+        <strong>Google</strong>:
+        <span class="ml-1">${renderStars(googleRating)}</span>
+      </div>
+    `;
+  }
+
+  if (irisjeRating && irisjeCount > 0) {
+    html += `
+      <div class="irisje-reviews mt-1">
+        <strong>Irisje</strong>:
+        <span class="ml-1">${renderStars(irisjeRating)}</span>
+        <span class="text-gray-500 ml-1">(${irisjeCount})</span>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+
+
+
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
   const requestId = params.get("requestId");
@@ -197,6 +256,13 @@ if (data.noLocalResults === true) {
                   data-company-name="${companyName}"
                 >${companyName}</a>
               </h3>
+
+
+${renderReviewBlock(company)}
+
+
+
+
               ${badge}
             </div>
             <div class="company-city">${companyCity}</div>
