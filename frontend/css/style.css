@@ -1,5 +1,5 @@
 /* =========================
-   BASIS & TYPOGRAFIE
+   RESET / BASIS
 ========================= */
 
 *,
@@ -15,89 +15,60 @@ html, body {
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f4f6fb;
+  background: #f5f7fb;
   color: #1f2937;
   line-height: 1.6;
 }
 
 /* =========================
-   CONTAINER & CARD
+   ALGEMENE ELEMENTEN
 ========================= */
 
-.container {
-  max-width: 760px;
-  margin: 3.5rem auto;
-  padding: 0 1.5rem;
-}
-
-.card {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 2.75rem 2.75rem 3rem;
-  box-shadow:
-    0 8px 24px rgba(15, 23, 42, 0.08),
-    0 1px 2px rgba(15, 23, 42, 0.06);
-}
-
-/* =========================
-   TITELS & TEKST
-========================= */
-
-h1 {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin: 0 0 0.75rem;
-  color: #0f172a;
-}
-
-h2 {
-  font-size: 1.25rem;
+h1, h2, h3 {
   font-weight: 600;
   margin: 0 0 1rem;
 }
 
 p {
-  margin: 0 0 1.5rem;
-  color: #475569;
+  margin: 0 0 1rem;
+  color: #4b5563;
+}
+
+/* =========================
+   CONTAINER / CARD
+========================= */
+
+.container {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 0 1.25rem;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
 
 /* =========================
    FORM STRUCTUUR
 ========================= */
 
-form {
-  margin-top: 2rem;
-}
-
 .form-group {
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
   position: relative;
 }
 
-/* ❗ DEFINITIEVE FIX TEGEN STREPEN */
-fieldset,
-legend {
-  border: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-legend {
-  display: none !important;
-}
-
-/* =========================
-   LABELS
-========================= */
-
+/* ❗ LABEL — hier zat de bug */
 label {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  color: #334155;
-  margin-bottom: 0.45rem;
+  color: #374151;
+  margin-bottom: 0.4rem;
 
+  /* harde fix tegen lijnen */
   border: none !important;
   box-shadow: none !important;
   background: transparent !important;
@@ -110,62 +81,50 @@ label::after {
 }
 
 /* =========================
-   INPUTS & TEXTAREA
+   INPUTS / TEXTAREA
 ========================= */
 
 input,
 textarea {
   width: 100%;
-  padding: 0.85rem 0.95rem;
+  padding: 0.75rem 0.9rem;
   font-size: 1rem;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
   background: #ffffff;
   outline: none;
-
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #94a3b8;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input:focus,
 textarea:focus {
   border-color: #2563eb;
-  background: #ffffff;
-  box-shadow:
-    0 0 0 3px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 /* =========================
-   AUTOCOMPLETE PLAATSEN
+   AUTOCOMPLETE PLAATSENLIJST
 ========================= */
 
 .autocomplete-list {
   position: absolute;
-  top: calc(100% + 6px);
+  top: 100%;
   left: 0;
   right: 0;
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow:
-    0 16px 40px rgba(15, 23, 42, 0.14),
-    0 2px 6px rgba(15, 23, 42, 0.08);
-  z-index: 100;
+  border-radius: 10px;
+  margin-top: 0.4rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  z-index: 50;
   overflow: hidden;
 }
 
 .autocomplete-item {
   padding: 0.75rem 1rem;
-  font-size: 1.05rem;
+  font-size: 1.05rem;          /* groter en duidelijk */
   font-weight: 500;
-  color: #0f172a;
   cursor: pointer;
+  color: #111827;
   background: #ffffff;
 }
 
@@ -179,38 +138,43 @@ textarea:focus {
 
 button {
   width: 100%;
-  padding: 0.95rem;
-  border-radius: 14px;
+  padding: 0.9rem;
+  border-radius: 12px;
   border: none;
   font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
   cursor: pointer;
-
-  background: linear-gradient(
-    180deg,
-    #2563eb,
-    #1e40af
-  );
+  background: #2563eb;
   color: #ffffff;
-
-  box-shadow:
-    0 6px 18px rgba(37, 99, 235, 0.35);
-
-  transition:
-    transform 0.05s ease,
-    box-shadow 0.15s ease,
-    filter 0.15s ease;
+  transition: background 0.2s ease, transform 0.05s ease;
 }
 
 button:hover {
-  filter: brightness(1.05);
-  box-shadow:
-    0 8px 22px rgba(37, 99, 235, 0.45);
+  background: #1e40af;
 }
 
 button:active {
   transform: translateY(1px);
+}
+
+/* =========================
+   STAPPEN / TITELS (belangrijk)
+========================= */
+
+.step-title,
+.step,
+.step-label {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.step-title::before,
+.step-title::after,
+.step::before,
+.step::after {
+  content: none !important;
+  display: none !important;
 }
 
 /* =========================
@@ -222,11 +186,11 @@ button:active {
 }
 
 .success h1 {
-  margin-bottom: 0.75rem;
+  color: #111827;
 }
 
 .success p {
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 /* =========================
@@ -236,6 +200,6 @@ button:active {
 footer {
   text-align: center;
   font-size: 0.85rem;
-  color: #64748b;
+  color: #6b7280;
   margin: 3rem 0 1.5rem;
 }
