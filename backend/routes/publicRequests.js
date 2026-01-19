@@ -51,10 +51,12 @@ router.post("/", async (req, res) => {
 /*
   GET /api/publicRequests/:id
   - Ophalen aanvraag + bedrijven
-  - LEIDEND: request.sector
-  - Specialismen:
-      * specialties leeg  -> meenemen
-      * specialties gevuld -> alleen matchende meenemen
+  - Match:
+      * categorie via categories[] (array)
+      * specialismen:
+          - leeg -> meenemen
+          - gevuld -> matchen
+  - isActive tijdelijk losgelaten (Google Places imports)
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -79,8 +81,7 @@ router.get("/:id", async (req, res) => {
     }
 
     const companies = await Company.find({
-      category: category,
-      isActive: true,
+      categories: { $in: [category] },
       $or: [
         { specialties: { $exists: false } },
         { specialties: { $size: 0 } },
