@@ -3,7 +3,6 @@
 
 
 
->
 function renderStars(rating) {
   if (typeof rating !== "number" || rating <= 0) return "";
 
