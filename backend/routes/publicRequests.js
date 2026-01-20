@@ -58,6 +58,55 @@ router.get("/:id", async (req, res) => {
   try {
     const requestId = req.params.id;
 
+
+
+// =========================
+// SORTERING – DEFINITIEF
+// =========================
+
+const reqCity = (request.city || "").toLowerCase();
+
+companies.sort((a, b) => {
+  // 1) Plaatsmatch (zelfde plaats eerst)
+  const aLocal = (a.city || "").toLowerCase() === reqCity ? 1 : 0;
+  const bLocal = (b.city || "").toLowerCase() === reqCity ? 1 : 0;
+  if (aLocal !== bLocal) return bLocal - aLocal;
+
+  // 2) Irisje-reviews (zwaarder dan Google)
+  const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0 ? 1 : 0;
+  const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0 ? 1 : 0;
+  if (aHasIrisje !== bHasIrisje) return bHasIrisje - aHasIrisje;
+
+  if (aHasIrisje && bHasIrisje) {
+    if (b.averageRating !== a.averageRating)
+      return b.averageRating - a.averageRating;
+    if ((b.reviewCount || 0) !== (a.reviewCount || 0))
+      return (b.reviewCount || 0) - (a.reviewCount || 0);
+  }
+
+  // 3) Google-reviews
+  const aHasGoogle = Number.isFinite(a.avgRating) ? 1 : 0;
+  const bHasGoogle = Number.isFinite(b.avgRating) ? 1 : 0;
+  if (aHasGoogle !== bHasGoogle) return bHasGoogle - aHasGoogle;
+
+  if (aHasGoogle && bHasGoogle) {
+    if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
+  }
+
+  // 4) Verificatie
+  const aVer = a.isVerified ? 1 : 0;
+  const bVer = b.isVerified ? 1 : 0;
+  if (aVer !== bVer) return bVer - aVer;
+
+  // 5) Stabiele fallback: naam A–Z
+  return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
+});
+
+
+
+
+
+
     const request = await Request.findById(requestId).lean();
     if (!request) {
       return res.status(404).json({
