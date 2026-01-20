@@ -1,16 +1,32 @@
-<!-- // frontend/results.html -->
+<!-- frontend/results.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
   <title>Geschikte bedrijven – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <link rel="stylesheet" href="/css/style.css" />
 
   <style>
-    body { padding-bottom: 110px; } /* ruimte voor vaste footer */
+    body {
+      padding-bottom: 110px; /* ruimte voor vaste footer */
+    }
 
-    /* Modal (inline, geen CSS-bestand wijziging) */
+    /* embed-gedrag */
+    .embed-mode .hide-in-embed {
+      display: none !important;
+    }
+
+    /* simpele utility-classes (geen Tailwind afhankelijkheid) */
+    .hidden { display: none; }
+    .text-sm { font-size: 14px; }
+    .text-gray-600 { color: #4b5563; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+
+    /* Modal */
     .irisje-modal-overlay {
       position: fixed;
       inset: 0;
@@ -19,6 +35,7 @@
       display: none;
       padding: 18px;
     }
+
     .irisje-modal {
       width: min(980px, 100%);
       height: min(86vh, 860px);
@@ -30,6 +47,7 @@
       flex-direction: column;
       box-shadow: 0 20px 60px rgba(0,0,0,0.35);
     }
+
     .irisje-modal-header {
       display: flex;
       align-items: center;
@@ -39,16 +57,18 @@
       border-bottom: 1px solid #e5e7eb;
       background: #fff;
     }
+
     .irisje-modal-title {
       font-size: 14px;
       font-weight: 600;
       margin: 0;
     }
+
     .irisje-modal-actions {
       display: flex;
       gap: 8px;
-      align-items: center;
     }
+
     .irisje-modal-btn {
       border: 1px solid #e5e7eb;
       background: #fff;
@@ -56,37 +76,44 @@
       padding: 8px 10px;
       font-size: 13px;
       cursor: pointer;
-      line-height: 1;
     }
-    .irisje-modal-btn:hover { background: #f9fafb; }
+
+    .irisje-modal-btn:hover {
+      background: #f9fafb;
+    }
+
     .irisje-modal-body {
       flex: 1;
-      background: #fff;
     }
+
     .irisje-modal-iframe {
       width: 100%;
       height: 100%;
       border: 0;
-      display: block;
     }
   </style>
 </head>
 
 <body class="irisje-body min-h-screen">
 
- <!-- HEADER -->
-<header class="irisje-header hide-in-embed">
-  <div class="irisje-container irisje-header-inner">
-    <a href="/" class="irisje-logo">Irisje.nl</a>
-  </div>
-</header>
+  <!-- embed-detectie -->
+  <script>
+    if (new URLSearchParams(window.location.search).get("embed") === "1") {
+      document.documentElement.classList.add("embed-mode");
+    }
+  </script>
 
+  <!-- HEADER -->
+  <header class="irisje-header hide-in-embed">
+    <div class="irisje-container irisje-header-inner">
+      <a href="/" class="irisje-logo">Irisje.nl</a>
+    </div>
+  </header>
 
   <main>
     <section class="irisje-section">
       <div class="irisje-container">
 
-        <!-- SINGLE PREMIUM CARD -->
         <section class="card card--large">
 
           <header class="mb-4">
@@ -94,25 +121,19 @@
             <p id="resultsSubtitle" class="muted"></p>
           </header>
 
+          <div id="noLocalNotice" class="hidden text-sm text-gray-600 mb-4"></div>
 
-
-<div id="noLocalNotice" class="hidden text-sm text-gray-600 mb-4"></div>
-
-<p class="text-sm text-gray-600 mb-2">
-  <strong>Beste match</strong> is gebaseerd op hoe goed een bedrijf past bij jouw aanvraag, reviews en locatie.
-</p>
-
-
-
+          <p class="text-sm text-gray-600 mb-2">
+            <strong>Beste match</strong> is gebaseerd op hoe goed een bedrijf past bij jouw aanvraag,
+            reviews en locatie.
+          </p>
 
           <p class="muted mb-6">
             Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
           </p>
 
-          <!-- STATUS (laden / geen resultaten) -->
           <div id="resultsState" class="results-state mb-6"></div>
 
-          <!-- RESULTATEN -->
           <div id="companiesList" class="results-container"></div>
 
         </section>
@@ -121,7 +142,7 @@
     </section>
   </main>
 
-  <!-- SELECTIE FOOTER (STICKY) -->
+  <!-- SELECTIE FOOTER -->
   <footer
     id="resultsFooter"
     class="results-footer hidden"
@@ -160,7 +181,7 @@
   </footer>
 
   <!-- SITE FOOTER -->
-  <footer class="site-footer">
+  <footer class="site-footer hide-in-embed">
     <div class="irisje-container">
       © Irisje.nl
     </div>
@@ -168,39 +189,18 @@
 
   <script src="/js/results.js"></script>
 
-  <div id="stickySubmitBar" style="
-    position: fixed;
-    inset: auto 0 0 0;
-    background: #ffffff;
-    border-top: 1px solid #e5e7eb;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: center;
-    z-index: 2147483647;
-    pointer-events: none;
-  ">
-    <button
-      id="stickySubmitBtn"
-      type="button"
-      class="btn-primary"
-      style="max-width: 480px; width: 100%; pointer-events: auto;"
-    >
-      Aanvraag verzenden
-    </button>
-  </div>
-
   <!-- PROFIEL MODAL -->
   <div id="companyModalOverlay" class="irisje-modal-overlay" aria-hidden="true">
-    <div class="irisje-modal" role="dialog" aria-modal="true" aria-label="Bedrijfsprofiel">
+    <div class="irisje-modal" role="dialog" aria-modal="true">
       <div class="irisje-modal-header">
         <p id="companyModalTitle" class="irisje-modal-title">Bedrijfsprofiel</p>
         <div class="irisje-modal-actions">
-          <button id="companyModalOpenNewTab" class="irisje-modal-btn" type="button">Open in nieuw tabblad</button>
-          <button id="companyModalClose" class="irisje-modal-btn" type="button">Sluiten</button>
+          <button id="companyModalOpenNewTab" class="irisje-modal-btn">Open in nieuw tabblad</button>
+          <button id="companyModalClose" class="irisje-modal-btn">Sluiten</button>
         </div>
       </div>
       <div class="irisje-modal-body">
-        <iframe id="companyModalFrame" class="irisje-modal-iframe" title="Bedrijfsprofiel"></iframe>
+        <iframe id="companyModalFrame" class="irisje-modal-iframe"></iframe>
       </div>
     </div>
   </div>
