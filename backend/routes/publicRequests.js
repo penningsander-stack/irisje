@@ -174,6 +174,33 @@ router.get("/:id", async (req, res) => {
       });
     });
 
+
+
+
+// =========================
+// TEMP LOGGING – RANKING
+// =========================
+console.log("=== RANKING RESULT (TOP 5) ===");
+finalCompanies.slice(0, 5).forEach((c, i) => {
+  console.log(
+    `#${i + 1}`,
+    {
+      name: c.name,
+      city: c.city,
+      irisjeAvg: c.averageRating,
+      irisjeCount: c.reviewCount,
+      googleAvg: c.avgRating,
+      verified: c.isVerified
+    }
+  );
+});
+
+
+
+
+
+
+
     // -------------------------
     // Response
     // -------------------------
