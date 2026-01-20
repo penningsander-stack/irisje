@@ -1724,3 +1724,22 @@ a {
   height: auto;
   overflow-x: hidden;
 }
+
+
+
+
+/* =========================
+   EMBED-MODUS (company modal)
+   ========================= */
+
+.embed-mode .hide-in-embed {
+  display: none !important;
+}
+
+.embed-mode body {
+  padding-top: 0;
+}
+
+.embed-mode .company-container {
+  margin-top: 0;
+}
