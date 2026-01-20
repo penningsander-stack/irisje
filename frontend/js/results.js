@@ -3,7 +3,7 @@
 
 
 
-
+>
 function renderStars(rating) {
   if (typeof rating !== "number" || rating <= 0) return "";
 
@@ -19,7 +19,6 @@ function renderStars(rating) {
 }
 
 
-
 function renderReviewBlock(company) {
   const googleRating =
     typeof company.avgRating === "number" ? company.avgRating : null;
@@ -30,23 +29,25 @@ function renderReviewBlock(company) {
   const irisjeCount =
     Number.isInteger(company.reviewCount) ? company.reviewCount : 0;
 
-  let html = `<div class="company-reviews text-sm text-gray-700 mt-2">`;
+  let html = `
+    <div class="company-reviews mt-1 flex flex-col gap-0.5 text-sm">
+  `;
 
   if (googleRating) {
     html += `
-      <div class="google-reviews">
-        <strong>Google</strong>:
-        <span class="ml-1">${renderStars(googleRating)}</span>
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500">Google</span>
+        <span class="text-yellow-500">${renderStars(googleRating)}</span>
       </div>
     `;
   }
 
   if (irisjeRating && irisjeCount > 0) {
     html += `
-      <div class="irisje-reviews mt-1">
-        <strong>Irisje</strong>:
-        <span class="ml-1">${renderStars(irisjeRating)}</span>
-        <span class="text-gray-500 ml-1">(${irisjeCount})</span>
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500">Irisje</span>
+        <span class="text-yellow-500">${renderStars(irisjeRating)}</span>
+        <span class="text-gray-400 text-xs">(${irisjeCount})</span>
       </div>
     `;
   }
@@ -54,6 +55,7 @@ function renderReviewBlock(company) {
   html += `</div>`;
   return html;
 }
+
 
 
 
@@ -248,14 +250,15 @@ if (data.noLocalResults === true) {
           />
           <div class="company-info">
             <div class="company-header">
-              <h3>
-                <a
-                  href="${profileUrl}"
-                  class="company-profile-link"
-                  data-profile-url="${profileUrl}"
-                  data-company-name="${companyName}"
-                >${companyName}</a>
-              </h3>
+              <h3 class="company-name block">
+  <a
+    href="${profileUrl}"
+    class="company-profile-link"
+    data-profile-url="${profileUrl}"
+    data-company-name="${companyName}"
+  >${companyName}</a>
+</h3>
+
 
 
 ${renderReviewBlock(company)}
