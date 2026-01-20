@@ -1743,3 +1743,18 @@ a {
 .embed-mode .company-container {
   margin-top: 0;
 }
+
+
+
+
+/* =========================
+   EMBED MODE (iframe)
+   ========================= */
+
+.embed-mode .hide-in-embed {
+  display: none !important;
+}
+
+.embed-mode body {
+  background: transparent;
+}
