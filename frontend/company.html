@@ -11,6 +11,18 @@
 
 <body class="irisje-body">
 
+
+
+<script>
+  const isEmbed = new URLSearchParams(window.location.search).get("embed") === "1";
+  if (isEmbed) document.documentElement.classList.add("embed-mode");
+</script>
+
+
+
+
+
+
   <!-- HEADER -->
   <header class="irisje-header sticky top-0 z-40">
     <div class="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 lg:py-4">

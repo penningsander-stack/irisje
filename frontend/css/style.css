@@ -1681,3 +1681,46 @@ a {
   border-radius: 4px;
   margin-bottom: 2px;
 }
+
+
+
+
+/* =========================
+   EMBED MODUS (modal)
+   ========================= */
+
+.embed-mode body {
+  margin: 0;
+  background: #fff;
+}
+
+.embed-mode header,
+.embed-mode footer,
+.embed-mode .site-header,
+.embed-mode .site-footer {
+  display: none !important;
+}
+
+/* container compacter */
+.embed-mode .container,
+.embed-mode .page-container,
+.embed-mode main {
+  padding: 16px !important;
+  max-width: 100% !important;
+}
+
+/* kaarten niet “zweven” */
+.embed-mode .card,
+.embed-mode .company-card {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+
+
+
+.embed-mode html,
+.embed-mode body {
+  height: auto;
+  overflow-x: hidden;
+}

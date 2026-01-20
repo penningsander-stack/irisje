@@ -247,9 +247,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const card = document.createElement("div");
       card.className = "result-card";
 
-      const profileUrl = `/company.html?slug=${encodeURIComponent(
-        company.slug || ""
-      )}`;
+      const profileUrl = `/company.html?slug=${encodeURIComponent(company.slug || "")}&embed=1`;
+
 
       card.innerHTML = `
         <label class="company-select">
