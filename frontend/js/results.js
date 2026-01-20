@@ -195,6 +195,50 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "Resultaten konden niet worden geladen.";
   }
 
+
+
+/**
+ * SORTERING & "BESTE MATCH" – BELANGRIJK
+ *
+ * De badge "Beste match" wordt toegekend aan het EERSTE bedrijf
+ * in de gesorteerde resultatenlijst (index === 0).
+ *
+ * De sortering wordt al VÓÓR deze functie bepaald.
+ * Deze functie GAAT UIT van correcte volgorde en wijzigt die NIET.
+ *
+ * Verwachte sorteervolgorde (NIET wijzigen zonder expliciet akkoord):
+ *
+ * 1. Plaatsmatch
+ *    - Bedrijven in exact dezelfde plaats als de aanvraag eerst.
+ *    - Alleen als er 0 lokale resultaten zijn, wordt fallback gebruikt.
+ *
+ * 2. Reviews aanwezig
+ *    - Bedrijven met reviews boven bedrijven zonder reviews.
+ *    - Geldt voor Google- en Irisje-reviews.
+ *
+ * 3. Gemiddelde rating (aflopend)
+ *    - Eerst Irisje averageRating (indien aanwezig),
+ *      anders Google avgRating.
+ *    - Ruwe numerieke waarde telt (geen afronding).
+ *
+ * 4. Aantal reviews (aflopend)
+ *
+ * 5. Verificatiestatus
+ *    - isVerified = true boven false.
+ *
+ * 6. Stabiele fallback
+ *    - Alphabetisch op bedrijfsnaam (A–Z).
+ *
+ * ⚠️ Let op:
+ * - Deze functie gebruikt index === 0 voor "Beste match".
+ * - Wijzigingen hier kunnen direct UI- en rankinggedrag breken.
+ */
+
+
+
+
+
+
   function renderCompanies(companies) {
     listEl.innerHTML = "";
     updateSelectionUI();
