@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     listEl.innerHTML = "";
     updateSelectionUI();
 
-    companies.forEach((company) => {
+    companies.forEach((company, index) => {
       const card = document.createElement("div");
       card.className = "result-card";
 
@@ -216,13 +216,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="company-info">
             <div class="company-header">
               <h3 class="company-name block">
-                <a href="${profileUrl}"
-                   class="company-profile-link"
-                   data-profile-url="${profileUrl}"
-                   data-company-name="${escapeHtml(company.name)}">
-                  ${escapeHtml(company.name)}
-                </a>
-              </h3>
+  ${index === 0 ? `<span class="best-match-badge">Beste match</span>` : ""}
+  <a href="${profileUrl}"
+     class="company-profile-link"
+     data-profile-url="${profileUrl}"
+     data-company-name="${escapeHtml(company.name)}">
+    ${escapeHtml(company.name)}
+  </a>
+</h3>
+
               ${renderReviewBlock(company)}
             </div>
             <div class="company-city">${escapeHtml(company.city)}</div>
