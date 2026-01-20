@@ -1,5 +1,3 @@
-// backend/routes/publicRequests.js
-
 const express = require("express");
 const router = express.Router();
 
@@ -9,7 +7,6 @@ const Company = require("../models/company");
 /*
   POST /api/publicRequests
   - Public aanvraag aanmaken
-  - Vereist: sector (of category), specialty, city
 */
 router.post("/", async (req, res) => {
   try {
@@ -25,7 +22,7 @@ router.post("/", async (req, res) => {
 
     const created = await Request.create({
       sector: finalSector,
-      category: finalSector, // compatibiliteit
+      category: finalSector,
       specialty,
       city
     });
@@ -50,62 +47,13 @@ router.post("/", async (req, res) => {
 
 /*
   GET /api/publicRequests/:id
-  - Alle matchende bedrijven
-  - Reviews via aggregation ($lookup)
-  - Ranking uitgebreid (O2A)
+  - Bedrijven ophalen
+  - Reviews via aggregation
+  - ÉÉN centrale sortering (definitief)
 */
 router.get("/:id", async (req, res) => {
   try {
     const requestId = req.params.id;
-
-
-
-// =========================
-// SORTERING – DEFINITIEF
-// =========================
-
-const reqCity = (request.city || "").toLowerCase();
-
-companies.sort((a, b) => {
-  // 1) Plaatsmatch (zelfde plaats eerst)
-  const aLocal = (a.city || "").toLowerCase() === reqCity ? 1 : 0;
-  const bLocal = (b.city || "").toLowerCase() === reqCity ? 1 : 0;
-  if (aLocal !== bLocal) return bLocal - aLocal;
-
-  // 2) Irisje-reviews (zwaarder dan Google)
-  const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0 ? 1 : 0;
-  const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0 ? 1 : 0;
-  if (aHasIrisje !== bHasIrisje) return bHasIrisje - aHasIrisje;
-
-  if (aHasIrisje && bHasIrisje) {
-    if (b.averageRating !== a.averageRating)
-      return b.averageRating - a.averageRating;
-    if ((b.reviewCount || 0) !== (a.reviewCount || 0))
-      return (b.reviewCount || 0) - (a.reviewCount || 0);
-  }
-
-  // 3) Google-reviews
-  const aHasGoogle = Number.isFinite(a.avgRating) ? 1 : 0;
-  const bHasGoogle = Number.isFinite(b.avgRating) ? 1 : 0;
-  if (aHasGoogle !== bHasGoogle) return bHasGoogle - aHasGoogle;
-
-  if (aHasGoogle && bHasGoogle) {
-    if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
-  }
-
-  // 4) Verificatie
-  const aVer = a.isVerified ? 1 : 0;
-  const bVer = b.isVerified ? 1 : 0;
-  if (aVer !== bVer) return bVer - aVer;
-
-  // 5) Stabiele fallback: naam A–Z
-  return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
-});
-
-
-
-
-
 
     const request = await Request.findById(requestId).lean();
     if (!request) {
@@ -126,8 +74,10 @@ companies.sort((a, b) => {
       });
     }
 
+    // -------------------------
+    // Aggregation: bedrijven + reviews
+    // -------------------------
     const pipeline = [
-      // Basis match: categorie + specialty (bedrijven zonder specialties niet uitsluiten)
       {
         $match: {
           categories: { $in: [category] },
@@ -138,7 +88,6 @@ companies.sort((a, b) => {
           ]
         }
       },
-      // Reviews ophalen (alleen goedgekeurd)
       {
         $lookup: {
           from: "reviews",
@@ -155,7 +104,6 @@ companies.sort((a, b) => {
           as: "reviews"
         }
       },
-      // Review-metrics
       {
         $addFields: {
           reviewCount: { $size: "$reviews" },
@@ -168,121 +116,84 @@ companies.sort((a, b) => {
           }
         }
       },
-      // Opschonen
       {
         $project: {
-          password: 0,
-          reviews: 0
+          reviews: 0,
+          password: 0
         }
       }
     ];
 
-    let companies = await Company.aggregate(pipeline);
+    const companies = await Company.aggregate(pipeline);
 
+    // -------------------------
+    // Plaats-fallback
+    // -------------------------
+    const reqCity = city.trim().toLowerCase();
+    const localCompanies = companies.filter(
+      c => (c.city || "").trim().toLowerCase() === reqCity
+    );
 
+    const hasLocal = localCompanies.length > 0;
+    const finalCompanies = hasLocal ? localCompanies : companies;
 
-// Na: let companies = await Company.aggregate(pipeline);
+    // -------------------------
+    // DEFINITIEVE SORTERING
+    // -------------------------
+    finalCompanies.sort((a, b) => {
+      // 1) Irisje reviews
+      const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0;
+      const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0;
+      if (aHasIrisje !== bHasIrisje) return aHasIrisje ? -1 : 1;
 
-// 1) Bepaal lokale vs. niet-lokale bedrijven
-const localCompanies = companies.filter(c => c.city === city);
-const hasLocal = localCompanies.length > 0;
+      if (aHasIrisje && bHasIrisje) {
+        if (b.averageRating !== a.averageRating)
+          return b.averageRating - a.averageRating;
+        if ((b.reviewCount || 0) !== (a.reviewCount || 0))
+          return (b.reviewCount || 0) - (a.reviewCount || 0);
+      }
 
-// 2) Kies set: alleen lokaal als die er zijn, anders fallback (alles)
-let finalCompanies = hasLocal ? localCompanies : companies;
+      // 2) Google reviews
+      const aHasGoogle = Number.isFinite(a.avgRating);
+      const bHasGoogle = Number.isFinite(b.avgRating);
+      if (aHasGoogle !== bHasGoogle) return aHasGoogle ? -1 : 1;
 
-// 3) Ranking toepassen op de gekozen set
-finalCompanies.sort((a, b) => {
-  // 1) bedrijven met reviews eerst
-  const aHasReviews = (a.reviewCount || 0) > 0;
-  const bHasReviews = (b.reviewCount || 0) > 0;
-  if (aHasReviews !== bHasReviews) return aHasReviews ? -1 : 1;
+      if (aHasGoogle && bHasGoogle) {
+        if (b.avgRating !== a.avgRating)
+          return b.avgRating - a.avgRating;
+      }
 
-  // 2) hoogste gemiddelde rating
-  const aRating = a.averageRating ?? -1;
-  const bRating = b.averageRating ?? -1;
-  if (aRating !== bRating) return bRating - aRating;
+      // 3) Verificatie
+      const aVer = a.isVerified ? 1 : 0;
+      const bVer = b.isVerified ? 1 : 0;
+      if (aVer !== bVer) return bVer - aVer;
 
-  // 3) meeste reviews
-  const aCnt = a.reviewCount || 0;
-  const bCnt = b.reviewCount || 0;
-  if (aCnt !== bCnt) return bCnt - aCnt;
-
-  // 4) heeft specialismen
-  const aHasSpecs = Array.isArray(a.specialties) && a.specialties.length > 0;
-  const bHasSpecs = Array.isArray(b.specialties) && b.specialties.length > 0;
-  if (aHasSpecs !== bHasSpecs) return aHasSpecs ? -1 : 1;
-
-  // 5) alfabetisch
-  return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
-});
-
-// 4) Response (let op noLocalResults-flag)
-return res.json({
-  ok: true,
-  noLocalResults: !hasLocal,
-  request: {
-    _id: request._id,
-    sector: category,
-    specialty: request.specialty,
-    city: request.city
-  },
-  companies: finalCompanies
-});
-
-
-
-
-
-
-    // Ranking (uitgebreid)
-    companies.sort((a, b) => {
-      // 1) zelfde stad eerst
-      const aLocal = a.city === city;
-      const bLocal = b.city === city;
-      if (aLocal !== bLocal) return aLocal ? -1 : 1;
-
-      // 2) bedrijven met reviews eerst
-      const aHasReviews = (a.reviewCount || 0) > 0;
-      const bHasReviews = (b.reviewCount || 0) > 0;
-      if (aHasReviews !== bHasReviews) return aHasReviews ? -1 : 1;
-
-      // 3) hoogste gemiddelde rating
-      const aRating = a.averageRating ?? -1;
-      const bRating = b.averageRating ?? -1;
-      if (aRating !== bRating) return bRating - aRating;
-
-      // 4) meeste reviews
-      const aCnt = a.reviewCount || 0;
-      const bCnt = b.reviewCount || 0;
-      if (aCnt !== bCnt) return bCnt - aCnt;
-
-      // 5) heeft specialismen
-      const aHasSpecs = Array.isArray(a.specialties) && a.specialties.length > 0;
-      const bHasSpecs = Array.isArray(b.specialties) && b.specialties.length > 0;
-      if (aHasSpecs !== bHasSpecs) return aHasSpecs ? -1 : 1;
-
-      // 6) alfabetisch
-      return (a.name || "").localeCompare(b.name || "", "nl", { sensitivity: "base" });
+      // 4) Stabiele fallback
+      return (a.name || "").localeCompare(b.name || "", "nl", {
+        sensitivity: "base"
+      });
     });
 
+    // -------------------------
+    // Response
+    // -------------------------
     return res.json({
       ok: true,
+      noLocalResults: !hasLocal,
       request: {
         _id: request._id,
         sector: category,
         specialty: request.specialty,
         city: request.city
       },
-      companies
+      companies: finalCompanies
     });
   } catch (error) {
     console.error("publicRequests GET error:", error);
     return res.status(500).json({
-  ok: false,
-  error: error.message,
-  stack: error.stack
-});
-
+      ok: false,
+      error: error.message
+    });
   }
 });
 
