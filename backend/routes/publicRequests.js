@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Request = require("../models/Request");
-const Company = require("../models/Company");
+const Request = require("../models/request");
+const Company = require("../models/company");
 
 /*
   POST /api/publicRequests
