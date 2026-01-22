@@ -83,7 +83,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
   const subtitleEl = document.getElementById("resultsSubtitle");
-  const stickySubmitBtn = document.getElementById("stickySubmitBtn");
 
   const modalOverlay = document.getElementById("companyModalOverlay");
   const modalCloseBtn = document.getElementById("companyModalClose");
@@ -93,6 +92,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let modalUrl = "";
 
+  // A6: context state
+  let storedScrollY = 0;
+  let activeCard = null;
+
   if (!stateEl || !listEl) return;
 
   if (!requestId) {
@@ -101,6 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function openCompanyModal(url, titleText) {
+    storedScrollY = window.scrollY;
     modalUrl = url;
     modalTitle.textContent = titleText || "Bedrijfsprofiel";
     modalFrame.src = url;
@@ -113,13 +117,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     modalFrame.src = "about:blank";
     modalUrl = "";
     document.body.style.overflow = "";
+
+    // A6: context herstellen
+    window.scrollTo(0, storedScrollY);
+    activeCard = null;
   }
 
   if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
-  if (modalOverlay)
+
+  if (modalOverlay) {
     modalOverlay.addEventListener("click", (e) => {
       if (e.target === modalOverlay) closeCompanyModal();
     });
+  }
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeCompanyModal();
@@ -151,8 +161,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
-  if (stickySubmitBtn)
-    stickySubmitBtn.addEventListener("click", handleSendClick);
 
   try {
     const res = await fetch(
@@ -195,50 +203,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "Resultaten konden niet worden geladen.";
   }
 
-
-
-/**
- * SORTERING & "BESTE MATCH" – BELANGRIJK
- *
- * De badge "Beste match" wordt toegekend aan het EERSTE bedrijf
- * in de gesorteerde resultatenlijst (index === 0).
- *
- * De sortering wordt al VÓÓR deze functie bepaald.
- * Deze functie GAAT UIT van correcte volgorde en wijzigt die NIET.
- *
- * Verwachte sorteervolgorde (NIET wijzigen zonder expliciet akkoord):
- *
- * 1. Plaatsmatch
- *    - Bedrijven in exact dezelfde plaats als de aanvraag eerst.
- *    - Alleen als er 0 lokale resultaten zijn, wordt fallback gebruikt.
- *
- * 2. Reviews aanwezig
- *    - Bedrijven met reviews boven bedrijven zonder reviews.
- *    - Geldt voor Google- en Irisje-reviews.
- *
- * 3. Gemiddelde rating (aflopend)
- *    - Eerst Irisje averageRating (indien aanwezig),
- *      anders Google avgRating.
- *    - Ruwe numerieke waarde telt (geen afronding).
- *
- * 4. Aantal reviews (aflopend)
- *
- * 5. Verificatiestatus
- *    - isVerified = true boven false.
- *
- * 6. Stabiele fallback
- *    - Alphabetisch op bedrijfsnaam (A–Z).
- *
- * ⚠️ Let op:
- * - Deze functie gebruikt index === 0 voor "Beste match".
- * - Wijzigingen hier kunnen direct UI- en rankinggedrag breken.
- */
-
-
-
-
-
-
   function renderCompanies(companies) {
     listEl.innerHTML = "";
     updateSelectionUI();
@@ -247,8 +211,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       const card = document.createElement("div");
       card.className = "result-card";
 
-      const profileUrl = `/company.html?slug=${encodeURIComponent(company.slug || "")}&embed=1`;
-
+      const profileUrl = `/company.html?slug=${encodeURIComponent(
+        company.slug || ""
+      )}&embed=1`;
 
       card.innerHTML = `
         <label class="company-select">
@@ -259,15 +224,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="company-info">
             <div class="company-header">
               <h3 class="company-name block">
-  ${index === 0 ? `<span class="best-match-badge">Beste match</span>` : ""}
-  <a href="${profileUrl}"
-     class="company-profile-link"
-     data-profile-url="${profileUrl}"
-     data-company-name="${escapeHtml(company.name)}">
-    ${escapeHtml(company.name)}
-  </a>
-</h3>
-
+                ${index === 0 ? `<span class="best-match-badge">Beste match</span>` : ""}
+                <a href="${profileUrl}"
+                   class="company-profile-link"
+                   data-profile-url="${profileUrl}"
+                   data-company-name="${escapeHtml(company.name)}">
+                  ${escapeHtml(company.name)}
+                </a>
+              </h3>
               ${renderReviewBlock(company)}
             </div>
             <div class="company-city">${escapeHtml(company.city)}</div>
@@ -278,10 +242,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       listEl.appendChild(card);
     });
 
+    // A6: geïsoleerde click-afhandeling
     listEl.addEventListener("click", (e) => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
+
       e.preventDefault();
+      activeCard = link.closest(".result-card");
+
       openCompanyModal(
         link.dataset.profileUrl,
         link.dataset.companyName
