@@ -1,57 +1,117 @@
 // backend/utils/matchCompanies.js
-// Centrale match-logica voor bedrijven (request-mode & company-mode)
+// Centrale match-logica voor request-mode en company-mode
 
-const Company = require("../models/Company");
+const Company = require("../models/company");
 
 async function matchCompanies({ category, specialty, city }) {
   if (!category || !specialty || !city) {
     throw new Error("matchCompanies: ontbrekende parameters");
   }
 
-  // 1. Eerst lokaal (zelfde plaats)
-  let companies = await Company.find({
-    category,
-    specialties: specialty,
-    city,
-    isActive: true
-  }).lean();
+  // -------------------------
+  // Aggregation: bedrijven + reviews
+  // -------------------------
+  const pipeline = [
+    {
+      $match: {
+        $or: [{ category }, { categories: { $in: [category] } }],
+        $or: [
+          { specialties: { $exists: false } },
+          { specialties: { $size: 0 } },
+          { specialties: { $in: [specialty] } }
+        ]
+      }
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        let: { companyId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$company", "$$companyId"] },
+              isApproved: true
+            }
+          },
+          { $project: { rating: 1 } }
+        ],
+        as: "reviews"
+      }
+    },
+    {
+      $addFields: {
+        reviewCount: { $size: "$reviews" },
+        averageRating: {
+          $cond: [
+            { $gt: [{ $size: "$reviews" }, 0] },
+            { $avg: "$reviews.rating" },
+            null
+          ]
+        }
+      }
+    },
+    {
+      $project: {
+        reviews: 0,
+        password: 0
+      }
+    }
+  ];
 
-  let noLocalResults = false;
+  const companies = await Company.aggregate(pipeline);
 
-  // 2. Fallback: andere plaatsen
-  if (!companies.length) {
-    noLocalResults = true;
-    companies = await Company.find({
-      category,
-      specialties: specialty,
-      isActive: true
-    }).lean();
-  }
+  // -------------------------
+  // Plaats-fallback
+  // -------------------------
+  const reqCity = String(city).trim().toLowerCase();
 
-  // 3. Ranking (exact bestaand principe)
-  companies.sort((a, b) => {
-    // plaats
-    if (a.city === city && b.city !== city) return -1;
-    if (b.city === city && a.city !== city) return 1;
+  const localCompanies = companies.filter(
+    (c) => String(c.city || "").trim().toLowerCase() === reqCity
+  );
 
-    // Irisje reviews
-    const irisjeA = a.averageRating || 0;
-    const irisjeB = b.averageRating || 0;
-    if (irisjeA !== irisjeB) return irisjeB - irisjeA;
+  const hasLocal = localCompanies.length > 0;
+  const finalCompanies = hasLocal ? localCompanies : companies;
 
-    // Google reviews
-    const googleA = a.avgRating || 0;
-    const googleB = b.avgRating || 0;
-    if (googleA !== googleB) return googleB - googleA;
+  // -------------------------
+  // DEFINITIEVE SORTERING
+  // -------------------------
+  finalCompanies.sort((a, b) => {
+    // 1) Irisje reviews
+    const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0;
+    const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0;
+    if (aHasIrisje !== bHasIrisje) return aHasIrisje ? -1 : 1;
 
-    // verificatie
-    if (a.isVerified && !b.isVerified) return -1;
-    if (b.isVerified && !a.isVerified) return 1;
+    if (aHasIrisje && bHasIrisje) {
+      if (b.averageRating !== a.averageRating)
+        return b.averageRating - a.averageRating;
+      if ((b.reviewCount || 0) !== (a.reviewCount || 0))
+        return (b.reviewCount || 0) - (a.reviewCount || 0);
+    }
 
-    return 0;
+    // 2) Google reviews
+    const aHasGoogle = Number.isFinite(a.avgRating);
+    const bHasGoogle = Number.isFinite(b.avgRating);
+    if (aHasGoogle !== bHasGoogle) return aHasGoogle ? -1 : 1;
+
+    if (aHasGoogle && bHasGoogle) {
+      if (b.avgRating !== a.avgRating) return b.avgRating - a.avgRating;
+    }
+
+    // 3) Verificatie
+    const aVer = a.isVerified ? 1 : 0;
+    const bVer = b.isVerified ? 1 : 0;
+    if (aVer !== bVer) return bVer - aVer;
+
+    // 4) Stabiele fallback
+    return (a.name || "").localeCompare(b.name || "", "nl", {
+      sensitivity: "base"
+    });
   });
 
-  return { companies, noLocalResults };
+  return {
+    companies: finalCompanies,
+    noLocalResults: !hasLocal
+  };
 }
 
 module.exports = matchCompanies;
