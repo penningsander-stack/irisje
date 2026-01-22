@@ -2,6 +2,15 @@
 // Aanvraag starten (FASE 1) via /api/publicRequests — specialismen behouden
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ====================
+  // A8: preselectie-context opslaan
+  // ====================
+  const params = new URLSearchParams(window.location.search);
+  const companySlug = params.get("companySlug");
+  if (companySlug) {
+    sessionStorage.setItem("preselectedCompanySlug", companySlug);
+  }
+
   const PLACES = [
     "Amsterdam", "Rotterdam", "Den Haag", "Utrecht", "Eindhoven",
     "Groningen", "Leeuwarden", "Zwolle", "Arnhem", "Nijmegen",
@@ -55,9 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedSpecialty = "";
 
-  // --------------------
-  // Specialisme chips
-  // --------------------
   function renderSpecialties() {
     const sector = normalize(categorySelect.value);
     specialtyOptions.innerHTML = "";
@@ -119,9 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   categorySelect.addEventListener("change", renderSpecialties);
 
-  // --------------------
-  // Plaats autocomplete
-  // --------------------
   cityInput.addEventListener("input", () => {
     const query = cityInput.value.trim().toLowerCase();
     suggestionsBox.innerHTML = "";
@@ -156,9 +159,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --------------------
-  // Submit — FASE 1
-  // --------------------
   form.addEventListener("submit", async e => {
     e.preventDefault();
     errorBox.classList.add("hidden");
