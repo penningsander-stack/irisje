@@ -91,8 +91,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const modalFrame = document.getElementById("companyModalFrame");
 
   let modalUrl = "";
-
-  // A6: context state
   let storedScrollY = 0;
 
   if (!stateEl || !listEl) return;
@@ -140,7 +138,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   function handleSendClick() {
     const selected = document.querySelectorAll(".company-checkbox:checked");
     if (!selected.length) return alert("Selecteer minimaal één bedrijf.");
-
     if (selected.length > 5)
       return alert("Je kunt maximaal 5 bedrijven selecteren.");
 
@@ -194,21 +191,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "";
     renderCompanies(companies);
 
-    // ====================
-    // A8: preselectie toepassen
-    // ====================
+    /* ====================
+       A8.4b: robuuste preselectie
+       ==================== */
     const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
     if (preselectedSlug) {
-      const link = listEl.querySelector(
-        `.company-profile-link[href*="slug=${encodeURIComponent(preselectedSlug)}"]`
+      const checkbox = listEl.querySelector(
+        `.company-checkbox[data-company-slug="${preselectedSlug}"]`
       );
-      if (link) {
-        const checkbox = link
-          .closest(".result-card")
-          ?.querySelector(".company-checkbox");
-        if (checkbox) {
-          checkbox.checked = true;
-        }
+      if (checkbox) {
+        checkbox.checked = true;
       }
       sessionStorage.removeItem("preselectedCompanySlug");
       updateSelectionUI();
@@ -237,11 +229,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           <input type="checkbox"
             class="company-checkbox"
             data-company-id="${company._id || ""}"
+            data-company-slug="${company.slug || ""}"
           />
           <div class="company-info">
             <div class="company-header">
               <h3 class="company-name block">
-                ${index === 0 ? `<span class="best-match-badge">Beste match</span>` : ""}
+                ${
+                  index === 0
+                    ? `<span class="best-match-badge">Beste match</span>`
+                    : ""
+                }
                 <a href="${profileUrl}"
                    class="company-profile-link"
                    data-company-name="${escapeHtml(company.name)}">
@@ -268,7 +265,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateSelectionUI() {
-    const selected = document.querySelectorAll(".company-checkbox:checked").length;
+    const selected = document.querySelectorAll(
+      ".company-checkbox:checked"
+    ).length;
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
     if (sendBtn) sendBtn.disabled = selected === 0;
   }
