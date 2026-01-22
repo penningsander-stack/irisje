@@ -1,5 +1,6 @@
 // frontend/js/results.js
-// Resultatenpagina – stabiele selectie + profiel in modal + doorsturen naar request-send
+// Resultatenpagina – request-mode + company-mode
+// ⭐ Google & Irisje sterren ongewijzigd
 
 /* =========================
    ⭐ Google-style sterren
@@ -75,7 +76,14 @@ function renderReviewBlock(company) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
+
   const requestId = params.get("requestId");
+
+  // ➕ company-mode params
+  const category = params.get("category");
+  const specialty = params.get("specialty");
+  const city = params.get("city");
+  const companyIdFromUrl = params.get("companyId");
 
   const stateEl = document.getElementById("resultsState");
   const listEl = document.getElementById("companiesList");
@@ -95,7 +103,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!stateEl || !listEl) return;
 
-  if (!requestId) {
+  // -------------------------
+  // MODE DETECTIE
+  // -------------------------
+  const isRequestMode = !!requestId;
+  const isCompanyMode = !requestId && category && specialty && city;
+
+  if (!isRequestMode && !isCompanyMode) {
     stateEl.textContent = "Ongeldige aanvraag.";
     return;
   }
@@ -146,41 +160,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       .filter(Boolean);
 
     sessionStorage.setItem("selectedCompanyIds", JSON.stringify(ids));
-    sessionStorage.setItem("requestId", requestId);
 
-    window.location.href = `/request-send.html?requestId=${encodeURIComponent(
-      requestId
-    )}`;
+    if (requestId) {
+      sessionStorage.setItem("requestId", requestId);
+      window.location.href = `/request-send.html?requestId=${encodeURIComponent(
+        requestId
+      )}`;
+    } else {
+      window.location.href = `/request-send.html?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
+    }
   }
 
   if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
 
   try {
-    const res = await fetch(
-      `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`,
-      { cache: "no-store" }
-    );
+    // -------------------------
+    // DATA OPHALEN
+    // -------------------------
+    let fetchUrl;
+
+    if (isRequestMode) {
+      fetchUrl = `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`;
+    } else {
+      fetchUrl = `https://irisje-backend.onrender.com/api/companies/match?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
+    }
+
+    const res = await fetch(fetchUrl, { cache: "no-store" });
     if (!res.ok) throw new Error(res.status);
 
     const data = await res.json();
     const companies = Array.isArray(data.companies) ? data.companies : [];
-    const request = data.request || {};
-
-    const notice = document.getElementById("noLocalNotice");
-    if (data.noLocalResults) {
-      notice.textContent = `Geen ${request.sector.toLowerCase()} in ${
-        request.city
-      }. Hieronder tonen we ${request.sector.toLowerCase()} uit andere plaatsen.`;
-      notice.classList.remove("hidden");
-    } else {
-      notice.classList.add("hidden");
-    }
-
-    if (subtitleEl) {
-      subtitleEl.textContent = `Gebaseerd op jouw aanvraag voor ${
-        request.sector || ""
-      } in ${request.city || ""}.`;
-    }
 
     if (!companies.length) {
       stateEl.textContent =
@@ -191,20 +208,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "";
     renderCompanies(companies);
 
-    /* ====================
-       A8.4b: robuuste preselectie
-       ==================== */
-    const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
-    if (preselectedSlug) {
-      const checkbox = listEl.querySelector(
-        `.company-checkbox[data-company-slug="${preselectedSlug}"]`
-      );
-      if (checkbox) {
-        checkbox.checked = true;
-      }
-      sessionStorage.removeItem("preselectedCompanySlug");
-      updateSelectionUI();
-    }
+    // -------------------------
+    // PRESELECTIE (A8 + company-mode)
+    // -------------------------
+    const preselectedSlug =
+      sessionStorage.getItem("preselectedCompanySlug");
+
+    const checkbox = companyIdFromUrl
+      ? listEl.querySelector(
+          `.company-checkbox[data-company-id="${companyIdFromUrl}"]`
+        )
+      : preselectedSlug
+      ? listEl.querySelector(
+          `.company-checkbox[data-company-slug="${preselectedSlug}"]`
+        )
+      : null;
+
+    if (checkbox) checkbox.checked = true;
+
+    sessionStorage.removeItem("preselectedCompanySlug");
+    updateSelectionUI();
 
     if (footerEl) footerEl.classList.remove("hidden");
   } catch (err) {
@@ -258,7 +281,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     listEl.addEventListener("click", (e) => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
-
       e.preventDefault();
       openCompanyModal(link.href, link.dataset.companyName);
     });
