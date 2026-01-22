@@ -8,6 +8,12 @@ const cors = require("cors");
 
 const app = express();
 
+const companiesMatchRoutes = require("./routes/companiesMatch");
+app.use("/api/companies", companiesMatchRoutes);
+
+
+
+
 /* =========================
  * Middleware
  * ========================= */

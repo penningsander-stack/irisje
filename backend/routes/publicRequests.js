@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 
-const Request = require("../models/request");
-const Company = require("../models/company");
+const Request = require("../models/Request");
+const Company = require("../models/Company");
 
 /*
   POST /api/publicRequests
@@ -80,7 +80,10 @@ router.get("/:id", async (req, res) => {
     const pipeline = [
       {
         $match: {
-          categories: { $in: [category] },
+          $or: [
+            { category },
+            { categories: { $in: [category] } }
+          ],
           $or: [
             { specialties: { $exists: false } },
             { specialties: { $size: 0 } },
@@ -129,9 +132,10 @@ router.get("/:id", async (req, res) => {
     // -------------------------
     // Plaats-fallback
     // -------------------------
-    const reqCity = city.trim().toLowerCase();
+    const reqCity = String(city).trim().toLowerCase();
+
     const localCompanies = companies.filter(
-      c => (c.city || "").trim().toLowerCase() === reqCity
+      c => String(c.city || "").trim().toLowerCase() === reqCity
     );
 
     const hasLocal = localCompanies.length > 0;
@@ -174,32 +178,20 @@ router.get("/:id", async (req, res) => {
       });
     });
 
-
-
-
-// =========================
-// TEMP LOGGING – RANKING
-// =========================
-console.log("=== RANKING RESULT (TOP 5) ===");
-finalCompanies.slice(0, 5).forEach((c, i) => {
-  console.log(
-    `#${i + 1}`,
-    {
-      name: c.name,
-      city: c.city,
-      irisjeAvg: c.averageRating,
-      irisjeCount: c.reviewCount,
-      googleAvg: c.avgRating,
-      verified: c.isVerified
-    }
-  );
-});
-
-
-
-
-
-
+    // =========================
+    // TEMP LOGGING – RANKING
+    // =========================
+    console.log("=== RANKING RESULT (TOP 5) ===");
+    finalCompanies.slice(0, 5).forEach((c, i) => {
+      console.log(`#${i + 1}`, {
+        name: c.name,
+        city: c.city,
+        irisjeAvg: c.averageRating,
+        irisjeCount: c.reviewCount,
+        googleAvg: c.avgRating,
+        verified: c.isVerified
+      });
+    });
 
     // -------------------------
     // Response
