@@ -94,7 +94,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // A6: context state
   let storedScrollY = 0;
-  let activeCard = null;
 
   if (!stateEl || !listEl) return;
 
@@ -117,10 +116,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     modalFrame.src = "about:blank";
     modalUrl = "";
     document.body.style.overflow = "";
-
-    // A6: context herstellen
     window.scrollTo(0, storedScrollY);
-    activeCard = null;
   }
 
   if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
@@ -197,6 +193,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     stateEl.textContent = "";
     renderCompanies(companies);
+
+    // ====================
+    // A8: preselectie toepassen
+    // ====================
+    const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
+    if (preselectedSlug) {
+      const link = listEl.querySelector(
+        `.company-profile-link[href*="slug=${encodeURIComponent(preselectedSlug)}"]`
+      );
+      if (link) {
+        const checkbox = link
+          .closest(".result-card")
+          ?.querySelector(".company-checkbox");
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      }
+      sessionStorage.removeItem("preselectedCompanySlug");
+      updateSelectionUI();
+    }
+
     if (footerEl) footerEl.classList.remove("hidden");
   } catch (err) {
     console.error(err);
@@ -227,7 +244,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 ${index === 0 ? `<span class="best-match-badge">Beste match</span>` : ""}
                 <a href="${profileUrl}"
                    class="company-profile-link"
-                   data-profile-url="${profileUrl}"
                    data-company-name="${escapeHtml(company.name)}">
                   ${escapeHtml(company.name)}
                 </a>
@@ -242,18 +258,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       listEl.appendChild(card);
     });
 
-    // A6: geïsoleerde click-afhandeling
     listEl.addEventListener("click", (e) => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
 
       e.preventDefault();
-      activeCard = link.closest(".result-card");
-
-      openCompanyModal(
-        link.dataset.profileUrl,
-        link.dataset.companyName
-      );
+      openCompanyModal(link.href, link.dataset.companyName);
     });
   }
 
