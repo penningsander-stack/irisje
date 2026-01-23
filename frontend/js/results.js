@@ -103,9 +103,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (!stateEl || !listEl) return;
 
-  // -------------------------
-  // MODE DETECTIE
-  // -------------------------
   const isRequestMode = !!requestId;
   const isCompanyMode = !requestId && category && specialty && city;
 
@@ -114,21 +111,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // -------------------------
-  // ✅ FIX: teller updaten bij checkbox-change (event delegation)
-  // -------------------------
+  /* =========================
+     ✔ Teller + max 5 (event delegation)
+     ========================= */
+
   listEl.addEventListener("change", (e) => {
     const cb = e.target.closest(".company-checkbox");
     if (!cb) return;
 
-    // Max 5 afdwingen (zonder iets te verwijderen)
-    const checkedCount = listEl.querySelectorAll(".company-checkbox:checked").length;
+    const checkedCount = listEl.querySelectorAll(
+      ".company-checkbox:checked"
+    ).length;
+
     if (checkedCount > 5) {
       cb.checked = false;
       alert("Je kunt maximaal 5 bedrijven selecteren.");
     }
 
     updateSelectionUI();
+  });
+
+  /* =========================
+     ✔ Modal openen (ÉÉN KEER)
+     ========================= */
+
+  listEl.addEventListener("click", (e) => {
+    const link = e.target.closest(".company-profile-link");
+    if (!link) return;
+    e.preventDefault();
+    openCompanyModal(link.href, link.dataset.companyName);
   });
 
   function openCompanyModal(url, titleText) {
@@ -166,47 +177,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  /* =========================
+     Verzenden
+     ========================= */
+
   function handleSendClick() {
     const selected = document.querySelectorAll(".company-checkbox:checked");
     if (!selected.length) return alert("Selecteer minimaal één bedrijf.");
     if (selected.length > 5)
       return alert("Je kunt maximaal 5 bedrijven selecteren.");
 
-    const ids = Array.from(selected)
-      .map((cb) => cb.dataset.companyId)
+    const selectedCompanies = Array.from(selected)
+      .map((cb) => {
+        const card = cb.closest(".result-card");
+        if (!card) return null;
+
+        const nameEl = card.querySelector(".company-name a");
+        const cityEl = card.querySelector(".company-city");
+
+        return {
+          id: cb.dataset.companyId,
+          name: nameEl ? nameEl.textContent.trim() : "",
+          city: cityEl ? cityEl.textContent.trim() : ""
+        };
+      })
       .filter(Boolean);
 
-    sessionStorage.setItem("selectedCompanyIds", JSON.stringify(ids));
+    sessionStorage.setItem(
+      "selectedCompaniesSummary",
+      JSON.stringify(selectedCompanies)
+    );
+
+    sessionStorage.setItem(
+      "selectedCompanyIds",
+      JSON.stringify(selectedCompanies.map((c) => c.id))
+    );
 
     if (requestId) {
       sessionStorage.setItem("requestId", requestId);
-
-
-const selectedCompanies = Array.from(selected)
-  .map(cb => {
-    const card = cb.closest(".result-card");
-    if (!card) return null;
-
-    const nameEl = card.querySelector(".company-name a");
-    const cityEl = card.querySelector(".company-city");
-
-    return {
-      id: cb.dataset.companyId,
-      name: nameEl ? nameEl.textContent.trim() : "",
-      city: cityEl ? cityEl.textContent.trim() : ""
-    };
-  })
-  .filter(Boolean);
-
-sessionStorage.setItem(
-  "selectedCompaniesSummary",
-  JSON.stringify(selectedCompanies)
-);
-
-
-
-
-
       window.location.href = `/request-send.html?requestId=${encodeURIComponent(
         requestId
       )}`;
@@ -221,10 +229,11 @@ sessionStorage.setItem(
 
   if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
 
+  /* =========================
+     Data ophalen
+     ========================= */
+
   try {
-    // -------------------------
-    // DATA OPHALEN
-    // -------------------------
     let fetchUrl;
 
     if (isRequestMode) {
@@ -243,34 +252,6 @@ sessionStorage.setItem(
     const data = await res.json();
     const companies = Array.isArray(data.companies) ? data.companies : [];
 
-    // Request-mode: bestaande subtitle/notice behouden
-    if (isRequestMode) {
-      const request = data.request || {};
-      const notice = document.getElementById("noLocalNotice");
-      if (notice) {
-        if (data.noLocalResults) {
-          const sectorTxt = String(request.sector || "").toLowerCase();
-          notice.textContent = `Geen ${sectorTxt} in ${request.city}. Hieronder tonen we ${sectorTxt} uit andere plaatsen.`;
-          notice.classList.remove("hidden");
-        } else {
-          notice.classList.add("hidden");
-        }
-      }
-
-      if (subtitleEl) {
-        subtitleEl.textContent = `Gebaseerd op jouw aanvraag voor ${
-          request.sector || ""
-        } in ${request.city || ""}.`;
-      }
-    } else {
-      // Company-mode: subtitle zonder request-object (geen aannames)
-      if (subtitleEl) {
-        subtitleEl.textContent = `Gebaseerd op jouw aanvraag voor ${
-          category || ""
-        } in ${city || ""}.`;
-      }
-    }
-
     if (!companies.length) {
       stateEl.textContent =
         "Er zijn op dit moment geen bedrijven beschikbaar.";
@@ -280,9 +261,6 @@ sessionStorage.setItem(
     stateEl.textContent = "";
     renderCompanies(companies);
 
-    // -------------------------
-    // PRESELECTIE (A8 + company-mode)
-    // -------------------------
     const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
 
     const checkbox = companyIdFromUrl
@@ -348,18 +326,12 @@ sessionStorage.setItem(
 
       listEl.appendChild(card);
     });
-
-    // Modal openen via link (event delegation)
-    listEl.addEventListener("click", (e) => {
-      const link = e.target.closest(".company-profile-link");
-      if (!link) return;
-      e.preventDefault();
-      openCompanyModal(link.href, link.dataset.companyName);
-    });
   }
 
   function updateSelectionUI() {
-    const selected = document.querySelectorAll(".company-checkbox:checked").length;
+    const selected = listEl.querySelectorAll(
+      ".company-checkbox:checked"
+    ).length;
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
     if (sendBtn) sendBtn.disabled = selected === 0;
   }
