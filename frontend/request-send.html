@@ -140,12 +140,16 @@
     throw new Error("requestId ontbreekt");
   }
 
-  const selectedCompanies = Array.isArray(safeJsonParse(sessionStorage.getItem("selectedCompanies")))
-    ? safeJsonParse(sessionStorage.getItem("selectedCompanies"))
-    : [];
-  const selectedCompanyIds = Array.isArray(safeJsonParse(sessionStorage.getItem("selectedCompanyIds")))
-    ? safeJsonParse(sessionStorage.getItem("selectedCompanyIds"))
-    : [];
+  // ✅ FIX: eerst nieuwe key, dan fallback naar oude key
+  const selectedCompaniesRaw =
+    sessionStorage.getItem("selectedCompaniesSummary") ||
+    sessionStorage.getItem("selectedCompanies");
+
+  const selectedCompaniesParsed = safeJsonParse(selectedCompaniesRaw);
+  const selectedCompanies = Array.isArray(selectedCompaniesParsed) ? selectedCompaniesParsed : [];
+
+  const selectedCompanyIdsParsed = safeJsonParse(sessionStorage.getItem("selectedCompanyIds"));
+  const selectedCompanyIds = Array.isArray(selectedCompanyIdsParsed) ? selectedCompanyIdsParsed : [];
 
   const boxEl = document.getElementById("selectedCompaniesBox");
   const listEl = document.getElementById("selectedCompaniesList");
@@ -184,8 +188,10 @@
       const data = await res.json();
       if(!res.ok) throw new Error(data.message || "Versturen mislukt");
 
+      // ✅ context voor thank-you
       sessionStorage.setItem("requestSent","1");
       sessionStorage.setItem("sentCompanies", JSON.stringify(selectedCompanies));
+
       window.location.href = "/thank-you.html";
     }catch(err){
       statusEl.textContent = "Versturen mislukt: " + err.message;

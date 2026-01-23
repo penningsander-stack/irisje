@@ -94,9 +94,15 @@
     successEl.style.display = "block";
     sessionStorage.removeItem("requestSent");
 
-    const sentCompanies = Array.isArray(safeJsonParse(sessionStorage.getItem("sentCompanies")))
-      ? safeJsonParse(sessionStorage.getItem("sentCompanies"))
-      : [];
+    // 1) Primair: sentCompanies (komt uit request-send)
+    const sentCompaniesParsed = safeJsonParse(sessionStorage.getItem("sentCompanies"));
+    let sentCompanies = Array.isArray(sentCompaniesParsed) ? sentCompaniesParsed : [];
+
+    // 2) Fallback: selectedCompaniesSummary (voor safety / no-regressie)
+    if (!sentCompanies.length) {
+      const fallbackParsed = safeJsonParse(sessionStorage.getItem("selectedCompaniesSummary"));
+      sentCompanies = Array.isArray(fallbackParsed) ? fallbackParsed : [];
+    }
 
     const boxEl = document.getElementById("sentCompaniesBox");
     const listEl = document.getElementById("sentCompaniesList");
