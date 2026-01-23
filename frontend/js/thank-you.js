@@ -1,32 +1,48 @@
 // frontend/js/thank-you.js
-// Toon bedrijven waarnaar aanvraag is verstuurd (frontend-only, robuust)
+// Toon naar welke bedrijven de aanvraag is verzonden
+// + A14.3: sessionStorage netjes opruimen na render
 
 document.addEventListener("DOMContentLoaded", () => {
-  const box = document.getElementById("sentCompaniesBox");
-  const list = document.getElementById("sentCompaniesList");
+  const boxEl = document.getElementById("sentCompaniesBox");
+  const listEl = document.getElementById("sentCompaniesList");
 
-  if (!box || !list) return;
+  if (!boxEl || !listEl) return;
 
-  const raw = sessionStorage.getItem("selectedCompaniesSummary");
-  if (!raw) return;
+  let companies = [];
 
-  let companies;
   try {
-    companies = JSON.parse(raw);
-  } catch {
+    const raw = sessionStorage.getItem("selectedCompaniesSummary");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        companies = parsed;
+      }
+    }
+  } catch (err) {
+    console.error("Fout bij lezen selectedCompaniesSummary:", err);
+  }
+
+  if (!companies.length) {
+    // Niets tonen → box verborgen houden
+    boxEl.style.display = "none";
     return;
   }
 
-  if (!Array.isArray(companies) || companies.length === 0) return;
+  // Toon box
+  boxEl.style.display = "block";
+  listEl.innerHTML = "";
 
-  list.innerHTML = "";
-
-  companies.forEach(c => {
+  companies.forEach((c) => {
     const li = document.createElement("li");
-    li.className = "selected-item";
-    li.textContent = `${c.name}${c.city ? ` (${c.city})` : ""}`;
-    list.appendChild(li);
+    li.textContent = `${c.name}${c.city ? " – " + c.city : ""}`;
+    listEl.appendChild(li);
   });
 
-  box.style.display = "block";
+  // =========================
+  // A14.3 – OPSCHONEN
+  // =========================
+  sessionStorage.removeItem("selectedCompaniesSummary");
+  sessionStorage.removeItem("selectedCompanyIds");
+  sessionStorage.removeItem("requestId");
+  sessionStorage.removeItem("requestSent");
 });
