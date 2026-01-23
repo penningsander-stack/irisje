@@ -1,48 +1,45 @@
 // frontend/js/thank-you.js
-// Toon naar welke bedrijven de aanvraag is verzonden
-// + A14.3: sessionStorage netjes opruimen na render
+// Route A – frontend-only bevestiging via sessionStorage
 
 document.addEventListener("DOMContentLoaded", () => {
-  const boxEl = document.getElementById("sentCompaniesBox");
-  const listEl = document.getElementById("sentCompaniesList");
+  const box = document.getElementById("sentCompaniesBox");
+  const list = document.getElementById("sentCompaniesList");
 
-  if (!boxEl || !listEl) return;
+  if (!box || !list) return;
 
-  let companies = [];
+  let companies = null;
 
   try {
     const raw = sessionStorage.getItem("selectedCompaniesSummary");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         companies = parsed;
       }
     }
   } catch (err) {
-    console.error("Fout bij lezen selectedCompaniesSummary:", err);
+    console.warn("Kon selectedCompaniesSummary niet lezen:", err);
   }
 
-  if (!companies.length) {
-    // Niets tonen → box verborgen houden
-    boxEl.style.display = "none";
+  if (!companies) {
+    // Geen data → box verborgen laten (bewust, geen foutmelding)
     return;
   }
 
-  // Toon box
-  boxEl.style.display = "block";
-  listEl.innerHTML = "";
+  // Lijst opbouwen
+  list.innerHTML = "";
 
-  companies.forEach((c) => {
+  companies.forEach((company) => {
+    if (!company || !company.name) return;
+
     const li = document.createElement("li");
-    li.textContent = `${c.name}${c.city ? " – " + c.city : ""}`;
-    listEl.appendChild(li);
+    li.textContent = company.city
+      ? `${company.name} (${company.city})`
+      : company.name;
+
+    list.appendChild(li);
   });
 
-  // =========================
-  // A14.3 – OPSCHONEN
-  // =========================
-  sessionStorage.removeItem("selectedCompaniesSummary");
-  sessionStorage.removeItem("selectedCompanyIds");
-  sessionStorage.removeItem("requestId");
-  sessionStorage.removeItem("requestSent");
+  // Box tonen
+  box.style.display = "block";
 });
