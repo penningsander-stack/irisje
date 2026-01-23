@@ -7,29 +7,38 @@
 
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
-  <main class="container max-w-2xl mx-auto py-12">
-    <h1 class="text-2xl font-semibold mb-4">Aanvraag verstuurd</h1>
 
-    <p class="mb-6">
-      Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
-      Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
-      Controleer ook even je spamfolder als je nog niets hoort.
-    </p>
+<body class="irisje-body min-h-screen">
+  <main class="page-shell">
 
-    <!-- 👇 Wordt alleen zichtbaar als er bedrijven bekend zijn -->
-    <div
-      id="sentCompaniesBox"
-      class="selected-box"
-      style="display:none;"
-    >
-      <div class="selected-title mb-2">
-        Naar deze bedrijven is je aanvraag verstuurd
+    <div class="surface-card max-w-2xl mx-auto">
+
+      <h1 class="text-2xl font-semibold mb-4 text-indigo-700">
+        Aanvraag verstuurd
+      </h1>
+
+      <p class="mb-6 text-gray-700 leading-relaxed">
+        Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
+        Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
+        Controleer ook je spamfolder als je nog niets hoort.
+      </p>
+
+      <!-- Wordt alleen zichtbaar via JS -->
+      <div
+        id="sentCompaniesBox"
+        class="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-lg"
+        style="display:none;"
+      >
+        <div class="font-medium text-indigo-700 mb-2">
+          Naar deze bedrijven is je aanvraag verstuurd
+        </div>
+
+        <ul
+          id="sentCompaniesList"
+          class="list-disc pl-5 text-sm text-gray-700 space-y-1"
+        ></ul>
       </div>
-      <ul
-        id="sentCompaniesList"
-        class="selected-list list-disc pl-5"
-      ></ul>
+
     </div>
   </main>
 
