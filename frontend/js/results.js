@@ -180,6 +180,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (requestId) {
       sessionStorage.setItem("requestId", requestId);
+
+
+const selectedCompanies = Array.from(selected)
+  .map(cb => {
+    const card = cb.closest(".result-card");
+    if (!card) return null;
+
+    const nameEl = card.querySelector(".company-name a");
+    const cityEl = card.querySelector(".company-city");
+
+    return {
+      id: cb.dataset.companyId,
+      name: nameEl ? nameEl.textContent.trim() : "",
+      city: cityEl ? cityEl.textContent.trim() : ""
+    };
+  })
+  .filter(Boolean);
+
+sessionStorage.setItem(
+  "selectedCompaniesSummary",
+  JSON.stringify(selectedCompanies)
+);
+
+
+
+
+
       window.location.href = `/request-send.html?requestId=${encodeURIComponent(
         requestId
       )}`;
