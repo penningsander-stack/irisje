@@ -1,5 +1,5 @@
 // frontend/js/thank-you.js
-// A16.6 – frontend-only bevestiging + opschonen + fallback (gecontroleerd)
+// A16.7 – premium success weergave + veilige fallback
 
 document.addEventListener("DOMContentLoaded", () => {
   const box = document.getElementById("sentCompaniesBox");
@@ -7,13 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!box || !list) return;
 
-  let companies = [];
+  let companies = null;
 
   try {
     const raw = sessionStorage.getItem("selectedCompaniesSummary");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         companies = parsed;
       }
     }
@@ -21,45 +21,46 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Kon selectedCompaniesSummary niet lezen:", err);
   }
 
-  list.innerHTML = "";
-
-  // -------------------------
-  // Geen (bruikbare) bedrijven
-  // -------------------------
-  const validCompanies = companies.filter(
-    (c) => c && typeof c.name === "string" && c.name.trim() !== ""
-  );
-
-  if (validCompanies.length === 0) {
+  // Fallback (bewust rustig, geen error state)
+  if (!companies) {
     box.style.display = "block";
+    list.innerHTML = "";
 
     const li = document.createElement("li");
+    li.className = "text-gray-600";
     li.textContent =
       "De geselecteerde bedrijven zijn niet meer beschikbaar. " +
       "Bedrijven nemen contact met je op zodra je aanvraag is ontvangen.";
-
     list.appendChild(li);
+
     cleanupStorage();
     return;
   }
 
-  // -------------------------
   // Normale weergave
-  // -------------------------
-  validCompanies.forEach((company) => {
+  list.innerHTML = "";
+
+  companies.forEach((company) => {
+    if (!company || !company.name) return;
+
     const li = document.createElement("li");
-    li.textContent = company.city
+    li.className = "flex items-center gap-2";
+
+    const dot = document.createElement("span");
+    dot.className = "inline-block w-2 h-2 rounded-full bg-indigo-500";
+
+    const text = document.createElement("span");
+    text.textContent = company.city
       ? `${company.name} (${company.city})`
       : company.name;
 
+    li.appendChild(dot);
+    li.appendChild(text);
     list.appendChild(li);
   });
 
   box.style.display = "block";
 
-  // -------------------------
-  // Opschonen na tonen
-  // -------------------------
   cleanupStorage();
 
   function cleanupStorage() {
