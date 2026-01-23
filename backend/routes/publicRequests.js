@@ -80,14 +80,20 @@ router.get("/:id", async (req, res) => {
     const pipeline = [
       {
         $match: {
-          $or: [
-            { category },
-            { categories: { $in: [category] } }
-          ],
-          $or: [
-            { specialties: { $exists: false } },
-            { specialties: { $size: 0 } },
-            { specialties: { $in: [specialty] } }
+          $and: [
+            {
+              $or: [
+                { category },
+                { categories: { $in: [category] } }
+              ]
+            },
+            {
+              $or: [
+                { specialties: { $exists: false } },
+                { specialties: { $size: 0 } },
+                { specialties: { $in: [specialty] } }
+              ]
+            }
           ]
         }
       },
@@ -168,9 +174,9 @@ router.get("/:id", async (req, res) => {
       }
 
       // 3) Verificatie
-      const aVer = a.isVerified ? 1 : 0;
-      const bVer = b.isVerified ? 1 : 0;
-      if (aVer !== bVer) return bVer - aVer;
+      if ((b.isVerified ? 1 : 0) !== (a.isVerified ? 1 : 0)) {
+        return (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
+      }
 
       // 4) Stabiele fallback
       return (a.name || "").localeCompare(b.name || "", "nl", {
@@ -178,24 +184,6 @@ router.get("/:id", async (req, res) => {
       });
     });
 
-    // =========================
-    // TEMP LOGGING – RANKING
-    // =========================
-    console.log("=== RANKING RESULT (TOP 5) ===");
-    finalCompanies.slice(0, 5).forEach((c, i) => {
-      console.log(`#${i + 1}`, {
-        name: c.name,
-        city: c.city,
-        irisjeAvg: c.averageRating,
-        irisjeCount: c.reviewCount,
-        googleAvg: c.avgRating,
-        verified: c.isVerified
-      });
-    });
-
-    // -------------------------
-    // Response
-    // -------------------------
     return res.json({
       ok: true,
       noLocalResults: !hasLocal,
@@ -213,6 +201,34 @@ router.get("/:id", async (req, res) => {
       ok: false,
       error: error.message
     });
+  }
+});
+
+/* ======================================================
+   A16.2 – Bevestiging verzonden aanvraag (read-only)
+   ====================================================== */
+
+router.get("/:id/confirmation", async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id)
+      .populate({
+        path: "companies",
+        select: "_id name city slug"
+      })
+      .select("_id companies");
+
+    if (!request) {
+      return res.status(404).json({ ok: false, message: "Aanvraag niet gevonden" });
+    }
+
+    return res.json({
+      ok: true,
+      requestId: request._id,
+      companies: Array.isArray(request.companies) ? request.companies : []
+    });
+  } catch (err) {
+    console.error("confirmation error:", err);
+    return res.status(500).json({ ok: false, message: "Serverfout" });
   }
 });
 
