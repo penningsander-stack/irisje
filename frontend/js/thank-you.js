@@ -1,5 +1,5 @@
 // frontend/js/thank-you.js
-// A16.6 – frontend-only bevestiging + opschonen + fallback
+// A16.6 – frontend-only bevestiging + opschonen + fallback (gecontroleerd)
 
 document.addEventListener("DOMContentLoaded", () => {
   const box = document.getElementById("sentCompaniesBox");
@@ -7,13 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!box || !list) return;
 
-  let companies = null;
+  let companies = [];
 
   try {
     const raw = sessionStorage.getItem("selectedCompaniesSummary");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         companies = parsed;
       }
     }
@@ -21,21 +21,24 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Kon selectedCompaniesSummary niet lezen:", err);
   }
 
+  list.innerHTML = "";
+
   // -------------------------
-  // Fallback: geen bedrijven
+  // Geen (bruikbare) bedrijven
   // -------------------------
-  if (!companies) {
-    // Bewust geen foutmelding, maar duidelijke uitleg
+  const validCompanies = companies.filter(
+    (c) => c && typeof c.name === "string" && c.name.trim() !== ""
+  );
+
+  if (validCompanies.length === 0) {
     box.style.display = "block";
-    list.innerHTML = "";
 
     const li = document.createElement("li");
     li.textContent =
       "De geselecteerde bedrijven zijn niet meer beschikbaar. " +
-      "Bedrijven nemen contact met je op als je aanvraag is ontvangen.";
-    list.appendChild(li);
+      "Bedrijven nemen contact met je op zodra je aanvraag is ontvangen.";
 
-    // Opschonen (ook in fallback)
+    list.appendChild(li);
     cleanupStorage();
     return;
   }
@@ -43,11 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // -------------------------
   // Normale weergave
   // -------------------------
-  list.innerHTML = "";
-
-  companies.forEach((company) => {
-    if (!company || !company.name) return;
-
+  validCompanies.forEach((company) => {
     const li = document.createElement("li");
     li.textContent = company.city
       ? `${company.name} (${company.city})`
