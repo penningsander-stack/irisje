@@ -1,23 +1,33 @@
 // backend/models/request.js
 const mongoose = require("mongoose");
 
-const requestSchema = new mongoose.Schema({
-  sector: {
-    type: String,
-    required: true,
-  },
-  specialty: {
-    type: String,
-    default: "",
-  },
-  city: {
-    type: String,
-    default: "",
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+const RequestSchema = new mongoose.Schema(
+  {
+    sector: {
+      type: String,
+      required: true
+    },
+    category: {
+      type: String
+    },
+    specialty: {
+      type: String,
+      required: true
+    },
+    city: {
+      type: String,
+      required: true
+    },
 
-module.exports = mongoose.model("Request", requestSchema);
+    // ✅ A16.3c: definitieve koppeling verzonden bedrijven
+    sentCompanies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Company"
+      }
+    ]
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Request", RequestSchema);
