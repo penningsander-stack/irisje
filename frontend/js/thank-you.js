@@ -1,5 +1,5 @@
 // frontend/js/thank-you.js
-// Route A – frontend-only bevestiging via sessionStorage
+// A16.6 – frontend-only bevestiging + opschonen + fallback
 
 document.addEventListener("DOMContentLoaded", () => {
   const box = document.getElementById("sentCompaniesBox");
@@ -21,12 +21,28 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Kon selectedCompaniesSummary niet lezen:", err);
   }
 
+  // -------------------------
+  // Fallback: geen bedrijven
+  // -------------------------
   if (!companies) {
-    // Geen data → box verborgen laten (bewust, geen foutmelding)
+    // Bewust geen foutmelding, maar duidelijke uitleg
+    box.style.display = "block";
+    list.innerHTML = "";
+
+    const li = document.createElement("li");
+    li.textContent =
+      "De geselecteerde bedrijven zijn niet meer beschikbaar. " +
+      "Bedrijven nemen contact met je op als je aanvraag is ontvangen.";
+    list.appendChild(li);
+
+    // Opschonen (ook in fallback)
+    cleanupStorage();
     return;
   }
 
-  // Lijst opbouwen
+  // -------------------------
+  // Normale weergave
+  // -------------------------
   list.innerHTML = "";
 
   companies.forEach((company) => {
@@ -40,6 +56,21 @@ document.addEventListener("DOMContentLoaded", () => {
     list.appendChild(li);
   });
 
-  // Box tonen
   box.style.display = "block";
+
+  // -------------------------
+  // Opschonen na tonen
+  // -------------------------
+  cleanupStorage();
+
+  function cleanupStorage() {
+    try {
+      sessionStorage.removeItem("selectedCompaniesSummary");
+      sessionStorage.removeItem("selectedCompanyIds");
+      sessionStorage.removeItem("requestId");
+      sessionStorage.removeItem("requestSent");
+    } catch (e) {
+      console.warn("Opschonen sessionStorage mislukt:", e);
+    }
+  }
 });
