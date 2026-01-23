@@ -5,38 +5,37 @@
   <title>Aanvraag verstuurd – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Irisje globale styling -->
+  <!-- Irisje styling -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-  <main class="container max-w-2xl mx-auto py-12">
-    <h1 class="text-2xl font-semibold mb-4">Aanvraag verstuurd</h1>
+  <main class="page">
+    <h1 class="page-title">Aanvraag verstuurd</h1>
 
-    <p class="mb-6">
+    <p class="page-text">
       Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
       Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
       Controleer ook even je spamfolder als je nog niets hoort.
     </p>
 
-    <!-- Wordt alleen zichtbaar als er bedrijven bekend zijn -->
+    <!-- Bedrijvenlijst -->
     <div
       id="sentCompaniesBox"
-      class="selected-box mb-8"
+      class="selected-box"
       style="display:none;"
     >
-      <div class="selected-title mb-2">
+      <div class="selected-title">
         Naar deze bedrijven is je aanvraag verstuurd
       </div>
       <ul
         id="sentCompaniesList"
-        class="selected-list list-disc pl-5"
+        class="selected-list"
       ></ul>
     </div>
 
-    <!-- CTA: terug naar homepage -->
-    <div class="mt-10">
-      <a href="/"
-         class="btn btn-primary inline-block">
+    <!-- CTA -->
+    <div class="page-actions">
+      <a href="/" class="btn btn-primary">
         Terug naar homepage
       </a>
     </div>
