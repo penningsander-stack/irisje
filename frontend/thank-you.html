@@ -5,40 +5,43 @@
   <title>Aanvraag verstuurd – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Irisje styling -->
+  <!-- JUISTE CSS (bevestigd door jou) -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
-  <main class="page">
-    <h1 class="page-title">Aanvraag verstuurd</h1>
+<body class="bg-gray-50">
+  <main class="container max-w-2xl mx-auto py-12 px-4">
+    <h1 class="text-2xl font-semibold mb-4">
+      Aanvraag verstuurd
+    </h1>
 
-    <p class="page-text">
+    <p class="mb-6 text-gray-700">
       Je aanvraag is succesvol verstuurd naar de geselecteerde bedrijven.
       Bedrijven nemen rechtstreeks contact met je op via e-mail of telefoon.
       Controleer ook even je spamfolder als je nog niets hoort.
     </p>
 
-    <!-- Bedrijvenlijst -->
+    <!-- Wordt zichtbaar via thank-you.js -->
     <div
       id="sentCompaniesBox"
-      class="selected-box"
+      class="border rounded-lg bg-white p-4 mb-8"
       style="display:none;"
     >
-      <div class="selected-title">
+      <div class="font-medium mb-2">
         Naar deze bedrijven is je aanvraag verstuurd
       </div>
       <ul
         id="sentCompaniesList"
-        class="selected-list"
+        class="list-disc pl-5 text-gray-700"
       ></ul>
     </div>
 
     <!-- CTA -->
-    <div class="page-actions">
-      <a href="/" class="btn btn-primary">
-        Terug naar homepage
-      </a>
-    </div>
+    <a
+      href="/"
+      class="inline-block bg-black text-white px-6 py-3 rounded hover:bg-gray-800 transition"
+    >
+      Terug naar homepage
+    </a>
   </main>
 
   <script src="/js/thank-you.js"></script>
