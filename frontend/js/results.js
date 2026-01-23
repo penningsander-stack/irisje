@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const requestId = params.get("requestId");
 
-  // ➕ company-mode params
+  // company-mode params
   const category = params.get("category");
   const specialty = params.get("specialty");
   const city = params.get("city");
@@ -114,18 +114,35 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // -------------------------
+  // ✅ FIX: teller updaten bij checkbox-change (event delegation)
+  // -------------------------
+  listEl.addEventListener("change", (e) => {
+    const cb = e.target.closest(".company-checkbox");
+    if (!cb) return;
+
+    // Max 5 afdwingen (zonder iets te verwijderen)
+    const checkedCount = listEl.querySelectorAll(".company-checkbox:checked").length;
+    if (checkedCount > 5) {
+      cb.checked = false;
+      alert("Je kunt maximaal 5 bedrijven selecteren.");
+    }
+
+    updateSelectionUI();
+  });
+
   function openCompanyModal(url, titleText) {
     storedScrollY = window.scrollY;
     modalUrl = url;
-    modalTitle.textContent = titleText || "Bedrijfsprofiel";
-    modalFrame.src = url;
-    modalOverlay.style.display = "block";
+    if (modalTitle) modalTitle.textContent = titleText || "Bedrijfsprofiel";
+    if (modalFrame) modalFrame.src = url;
+    if (modalOverlay) modalOverlay.style.display = "block";
     document.body.style.overflow = "hidden";
   }
 
   function closeCompanyModal() {
-    modalOverlay.style.display = "none";
-    modalFrame.src = "about:blank";
+    if (modalOverlay) modalOverlay.style.display = "none";
+    if (modalFrame) modalFrame.src = "about:blank";
     modalUrl = "";
     document.body.style.overflow = "";
     window.scrollTo(0, storedScrollY);
@@ -199,6 +216,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     const data = await res.json();
     const companies = Array.isArray(data.companies) ? data.companies : [];
 
+    // Request-mode: bestaande subtitle/notice behouden
+    if (isRequestMode) {
+      const request = data.request || {};
+      const notice = document.getElementById("noLocalNotice");
+      if (notice) {
+        if (data.noLocalResults) {
+          const sectorTxt = String(request.sector || "").toLowerCase();
+          notice.textContent = `Geen ${sectorTxt} in ${request.city}. Hieronder tonen we ${sectorTxt} uit andere plaatsen.`;
+          notice.classList.remove("hidden");
+        } else {
+          notice.classList.add("hidden");
+        }
+      }
+
+      if (subtitleEl) {
+        subtitleEl.textContent = `Gebaseerd op jouw aanvraag voor ${
+          request.sector || ""
+        } in ${request.city || ""}.`;
+      }
+    } else {
+      // Company-mode: subtitle zonder request-object (geen aannames)
+      if (subtitleEl) {
+        subtitleEl.textContent = `Gebaseerd op jouw aanvraag voor ${
+          category || ""
+        } in ${city || ""}.`;
+      }
+    }
+
     if (!companies.length) {
       stateEl.textContent =
         "Er zijn op dit moment geen bedrijven beschikbaar.";
@@ -211,8 +256,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // -------------------------
     // PRESELECTIE (A8 + company-mode)
     // -------------------------
-    const preselectedSlug =
-      sessionStorage.getItem("preselectedCompanySlug");
+    const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
 
     const checkbox = companyIdFromUrl
       ? listEl.querySelector(
@@ -278,6 +322,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       listEl.appendChild(card);
     });
 
+    // Modal openen via link (event delegation)
     listEl.addEventListener("click", (e) => {
       const link = e.target.closest(".company-profile-link");
       if (!link) return;
@@ -287,9 +332,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function updateSelectionUI() {
-    const selected = document.querySelectorAll(
-      ".company-checkbox:checked"
-    ).length;
+    const selected = document.querySelectorAll(".company-checkbox:checked").length;
     if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
     if (sendBtn) sendBtn.disabled = selected === 0;
   }
