@@ -1,9 +1,8 @@
 // backend/routes/companyContext.js
 
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
-
-const Company = require("../models/company");
 
 /*
   A17 – Bedrijf-gecentreerde context
@@ -21,19 +20,15 @@ router.get("/:companySlug", async (req, res) => {
       });
     }
 
-    const sourceArr = await Company.aggregate([
-      { $match: { slug: companySlug, active: true } },
-      { $limit: 1 },
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-          city: 1,
-          categories: 1,
-          specialties: 1
-        }
-      }
-    ]);
+    const companies = mongoose.connection.collection("companies");
+
+    // 1) Bronbedrijf
+    const sourceArr = await companies
+      .aggregate([
+        { $match: { slug: companySlug, active: true } },
+        { $limit: 1 }
+      ])
+      .toArray();
 
     const source = sourceArr[0];
 
@@ -48,6 +43,7 @@ router.get("/:companySlug", async (req, res) => {
     const specialties = Array.isArray(source.specialties) ? source.specialties : [];
     const cityNorm = String(source.city || "").trim().toLowerCase();
 
+    // 2) Vergelijkbare bedrijven
     const matchAnd = [
       { active: true },
       { slug: { $ne: source.slug } },
@@ -58,20 +54,14 @@ router.get("/:companySlug", async (req, res) => {
       matchAnd.push({ specialties: { $in: specialties } });
     }
 
-    const candidates = await Company.aggregate([
-      { $match: { $and: matchAnd } },
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-          city: 1,
-          categories: 1,
-          specialties: 1
-        }
-      },
-      { $limit: 50 }
-    ]);
+    const candidates = await companies
+      .aggregate([
+        { $match: { $and: matchAnd } },
+        { $limit: 50 }
+      ])
+      .toArray();
 
+    // 3) Sortering
     const scored = candidates.map(c => {
       const cityMatch =
         String(c.city || "").trim().toLowerCase() === cityNorm ? 1 : 0;
