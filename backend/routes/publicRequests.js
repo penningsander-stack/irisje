@@ -192,24 +192,25 @@ router.get("/:id", async (req, res) => {
     const cityRegex = new RegExp(`^${city.trim()}$`, "i");
 
     const companies = await Company.find({
-      active: true,
-      city: cityRegex,
-      $and: [
-        {
-          $or: [
-            { category },
-            { categories: { $in: [category] } }
-          ]
-        },
-        {
-          $or: [
-            { specialties: { $exists: false } },
-            { specialties: { $size: 0 } },
-            { specialties: { $in: [specialty] } }
-          ]
-        }
+  active: true,
+  city: city,
+  $and: [
+    {
+      $or: [
+        { category },
+        { categories: { $in: [category] } }
       ]
-    }).lean();
+    },
+    {
+      $or: [
+        { specialties: { $exists: false } },
+        { specialties: { $size: 0 } },
+        { specialties: { $in: [specialty] } }
+      ]
+    }
+  ]
+}).lean();
+
 
     return res.json({
       ok: true,
