@@ -1,8 +1,112 @@
+// backend/routes/publicRequests.js
+
 const express = require("express");
 const router = express.Router();
 
 const Request = require("../models/request");
 const Company = require("../models/company");
+
+/* ======================================================
+   A17 – Bedrijf-gecentreerde context (READ ONLY)
+   ====================================================== */
+
+router.get("/companyContext/:companySlug", async (req, res) => {
+  try {
+    const { companySlug } = req.params;
+
+    if (!companySlug) {
+      return res.status(400).json({
+        ok: false,
+        message: "companySlug ontbreekt"
+      });
+    }
+
+    // 1. Bronbedrijf ophalen
+    const sourceCompany = await Company.findOne({
+      slug: companySlug,
+      published: true
+    }).lean();
+
+    if (!sourceCompany) {
+      return res.status(404).json({
+        ok: false,
+        message: "Bedrijf niet gevonden"
+      });
+    }
+
+    const { category, specialties, city } = sourceCompany;
+
+    if (!category || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Bedrijf mist categorie of plaats"
+      });
+    }
+
+    // 2. Kandidaten ophalen (ruim)
+    const candidates = await Company.find({
+      _id: { $ne: sourceCompany._id },
+      published: true,
+      category: category,
+      specialties: { $in: Array.isArray(specialties) ? specialties : [] }
+    })
+      .lean()
+      .limit(50);
+
+    // 3. Scoren + sorteren (city eerst, dan overlap)
+    const scored = candidates.map(c => {
+      const overlap =
+        Array.isArray(c.specialties) && Array.isArray(specialties)
+          ? c.specialties.filter(s => specialties.includes(s)).length
+          : 0;
+
+      const cityMatch = String(c.city || "").toLowerCase() === String(city).toLowerCase();
+
+      return {
+        company: c,
+        cityMatch: cityMatch ? 1 : 0,
+        overlap
+      };
+    });
+
+    scored.sort((a, b) => {
+      if (b.cityMatch !== a.cityMatch) return b.cityMatch - a.cityMatch;
+      return b.overlap - a.overlap;
+    });
+
+    const matches = scored.slice(0, 20).map(s => ({
+      id: s.company._id,
+      slug: s.company.slug,
+      name: s.company.name,
+      category: s.company.category,
+      specialties: s.company.specialties,
+      city: s.company.city
+    }));
+
+    return res.json({
+      ok: true,
+      sourceCompany: {
+        id: sourceCompany._id,
+        slug: sourceCompany.slug,
+        name: sourceCompany.name,
+        category: sourceCompany.category,
+        specialties: sourceCompany.specialties,
+        city: sourceCompany.city
+      },
+      matches,
+      meta: {
+        strategy: "category + specialty overlap, city-first",
+        limit: 20
+      }
+    });
+  } catch (err) {
+    console.error("companyContext error:", err);
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout"
+    });
+  }
+});
 
 /*
   POST /api/publicRequests
@@ -74,9 +178,6 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // -------------------------
-    // Aggregation: bedrijven + reviews
-    // -------------------------
     const pipeline = [
       {
         $match: {
@@ -135,11 +236,7 @@ router.get("/:id", async (req, res) => {
 
     const companies = await Company.aggregate(pipeline);
 
-    // -------------------------
-    // Plaats-fallback
-    // -------------------------
     const reqCity = String(city).trim().toLowerCase();
-
     const localCompanies = companies.filter(
       c => String(c.city || "").trim().toLowerCase() === reqCity
     );
@@ -147,11 +244,7 @@ router.get("/:id", async (req, res) => {
     const hasLocal = localCompanies.length > 0;
     const finalCompanies = hasLocal ? localCompanies : companies;
 
-    // -------------------------
-    // DEFINITIEVE SORTERING
-    // -------------------------
     finalCompanies.sort((a, b) => {
-      // 1) Irisje reviews
       const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0;
       const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0;
       if (aHasIrisje !== bHasIrisje) return aHasIrisje ? -1 : 1;
@@ -163,7 +256,6 @@ router.get("/:id", async (req, res) => {
           return (b.reviewCount || 0) - (a.reviewCount || 0);
       }
 
-      // 2) Google reviews
       const aHasGoogle = Number.isFinite(a.avgRating);
       const bHasGoogle = Number.isFinite(b.avgRating);
       if (aHasGoogle !== bHasGoogle) return aHasGoogle ? -1 : 1;
@@ -173,12 +265,10 @@ router.get("/:id", async (req, res) => {
           return b.avgRating - a.avgRating;
       }
 
-      // 3) Verificatie
       if ((b.isVerified ? 1 : 0) !== (a.isVerified ? 1 : 0)) {
         return (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
       }
 
-      // 4) Stabiele fallback
       return (a.name || "").localeCompare(b.name || "", "nl", {
         sensitivity: "base"
       });
