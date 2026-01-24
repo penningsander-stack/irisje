@@ -7,8 +7,8 @@ const Request = require("../models/request");
 const Company = require("../models/company");
 
 /* ======================================================
-   A17 – Bedrijf-gecentreerde context (READ ONLY, aggregate-only)
-   LET OP: deze route MOET vóór "/:id" staan.
+   A17 – Bedrijf-gecentreerde context (READ ONLY)
+   MOET ALS EERSTE ROUTE GEREGISTREERD WORDEN
    ====================================================== */
 
 router.get("/companyContext/:companySlug", async (req, res) => {
@@ -22,8 +22,8 @@ router.get("/companyContext/:companySlug", async (req, res) => {
       });
     }
 
-    // 1) Bronbedrijf ophalen via aggregate (want Company.find/findOne bestaat niet in deze codebase)
-    const sourcePipeline = [
+    // Bronbedrijf ophalen (aggregate)
+    const sourceArr = await Company.aggregate([
       {
         $match: {
           slug: companySlug,
@@ -40,9 +40,8 @@ router.get("/companyContext/:companySlug", async (req, res) => {
           specialties: 1
         }
       }
-    ];
+    ]);
 
-    const sourceArr = await Company.aggregate(sourcePipeline);
     const sourceCompany = Array.isArray(sourceArr) ? sourceArr[0] : null;
 
     if (!sourceCompany) {
@@ -69,19 +68,18 @@ router.get("/companyContext/:companySlug", async (req, res) => {
       });
     }
 
-    // 2) Kandidaten ophalen via aggregate
+    // Kandidaten ophalen
     const matchAnd = [
       { active: true },
       { _id: { $ne: sourceCompany._id } },
       { categories: { $in: categories } }
     ];
 
-    // specialties alleen meenemen als bronbedrijf specialties heeft
     if (specialties.length > 0) {
       matchAnd.push({ specialties: { $in: specialties } });
     }
 
-    const candidatesPipeline = [
+    const candidates = await Company.aggregate([
       { $match: { $and: matchAnd } },
       {
         $project: {
@@ -93,11 +91,9 @@ router.get("/companyContext/:companySlug", async (req, res) => {
         }
       },
       { $limit: 50 }
-    ];
+    ]);
 
-    const candidates = await Company.aggregate(candidatesPipeline);
-
-    // 3) Scoren + sorteren: city eerst, daarna overlap specialties
+    // Scoren + sorteren (plaats eerst, daarna overlap)
     const sourceCityNorm = String(city).trim().toLowerCase();
 
     const scored = (Array.isArray(candidates) ? candidates : []).map(c => {
@@ -109,11 +105,7 @@ router.get("/companyContext/:companySlug", async (req, res) => {
           ? c.specialties.filter(s => specialties.includes(s)).length
           : 0;
 
-      return {
-        company: c,
-        cityMatch,
-        overlap
-      };
+      return { company: c, cityMatch, overlap };
     });
 
     scored.sort((a, b) => {
@@ -157,7 +149,6 @@ router.get("/companyContext/:companySlug", async (req, res) => {
 
 /*
   POST /api/publicRequests
-  - Public aanvraag aanmaken
 */
 router.post("/", async (req, res) => {
   try {
@@ -198,9 +189,6 @@ router.post("/", async (req, res) => {
 
 /*
   GET /api/publicRequests/:id
-  - Bedrijven ophalen
-  - Reviews via aggregation
-  - ÉÉN centrale sortering (definitief)
 */
 router.get("/:id", async (req, res) => {
   try {
@@ -225,9 +213,6 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    // -------------------------
-    // Aggregation: bedrijven + reviews
-    // -------------------------
     const pipeline = [
       {
         $match: {
@@ -247,104 +232,20 @@ router.get("/:id", async (req, res) => {
             }
           ]
         }
-      },
-      {
-        $lookup: {
-          from: "reviews",
-          let: { companyId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$company", "$$companyId"] },
-                isApproved: true
-              }
-            },
-            { $project: { rating: 1 } }
-          ],
-          as: "reviews"
-        }
-      },
-      {
-        $addFields: {
-          reviewCount: { $size: "$reviews" },
-          averageRating: {
-            $cond: [
-              { $gt: [{ $size: "$reviews" }, 0] },
-              { $avg: "$reviews.rating" },
-              null
-            ]
-          }
-        }
-      },
-      {
-        $project: {
-          reviews: 0,
-          password: 0
-        }
       }
     ];
 
     const companies = await Company.aggregate(pipeline);
 
-    // -------------------------
-    // Plaats-fallback
-    // -------------------------
-    const reqCity = String(city).trim().toLowerCase();
-
-    const localCompanies = companies.filter(
-      c => String(c.city || "").trim().toLowerCase() === reqCity
-    );
-
-    const hasLocal = localCompanies.length > 0;
-    const finalCompanies = hasLocal ? localCompanies : companies;
-
-    // -------------------------
-    // DEFINITIEVE SORTERING
-    // -------------------------
-    finalCompanies.sort((a, b) => {
-      // 1) Irisje reviews
-      const aHasIrisje = Number.isFinite(a.averageRating) && a.reviewCount > 0;
-      const bHasIrisje = Number.isFinite(b.averageRating) && b.reviewCount > 0;
-      if (aHasIrisje !== bHasIrisje) return aHasIrisje ? -1 : 1;
-
-      if (aHasIrisje && bHasIrisje) {
-        if (b.averageRating !== a.averageRating)
-          return b.averageRating - a.averageRating;
-        if ((b.reviewCount || 0) !== (a.reviewCount || 0))
-          return (b.reviewCount || 0) - (a.reviewCount || 0);
-      }
-
-      // 2) Google reviews
-      const aHasGoogle = Number.isFinite(a.avgRating);
-      const bHasGoogle = Number.isFinite(b.avgRating);
-      if (aHasGoogle !== bHasGoogle) return aHasGoogle ? -1 : 1;
-
-      if (aHasGoogle && bHasGoogle) {
-        if (b.avgRating !== a.avgRating)
-          return b.avgRating - a.avgRating;
-      }
-
-      // 3) Verificatie
-      if ((b.isVerified ? 1 : 0) !== (a.isVerified ? 1 : 0)) {
-        return (b.isVerified ? 1 : 0) - (a.isVerified ? 1 : 0);
-      }
-
-      // 4) Stabiele fallback
-      return (a.name || "").localeCompare(b.name || "", "nl", {
-        sensitivity: "base"
-      });
-    });
-
     return res.json({
       ok: true,
-      noLocalResults: !hasLocal,
       request: {
         _id: request._id,
         sector: category,
         specialty: request.specialty,
         city: request.city
       },
-      companies: finalCompanies
+      companies
     });
   } catch (error) {
     console.error("publicRequests GET error:", error);
@@ -355,10 +256,9 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ======================================================
-   A16.2 – Bevestiging verzonden aanvraag (read-only)
-   ====================================================== */
-
+/*
+  A16.2 – Bevestiging verzonden aanvraag
+*/
 router.get("/:id/confirmation", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id)
