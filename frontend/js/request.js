@@ -1,22 +1,52 @@
 // frontend/js/request.js
-// A2 – correcte aanvraag + redirect naar results.html met requestId
+// A2 – ROBUUST: specialisme + plaats altijd correct uitlezen
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.querySelector("form");
   if (!form) return;
 
+  function getValue(selectors) {
+    for (const sel of selectors) {
+      const el = form.querySelector(sel);
+      if (el && typeof el.value === "string" && el.value.trim() !== "") {
+        return el.value.trim();
+      }
+    }
+    return "";
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const sector =
-      form.querySelector("[name='sector']")?.value ||
-      form.querySelector("[name='category']")?.value;
+    // ✔ sector / categorie
+    const sector = getValue([
+      "[name='sector']",
+      "[name='category']",
+      "#sector",
+      "#category"
+    ]);
 
-    const specialty = form.querySelector("[name='specialty']")?.value;
-    const city = form.querySelector("[name='city']")?.value;
+    // ✔ specialisme (DIT WAS KAPOT)
+    const specialty = getValue([
+      "[name='specialty']",
+      "[name='specialisme']",
+      "#specialty",
+      "#specialisme"
+    ]);
+
+    // ✔ plaats (DIT WAS KAPOT)
+    const city = getValue([
+      "[name='city']",
+      "[name='place']",
+      "[name='plaats']",
+      "#city",
+      "#place",
+      "#plaats"
+    ]);
 
     if (!sector || !specialty || !city) {
-      alert("Vul sector, specialisme en plaats in.");
+      alert("Sector, specialisme en plaats zijn verplicht.");
+      console.error("❌ Missing values:", { sector, specialty, city });
       return;
     }
 
@@ -26,11 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sector,
-            specialty,
-            city
-          })
+          body: JSON.stringify({ sector, specialty, city })
         }
       );
 
@@ -40,11 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error(data?.message || "Aanvraag mislukt");
       }
 
-      // ✔️ JUISTE redirect
+      // ✔ juiste redirect
       window.location.href =
-        `/results.html?requestId=${data.request._id}`;
+        `/results.html?requestId=${encodeURIComponent(data.request._id)}`;
     } catch (err) {
-      console.error("request.js error:", err);
+      console.error("❌ request.js error:", err);
       alert("Aanvraag mislukt. Probeer het opnieuw.");
     }
   });
