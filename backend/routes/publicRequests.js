@@ -1,4 +1,5 @@
 // backend/routes/publicRequests.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -13,13 +14,21 @@ router.get("/companyContext/:companySlug", async (req, res) => {
   try {
     const { companySlug } = req.params;
 
-    const sourceCompany = await Company.findOne({
+    // 🔧 FIX: geen findOne gebruiken
+    const companies = await Company.find({
       slug: companySlug,
       active: true
-    }).lean();
+    })
+      .lean()
+      .limit(1);
+
+    const sourceCompany = companies[0];
 
     if (!sourceCompany) {
-      return res.status(404).json({ ok: false, message: "Bedrijf niet gevonden" });
+      return res.status(404).json({
+        ok: false,
+        message: "Bedrijf niet gevonden"
+      });
     }
 
     const categories = Array.isArray(sourceCompany.categories)
@@ -39,7 +48,6 @@ router.get("/companyContext/:companySlug", async (req, res) => {
       });
     }
 
-    // 🔴 BELANGRIJK: specialties alleen gebruiken als ze bestaan
     const candidateQuery = {
       _id: { $ne: sourceCompany._id },
       active: true,
@@ -101,6 +109,17 @@ router.get("/companyContext/:companySlug", async (req, res) => {
     });
   } catch (err) {
     console.error("companyContext error:", err);
-    return res.status(500).json({ ok: false, message: "Serverfout" });
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout"
+    });
   }
 });
+
+/* ======================================================
+   BESTAANDE ROUTES – ONGEWIJZIGD
+   ====================================================== */
+
+// (rest van het bestand blijft exact zoals nu)
+
+module.exports = router;
