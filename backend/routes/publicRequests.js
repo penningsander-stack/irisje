@@ -6,6 +6,18 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
+console.log(
+  "[DEBUG] Company typeof:",
+  typeof Company,
+  "find:",
+  typeof Company?.find,
+  "aggregate:",
+  typeof Company?.aggregate
+);
+
+
+
+
 /* ======================================================
    A17 – Bedrijf-gecentreerde context (READ ONLY)
    MOET VOOR /:id KOMEN
