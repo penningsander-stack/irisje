@@ -1,45 +1,45 @@
 // frontend/js/results.js
 // MODE A: search (category + city)
-// MODE B: offer-from-company (anchor company + max 4 similar)
+// MODE B: offer-from-company (anchor company via SLUG + max 4 similar)
 
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
 
-  const companyId = params.get("companyId");
+  const companySlug = params.get("companySlug"); // SLUG-ONLY
   const category = params.get("category");
   const city = params.get("city");
 
-  if (companyId) {
-    await runOfferMode(companyId);
+  if (companySlug) {
+    await runOfferMode(companySlug);
   } else {
     await runSearchMode(category, city);
   }
 }
 
 /* ============================================================
-   MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF
+   MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF (SLUG)
    ============================================================ */
 
-async function runOfferMode(companyId) {
+async function runOfferMode(companySlug) {
   try {
-    // 1. haal ankerbedrijf op
+    // 1) haal ankerbedrijf op via SLUG
     const anchorRes = await fetch(
-      `https://irisje-backend.onrender.com/api/companies/${companyId}`
+      `https://irisje-backend.onrender.com/api/companies/slug/${encodeURIComponent(companySlug)}`
     );
     const anchorData = await anchorRes.json();
 
-    if (!anchorData.ok || !anchorData.company) {
+    if (!anchorData || !anchorData._id) {
       throw new Error("Ankerbedrijf kon niet worden geladen");
     }
 
-    const anchor = anchorData.company;
+    const anchor = anchorData;
 
-    // 2. render ankerbedrijf als eerste (beste match)
+    // 2) render ankerbedrijf als eerste (Beste match)
     renderCompanies([anchor], { isAnchor: true });
 
-    // 3. haal vergelijkbare bedrijven op
+    // 3) haal vergelijkbare bedrijven op via similar-endpoint
     const similarRes = await fetch(
       `https://irisje-backend.onrender.com/api/companies/similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
     );
@@ -53,10 +53,10 @@ async function runOfferMode(companyId) {
       ? similarData.companies.slice(0, 4)
       : [];
 
-    // 4. render vergelijkbare bedrijven
+    // 4) render vergelijkbare bedrijven
     renderCompanies(similars, { isAnchor: false });
 
-    // 5. activeer selectiebeperking (max 5)
+    // 5) activeer selectiebeperking (max 5)
     enableSelectionLimit(5);
 
   } catch (err) {
@@ -66,7 +66,7 @@ async function runOfferMode(companyId) {
 }
 
 /* ============================================================
-   MODE A — ZOEKRESULTATEN
+   MODE A — ZOEKRESULTATEN (CATEGORY + CITY)
    ============================================================ */
 
 async function runSearchMode(category, city) {
