@@ -8,7 +8,7 @@ const Company = require("../models/company");
 
 /* ======================================================
    A17 – Bedrijf-gecentreerde context (READ ONLY)
-   MOET ALS EERSTE ROUTE GEREGISTREERD WORDEN
+   MOET VOOR /:id KOMEN
    ====================================================== */
 
 router.get("/companyContext/:companySlug", async (req, res) => {
@@ -22,27 +22,12 @@ router.get("/companyContext/:companySlug", async (req, res) => {
       });
     }
 
-    // Bronbedrijf ophalen (aggregate)
-    const sourceArr = await Company.aggregate([
-      {
-        $match: {
-          slug: companySlug,
-          active: true
-        }
-      },
-      { $limit: 1 },
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-          city: 1,
-          categories: 1,
-          specialties: 1
-        }
-      }
-    ]);
-
-    const sourceCompany = Array.isArray(sourceArr) ? sourceArr[0] : null;
+    const sourceCompany = await Company.findOne({
+      slug: companySlug,
+      active: true
+    })
+      .select("name slug city categories specialties")
+      .lean();
 
     if (!sourceCompany) {
       return res.status(404).json({
@@ -68,35 +53,24 @@ router.get("/companyContext/:companySlug", async (req, res) => {
       });
     }
 
-    // Kandidaten ophalen
-    const matchAnd = [
-      { active: true },
-      { _id: { $ne: sourceCompany._id } },
-      { categories: { $in: categories } }
-    ];
+    const match = {
+      active: true,
+      _id: { $ne: sourceCompany._id },
+      categories: { $in: categories }
+    };
 
     if (specialties.length > 0) {
-      matchAnd.push({ specialties: { $in: specialties } });
+      match.specialties = { $in: specialties };
     }
 
-    const candidates = await Company.aggregate([
-      { $match: { $and: matchAnd } },
-      {
-        $project: {
-          name: 1,
-          slug: 1,
-          city: 1,
-          categories: 1,
-          specialties: 1
-        }
-      },
-      { $limit: 50 }
-    ]);
+    const candidates = await Company.find(match)
+      .select("name slug city categories specialties")
+      .limit(50)
+      .lean();
 
-    // Scoren + sorteren (plaats eerst, daarna overlap)
     const sourceCityNorm = String(city).trim().toLowerCase();
 
-    const scored = (Array.isArray(candidates) ? candidates : []).map(c => {
+    const scored = candidates.map(c => {
       const cCityNorm = String(c.city || "").trim().toLowerCase();
       const cityMatch = cCityNorm === sourceCityNorm ? 1 : 0;
 
@@ -147,9 +121,10 @@ router.get("/companyContext/:companySlug", async (req, res) => {
   }
 });
 
-/*
-  POST /api/publicRequests
-*/
+/* ======================================================
+   POST /api/publicRequests
+   ====================================================== */
+
 router.post("/", async (req, res) => {
   try {
     const { sector, category, specialty, city } = req.body || {};
@@ -187,14 +162,14 @@ router.post("/", async (req, res) => {
   }
 });
 
-/*
-  GET /api/publicRequests/:id
-*/
+/* ======================================================
+   GET /api/publicRequests/:id
+   ====================================================== */
+
 router.get("/:id", async (req, res) => {
   try {
-    const requestId = req.params.id;
+    const request = await Request.findById(req.params.id).lean();
 
-    const request = await Request.findById(requestId).lean();
     if (!request) {
       return res.status(404).json({
         ok: false,
@@ -213,29 +188,23 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const pipeline = [
-      {
-        $match: {
-          $and: [
-            {
-              $or: [
-                { category },
-                { categories: { $in: [category] } }
-              ]
-            },
-            {
-              $or: [
-                { specialties: { $exists: false } },
-                { specialties: { $size: 0 } },
-                { specialties: { $in: [specialty] } }
-              ]
-            }
+    const companies = await Company.find({
+      $and: [
+        {
+          $or: [
+            { category },
+            { categories: { $in: [category] } }
+          ]
+        },
+        {
+          $or: [
+            { specialties: { $exists: false } },
+            { specialties: { $size: 0 } },
+            { specialties: { $in: [specialty] } }
           ]
         }
-      }
-    ];
-
-    const companies = await Company.aggregate(pipeline);
+      ]
+    }).lean();
 
     return res.json({
       ok: true,
@@ -256,9 +225,10 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/*
-  A16.2 – Bevestiging verzonden aanvraag
-*/
+/* ======================================================
+   A16.2 – Bevestiging verzonden aanvraag
+   ====================================================== */
+
 router.get("/:id/confirmation", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id)
@@ -269,7 +239,10 @@ router.get("/:id/confirmation", async (req, res) => {
       .select("_id companies");
 
     if (!request) {
-      return res.status(404).json({ ok: false, message: "Aanvraag niet gevonden" });
+      return res.status(404).json({
+        ok: false,
+        message: "Aanvraag niet gevonden"
+      });
     }
 
     return res.json({
@@ -279,7 +252,10 @@ router.get("/:id/confirmation", async (req, res) => {
     });
   } catch (err) {
     console.error("confirmation error:", err);
-    return res.status(500).json({ ok: false, message: "Serverfout" });
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout"
+    });
   }
 });
 
