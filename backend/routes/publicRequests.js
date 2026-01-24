@@ -1,17 +1,10 @@
+// backend/routes/publicRequests.js
+
 const express = require("express");
 const router = express.Router();
 
 const Request = require("../models/request");
 const Company = require("../models/company");
-
-console.log(
-  "[DEBUG] Company typeof:",
-  typeof Company,
-  "find:",
-  typeof Company?.find,
-  "aggregate:",
-  typeof Company?.aggregate
-);
 
 /* ======================================================
    A17 – Bedrijf-gecentreerde context (READ ONLY)
@@ -148,7 +141,7 @@ router.post("/", async (req, res) => {
       sector: finalSector,
       category: finalSector,
       specialty,
-      city
+      city: city.trim()
     });
 
     return res.status(201).json({
@@ -171,7 +164,6 @@ router.post("/", async (req, res) => {
 
 /* ======================================================
    GET /api/publicRequests/:id
-   FIX: city + active filter
    ====================================================== */
 
 router.get("/:id", async (req, res) => {
@@ -196,33 +188,25 @@ router.get("/:id", async (req, res) => {
       });
     }
 
+    // ✅ A17.7 – city normalisatie (case-insensitive, exact match)
+    const cityRegex = new RegExp(`^${city.trim()}$`, "i");
+
     const companies = await Company.find({
+      active: true,
+      city: cityRegex,
       $and: [
-        // categorie
         {
           $or: [
             { category },
             { categories: { $in: [category] } }
           ]
         },
-
-        // specialisme
         {
           $or: [
             { specialties: { $exists: false } },
             { specialties: { $size: 0 } },
             { specialties: { $in: [specialty] } }
           ]
-        },
-
-        // ✅ PLAATS (dit ontbrak)
-        {
-          city: city
-        },
-
-        // ✅ alleen actieve bedrijven
-        {
-          active: true
         }
       ]
     }).lean();
