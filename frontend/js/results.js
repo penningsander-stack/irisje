@@ -112,6 +112,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+if (subtitleEl) {
+  if (isRequestMode) {
+    subtitleEl.textContent =
+      "Geschikte bedrijven voor jouw aanvraag. Jij kiest wie contact opneemt.";
+  } else if (isCompanyMode) {
+    subtitleEl.textContent =
+      "Vergelijkbare bedrijven op basis van jouw gekozen dienstverlener.";
+  }
+}
+
+
+
+
   /* =========================
      🧭 CONTEXT (ALLEEN UI)
      ========================= */
