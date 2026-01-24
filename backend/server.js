@@ -55,6 +55,11 @@ app.use("/api/publiccategories", require("./routes/publicCategories"));
 app.use("/api/meta", require("./routes/meta"));
 app.use("/api/seed", require("./routes/seed"));
 
+app.use("/api/companyContext", require("./routes/companyContext"));
+
+
+
+
 /* =========================
  * Health
  * ========================= */
