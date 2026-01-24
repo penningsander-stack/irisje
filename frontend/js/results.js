@@ -1,5 +1,5 @@
 // frontend/js/results.js
-// Resultatenpagina – request-mode + A17 company-mode
+// Resultatenpagina – request-mode + company-mode
 // ⭐ Google & Irisje sterren ongewijzigd
 
 /* =========================
@@ -78,18 +78,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
 
   const requestId = params.get("requestId");
-  const companySlug = params.get("company"); // ✅ A17
+
+  // company-mode params
+  const category = params.get("category");
+  const specialty = params.get("specialty");
+  const city = params.get("city");
+  const companyIdFromUrl = params.get("companyId");
 
   const stateEl = document.getElementById("resultsState");
   const listEl = document.getElementById("companiesList");
   const footerEl = document.getElementById("resultsFooter");
   const countEl = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
+  const subtitleEl = document.getElementById("resultsSubtitle");
+  const titleEl = document.getElementById("resultsTitle");
+
+  const modalOverlay = document.getElementById("companyModalOverlay");
+  const modalCloseBtn = document.getElementById("companyModalClose");
+  const modalOpenNewTabBtn = document.getElementById("companyModalOpenNewTab");
+  const modalTitle = document.getElementById("companyModalTitle");
+  const modalFrame = document.getElementById("companyModalFrame");
+
+  let modalUrl = "";
+  let storedScrollY = 0;
 
   if (!stateEl || !listEl) return;
 
   const isRequestMode = !!requestId;
-  const isCompanyMode = !!companySlug;
+  const isCompanyMode = !requestId && category && specialty && city;
 
   if (!isRequestMode && !isCompanyMode) {
     stateEl.textContent = "Ongeldige aanvraag.";
@@ -97,7 +113,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* =========================
-     ✔ Max 5 selectie
+     🧭 CONTEXT (ALLEEN UI)
+     ========================= */
+
+  if (isRequestMode) {
+    if (titleEl) titleEl.textContent = "Geschikte bedrijven voor jouw aanvraag";
+    if (subtitleEl)
+      subtitleEl.textContent =
+        "Deze bedrijven passen bij jouw aanvraag. Je kiest zelf wie contact met je opneemt.";
+  }
+
+  if (isCompanyMode) {
+    if (titleEl) titleEl.textContent = "Vergelijkbare bedrijven";
+    if (subtitleEl)
+      subtitleEl.textContent =
+        "Bedrijven die vergelijkbaar zijn met jouw gekozen dienstverlener.";
+  }
+
+  /* =========================
+     ✔ Teller + max 5
      ========================= */
 
   listEl.addEventListener("change", (e) => {
@@ -117,6 +151,52 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   /* =========================
+     ✔ Modal
+     ========================= */
+
+  listEl.addEventListener("click", (e) => {
+    const link = e.target.closest(".company-profile-link");
+    if (!link) return;
+    e.preventDefault();
+    openCompanyModal(link.href, link.dataset.companyName);
+  });
+
+  function openCompanyModal(url, titleText) {
+    storedScrollY = window.scrollY;
+    modalUrl = url;
+    if (modalTitle) modalTitle.textContent = titleText || "Bedrijfsprofiel";
+    if (modalFrame) modalFrame.src = url;
+    if (modalOverlay) modalOverlay.style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCompanyModal() {
+    if (modalOverlay) modalOverlay.style.display = "none";
+    if (modalFrame) modalFrame.src = "about:blank";
+    modalUrl = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, storedScrollY);
+  }
+
+  if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) closeCompanyModal();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompanyModal();
+  });
+
+  if (modalOpenNewTabBtn) {
+    modalOpenNewTabBtn.addEventListener("click", () => {
+      if (modalUrl) window.open(modalUrl, "_blank", "noopener");
+    });
+  }
+
+  /* =========================
      Verzenden
      ========================= */
 
@@ -126,10 +206,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (selected.length > 5)
       return alert("Je kunt maximaal 5 bedrijven selecteren.");
 
-    const selectedCompanies = Array.from(selected).map((cb) => ({
-      id: cb.dataset.companyId,
-      slug: cb.dataset.companySlug
-    }));
+    const selectedCompanies = Array.from(selected)
+      .map((cb) => {
+        const card = cb.closest(".result-card");
+        if (!card) return null;
+
+        const nameEl = card.querySelector(".company-name a");
+        const cityEl = card.querySelector(".company-city");
+
+        return {
+          id: cb.dataset.companyId,
+          name: nameEl ? nameEl.textContent.trim() : "",
+          city: cityEl ? cityEl.textContent.trim() : ""
+        };
+      })
+      .filter(Boolean);
+
+    sessionStorage.setItem(
+      "selectedCompaniesSummary",
+      JSON.stringify(selectedCompanies)
+    );
 
     sessionStorage.setItem(
       "selectedCompanyIds",
@@ -137,13 +233,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
     if (requestId) {
+      sessionStorage.setItem("requestId", requestId);
       window.location.href = `/request-send.html?requestId=${encodeURIComponent(
         requestId
       )}`;
     } else {
-      window.location.href = `/request-send.html?company=${encodeURIComponent(
-        companySlug
-      )}`;
+      window.location.href = `/request-send.html?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
     }
   }
 
@@ -155,23 +254,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     let fetchUrl;
-    let companies = [];
 
     if (isRequestMode) {
       fetchUrl = `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`;
-      const res = await fetch(fetchUrl, { cache: "no-store" });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      companies = Array.isArray(data.companies) ? data.companies : [];
+    } else {
+      fetchUrl = `https://irisje-backend.onrender.com/api/companies/match?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
     }
 
-    if (isCompanyMode) {
-      fetchUrl = `https://irisje-backend.onrender.com/api/public/companyContext/${companySlug}`;
-      const res = await fetch(fetchUrl, { cache: "no-store" });
-      if (!res.ok) throw new Error(res.status);
-      const data = await res.json();
-      companies = Array.isArray(data.matches) ? data.matches : [];
-    }
+    const res = await fetch(fetchUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+
+    const data = await res.json();
+    const companies = Array.isArray(data.companies) ? data.companies : [];
 
     if (!companies.length) {
       stateEl.textContent =
@@ -182,6 +280,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     stateEl.textContent = "";
     renderCompanies(companies);
 
+    updateSelectionUI();
     if (footerEl) footerEl.classList.remove("hidden");
   } catch (err) {
     console.error(err);
@@ -204,7 +303,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <label class="company-select">
           <input type="checkbox"
             class="company-checkbox"
-            data-company-id="${company._id || company.id || ""}"
+            data-company-id="${company._id || ""}"
             data-company-slug="${company.slug || ""}"
           />
           <div class="company-info">
@@ -215,7 +314,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ? `<span class="best-match-badge">Beste match</span>`
                     : ""
                 }
-                <a href="${profileUrl}" class="company-profile-link">
+                <a href="${profileUrl}"
+                   class="company-profile-link"
+                   data-company-name="${escapeHtml(company.name)}">
                   ${escapeHtml(company.name)}
                 </a>
               </h3>
