@@ -1,21 +1,52 @@
-// backend/routes/publicRequests.js
-// v2026-01-24 – STRICT MATCH: sector + city + specialty (optie B)
-
 const express = require("express");
 const router = express.Router();
 
-const Request = require("../models/request");
+const Request = require("../models/request"); // ⚠️ lowercase, afspraak
 const Company = require("../models/company");
 
-/*
- * GET /api/publicRequests/:id
- * Geeft:
- * - de aanvraag
- * - alleen bedrijven die EXACT matchen op:
- *   - sector (category)
- *   - city
- *   - specialty (MOET bestaan en matchen)
- */
+/* ======================================================
+   POST /api/publicRequests
+   ====================================================== */
+router.post("/", async (req, res) => {
+  try {
+    const { sector, category, specialty, city } = req.body || {};
+    const finalSector = sector || category;
+
+    if (!finalSector || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Sector en plaats zijn verplicht.",
+      });
+    }
+
+    const created = await Request.create({
+      sector: finalSector,
+      category: finalSector,
+      specialty: specialty || "",
+      city,
+    });
+
+    return res.status(201).json({
+      ok: true,
+      request: {
+        _id: created._id,
+        sector: created.sector,
+        specialty: created.specialty,
+        city: created.city,
+      },
+    });
+  } catch (error) {
+    console.error("publicRequests POST error:", error);
+    return res.status(500).json({
+      ok: false,
+      message: "Serverfout bij aanmaken aanvraag",
+    });
+  }
+});
+
+/* ======================================================
+   GET /api/publicRequests/:id
+   ====================================================== */
 router.get("/:id", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id).lean();
@@ -27,23 +58,31 @@ router.get("/:id", async (req, res) => {
       });
     }
 
-    const { sector, specialty, city } = request;
+    const sector = request.sector || request.category;
+    const specialty = request.specialty;
+    const city = request.city;
 
-    // 🔒 STRIKTE MATCH (optie B)
+    if (!sector || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Aanvraag mist sector of plaats",
+      });
+    }
+
+    // 🔑 CORE FIX: specialty mag NIET blokkeren
     const companies = await Company.find({
+      active: true,
       isVerified: true,
       city: city,
-      categories: sector,
-      specialties: {
-        $exists: true,
-        $ne: [],
-        $in: [specialty],
-      },
-    })
-      .lean()
-      .exec();
+      categories: { $in: [sector] },
+      $or: [
+        { specialties: { $exists: false } },
+        { specialties: { $size: 0 } },
+        { specialties: { $in: [specialty] } },
+      ],
+    }).lean();
 
-    res.json({
+    return res.json({
       ok: true,
       request: {
         _id: request._id,
@@ -52,13 +91,12 @@ router.get("/:id", async (req, res) => {
         city,
       },
       companies,
-      noLocalResults: companies.length === 0,
     });
-  } catch (err) {
-    console.error("❌ publicRequests error:", err);
-    res.status(500).json({
+  } catch (error) {
+    console.error("publicRequests GET error:", error);
+    return res.status(500).json({
       ok: false,
-      message: "Serverfout bij ophalen aanvraag",
+      error: error.message,
     });
   }
 });
