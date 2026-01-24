@@ -49,7 +49,17 @@ router.post("/", async (req, res) => {
    ====================================================== */
 router.get("/:id", async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id).lean();
+    const mongoose = require("mongoose");
+
+if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+  return res.status(400).json({
+    ok: false,
+    message: "Ongeldige aanvraag-ID",
+  });
+}
+
+const request = await Request.findById(req.params.id).lean();
+
 
     if (!request) {
       return res.status(404).json({
