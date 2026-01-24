@@ -3,207 +3,88 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8" />
-  <title>Geschikte bedrijven – Irisje.nl</title>
+  <title>Resultaten – Irisje.nl</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <link rel="stylesheet" href="/css/style.css" />
-
-  <style>
-    body {
-      padding-bottom: 110px; /* ruimte voor vaste footer */
-    }
-
-    /* embed-gedrag */
-    .embed-mode .hide-in-embed {
-      display: none !important;
-    }
-
-    /* simpele utility-classes (geen Tailwind afhankelijkheid) */
-    .hidden { display: none; }
-    .text-sm { font-size: 14px; }
-    .text-gray-600 { color: #4b5563; }
-    .mb-2 { margin-bottom: 0.5rem; }
-    .mb-4 { margin-bottom: 1rem; }
-    .mb-6 { margin-bottom: 1.5rem; }
-
-    /* Modal */
-    .irisje-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 2147483000;
-      display: none;
-      padding: 18px;
-    }
-
-    .irisje-modal {
-      width: min(980px, 100%);
-      height: min(86vh, 860px);
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 14px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    }
-
-    .irisje-modal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 14px;
-      border-bottom: 1px solid #e5e7eb;
-      background: #fff;
-    }
-
-    .irisje-modal-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .irisje-modal-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .irisje-modal-btn {
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      border-radius: 10px;
-      padding: 8px 10px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .irisje-modal-btn:hover {
-      background: #f9fafb;
-    }
-
-    .irisje-modal-body {
-      flex: 1;
-    }
-
-    .irisje-modal-iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
-    }
-  </style>
 </head>
+<body>
 
-<body class="irisje-body min-h-screen">
+<main class="container mx-auto max-w-5xl py-12">
+  <h1 id="results-title" class="text-3xl font-semibold mb-6"></h1>
 
-  <!-- embed-detectie -->
-  <script>
-    if (new URLSearchParams(window.location.search).get("embed") === "1") {
-      document.documentElement.classList.add("embed-mode");
+  <section id="results-list" class="grid gap-6"></section>
+
+  <div id="results-error" class="hidden text-red-600 mt-6"></div>
+</main>
+
+<script>
+/* ======================================================
+   A17.5 – Contextuele results obv company-slug
+   ====================================================== */
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
+  const companySlug = params.get("company");
+
+  // Alleen deze flow aanpassen — geen fallback hier
+  if (!companySlug) {
+    document.getElementById("results-title").textContent =
+      "Algemene resultaten (geen bedrijfscontext)";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `https://irisje-backend.onrender.com/api/publicRequests/companyContext/${encodeURIComponent(companySlug)}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data.message || "Fout bij laden resultaten");
     }
-  </script>
 
-  <!-- HEADER -->
-  <header class="irisje-header hide-in-embed">
-    <div class="irisje-container irisje-header-inner">
-      <a href="/" class="irisje-logo">Irisje.nl</a>
-    </div>
-  </header>
+    renderCompanyContext(data);
+  } catch (err) {
+    console.error(err);
+    const el = document.getElementById("results-error");
+    el.textContent = err.message;
+    el.classList.remove("hidden");
+  }
+});
 
-  <main>
-    <section class="irisje-section">
-      <div class="irisje-container">
+function renderCompanyContext(data) {
+  const { sourceCompany, matches } = data;
 
-        <section class="card card--large">
+  document.getElementById("results-title").textContent =
+    `Vergelijkbare bedrijven voor ${sourceCompany.name}`;
 
-          <header class="mb-4">
-            <h1>Geschikte bedrijven voor jouw aanvraag</h1>
-            <p id="resultsSubtitle" class="muted"></p>
-          </header>
+  const list = document.getElementById("results-list");
+  list.innerHTML = "";
 
-          <div id="noLocalNotice" class="hidden text-sm text-gray-600 mb-4"></div>
+  matches.forEach(c => {
+    const div = document.createElement("div");
+    div.className = "border rounded-xl p-6 bg-white shadow-sm";
 
-          <p class="text-sm text-gray-600 mb-2">
-            <strong>Beste match</strong> is gebaseerd op hoe goed een bedrijf past bij jouw aanvraag,
-            reviews en locatie.
-          </p>
+    div.innerHTML = `
+      <h2 class="text-xl font-semibold mb-1">${c.name}</h2>
+      <p class="text-gray-600 mb-2">${c.city}</p>
+      <p class="text-sm text-gray-500 mb-4">
+        ${Array.isArray(c.categories) ? c.categories.join(", ") : ""}
+      </p>
 
-          <p class="muted mb-6">
-            Selecteer maximaal 5 bedrijven. Je aanvraag wordt in één keer verstuurd.
-          </p>
-
-          <div id="resultsState" class="results-state mb-6"></div>
-
-          <div id="companiesList" class="results-container"></div>
-
-        </section>
-
-      </div>
-    </section>
-  </main>
-
-  <!-- SELECTIE FOOTER -->
-  <footer
-    id="resultsFooter"
-    class="results-footer hidden"
-    style="
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: #ffffff;
-      border-top: 1px solid #e5e7eb;
-      z-index: 1100;
-    "
-  >
-    <div
-      class="irisje-container footer-inner"
-      style="
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 12px 16px;
-        max-width: 640px;
-        margin: 0 auto;
-      "
-    >
-      <span
-        id="selectedCount"
-        style="font-size: 14px; font-weight: 500; text-align: center;"
+      <a
+        href="/company.html?slug=${encodeURIComponent(c.slug)}"
+        class="inline-block text-indigo-600 hover:underline"
       >
-        0 van 5 geselecteerd
-      </span>
+        Bekijk profiel
+      </a>
+    `;
 
-      <button id="sendBtn" class="btn-primary" disabled style="width: 100%;">
-        Verstuur aanvraag naar geselecteerde bedrijven
-      </button>
-    </div>
-  </footer>
-
-  <!-- SITE FOOTER -->
-  <footer class="site-footer hide-in-embed">
-    <div class="irisje-container">
-      © Irisje.nl
-    </div>
-  </footer>
-
-  <script src="/js/results.js"></script>
-
-  <!-- PROFIEL MODAL -->
-  <div id="companyModalOverlay" class="irisje-modal-overlay" aria-hidden="true">
-    <div class="irisje-modal" role="dialog" aria-modal="true">
-      <div class="irisje-modal-header">
-        <p id="companyModalTitle" class="irisje-modal-title">Bedrijfsprofiel</p>
-        <div class="irisje-modal-actions">
-          <button id="companyModalOpenNewTab" class="irisje-modal-btn">Open in nieuw tabblad</button>
-          <button id="companyModalClose" class="irisje-modal-btn">Sluiten</button>
-        </div>
-      </div>
-      <div class="irisje-modal-body">
-        <iframe id="companyModalFrame" class="irisje-modal-iframe"></iframe>
-      </div>
-    </div>
-  </div>
+    list.appendChild(div);
+  });
+}
+</script>
 
 </body>
 </html>
