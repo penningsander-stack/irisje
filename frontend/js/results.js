@@ -1,64 +1,348 @@
 // frontend/js/results.js
-// A2 – resultaten ophalen o.b.v. requestId (plaats + categorie + specialisme)
+// Resultatenpagina – request-mode + company-mode
+// ⭐ Google & Irisje sterren ongewijzigd
+
+/* =========================
+   ⭐ Google-style sterren
+   ========================= */
+
+function renderStars(rating) {
+  if (typeof rating !== "number" || rating <= 0) return "";
+
+  const rounded = Math.round(rating * 2) / 2;
+
+  let html = `
+    <span class="rating-number mr-1 text-gray-900">
+      ${rounded.toString().replace(".", ",")}
+    </span>
+    <span class="star-rating">
+  `;
+
+  for (let i = 1; i <= 5; i++) {
+    let fill = 0;
+    if (rounded >= i) fill = 100;
+    else if (rounded + 0.5 === i) fill = 50;
+
+    html += `
+      <span class="star">
+        ★
+        <span class="star-fill" style="width:${fill}%">★</span>
+      </span>
+    `;
+  }
+
+  html += `</span>`;
+  return html;
+}
+
+function renderReviewBlock(company) {
+  const googleRating =
+    typeof company.avgRating === "number" ? company.avgRating : null;
+
+  const irisjeRating =
+    typeof company.averageRating === "number" ? company.averageRating : null;
+
+  const irisjeCount =
+    Number.isInteger(company.reviewCount) ? company.reviewCount : 0;
+
+  let html = `<div class="company-reviews mt-1 flex flex-col gap-0.5 text-sm">`;
+
+  if (googleRating) {
+    html += `
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500 text-xs">Google</span>
+        <span class="text-yellow-500">${renderStars(googleRating)}</span>
+      </div>
+    `;
+  }
+
+  if (irisjeRating && irisjeCount > 0) {
+    html += `
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500 text-xs">Irisje</span>
+        <span class="text-yellow-500">${renderStars(irisjeRating)}</span>
+        <span class="text-gray-400 text-xs">(${irisjeCount})</span>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+/* =========================
+   DOMContentLoaded
+   ========================= */
 
 document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(window.location.search);
+
   const requestId = params.get("requestId");
 
-  const titleEl = document.getElementById("resultsTitle");
-  const infoEl = document.getElementById("resultsInfo");
-  const gridEl = document.getElementById("companiesGrid");
-  const errorEl = document.getElementById("resultsError");
+  // company-mode params
+  const category = params.get("category");
+  const specialty = params.get("specialty");
+  const city = params.get("city");
+  const companyIdFromUrl = params.get("companyId");
 
-  if (!requestId) {
-    errorEl.textContent = "Geen aanvraag gevonden.";
-    errorEl.classList.remove("hidden");
+  const stateEl = document.getElementById("resultsState");
+  const listEl = document.getElementById("companiesList");
+  const footerEl = document.getElementById("resultsFooter");
+  const countEl = document.getElementById("selectedCount");
+  const sendBtn = document.getElementById("sendBtn");
+  const subtitleEl = document.getElementById("resultsSubtitle");
+
+  const modalOverlay = document.getElementById("companyModalOverlay");
+  const modalCloseBtn = document.getElementById("companyModalClose");
+  const modalOpenNewTabBtn = document.getElementById("companyModalOpenNewTab");
+  const modalTitle = document.getElementById("companyModalTitle");
+  const modalFrame = document.getElementById("companyModalFrame");
+
+  let modalUrl = "";
+  let storedScrollY = 0;
+
+  if (!stateEl || !listEl) return;
+
+  const isRequestMode = !!requestId;
+  const isCompanyMode = !requestId && category && specialty && city;
+
+  if (!isRequestMode && !isCompanyMode) {
+    stateEl.textContent = "Ongeldige aanvraag.";
     return;
   }
 
-  try {
-    const res = await fetch(
-      `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`
-    );
+  /* =========================
+     ✔ Teller + max 5 (event delegation)
+     ========================= */
 
-    const data = await res.json();
+  listEl.addEventListener("change", (e) => {
+    const cb = e.target.closest(".company-checkbox");
+    if (!cb) return;
 
-    if (!res.ok || !data?.ok) {
-      throw new Error(data?.message || "Resultaten konden niet worden geladen");
+    const checkedCount = listEl.querySelectorAll(
+      ".company-checkbox:checked"
+    ).length;
+
+    if (checkedCount > 5) {
+      cb.checked = false;
+      alert("Je kunt maximaal 5 bedrijven selecteren.");
     }
 
-    const { request, companies } = data;
+    updateSelectionUI();
+  });
 
-    titleEl.textContent = "Geschikte bedrijven voor jouw aanvraag";
-    infoEl.textContent = `${request.sector} • ${request.specialty} • ${request.city}`;
+  /* =========================
+     ✔ Modal openen (ÉÉN KEER)
+     ========================= */
 
-    if (!Array.isArray(companies) || companies.length === 0) {
-      infoEl.textContent += " — Geen bedrijven gevonden.";
+  listEl.addEventListener("click", (e) => {
+    const link = e.target.closest(".company-profile-link");
+    if (!link) return;
+    e.preventDefault();
+    openCompanyModal(link.href, link.dataset.companyName);
+  });
+
+  function openCompanyModal(url, titleText) {
+    storedScrollY = window.scrollY;
+    modalUrl = url;
+    if (modalTitle) modalTitle.textContent = titleText || "Bedrijfsprofiel";
+    if (modalFrame) modalFrame.src = url;
+    if (modalOverlay) modalOverlay.style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeCompanyModal() {
+    if (modalOverlay) modalOverlay.style.display = "none";
+    if (modalFrame) modalFrame.src = "about:blank";
+    modalUrl = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, storedScrollY);
+  }
+
+  if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) closeCompanyModal();
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompanyModal();
+  });
+
+  if (modalOpenNewTabBtn) {
+    modalOpenNewTabBtn.addEventListener("click", () => {
+      if (modalUrl) window.open(modalUrl, "_blank", "noopener");
+    });
+  }
+
+  /* =========================
+     Verzenden
+     ========================= */
+
+  function handleSendClick() {
+    const selected = document.querySelectorAll(".company-checkbox:checked");
+    if (!selected.length) return alert("Selecteer minimaal één bedrijf.");
+    if (selected.length > 5)
+      return alert("Je kunt maximaal 5 bedrijven selecteren.");
+
+    const selectedCompanies = Array.from(selected)
+      .map((cb) => {
+        const card = cb.closest(".result-card");
+        if (!card) return null;
+
+        const nameEl = card.querySelector(".company-name a");
+        const cityEl = card.querySelector(".company-city");
+
+        return {
+          id: cb.dataset.companyId,
+          name: nameEl ? nameEl.textContent.trim() : "",
+          city: cityEl ? cityEl.textContent.trim() : ""
+        };
+      })
+      .filter(Boolean);
+
+    sessionStorage.setItem(
+      "selectedCompaniesSummary",
+      JSON.stringify(selectedCompanies)
+    );
+
+    sessionStorage.setItem(
+      "selectedCompanyIds",
+      JSON.stringify(selectedCompanies.map((c) => c.id))
+    );
+
+    if (requestId) {
+      sessionStorage.setItem("requestId", requestId);
+      window.location.href = `/request-send.html?requestId=${encodeURIComponent(
+        requestId
+      )}`;
+    } else {
+      window.location.href = `/request-send.html?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
+    }
+  }
+
+  if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
+
+  /* =========================
+     Data ophalen
+     ========================= */
+
+  try {
+    let fetchUrl;
+
+    if (isRequestMode) {
+      fetchUrl = `https://irisje-backend.onrender.com/api/publicRequests/${requestId}`;
+    } else {
+      fetchUrl = `https://irisje-backend.onrender.com/api/companies/match?category=${encodeURIComponent(
+        category
+      )}&specialty=${encodeURIComponent(
+        specialty
+      )}&city=${encodeURIComponent(city)}`;
+    }
+
+    const res = await fetch(fetchUrl, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+
+    const data = await res.json();
+    const companies = Array.isArray(data.companies) ? data.companies : [];
+
+    if (!companies.length) {
+      stateEl.textContent =
+        "Er zijn op dit moment geen bedrijven beschikbaar.";
       return;
     }
 
-    gridEl.innerHTML = "";
+    stateEl.textContent = "";
+    renderCompanies(companies);
 
-    companies.forEach((c) => {
+    const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
+
+    const checkbox = companyIdFromUrl
+      ? listEl.querySelector(
+          `.company-checkbox[data-company-id="${companyIdFromUrl}"]`
+        )
+      : preselectedSlug
+      ? listEl.querySelector(
+          `.company-checkbox[data-company-slug="${preselectedSlug}"]`
+        )
+      : null;
+
+    if (checkbox) checkbox.checked = true;
+
+    sessionStorage.removeItem("preselectedCompanySlug");
+    updateSelectionUI();
+
+    if (footerEl) footerEl.classList.remove("hidden");
+  } catch (err) {
+    console.error(err);
+    stateEl.textContent = "Resultaten konden niet worden geladen.";
+  }
+
+  function renderCompanies(companies) {
+    listEl.innerHTML = "";
+    updateSelectionUI();
+
+    companies.forEach((company, index) => {
       const card = document.createElement("div");
-      card.className =
-        "bg-white rounded-lg shadow p-5 border border-gray-200";
+      card.className = "result-card";
+
+      const profileUrl = `/company.html?slug=${encodeURIComponent(
+        company.slug || ""
+      )}&embed=1`;
 
       card.innerHTML = `
-        <h3 class="text-lg font-semibold mb-1">${c.name}</h3>
-        <p class="text-sm text-gray-600 mb-2">${c.city}</p>
-        <a href="/company.html?slug=${c.slug}"
-           class="inline-block mt-2 text-indigo-600 font-medium">
-          Bekijk profiel →
-        </a>
+        <label class="company-select">
+          <input type="checkbox"
+            class="company-checkbox"
+            data-company-id="${company._id || ""}"
+            data-company-slug="${company.slug || ""}"
+          />
+          <div class="company-info">
+            <div class="company-header">
+              <h3 class="company-name block">
+                ${
+                  index === 0
+                    ? `<span class="best-match-badge">Beste match</span>`
+                    : ""
+                }
+                <a href="${profileUrl}"
+                   class="company-profile-link"
+                   data-company-name="${escapeHtml(company.name)}">
+                  ${escapeHtml(company.name)}
+                </a>
+              </h3>
+              ${renderReviewBlock(company)}
+            </div>
+            <div class="company-city">${escapeHtml(company.city)}</div>
+          </div>
+        </label>
       `;
 
-      gridEl.appendChild(card);
+      listEl.appendChild(card);
     });
-  } catch (err) {
-    console.error("results.js error:", err);
-    errorEl.textContent =
-      "Resultaten konden niet worden geladen.";
-    errorEl.classList.remove("hidden");
+  }
+
+  function updateSelectionUI() {
+    const selected = listEl.querySelectorAll(
+      ".company-checkbox:checked"
+    ).length;
+    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+    if (sendBtn) sendBtn.disabled = selected === 0;
+  }
+
+  function escapeHtml(str) {
+    return String(str || "").replace(/[&<>"']/g, (s) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[s]);
   }
 });
