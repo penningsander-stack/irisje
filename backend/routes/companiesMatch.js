@@ -1,10 +1,12 @@
 // backend/routes/companiesMatch.js
-// Read-only endpoint voor company-mode
-
 const express = require("express");
 const router = express.Router();
-const matchCompanies = require("../utils/matchCompanies");
+const Company = require("../models/company");
 
+/*
+ * GET /api/companies/match
+ * ?category=Advocaat&specialty=Arbeidsrecht&city=Amsterdam
+ */
 router.get("/match", async (req, res) => {
   try {
     const { category, specialty, city } = req.query;
@@ -16,19 +18,33 @@ router.get("/match", async (req, res) => {
       });
     }
 
-    const result = await matchCompanies({ category, specialty, city });
+    const companies = await Company.find({
+      active: true,
+      city,
+      $and: [
+        {
+          $or: [
+            { category },
+            { categories: { $in: [category] } }
+          ]
+        },
+        {
+          $or: [
+            { specialties: { $exists: false } },
+            { specialties: { $size: 0 } },
+            { specialties: { $in: [specialty] } }
+          ]
+        }
+      ]
+    })
+      .select("name slug city categories specialties")
+      .limit(50)
+      .lean();
 
-    res.json({
-      ok: true,
-      companies: result.companies,
-      noLocalResults: result.noLocalResults
-    });
+    return res.json({ ok: true, companies });
   } catch (err) {
     console.error("companiesMatch error:", err);
-    res.status(500).json({
-      ok: false,
-      message: "Kon bedrijven niet ophalen"
-    });
+    return res.status(500).json({ ok: false, message: "Serverfout" });
   }
 });
 

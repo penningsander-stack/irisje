@@ -1,6 +1,4 @@
 // backend/server.js
-// v2026-01-24 – FIX: CORS correct + vóór alle routes
-
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -9,26 +7,9 @@ const cors = require("cors");
 const app = express();
 
 /* =========================
- * CORS – MOET ALS EERSTE
- * ========================= */
-app.use(
-  cors({
-    origin: [
-      "https://irisje.nl",
-      "https://www.irisje.nl"
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false
-  })
-);
-
-// preflight expliciet toestaan
-app.options("*", cors());
-
-/* =========================
  * Middleware
  * ========================= */
+app.use(cors({ origin: ["https://irisje.nl", "http://localhost:3000"] }));
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -50,14 +31,11 @@ mongoose
   });
 
 /* =========================
- * API Routes
+ * Routes
  * ========================= */
-
-// ⚠️ volgorde is nu correct
 app.use("/api/publicRequests", require("./routes/publicRequests"));
-app.use("/api/companies", require("./routes/companies"));
-app.use("/api/companies", require("./routes/companiesMatch"));
-
+app.use("/api/companies", require("./routes/companiesMatch")); // match-endpoint
+app.use("/api/companies", require("./routes/companies"));      // overige company routes
 app.use("/api/requests", require("./routes/requests"));
 app.use("/api/reviews", require("./routes/reviews"));
 app.use("/api/auth", require("./routes/auth"));
@@ -66,17 +44,14 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publiccategories", require("./routes/publicCategories"));
 app.use("/api/meta", require("./routes/meta"));
 app.use("/api/seed", require("./routes/seed"));
-app.use("/api/companyContext", require("./routes/companyContext"));
 
 /* =========================
  * Health
  * ========================= */
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true });
-});
+app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 /* =========================
- * 404 fallback (API only)
+ * 404 (API only)
  * ========================= */
 app.use((req, res) => {
   res.status(404).json({ ok: false, error: "Not Found" });
