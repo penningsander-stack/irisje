@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
   const params = new URLSearchParams(window.location.search);
 
-  const companySlug = params.get("companySlug"); // SLUG-ONLY
+  const companySlug = params.get("companySlug");
   const category = params.get("category");
   const city = params.get("city");
 
@@ -30,16 +30,16 @@ async function runOfferMode(companySlug) {
     );
     const anchorData = await anchorRes.json();
 
-    if (!anchorData || !anchorData._id) {
+    if (!anchorData.ok || !anchorData.company) {
       throw new Error("Ankerbedrijf kon niet worden geladen");
     }
 
-    const anchor = anchorData;
+    const anchor = anchorData.company;
 
     // 2) render ankerbedrijf als eerste (Beste match)
     renderCompanies([anchor], { isAnchor: true });
 
-    // 3) haal vergelijkbare bedrijven op via similar-endpoint
+    // 3) haal vergelijkbare bedrijven op
     const similarRes = await fetch(
       `https://irisje-backend.onrender.com/api/companies/similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
     );
@@ -66,7 +66,7 @@ async function runOfferMode(companySlug) {
 }
 
 /* ============================================================
-   MODE A — ZOEKRESULTATEN (CATEGORY + CITY)
+   MODE A — ZOEKRESULTATEN
    ============================================================ */
 
 async function runSearchMode(category, city) {
