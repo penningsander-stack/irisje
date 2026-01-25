@@ -134,7 +134,7 @@
 
     // 2) similar ophalen via companies-similar
     const simRes = await fetch(
-      `${API_BASE}/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
+      `${API_BASE}/companies/similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
     );
     const simData = await safeJson(simRes);
 
