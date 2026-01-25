@@ -65,15 +65,15 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedSpecialty = "";
 
   function renderSpecialties() {
-    const sector = normalize(categorySelect.value);
+    const sectorKey = normalize(categorySelect.value);
     specialtyOptions.innerHTML = "";
     specialtyOtherWrap.classList.add("hidden");
     specialtyOtherInput.value = "";
     selectedSpecialty = "";
 
-    if (!sector) return;
+    if (!sectorKey) return;
 
-    const list = SPECIALTIES_BY_SECTOR[sector] || [];
+    const list = SPECIALTIES_BY_SECTOR[sectorKey] || [];
 
     list.forEach(label => {
       specialtyOptions.appendChild(createChip(label, false));
@@ -188,8 +188,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const requestId = data?.request?._id || data?.requestId;
       if (!requestId) throw new Error("Geen requestId ontvangen");
 
-      window.location.href =
-        `/results.html?requestId=${encodeURIComponent(requestId)}`;
+      // ✅ FIX: behoud context in de URL voor results.html
+      const out = new URLSearchParams();
+      out.set("requestId", requestId);
+      out.set("category", sector);
+      out.set("city", city);
+      out.set("specialty", specialty);
+
+      const storedSlug = sessionStorage.getItem("preselectedCompanySlug");
+      if (storedSlug) out.set("companySlug", storedSlug);
+
+      window.location.href = `/results.html?${out.toString()}`;
     } catch (err) {
       console.error(err);
       showError("Er ging iets mis bij het starten van je aanvraag.");
