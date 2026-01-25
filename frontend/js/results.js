@@ -24,6 +24,10 @@ async function init() {
 
 async function runOfferMode(companySlug) {
   try {
+    // ⬇️ RESET container (Stap A)
+    const container = document.getElementById("companies");
+    if (container) container.innerHTML = "";
+
     // 1) haal ankerbedrijf op via SLUG
     const anchorRes = await fetch(
       `https://irisje-backend.onrender.com/api/companies/slug/${encodeURIComponent(companySlug)}`
@@ -42,7 +46,6 @@ async function runOfferMode(companySlug) {
     // 3) haal vergelijkbare bedrijven op
     const similarRes = await fetch(
       `https://irisje-backend.onrender.com/api/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
-
     );
     const similarData = await similarRes.json();
 
@@ -72,6 +75,10 @@ async function runOfferMode(companySlug) {
 
 async function runSearchMode(category, city) {
   try {
+    // ⬇️ RESET container (Stap A)
+    const container = document.getElementById("companies");
+    if (container) container.innerHTML = "";
+
     const url = new URL("https://irisje-backend.onrender.com/api/companies");
     if (category) url.searchParams.set("category", category);
     if (city) url.searchParams.set("city", city);
