@@ -41,7 +41,8 @@ async function runOfferMode(companySlug) {
 
     // 3) haal vergelijkbare bedrijven op
     const similarRes = await fetch(
-      `https://irisje-backend.onrender.com/api/companies/similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
+      `https://irisje-backend.onrender.com/api/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
+
     );
     const similarData = await similarRes.json();
 

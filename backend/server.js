@@ -8,10 +8,6 @@ const cors = require("cors");
 
 const app = express();
 
-const companiesMatchRoutes = require("./routes/companiesMatch");
-app.use("/api/companies", companiesMatchRoutes);
-
-
 
 
 /* =========================
@@ -54,7 +50,7 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publiccategories", require("./routes/publicCategories"));
 app.use("/api/meta", require("./routes/meta"));
 app.use("/api/seed", require("./routes/seed"));
-app.use("/api/companies", require("./routes/companiesSimilar"));
+app.use("/api/companies-similar", require("./routes/companiesSimilar"));
 
 
 /* =========================
