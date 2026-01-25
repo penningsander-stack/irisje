@@ -1,9 +1,8 @@
 // frontend/js/results.js
 // Irisje.nl – Results page logic (search, request, offer-from-company)
-// ✔ fixes missing state handlers
-// ✔ restores Irisje + Google reviews
-// ✔ correct city/category filtering
-// ✔ stable star rendering (5 visible, overlay-fill)
+// ✔ correcte Irisje + Google reviews
+// ✔ geen dubbele sterren in DOM
+// ✔ veilige filtering op city/category/specialty
 
 (() => {
   "use strict";
@@ -19,7 +18,7 @@
       const requestId   = params.get("requestId");
       const category    = params.get("category");
       const city        = params.get("city");
-      const specialty  = params.get("specialty");
+      const specialty   = params.get("specialty");
       const companySlug = params.get("companySlug");
 
       setState("loading", "Bedrijven laden…");
@@ -42,56 +41,53 @@
     }
   }
 
-  /* ============================================================
-     REQUEST MODE
-     ============================================================ */
+  /* ================= REQUEST MODE ================= */
+
   async function runRequestMode(requestId) {
     const res = await fetch(`${API}/publicRequests/${encodeURIComponent(requestId)}`);
     const data = await safeJson(res);
 
-    if (!res.ok || !data || data.ok !== true) {
+    if (!res.ok || !data?.ok) {
       throw new Error("Aanvraag kon niet worden geladen");
     }
 
-    setSubtitle(`Gebaseerd op jouw aanvraag voor ${data.request.category} in ${data.request.city}.`);
+    const r = data.request;
+    setSubtitle(`Gebaseerd op jouw aanvraag voor ${r.category}${r.city ? " in " + r.city : ""}.`);
     setState("ready");
 
-    renderCompanies(data.companies || [], {
-      anchorId: data.request.companyId || null
-    });
+    renderCompanies(data.companies || [], { anchorId: r.companyId || null });
   }
 
-  /* ============================================================
-     SEARCH MODE
-     ============================================================ */
+  /* ================= SEARCH MODE ================= */
+
   async function runSearchMode({ category, city, specialty }) {
     const res = await fetch(`${API}/companies`);
     const data = await safeJson(res);
 
-    if (!res.ok || !data || data.ok !== true) {
+    if (!res.ok || !data?.ok) {
       throw new Error("Bedrijven konden niet worden geladen");
     }
 
-    const wantedCategory  = normalize(category);
-    const wantedCity      = normalize(city);
-    const wantedSpecialty = normalize(specialty);
-
     const filtered = data.companies.filter(c => {
-      const cityOk = wantedCity ? normalize(c.city) === wantedCity : true;
-      const catOk  = wantedCategory ? (c.categories || []).map(normalize).includes(wantedCategory) : true;
-      const specOk = wantedSpecialty ? (c.specialties || []).map(normalize).includes(wantedSpecialty) : true;
+      const cityOk = city ? normalize(c.city) === normalize(city) : true;
+      const catOk  = category ? (c.categories || []).map(normalize).includes(normalize(category)) : true;
+      const specOk = specialty ? (c.specialties || []).map(normalize).includes(normalize(specialty)) : true;
       return cityOk && catOk && specOk;
     });
 
-    setSubtitle(`Gebaseerd op jouw zoekopdracht: ${category} in ${city}.`);
+    const parts = [];
+    if (category) parts.push(category);
+    if (specialty) parts.push(specialty);
+    if (city) parts.push(`in ${city}`);
+
+    setSubtitle(parts.length ? `Gebaseerd op jouw zoekopdracht: ${parts.join(" ")}` : "Resultaten");
     setState("ready");
 
     renderCompanies(filtered);
   }
 
-  /* ============================================================
-     OFFER MODE (companySlug)
-     ============================================================ */
+  /* ================= OFFER MODE ================= */
+
   async function runOfferMode(slug) {
     const anchorRes = await fetch(`${API}/companies/slug/${encodeURIComponent(slug)}`);
     const anchorData = await safeJson(anchorRes);
@@ -100,7 +96,7 @@
       throw new Error("Ankerbedrijf niet gevonden");
     }
 
-    const simRes = await fetch(`${API}/companies/similar?anchorSlug=${encodeURIComponent(slug)}`);
+    const simRes = await fetch(`${API}/companies-similar?anchorSlug=${encodeURIComponent(slug)}`);
     const simData = await safeJson(simRes);
 
     if (!simRes.ok || !simData?.companies) {
@@ -116,9 +112,8 @@
     );
   }
 
-  /* ============================================================
-     RENDERING
-     ============================================================ */
+  /* ================= RENDERING ================= */
+
   function renderCompanies(companies, options = {}) {
     const list = document.getElementById("companiesList");
     list.innerHTML = "";
@@ -128,30 +123,32 @@
       return;
     }
 
-    companies.forEach(company => {
-      const isAnchor = options.anchorId && company._id === options.anchorId;
+    companies.forEach(c => {
+      const isAnchor = options.anchorId && String(c._id) === String(options.anchorId);
 
-      const irisjeRating = number(company.avgRating);
-      const irisjeCount  = number(company.reviewCount);
+      // Irisje reviews (backend bevestigd)
+      const irisjeRating = number(c.averageRating);
+      const irisjeCount  = number(c.reviewCount);
 
-      const googleRating = number(company.googleRating);
-      const googleCount  = number(company.googleReviewCount);
+      // Google reviews (optioneel)
+      const googleRating = number(c.avgRating);
+      const googleCount  = number(c.googleReviewCount);
 
       const card = document.createElement("div");
       card.className = `result-card${isAnchor ? " top-highlight" : ""}`;
 
       card.innerHTML = `
         ${isAnchor ? `<div class="pill pill-indigo">Beste match</div>` : ""}
-        <h3>${escape(company.name)}</h3>
-        <div>${escape(company.city)}</div>
+        <h3>${escape(c.name)}</h3>
+        <div class="result-city">${escape(c.city || "")}</div>
 
         <div class="ratings">
-          ${renderRatingLine("Irisje", irisjeRating, irisjeCount)}
+          ${irisjeRating !== null ? renderRatingLine("Irisje", irisjeRating, irisjeCount) : ""}
           ${googleRating !== null ? renderRatingLine("Google", googleRating, googleCount) : ""}
         </div>
 
-        <label>
-          <input type="checkbox" class="company-checkbox" value="${company._id}">
+        <label class="select-line">
+          <input type="checkbox" class="company-checkbox" value="${c._id}">
           Selecteer
         </label>
       `;
@@ -161,42 +158,27 @@
   }
 
   function renderRatingLine(label, rating, count) {
-    if (rating === null) {
-      return `<div class="rating-line">${label}: geen reviews</div>`;
-    }
-
     return `
       <div class="rating-line">
-        <strong>${label}</strong>
+        <span class="rating-label">${label}</span>
         ${renderStars(rating)}
-        <span>(${count || 0})</span>
+        <span class="rating-count">(${count ?? 0})</span>
       </div>
     `;
   }
 
   function renderStars(rating) {
     const r = clamp(rating, 0, 5);
-    let html = `<span class="star-rating">`;
-
+    let html = `<span class="star-rating" aria-label="${r} van 5">`;
     for (let i = 1; i <= 5; i++) {
-      const fill = clamp(r - (i - 1), 0, 1);
-      const pct = Math.round(fill * 100);
-
-      html += `
-        <span class="star">
-          ★
-          <span class="star-fill" style="width:${pct}%">★</span>
-        </span>
-      `;
+      html += `<span class="star${i <= r ? " filled" : ""}">★</span>`;
     }
-
     html += `</span>`;
     return html;
   }
 
-  /* ============================================================
-     UI HELPERS
-     ============================================================ */
+  /* ================= UI HELPERS ================= */
+
   function setState(state, message = "") {
     const el = document.getElementById("resultsState");
     if (!el) return;
@@ -222,9 +204,8 @@
     if (el) el.textContent = text;
   }
 
-  /* ============================================================
-     UTIL
-     ============================================================ */
+  /* ================= UTIL ================= */
+
   async function safeJson(res) {
     try { return await res.json(); }
     catch { return null; }
