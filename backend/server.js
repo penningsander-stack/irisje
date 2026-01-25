@@ -50,7 +50,11 @@ app.use("/api/payments", require("./routes/payments"));
 app.use("/api/publiccategories", require("./routes/publicCategories"));
 app.use("/api/meta", require("./routes/meta"));
 app.use("/api/seed", require("./routes/seed"));
-app.use("/api/companies-similar", require("./routes/companiesSimilar"));
+
+const companiesSimilarRoutes = require("./routes/companiesSimilar");
+
+app.use("/api/companies", companiesSimilarRoutes);
+
 
 
 /* =========================
