@@ -1,280 +1,494 @@
 // frontend/js/results.js
-// MODE A: search (category + city + optional specialty)
-// MODE B: offer-from-company (anchor company via SLUG + max 4 similar)
+// Irisje.nl – results page logic (search mode + request mode + offer-from-company mode)
+// Fixes: missing setState/showError, DOM id mismatch, empty results rendering, selection footer, modal open
 
-document.addEventListener("DOMContentLoaded", init);
+(() => {
+  "use strict";
 
-const MAX_SELECT = 5;
+  const API_BASE = "https://irisje-backend.onrender.com/api";
 
-/* ============================================================
-   INIT
-   ============================================================ */
+  document.addEventListener("DOMContentLoaded", init);
 
-async function init() {
-  try {
-    const params = new URLSearchParams(window.location.search);
+  async function init() {
+    try {
+      const params = new URLSearchParams(window.location.search);
 
-    const companySlug = params.get("companySlug");
-    const category = params.get("category");
-    const city = params.get("city");
-    const specialty = params.get("specialty");
+      const requestId = params.get("requestId");
+      const category = params.get("category");
+      const city = params.get("city");
+      const specialty = params.get("specialty");
+      const companySlug = params.get("companySlug");
 
-    setState("Laden…");
+      const embed = params.get("embed") === "1";
+      if (embed) document.body.classList.add("embed-mode");
 
-    if (companySlug) {
-      await runOfferMode(companySlug);
-    } else {
-      await runSearchMode(category, city, specialty);
+      bindModal();
+      bindFooter();
+
+      // MODE B: offer-from-company (anchor via slug + up to 4 similars)
+      if (companySlug) {
+        setState("loading", "Bedrijven laden…");
+        await runOfferMode(companySlug);
+        return;
+      }
+
+      // MODE A2: request-based results (preferred when requestId exists)
+      if (requestId) {
+        setState("loading", "Bedrijven laden…");
+        await runRequestMode(requestId);
+        return;
+      }
+
+      // MODE A1: direct search mode (category + city)
+      setState("loading", "Bedrijven laden…");
+      await runSearchMode({ category, city, specialty });
+    } catch (err) {
+      console.error(err);
+      showError("Er ging iets mis bij het laden van de resultaten.");
+    }
+  }
+
+  /* ============================================================
+     MODE A2 — REQUEST MODE (op basis van requestId)
+     ============================================================ */
+  async function runRequestMode(requestId) {
+    const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`);
+    const data = await safeJson(res);
+
+    if (!res.ok || !data || data.ok !== true) {
+      throw new Error((data && (data.message || data.error)) || "Request kon niet worden geladen");
     }
 
-    setState("");
+    const request = data.request || {};
+    const companies = Array.isArray(data.companies) ? data.companies : [];
 
-    const checkboxCount = document.querySelectorAll(".company-checkbox").length;
-    if (checkboxCount > 0) {
-      enableSelectionLimit(MAX_SELECT);
-      updateSelectionUI(MAX_SELECT);
+    // Titel/subtitel
+    setText("resultsSubtitle", buildSubtitleFromRequest(request));
+    setState("ready");
+
+    // No local results hint (als backend dit aangeeft)
+    if (data.noLocalResults) {
+      showNoLocalNotice(true);
     } else {
-      hideFooter();
+      showNoLocalNotice(false);
     }
-  } catch (err) {
-    console.error(err);
-    showError("Er ging iets mis bij het laden van de resultaten.");
-  }
-}
 
-/* ============================================================
-   MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF
-   ============================================================ */
-
-async function runOfferMode(companySlug) {
-  resetCompanies();
-
-  const anchorRes = await fetch(
-    `https://irisje-backend.onrender.com/api/companies/slug/${encodeURIComponent(companySlug)}`
-  );
-  const anchorData = await safeJson(anchorRes);
-
-  if (!anchorRes.ok || !anchorData?.ok || !anchorData?.company) {
-    throw new Error(anchorData?.message || "Ankerbedrijf kon niet worden geladen");
+    renderCompanies(companies, { anchorId: request.companyId || null });
   }
 
-  const anchor = anchorData.company;
-  renderCompanies([anchor], { isAnchor: true });
+  /* ============================================================
+     MODE A1 — SEARCH MODE (category + city + specialty)
+     Let op: /api/companies geeft alle bedrijven; we filteren client-side.
+     ============================================================ */
+  async function runSearchMode({ category, city, specialty }) {
+    const res = await fetch(`${API_BASE}/companies`);
+    const data = await safeJson(res);
 
-  const similarRes = await fetch(
-    `https://irisje-backend.onrender.com/api/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
-  );
-  const similarData = await safeJson(similarRes);
+    if (!res.ok || !data || data.ok !== true || !Array.isArray(data.companies)) {
+      throw new Error("Bedrijven konden niet worden geladen");
+    }
 
-  if (!similarRes.ok || !similarData?.ok) {
-    throw new Error(similarData?.message || "Similar-endpoint faalde");
+    const wantedCategory = normalize(category);
+    const wantedCity = normalize(city);
+    const wantedSpecialty = normalize(specialty);
+
+    const filtered = data.companies.filter((c) => {
+      const cCity = normalize(c.city);
+      const cCategories = Array.isArray(c.categories) ? c.categories.map(normalize) : [];
+      const cSpecialties = Array.isArray(c.specialties) ? c.specialties.map(normalize) : [];
+
+      const cityOk = wantedCity ? cCity === wantedCity : true;
+      const catOk = wantedCategory ? cCategories.includes(wantedCategory) : true;
+      const specOk = wantedSpecialty ? cSpecialties.includes(wantedSpecialty) : true;
+
+      return cityOk && catOk && specOk;
+    });
+
+    setText(
+      "resultsSubtitle",
+      buildSubtitleFromQuery({ category, city, specialty })
+    );
+
+    setState("ready");
+    showNoLocalNotice(false);
+
+    renderCompanies(filtered);
   }
 
-  const similars = Array.isArray(similarData.companies)
-    ? similarData.companies.slice(0, 4)
-    : [];
+  /* ============================================================
+     MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF (anchorSlug + similars)
+     Endpoint: /api/companies-similar?anchorSlug=...
+     ============================================================ */
+  async function runOfferMode(anchorSlug) {
+    // 1) anchor ophalen via bestaande companies/slug route
+    const anchorRes = await fetch(
+      `${API_BASE}/companies/slug/${encodeURIComponent(anchorSlug)}`
+    );
+    const anchorData = await safeJson(anchorRes);
 
-  renderCompanies(similars);
-}
+    if (!anchorRes.ok || !anchorData || anchorData.ok !== true || !anchorData.company) {
+      throw new Error("Ankerbedrijf kon niet worden geladen");
+    }
 
-/* ============================================================
-   MODE A — ZOEKRESULTATEN
-   ============================================================ */
+    const anchor = anchorData.company;
 
-async function runSearchMode(category, city, specialty) {
-  resetCompanies();
+    // 2) similar ophalen via companies-similar
+    const simRes = await fetch(
+      `${API_BASE}/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
+    );
+    const simData = await safeJson(simRes);
 
-  const url = new URL("https://irisje-backend.onrender.com/api/companies");
-  if (category) url.searchParams.set("category", category);
-  if (city) url.searchParams.set("city", city);
-  if (specialty) url.searchParams.set("specialty", specialty);
+    if (!simRes.ok || !simData || simData.ok !== true) {
+      throw new Error((simData && simData.message) || "Vergelijkbare bedrijven konden niet worden geladen");
+    }
 
-  const res = await fetch(url.toString(), { cache: "no-store" });
-  const data = await safeJson(res);
+    const similars = Array.isArray(simData.companies) ? simData.companies.slice(0, 4) : [];
 
-  if (!res.ok || !data?.ok || !Array.isArray(data.companies)) {
-    throw new Error(data?.message || "Zoekresultaten konden niet worden geladen");
+    setText("resultsSubtitle", `Gebaseerd op jouw aanvraag bij ${anchor.name}. Selecteer maximaal 5 bedrijven.`);
+    setState("ready");
+    showNoLocalNotice(false);
+
+    // Anchor bovenaan + badge
+    renderCompanies([anchor, ...similars], { anchorId: anchor._id });
   }
 
-  renderCompanies(data.companies);
-}
+  /* ============================================================
+     RENDERING
+     ============================================================ */
+  function renderCompanies(companies, options = {}) {
+    const list = document.getElementById("companiesList");
+    if (!list) return;
 
-/* ============================================================
-   RENDERING
-   ============================================================ */
+    list.innerHTML = "";
 
-function resetCompanies() {
-  const list = document.getElementById("companiesList");
-  if (list) list.innerHTML = "";
-  hideFooter();
-}
+    if (!Array.isArray(companies) || companies.length === 0) {
+      list.innerHTML = `<div class="empty-state">Geen geschikte bedrijven gevonden.</div>`;
+      updateFooterState();
+      return;
+    }
 
-function renderCompanies(companies, options = {}) {
-  const container = document.getElementById("companiesList");
-  if (!container) return;
+    const anchorId = options.anchorId || null;
 
-  if (!Array.isArray(companies) || companies.length === 0) {
-    setState("Geen geschikte bedrijven gevonden.");
-    hideFooter();
-    return;
-  }
+    companies.forEach((company, index) => {
+      const isAnchor = !!anchorId && String(company._id) === String(anchorId);
 
-  companies.forEach((company) => {
-    const card = document.createElement("div");
-    card.className = "result-card";
-    if (options.isAnchor) card.classList.add("best-match");
+      const card = document.createElement("div");
+      card.className = `result-card${isAnchor ? " top-highlight" : ""}`;
 
-    const reviewHtml = buildReviewsHtml(company);
+      const name = escapeHtml(company.name || "Onbekend bedrijf");
+      const city = escapeHtml(company.city || "");
+      const categories = Array.isArray(company.categories) ? company.categories.join(" • ") : "";
+      const tagline = company.tagline ? String(company.tagline) : "";
+      const slug = company.slug ? String(company.slug) : "";
 
-    card.innerHTML = `
-      <div class="result-card-inner">
-        ${options.isAnchor ? `<div class="badge">Beste match</div>` : ""}
+      // Ratings (Irisje)
+      const irisjeRating = numberOrNull(company.avgRating ?? company.averageRating);
+      const irisjeCount = numberOrNull(company.reviewCount);
 
-        <div class="result-card-main">
-          <h3 class="result-title">${escapeHtml(company.name)}</h3>
-          ${reviewHtml}
-          <p class="muted">${escapeHtml(company.city || "")}</p>
+      // (Optioneel) Google fields als ze bestaan op jouw Company-documents
+      const googleRating = numberOrNull(company.googleRating);
+      const googleCount = numberOrNull(company.googleReviewCount);
+
+      // We tonen in 1 regel: Irisje + (evt) Google.
+      const ratingHtml = buildRatingBlock({
+        irisjeRating,
+        irisjeCount,
+        googleRating,
+        googleCount,
+      });
+
+      card.innerHTML = `
+        <div class="result-header">
+          <div>
+            ${isAnchor ? `<div class="pill pill-indigo">Beste match</div>` : ``}
+            <div class="result-title">
+              <a href="#" class="js-open-company" data-slug="${escapeHtml(slug)}">${name}</a>
+            </div>
+            <div class="result-location">${city}</div>
+            ${categories ? `<div class="result-categories">${escapeHtml(categories)}</div>` : ``}
+            ${tagline ? `<div class="result-tagline">${escapeHtml(tagline)}</div>` : ``}
+          </div>
+          <div class="result-rating">
+            ${ratingHtml}
+          </div>
         </div>
 
-        <label class="result-select">
-          <input type="checkbox" class="company-checkbox" value="${escapeHtml(company._id)}">
-          <span>Selecteer</span>
-        </label>
-      </div>
-    `;
+        <div class="result-footer">
+          <div class="result-actions">
+            <label class="checkbox-label">
+              <input type="checkbox" class="company-checkbox" value="${escapeHtml(String(company._id || ""))}">
+              Selecteer
+            </label>
+            ${company.isVerified ? `<span class="result-verified">Geverifieerd</span>` : `<span class="result-verified">Niet geverifieerd</span>`}
+          </div>
+        </div>
+      `;
 
-    container.appendChild(card);
-  });
+      list.appendChild(card);
 
-  showFooter();
-}
+      // Modal open handler
+      const openBtn = card.querySelector(".js-open-company");
+      if (openBtn) {
+        openBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const s = openBtn.getAttribute("data-slug") || "";
+          if (s) openCompanyModal(s);
+        });
+      }
 
-/* ============================================================
-   REVIEWS + STERREN (GEFIXT)
-   ============================================================ */
+      // Checkbox handler
+      const cb = card.querySelector(".company-checkbox");
+      if (cb) {
+        cb.addEventListener("change", () => {
+          enforceSelectionLimit(5, cb);
+          updateFooterState();
+        });
+      }
+    });
 
-function buildReviewsHtml(company) {
-  const parts = [];
-
-  if (company.googleReviewCount > 0) {
-    parts.push(renderRatingRow("Google", company.googleRating, company.googleReviewCount));
+    updateFooterState();
   }
 
-  if (company.reviewCount > 0) {
-    parts.push(renderRatingRow("Irisje", company.avgRating, company.reviewCount));
-  }
+  function buildRatingBlock({ irisjeRating, irisjeCount, googleRating, googleCount }) {
+    const parts = [];
 
-  if (parts.length === 0) return "";
-
-  return `<div class="reviews-block">${parts.join("")}</div>`;
-}
-
-function renderRatingRow(source, rating, count) {
-  return `
-    <div class="rating-row">
-      <span class="rating-source">${source}</span>
-      <span class="rating-stars-fixed">
-        ${renderStars(rating)}
-      </span>
-      <span class="rating-value">${formatRating(rating)}</span>
-      <span class="rating-count">(${count})</span>
-    </div>
-  `;
-}
-
-function renderStars(rating) {
-  const r = clamp(Number(rating), 0, 5);
-  const full = Math.floor(r);
-  const half = r - full >= 0.5 ? 1 : 0;
-  const empty = 5 - full - half;
-
-  return (
-    svgStar("full").repeat(full) +
-    (half ? svgStar("half") : "") +
-    svgStar("empty").repeat(empty)
-  );
-}
-
-function svgStar(type) {
-  const path = "M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z";
-
-  if (type === "half") {
-    return `
-      <svg class="star" viewBox="0 0 20 20">
-        <defs>
-          <linearGradient id="half">
-            <stop offset="50%" stop-color="currentColor"/>
-            <stop offset="50%" stop-color="transparent"/>
-          </linearGradient>
-        </defs>
-        <path fill="url(#half)" d="${path}"></path>
-        <path fill="none" stroke="currentColor" d="${path}"></path>
-      </svg>`;
-  }
-
-  return `
-    <svg class="star" viewBox="0 0 20 20">
-      <path ${type === "full" ? `fill="currentColor"` : `fill="none" stroke="currentColor"`} d="${path}"></path>
-    </svg>`;
-}
-
-/* ============================================================
-   SELECTIE + FOOTER
-   ============================================================ */
-
-function enableSelectionLimit(max) {
-  document.addEventListener("change", (e) => {
-    if (!e.target.classList.contains("company-checkbox")) return;
-
-    const checked = document.querySelectorAll(".company-checkbox:checked");
-    if (checked.length > max) {
-      e.target.checked = false;
-      alert(`Je kunt maximaal ${max} bedrijven selecteren.`);
+    if (irisjeRating != null) {
+      parts.push(`
+        <div class="rating-line">
+          <span class="pill pill-irisje">Irisje</span>
+          <span class="rating-value">${formatOneDecimal(irisjeRating)}</span>
+          ${renderStars(irisjeRating)}
+          <span class="rating-count">(${irisjeCount ?? 0})</span>
+        </div>
+      `);
     }
-    updateSelectionUI(max);
-  });
-}
 
-function updateSelectionUI(max) {
-  const checked = document.querySelectorAll(".company-checkbox:checked").length;
-  const footer = document.getElementById("resultsFooter");
-  const selectedCount = document.getElementById("selectedCount");
-  const sendBtn = document.getElementById("sendBtn");
+    if (googleRating != null) {
+      parts.push(`
+        <div class="rating-line">
+          <span class="pill pill-google">Google</span>
+          <span class="rating-value">${formatOneDecimal(googleRating)}</span>
+          ${renderStars(googleRating)}
+          <span class="rating-count">(${googleCount ?? 0})</span>
+        </div>
+      `);
+    }
 
-  if (selectedCount) selectedCount.textContent = `${checked} van ${max} geselecteerd`;
-  if (footer) footer.classList.remove("hidden");
-  if (sendBtn) sendBtn.disabled = checked === 0;
-}
+    if (parts.length === 0) {
+      return `<div class="result-reviewcount">Geen reviews</div>`;
+    }
 
-function showFooter() {
-  const footer = document.getElementById("resultsFooter");
-  if (footer) footer.classList.remove("hidden");
-}
+    return parts.join("");
+  }
 
-function hideFooter() {
-  const footer = document.getElementById("resultsFooter");
-  if (footer) footer.classList.add("hidden");
-}
+  function renderStars(ratingOutOfFive) {
+    const r = clamp(Number(ratingOutOfFive) || 0, 0, 5);
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      const fill = clamp(r - (i - 1), 0, 1); // 0..1
+      const pct = Math.round(fill * 100);
+      stars.push(`
+        <span class="star" aria-hidden="true">
+          ★
+          <span class="star-fill" style="width:${pct}%">★</span>
+        </span>
+      `);
+    }
+    return `<span class="star-rating" title="${formatOneDecimal(r)} / 5">${stars.join("")}</span>`;
+  }
 
-/* ============================================================
-   HELPERS
-   ============================================================ */
+  /* ============================================================
+     FOOTER (selectie)
+     ============================================================ */
+  function bindFooter() {
+    const btn = document.getElementById("sendBtn");
+    if (btn) {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
 
-async function safeJson(res) {
-  try { return await res.json(); } catch { return null; }
-}
+        // Alleen selectie beheren; daadwerkelijke "verzend" endpoint is afhankelijk van jouw bestaande backend-flow.
+        // We laten dit veilig: geen aannames over endpoint, maar wél UX: toon huidige selectie.
+        const selectedIds = getSelectedCompanyIds();
+        if (selectedIds.length === 0) {
+          alert("Selecteer minimaal 1 bedrijf.");
+          return;
+        }
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, m =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])
-  );
-}
+        alert(`Geselecteerd: ${selectedIds.length} bedrijf(ven).\n\nAls jouw verzend-endpoint klaar staat, koppel ik dit knopje daar veilig aan (zonder aannames).`);
+      });
+    }
+  }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
+  function updateFooterState() {
+    const selected = getSelectedCompanyIds();
+    const footer = document.getElementById("resultsFooter");
+    const countEl = document.getElementById("selectedCount");
+    const btn = document.getElementById("sendBtn");
 
-function formatRating(r) {
-  const n = clamp(Number(r), 0, 5);
-  return n.toFixed(1).replace(".", ",");
-}
+    if (countEl) countEl.textContent = `${selected.length} van 5 geselecteerd`;
+    if (btn) btn.disabled = selected.length === 0;
+
+    if (!footer) return;
+    footer.style.display = selected.length > 0 ? "flex" : "none";
+  }
+
+  function getSelectedCompanyIds() {
+    return Array.from(document.querySelectorAll(".company-checkbox:checked"))
+      .map((el) => el.value)
+      .filter(Boolean);
+  }
+
+  function enforceSelectionLimit(max, changedCheckbox) {
+    const checked = document.querySelectorAll(".company-checkbox:checked");
+    if (checked.length <= max) return;
+
+    // Teveel: zet de laatst gewijzigde uit
+    if (changedCheckbox) changedCheckbox.checked = false;
+    alert(`Je kunt maximaal ${max} bedrijven selecteren.`);
+  }
+
+  /* ============================================================
+     MODAL
+     ============================================================ */
+  function bindModal() {
+    const overlay = document.getElementById("companyModalOverlay");
+    const closeBtn = document.getElementById("companyModalClose");
+    const openNewTab = document.getElementById("companyModalOpenNewTab");
+    const iframe = document.getElementById("companyModalIframe");
+
+    if (closeBtn) closeBtn.addEventListener("click", closeCompanyModal);
+    if (overlay) overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) closeCompanyModal();
+    });
+
+    // ESC sluiten
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeCompanyModal();
+    });
+
+    // Open new tab
+    if (openNewTab) {
+      openNewTab.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!iframe) return;
+        const src = iframe.getAttribute("src");
+        if (src) window.open(src.replace("&embed=1", ""), "_blank", "noopener");
+      });
+    }
+  }
+
+  function openCompanyModal(slug) {
+    const overlay = document.getElementById("companyModalOverlay");
+    const iframe = document.getElementById("companyModalIframe");
+    if (!overlay || !iframe) return;
+
+    iframe.src = `/company.html?slug=${encodeURIComponent(slug)}&embed=1`;
+    overlay.style.display = "flex";
+    document.body.classList.add("modal-open");
+  }
+
+  function closeCompanyModal() {
+    const overlay = document.getElementById("companyModalOverlay");
+    const iframe = document.getElementById("companyModalIframe");
+    if (!overlay) return;
+
+    overlay.style.display = "none";
+    document.body.classList.remove("modal-open");
+    if (iframe) iframe.src = "about:blank";
+  }
+
+  /* ============================================================
+     STATE / UI HELPERS (fixes missing setState/showError)
+     ============================================================ */
+  function setState(state, message = "") {
+    // state: loading | ready | error
+    const stateBox = document.getElementById("resultsState");
+    if (!stateBox) return;
+
+    stateBox.style.display = state === "ready" ? "none" : "block";
+
+    if (state === "loading") {
+      stateBox.innerHTML = `<div class="loading-state">${escapeHtml(message || "Laden…")}</div>`;
+    } else if (state === "error") {
+      stateBox.innerHTML = `<div class="error-state">${escapeHtml(message || "Er ging iets mis.")}</div>`;
+    } else {
+      stateBox.innerHTML = "";
+    }
+  }
+
+  function showError(message) {
+    setState("error", message || "Er ging iets mis.");
+  }
+
+  function showNoLocalNotice(show) {
+    const el = document.getElementById("noLocalNotice");
+    if (!el) return;
+    el.style.display = show ? "block" : "none";
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value || "";
+  }
+
+  function buildSubtitleFromRequest(request) {
+    const parts = [];
+    if (request.category) parts.push(request.category);
+    if (request.specialty) parts.push(request.specialty);
+    if (request.city) parts.push(request.city);
+    if (parts.length === 0) return "Gebaseerd op jouw aanvraag.";
+    return `Gebaseerd op jouw aanvraag voor ${parts.join(" in ")}.`;
+  }
+
+  function buildSubtitleFromQuery({ category, city, specialty }) {
+    const c = category ? String(category) : "";
+    const s = specialty ? String(specialty) : "";
+    const ci = city ? String(city) : "";
+
+    const left = [c, s].filter(Boolean).join(" – ");
+    const right = ci ? `in ${ci}` : "";
+
+    if (!left && !right) return "Resultaten";
+    return `Gebaseerd op jouw zoekopdracht: ${[left, right].filter(Boolean).join(" ")}.`;
+  }
+
+  /* ============================================================
+     FETCH / FORMAT HELPERS
+     ============================================================ */
+  async function safeJson(res) {
+    try {
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  function normalize(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function numberOrNull(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function formatOneDecimal(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return "0,0";
+    // NL formatting
+    return n.toFixed(1).replace(".", ",");
+  }
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+})();
