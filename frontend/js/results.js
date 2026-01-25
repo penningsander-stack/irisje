@@ -6,6 +6,10 @@ document.addEventListener("DOMContentLoaded", init);
 
 const MAX_SELECT = 5;
 
+/* ============================================================
+   INIT
+   ============================================================ */
+
 async function init() {
   try {
     const params = new URLSearchParams(window.location.search);
@@ -13,7 +17,7 @@ async function init() {
     const companySlug = params.get("companySlug");
     const category = params.get("category");
     const city = params.get("city");
-    const specialty = params.get("specialty"); // ✅ nieuw: optioneel
+    const specialty = params.get("specialty");
 
     setState("Laden…");
 
@@ -25,7 +29,6 @@ async function init() {
 
     setState("");
 
-    // Let op: alleen selection UI activeren als er echt kaarten/checkboxes staan.
     const checkboxCount = document.querySelectorAll(".company-checkbox").length;
     if (checkboxCount > 0) {
       enableSelectionLimit(MAX_SELECT);
@@ -40,13 +43,12 @@ async function init() {
 }
 
 /* ============================================================
-   MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF (SLUG)
+   MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF
    ============================================================ */
 
 async function runOfferMode(companySlug) {
   resetCompanies();
 
-  // 1) haal ankerbedrijf op via SLUG
   const anchorRes = await fetch(
     `https://irisje-backend.onrender.com/api/companies/slug/${encodeURIComponent(companySlug)}`
   );
@@ -57,11 +59,8 @@ async function runOfferMode(companySlug) {
   }
 
   const anchor = anchorData.company;
-
-  // 2) render ankerbedrijf als eerste (Beste match)
   renderCompanies([anchor], { isAnchor: true });
 
-  // 3) haal vergelijkbare bedrijven op
   const similarRes = await fetch(
     `https://irisje-backend.onrender.com/api/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`
   );
@@ -75,8 +74,7 @@ async function runOfferMode(companySlug) {
     ? similarData.companies.slice(0, 4)
     : [];
 
-  // 4) render vergelijkbare bedrijven
-  renderCompanies(similars, { isAnchor: false });
+  renderCompanies(similars);
 }
 
 /* ============================================================
@@ -86,11 +84,10 @@ async function runOfferMode(companySlug) {
 async function runSearchMode(category, city, specialty) {
   resetCompanies();
 
-  // Server-side filter (als backend dit ondersteunt)
   const url = new URL("https://irisje-backend.onrender.com/api/companies");
   if (category) url.searchParams.set("category", category);
   if (city) url.searchParams.set("city", city);
-  if (specialty) url.searchParams.set("specialty", specialty); // ✅ veilig: backend mag negeren
+  if (specialty) url.searchParams.set("specialty", specialty);
 
   const res = await fetch(url.toString(), { cache: "no-store" });
   const data = await safeJson(res);
@@ -99,17 +96,7 @@ async function runSearchMode(category, city, specialty) {
     throw new Error(data?.message || "Zoekresultaten konden niet worden geladen");
   }
 
-  // Client-side specialty fallback (als backend niet filtert)
-  let companies = data.companies;
-  if (specialty) {
-    const wanted = normalize(specialty);
-    companies = companies.filter((c) => {
-      const list = Array.isArray(c?.specialties) ? c.specialties : [];
-      return list.map(normalize).includes(wanted);
-    });
-  }
-
-  renderCompanies(companies, { isAnchor: false });
+  renderCompanies(data.companies);
 }
 
 /* ============================================================
@@ -119,7 +106,6 @@ async function runSearchMode(category, city, specialty) {
 function resetCompanies() {
   const list = document.getElementById("companiesList");
   if (list) list.innerHTML = "";
-  setState("");
   hideFooter();
 }
 
@@ -135,13 +121,8 @@ function renderCompanies(companies, options = {}) {
 
   companies.forEach((company) => {
     const card = document.createElement("div");
-
     card.className = "result-card";
     if (options.isAnchor) card.classList.add("best-match");
-
-    const name = escapeHtml(company?.name || "Onbekend bedrijf");
-    const city = escapeHtml(company?.city || "");
-    const id = company?._id ? String(company._id) : "";
 
     const reviewHtml = buildReviewsHtml(company);
 
@@ -150,15 +131,13 @@ function renderCompanies(companies, options = {}) {
         ${options.isAnchor ? `<div class="badge">Beste match</div>` : ""}
 
         <div class="result-card-main">
-          <h3 class="result-title">${name}</h3>
-
-          ${reviewHtml ? `<div class="result-reviews">${reviewHtml}</div>` : ``}
-
-          ${city ? `<p class="muted">${city}</p>` : ``}
+          <h3 class="result-title">${escapeHtml(company.name)}</h3>
+          ${reviewHtml}
+          <p class="muted">${escapeHtml(company.city || "")}</p>
         </div>
 
         <label class="result-select">
-          <input type="checkbox" class="company-checkbox" value="${escapeHtml(id)}" />
+          <input type="checkbox" class="company-checkbox" value="${escapeHtml(company._id)}">
           <span>Selecteer</span>
         </label>
       </div>
@@ -171,106 +150,76 @@ function renderCompanies(companies, options = {}) {
 }
 
 /* ============================================================
-   REVIEWS (Google + Irisje) — veilig/defensief
+   REVIEWS + STERREN (GEFIXT)
    ============================================================ */
 
 function buildReviewsHtml(company) {
-  // Irisje (jouw eigen reviews)
-  const irisjeRating = toNumber(company?.avgRating);
-  const irisjeCount = toInt(company?.reviewCount);
-
-  // Google (alleen als deze velden bestaan in je data)
-  const googleRating = toNumber(company?.googleRating);
-  const googleCount = toInt(company?.googleReviewCount);
-
   const parts = [];
 
-  if (isFinite(googleRating) && googleRating > 0 && googleCount >= 0) {
-    parts.push(renderRatingRow("Google", googleRating, googleCount));
+  if (company.googleReviewCount > 0) {
+    parts.push(renderRatingRow("Google", company.googleRating, company.googleReviewCount));
   }
 
-  if (isFinite(irisjeRating) && irisjeRating > 0 && irisjeCount >= 0) {
-    parts.push(renderRatingRow("Irisje", irisjeRating, irisjeCount));
+  if (company.reviewCount > 0) {
+    parts.push(renderRatingRow("Irisje", company.avgRating, company.reviewCount));
   }
 
-  // Als geen van beide beschikbaar is: niets tonen (oude gedrag: reviews weg)
   if (parts.length === 0) return "";
 
-  return parts.join("");
+  return `<div class="reviews-block">${parts.join("")}</div>`;
 }
 
-function renderRatingRow(sourceLabel, rating, count) {
-  const safeLabel = escapeHtml(sourceLabel);
-  const safeRatingText = escapeHtml(formatRating(rating));
-  const safeCountText = escapeHtml(String(count));
-
+function renderRatingRow(source, rating, count) {
   return `
     <div class="rating-row">
-      <span class="rating-source">${safeLabel}</span>
-      <span class="rating-stars" aria-label="${safeLabel} rating ${safeRatingText}">
+      <span class="rating-source">${source}</span>
+      <span class="rating-stars-fixed">
         ${renderStars(rating)}
       </span>
-      <span class="rating-value">${safeRatingText}</span>
-      <span class="rating-count">(${safeCountText})</span>
+      <span class="rating-value">${formatRating(rating)}</span>
+      <span class="rating-count">(${count})</span>
     </div>
   `;
 }
 
 function renderStars(rating) {
-  // 5 sterren, met halve ster (Google-stijl)
-  const r = clamp(toNumber(rating), 0, 5);
+  const r = clamp(Number(rating), 0, 5);
   const full = Math.floor(r);
-  const half = r - full >= 0.25 && r - full < 0.75 ? 1 : (r - full >= 0.75 ? 0 : 0);
-  const extraFull = r - full >= 0.75 ? 1 : 0;
-
-  const fullStars = Math.min(5, full + extraFull);
-  const halfStars = fullStars < 5 ? half : 0;
-  const emptyStars = 5 - fullStars - halfStars;
-
-  const starFull = svgStar("full");
-  const starHalf = svgStar("half");
-  const starEmpty = svgStar("empty");
+  const half = r - full >= 0.5 ? 1 : 0;
+  const empty = 5 - full - half;
 
   return (
-    starFull.repeat(fullStars) +
-    starHalf.repeat(halfStars) +
-    starEmpty.repeat(emptyStars)
+    svgStar("full").repeat(full) +
+    (half ? svgStar("half") : "") +
+    svgStar("empty").repeat(empty)
   );
 }
 
 function svgStar(type) {
-  // Inline SVG, gebruikt currentColor (dus past in je bestaande CSS/kleuren)
-  if (type === "full") {
-    return `
-      <svg class="star star-full" viewBox="0 0 20 20" aria-hidden="true">
-        <path d="M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z"></path>
-      </svg>
-    `;
-  }
+  const path = "M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z";
+
   if (type === "half") {
     return `
-      <svg class="star star-half" viewBox="0 0 20 20" aria-hidden="true">
+      <svg class="star" viewBox="0 0 20 20">
         <defs>
-          <linearGradient id="halfGrad" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="50%" stop-color="currentColor"></stop>
-            <stop offset="50%" stop-color="transparent"></stop>
+          <linearGradient id="half">
+            <stop offset="50%" stop-color="currentColor"/>
+            <stop offset="50%" stop-color="transparent"/>
           </linearGradient>
         </defs>
-        <path fill="url(#halfGrad)" d="M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z"></path>
-        <path fill="none" stroke="currentColor" stroke-width="1" d="M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z"></path>
-      </svg>
-    `;
+        <path fill="url(#half)" d="${path}"></path>
+        <path fill="none" stroke="currentColor" d="${path}"></path>
+      </svg>`;
   }
-  // empty
+
   return `
-    <svg class="star star-empty" viewBox="0 0 20 20" aria-hidden="true">
-      <path fill="none" stroke="currentColor" stroke-width="1" d="M10 15.27l-5.18 3.05 1.4-5.98L1.5 8.63l6.08-.52L10 2.5l2.42 5.61 6.08.52-4.72 3.71 1.4 5.98z"></path>
-    </svg>
-  `;
+    <svg class="star" viewBox="0 0 20 20">
+      <path ${type === "full" ? `fill="currentColor"` : `fill="none" stroke="currentColor"`} d="${path}"></path>
+    </svg>`;
 }
 
 /* ============================================================
-   SELECTIE + FOOTER UI
+   SELECTIE + FOOTER
    ============================================================ */
 
 function enableSelectionLimit(max) {
@@ -278,85 +227,33 @@ function enableSelectionLimit(max) {
     if (!e.target.classList.contains("company-checkbox")) return;
 
     const checked = document.querySelectorAll(".company-checkbox:checked");
-
     if (checked.length > max) {
       e.target.checked = false;
       alert(`Je kunt maximaal ${max} bedrijven selecteren.`);
     }
-
     updateSelectionUI(max);
   });
 }
 
 function updateSelectionUI(max) {
-  const allCheckboxes = document.querySelectorAll(".company-checkbox");
-  const checked = document.querySelectorAll(".company-checkbox:checked");
-
-  // ✅ Fix: als er geen kaarten/checkboxes zijn, footer weg
-  if (allCheckboxes.length === 0) {
-    hideFooter();
-    return;
-  }
-
-  const count = checked.length;
-
+  const checked = document.querySelectorAll(".company-checkbox:checked").length;
   const footer = document.getElementById("resultsFooter");
   const selectedCount = document.getElementById("selectedCount");
   const sendBtn = document.getElementById("sendBtn");
 
-  if (selectedCount) {
-    selectedCount.textContent = `${count} van ${max} geselecteerd`;
-  }
-
-  if (footer) {
-    footer.classList.remove("hidden");
-  }
-
-  if (sendBtn) {
-    sendBtn.disabled = count === 0;
-  }
+  if (selectedCount) selectedCount.textContent = `${checked} van ${max} geselecteerd`;
+  if (footer) footer.classList.remove("hidden");
+  if (sendBtn) sendBtn.disabled = checked === 0;
 }
 
 function showFooter() {
   const footer = document.getElementById("resultsFooter");
-  const hasCheckboxes = document.querySelectorAll(".company-checkbox").length > 0;
-
-  if (!hasCheckboxes) {
-    hideFooter();
-    return;
-  }
-
   if (footer) footer.classList.remove("hidden");
 }
 
 function hideFooter() {
   const footer = document.getElementById("resultsFooter");
   if (footer) footer.classList.add("hidden");
-
-  const selectedCount = document.getElementById("selectedCount");
-  if (selectedCount) selectedCount.textContent = `0 van ${MAX_SELECT} geselecteerd`;
-
-  const sendBtn = document.getElementById("sendBtn");
-  if (sendBtn) sendBtn.disabled = true;
-}
-
-/* ============================================================
-   STATE / FOUTMELDING
-   ============================================================ */
-
-function setState(message) {
-  const state = document.getElementById("resultsState");
-  if (!state) return;
-
-  state.textContent = message || "";
-}
-
-function showError(message) {
-  setState(message);
-
-  const container = document.getElementById("companiesList");
-  if (container) container.innerHTML = "";
-  hideFooter();
 }
 
 /* ============================================================
@@ -364,35 +261,13 @@ function showError(message) {
    ============================================================ */
 
 async function safeJson(res) {
-  try {
-    return await res.json();
-  } catch {
-    return null;
-  }
+  try { return await res.json(); } catch { return null; }
 }
 
 function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function normalize(v) {
-  return String(v || "").toLowerCase().trim();
-}
-
-function toNumber(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? n : NaN;
-}
-
-function toInt(v) {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.floor(n));
+  return String(str).replace(/[&<>"']/g, m =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])
+  );
 }
 
 function clamp(n, min, max) {
@@ -400,7 +275,6 @@ function clamp(n, min, max) {
 }
 
 function formatRating(r) {
-  const n = clamp(toNumber(r), 0, 5);
-  // NL-notatie (komma) zonder te breken als CSS/UX dit anders wil
+  const n = clamp(Number(r), 0, 5);
   return n.toFixed(1).replace(".", ",");
 }
