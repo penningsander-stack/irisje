@@ -15,7 +15,11 @@ const Company = require("../models/company");
  */
 router.get("/", async (req, res) => {
   try {
-    const { category, city } = req.query;
+    const rawCategory = req.query.category;
+    const rawCity = req.query.city;
+
+    const category = typeof rawCategory === "string" ? rawCategory.trim() : "";
+    const city = typeof rawCity === "string" ? rawCity.trim() : "";
 
     const query = {};
 
@@ -25,8 +29,10 @@ router.get("/", async (req, res) => {
     }
 
     // Filter op plaats (case-insensitive exacte match)
+    // Escapet regex-tekens zodat city altijd letterlijk wordt gematcht.
     if (city) {
-      query.city = new RegExp(`^${city}$`, "i");
+      const escapedCity = city.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      query.city = new RegExp(`^${escapedCity}$`, "i");
     }
 
     const companies = await Company.find(query)
