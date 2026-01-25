@@ -1,7 +1,7 @@
 /* frontend/css/style.css */
-/* === IRISJE PREMIUM LIGHT v20251206 – Global Premium Framework === */
+/* === IRISJE PREMIUM LIGHT – FIXED & SCOPED === */
 
-/* Basisthema & variabelen */
+/* ========== THEMA VARIABELEN ========== */
 :root {
   --irisje-bg: #f3f4ff;
   --irisje-bg-soft: #f9fafb;
@@ -11,325 +11,39 @@
   --irisje-text-soft: #64748b;
   --irisje-indigo: #4f46e5;
   --irisje-indigo-strong: #4338ca;
-  --irisje-indigo-soft: #e0e7ff;
   --irisje-emerald: #10b981;
   --irisje-radius-lg: 1.25rem;
-  --irisje-radius-md: 0.9rem;
-  --irisje-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
   --irisje-shadow-soft: 0 10px 22px rgba(15, 23, 42, 0.06);
-  --irisje-ring: 0 0 0 4px rgba(79, 70, 229, 0.18);
 }
 
-/* Reset */
+/* ========== RESET ========== */
 * {
   box-sizing: border-box;
 }
-html,
-body {
-  height: 100%;
-}
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans",
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  background: radial-gradient(1200px 600px at 20% 10%, rgba(79, 70, 229, 0.18), transparent 65%),
-    radial-gradient(1000px 520px at 80% 20%, rgba(16, 185, 129, 0.12), transparent 65%),
-    linear-gradient(180deg, var(--irisje-bg) 0%, #eef2ff 40%, #f8fafc 100%);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  background: linear-gradient(180deg, var(--irisje-bg), #f8fafc);
   color: var(--irisje-text-main);
 }
 
-/* Links */
-a {
-  color: var(--irisje-indigo);
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-
-/* Containers */
+/* ========== CONTAINER ========== */
 .container {
   width: 100%;
   padding: 0 1rem;
 }
-@media (min-width: 768px) {
-  .container {
-    padding: 0 1.5rem;
-  }
-}
-@media (min-width: 1024px) {
-  .container {
-    padding: 0 2rem;
-  }
-}
 
-/* Typografie helpers */
-h1,
-h2,
-h3,
-h4 {
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
-}
-p {
-  margin: 0 0 1rem 0;
-  color: var(--irisje-text-soft);
-}
-
-/* Card basis */
-.card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid var(--irisje-border-subtle);
-  border-radius: var(--irisje-radius-lg);
-  box-shadow: var(--irisje-shadow-soft);
-  backdrop-filter: blur(10px);
-}
-.card--pad {
-  padding: 1.25rem;
-}
-@media (min-width: 768px) {
-  .card--pad {
-    padding: 1.5rem;
-  }
-}
-
-/* Header / nav (generiek) */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(243, 244, 255, 0.75);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
-}
-.header-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 0;
-}
-.brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--irisje-text-main);
-}
-.brand-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 1), rgba(16, 185, 129, 1));
-  box-shadow: 0 10px 18px rgba(79, 70, 229, 0.18);
-  color: #fff;
-  font-weight: 900;
-}
-
-/* Form elementen */
-input,
-select,
-textarea,
-button {
-  font: inherit;
-}
-.input {
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.9);
-  padding: 0.85rem 1rem;
-  outline: none;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
-}
-.input:focus {
-  border-color: rgba(79, 70, 229, 0.55);
-  box-shadow: var(--irisje-ring);
-}
-.input::placeholder {
-  color: rgba(100, 116, 139, 0.8);
-}
-
-/* Layout helpers */
-.grid {
-  display: grid;
-}
-.grid-2 {
-  grid-template-columns: 1fr;
-  gap: 1rem;
-}
-@media (min-width: 768px) {
-  .grid-2 {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-  }
-}
-
-/* Badges */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-weight: 700;
-  font-size: 0.78rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--irisje-text-main);
-}
-.badge--best {
-  border-color: rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.1);
-  color: #047857;
-}
-.badge--match {
-  border-color: rgba(79, 70, 229, 0.35);
-  background: rgba(79, 70, 229, 0.08);
-  color: var(--irisje-indigo-strong);
-}
-
-/* Stars / rating (oude basis) */
-.star-rating {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-}
-.star {
-  font-size: 16px;
-  line-height: 1;
-  color: #d1d5db;
-}
-.star-fill {
-  color: #eab308;
-}
-
-/* ============================================================
-   STAR / RATING RENDERING (defensief)
-   - voorkomt “mega zwarte sterren” bij unicode stars
-   - ondersteunt spans en SVG’s (Google/Irisje reviews)
-   ============================================================ */
-
-.star-rating,
-.result-stars,
-.stars,
-.rating-stars,
-.review-stars {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  vertical-align: middle;
-  white-space: nowrap;
-  line-height: 1;
-}
-
-/* Als er unicode sterren (★/☆) als tekst staan: normaliseer grootte + kleur */
-.result-stars,
-.stars,
-.rating-stars,
-.review-stars {
-  font-size: 0.85rem; /* ~13.6px */
-  color: #eab308;     /* amber */
-  font-weight: 600;
-  letter-spacing: 0.01em;
-}
-
-/* “lege” sterren kunnen via class/attribute grijs gemaakt worden */
-.star.is-empty,
-.result-stars .is-empty,
-.stars .is-empty,
-.rating-stars .is-empty,
-.review-stars .is-empty {
-  color: #d1d5db;
-}
-
-/* SVG-sterren (bijv. iconen) */
-.result-stars svg,
-.stars svg,
-.rating-stars svg,
-.review-stars svg,
-.star-rating svg {
-  width: 14px;
-  height: 14px;
-  flex: 0 0 14px;
-  display: block;
-  fill: currentColor;
-}
-
-/* Review bron-badges (optioneel; gebruikt door results.js indien aanwezig) */
-.review-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.18rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  background: rgba(255, 255, 255, 0.9);
-  color: #0f172a;
-}
-
-.review-badge--irisje {
-  border-color: rgba(16, 185, 129, 0.35);
-  background: rgba(16, 185, 129, 0.08);
-  color: #047857;
-}
-
-.review-badge--google {
-  border-color: rgba(79, 70, 229, 0.25);
-  background: rgba(79, 70, 229, 0.06);
-  color: #4338ca;
-}
-
-/* BUTTONS */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  padding: 0.85rem 1.05rem;
-  border-radius: 16px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--irisje-text-main);
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
-  user-select: none;
-}
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--irisje-shadow-soft);
-}
-.btn:active {
-  transform: translateY(0);
-}
-.btn-primary {
-  border: none;
-  background: linear-gradient(135deg, var(--irisje-indigo), var(--irisje-emerald));
-  color: #fff;
-  box-shadow: 0 14px 26px rgba(79, 70, 229, 0.18);
-}
-.btn-primary:hover {
-  box-shadow: 0 18px 34px rgba(79, 70, 229, 0.22);
-}
-
-/* RESULTS PAGE (relevant) */
+/* ========== RESULTS LAYOUT ========== */
 .results-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin: 1.25rem 0 1rem 0;
+  margin: 1.25rem 0 1rem;
 }
+
 .results-title {
   font-size: 1.35rem;
   font-weight: 900;
 }
+
 .results-subtitle {
   font-size: 0.95rem;
   color: var(--irisje-text-soft);
@@ -340,82 +54,90 @@ button {
   grid-template-columns: 1fr;
   gap: 1rem;
 }
+
 @media (min-width: 768px) {
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
   }
 }
+
 @media (min-width: 1100px) {
   .results-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
+/* ========== RESULT CARD ========== */
 .result-card {
   padding: 1.1rem;
   border-radius: var(--irisje-radius-lg);
   border: 1px solid var(--irisje-border-subtle);
-  background: rgba(255, 255, 255, 0.92);
+  background: #fff;
   box-shadow: var(--irisje-shadow-soft);
-  transition: transform 0.12s ease, box-shadow 0.15s ease;
 }
-.result-card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--irisje-shadow);
-}
-.result-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
+
 .result-name {
   font-weight: 900;
   font-size: 1.02rem;
-  margin: 0;
 }
-.result-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 0.25rem;
-}
+
 .result-city {
   font-size: 0.9rem;
   color: var(--irisje-text-soft);
 }
-.result-ratingline {
+
+/* ========== RATING / REVIEWS (STRICT SCOPE) ========== */
+.result-card .result-ratingline {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
 }
-.result-source {
-  font-weight: 800;
-  font-size: 0.78rem;
-  color: var(--irisje-indigo-strong);
-}
-.result-score {
-  font-weight: 900;
-  color: var(--irisje-text-main);
-}
-.result-count {
-  font-size: 0.82rem;
-  color: var(--irisje-text-soft);
-}
-.result-stars {
-  font-size: 0.9rem;
+
+.result-card .result-stars {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 0.85rem;
   line-height: 1;
   color: #eab308;
 }
 
-/* Footer */
-.footer {
-  padding: 2rem 0 2.5rem;
-  color: rgba(100, 116, 139, 0.85);
-  text-align: center;
+.result-card .result-stars .star {
+  font-size: 0.85rem;
+  color: #eab308;
+}
+
+.result-card .result-stars .star.empty {
+  color: #d1d5db;
+}
+
+.result-card .result-stars svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* Review meta */
+.result-card .result-score {
+  font-weight: 900;
   font-size: 0.9rem;
 }
 
-/* Overige bestaande styles in dit bestand blijven hieronder ongewijzigd */
-/* ... (rest van jouw originele style.css blijft exact intact) ... */
+.result-card .result-count {
+  font-size: 0.8rem;
+  color: var(--irisje-text-soft);
+}
+
+.result-card .result-source {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--irisje-indigo-strong);
+}
+
+/* ========== FOOTER ========== */
+.footer {
+  padding: 2rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--irisje-text-soft);
+}
