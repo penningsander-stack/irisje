@@ -1,8 +1,9 @@
 // frontend/js/results.js
-// Irisje.nl – Results page logic (search, request, offer-from-company)
-// ✔ correcte Irisje + Google reviews
-// ✔ geen dubbele sterren in DOM
-// ✔ veilige filtering op city/category/specialty
+// Irisje.nl – Results page logic
+// ✔ klikbare bedrijfsnamen (embed-profiel)
+// ✔ juiste Irisje reviews
+// ✔ Google reviews alleen indien aanwezig
+// ✔ geen dubbele sterren
 
 (() => {
   "use strict";
@@ -41,11 +42,11 @@
     }
   }
 
-  /* ================= REQUEST MODE ================= */
+  /* ================= MODES ================= */
 
   async function runRequestMode(requestId) {
     const res = await fetch(`${API}/publicRequests/${encodeURIComponent(requestId)}`);
-    const data = await safeJson(res);
+    const data = await res.json();
 
     if (!res.ok || !data?.ok) {
       throw new Error("Aanvraag kon niet worden geladen");
@@ -58,61 +59,46 @@
     renderCompanies(data.companies || [], { anchorId: r.companyId || null });
   }
 
-  /* ================= SEARCH MODE ================= */
-
   async function runSearchMode({ category, city, specialty }) {
     const res = await fetch(`${API}/companies`);
-    const data = await safeJson(res);
+    const data = await res.json();
 
     if (!res.ok || !data?.ok) {
       throw new Error("Bedrijven konden niet worden geladen");
     }
 
     const filtered = data.companies.filter(c => {
-      const cityOk = city ? normalize(c.city) === normalize(city) : true;
-      const catOk  = category ? (c.categories || []).map(normalize).includes(normalize(category)) : true;
-      const specOk = specialty ? (c.specialties || []).map(normalize).includes(normalize(specialty)) : true;
+      const cityOk = city ? norm(c.city) === norm(city) : true;
+      const catOk  = category ? (c.categories || []).map(norm).includes(norm(category)) : true;
+      const specOk = specialty ? (c.specialties || []).map(norm).includes(norm(specialty)) : true;
       return cityOk && catOk && specOk;
     });
 
-    const parts = [];
-    if (category) parts.push(category);
-    if (specialty) parts.push(specialty);
-    if (city) parts.push(`in ${city}`);
-
-    setSubtitle(parts.length ? `Gebaseerd op jouw zoekopdracht: ${parts.join(" ")}` : "Resultaten");
+    setSubtitle(`Gebaseerd op jouw zoekopdracht`);
     setState("ready");
 
     renderCompanies(filtered);
   }
 
-  /* ================= OFFER MODE ================= */
-
   async function runOfferMode(slug) {
-    const anchorRes = await fetch(`${API}/companies/slug/${encodeURIComponent(slug)}`);
-    const anchorData = await safeJson(anchorRes);
+    const aRes = await fetch(`${API}/companies/slug/${encodeURIComponent(slug)}`);
+    const aData = await aRes.json();
+    if (!aRes.ok || !aData?.company) throw new Error("Ankerbedrijf niet gevonden");
 
-    if (!anchorRes.ok || !anchorData?.company) {
-      throw new Error("Ankerbedrijf niet gevonden");
-    }
+    const sRes = await fetch(`${API}/companies-similar?anchorSlug=${encodeURIComponent(slug)}`);
+    const sData = await sRes.json();
+    if (!sRes.ok || !sData?.companies) throw new Error("Vergelijkbare bedrijven niet gevonden");
 
-    const simRes = await fetch(`${API}/companies-similar?anchorSlug=${encodeURIComponent(slug)}`);
-    const simData = await safeJson(simRes);
-
-    if (!simRes.ok || !simData?.companies) {
-      throw new Error("Vergelijkbare bedrijven konden niet worden geladen");
-    }
-
-    setSubtitle(`Gebaseerd op jouw aanvraag bij ${anchorData.company.name}.`);
+    setSubtitle(`Gebaseerd op jouw aanvraag bij ${aData.company.name}.`);
     setState("ready");
 
     renderCompanies(
-      [anchorData.company, ...simData.companies.slice(0, 4)],
-      { anchorId: anchorData.company._id }
+      [aData.company, ...sData.companies.slice(0, 4)],
+      { anchorId: aData.company._id }
     );
   }
 
-  /* ================= RENDERING ================= */
+  /* ================= RENDER ================= */
 
   function renderCompanies(companies, options = {}) {
     const list = document.getElementById("companiesList");
@@ -126,25 +112,27 @@
     companies.forEach(c => {
       const isAnchor = options.anchorId && String(c._id) === String(options.anchorId);
 
-      // Irisje reviews (backend bevestigd)
-      const irisjeRating = number(c.averageRating);
-      const irisjeCount  = number(c.reviewCount);
+      const irisjeRating = num(c.avgRating ?? c.averageRating);
+      const irisjeCount  = num(c.reviewCount);
 
-      // Google reviews (optioneel)
-      const googleRating = number(c.avgRating);
-      const googleCount  = number(c.googleReviewCount);
+      const googleRating = num(c.googleRating);
+      const googleCount  = num(c.googleReviewCount);
 
       const card = document.createElement("div");
       card.className = `result-card${isAnchor ? " top-highlight" : ""}`;
 
       card.innerHTML = `
         ${isAnchor ? `<div class="pill pill-indigo">Beste match</div>` : ""}
-        <h3>${escape(c.name)}</h3>
-        <div class="result-city">${escape(c.city || "")}</div>
+        <h3>
+          <a href="#" class="company-link" data-slug="${esc(c.slug)}">
+            ${esc(c.name)}
+          </a>
+        </h3>
+        <div class="result-city">${esc(c.city || "")}</div>
 
         <div class="ratings">
-          ${irisjeRating !== null ? renderRatingLine("Irisje", irisjeRating, irisjeCount) : ""}
-          ${googleRating !== null ? renderRatingLine("Google", googleRating, googleCount) : ""}
+          ${irisjeRating !== null ? ratingLine("Irisje", irisjeRating, irisjeCount) : ""}
+          ${googleRating !== null ? ratingLine("Google", googleRating, googleCount) : ""}
         </div>
 
         <label class="select-line">
@@ -154,80 +142,65 @@
       `;
 
       list.appendChild(card);
+
+      const link = card.querySelector(".company-link");
+      link.addEventListener("click", e => {
+        e.preventDefault();
+        openCompanyModal(c.slug);
+      });
     });
   }
 
-  function renderRatingLine(label, rating, count) {
+  function ratingLine(label, rating, count) {
     return `
       <div class="rating-line">
-        <span class="rating-label">${label}</span>
-        ${renderStars(rating)}
-        <span class="rating-count">(${count ?? 0})</span>
+        <strong>${label}</strong>
+        ${stars(rating)}
+        <span>(${count ?? 0})</span>
       </div>
     `;
   }
 
-  function renderStars(rating) {
-    const r = clamp(rating, 0, 5);
-    let html = `<span class="star-rating" aria-label="${r} van 5">`;
+  function stars(r) {
+    r = clamp(r, 0, 5);
+    let s = `<span class="star-rating">`;
     for (let i = 1; i <= 5; i++) {
-      html += `<span class="star${i <= r ? " filled" : ""}">★</span>`;
+      s += `<span class="star${i <= r ? " filled" : ""}">★</span>`;
     }
-    html += `</span>`;
-    return html;
+    return s + `</span>`;
   }
 
-  /* ================= UI HELPERS ================= */
+  /* ================= UI ================= */
 
-  function setState(state, message = "") {
+  function openCompanyModal(slug) {
+    const iframe = document.getElementById("companyModalIframe");
+    const overlay = document.getElementById("companyModalOverlay");
+    iframe.src = `/company.html?slug=${encodeURIComponent(slug)}&embed=1`;
+    overlay.style.display = "flex";
+  }
+
+  function setState(state, msg = "") {
     const el = document.getElementById("resultsState");
     if (!el) return;
-
-    if (state === "loading") {
-      el.style.display = "block";
-      el.textContent = message;
-    } else {
-      el.style.display = "none";
-      el.textContent = "";
-    }
+    el.style.display = state === "loading" ? "block" : "none";
+    el.textContent = msg;
   }
 
   function showError(msg) {
     const el = document.getElementById("resultsState");
-    if (!el) return;
-    el.style.display = "block";
-    el.textContent = msg;
+    if (el) el.textContent = msg;
   }
 
-  function setSubtitle(text) {
+  function setSubtitle(t) {
     const el = document.getElementById("resultsSubtitle");
-    if (el) el.textContent = text;
+    if (el) el.textContent = t;
   }
 
-  /* ================= UTIL ================= */
+  /* ================= HELPERS ================= */
 
-  async function safeJson(res) {
-    try { return await res.json(); }
-    catch { return null; }
-  }
-
-  function normalize(v) {
-    return String(v || "").toLowerCase().trim();
-  }
-
-  function number(v) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
-  function escape(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
-  }
+  const norm = v => String(v || "").toLowerCase().trim();
+  const num  = v => Number.isFinite(Number(v)) ? Number(v) : null;
+  const clamp = (n,min,max) => Math.max(min, Math.min(max, n));
+  const esc = s => String(s)
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
 })();
