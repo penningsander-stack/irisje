@@ -5,11 +5,16 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
+// 🔒 Root guard: voorkomt 404 zonder id
+router.get("/", (req, res) => {
+  return res.status(400).json({
+    ok: false,
+    message: "requestId ontbreekt in URL (/api/publicRequests/:id)",
+  });
+});
+
 // GET /api/publicRequests/:id
 // Geeft request + passende bedrijven terug (max 50)
-// - Google velden blijven: avgRating + reviewCount (zoals in Company)
-// - Irisje velden toegevoegd: irisjeAvgRating + irisjeReviewCount (uit Review-collection)
-// - Sort: lokaal (zelfde city) eerst, daarna overige. Binnen beide: Irisje eerst, daarna Google fallback.
 router.get("/:id", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id).lean();
@@ -21,14 +26,15 @@ router.get("/:id", async (req, res) => {
     const specialty = String(request.specialty || "").trim();
     const city = String(request.city || "").trim();
 
-    const match = { active: true };
+    // ⚠️ backward-compatible active filter
+    const match = { active: { $ne: false } };
     if (category) match.categories = category;
     if (specialty) match.specialties = specialty;
 
     const companiesRaw = await Company.aggregate([
       { $match: match },
 
-      // Irisje reviews ophalen (source: "irisje", niet verborgen)
+      // Irisje reviews ophalen
       {
         $lookup: {
           from: "reviews",
@@ -47,7 +53,6 @@ router.get("/:id", async (req, res) => {
         },
       },
 
-      // Irisje aggregatie toevoegen, Google velden ongemoeid laten
       {
         $addFields: {
           irisjeReviewCount: { $size: "$_irisjeReviews" },
@@ -61,11 +66,9 @@ router.get("/:id", async (req, res) => {
         },
       },
 
-      // payload opschonen
       { $project: { _irisjeReviews: 0, password: 0 } },
     ]);
 
-    // lokaal eerst
     const local = [];
     const nonLocal = [];
 
@@ -75,7 +78,6 @@ router.get("/:id", async (req, res) => {
       else nonLocal.push(c);
     }
 
-    // binnen groepen sorteren: Irisje eerst, dan Google fallback
     const scoreSort = (a, b) => {
       const aIcount = Number(a.irisjeReviewCount || 0);
       const bIcount = Number(b.irisjeReviewCount || 0);
@@ -91,7 +93,6 @@ router.get("/:id", async (req, res) => {
       if (bIavg !== aIavg) return bIavg - aIavg;
       if (bIcount !== aIcount) return bIcount - aIcount;
 
-      // Google fallback (Company fields)
       const aG = Number(a.avgRating || 0);
       const bG = Number(b.avgRating || 0);
       if (bG !== aG) return bG - aG;
@@ -122,7 +123,7 @@ router.get("/:id", async (req, res) => {
     });
   } catch (err) {
     console.error("publicRequests error:", err);
-    return res.status(500).json({ ok: false, message: "Server error", error: err.message });
+    return res.status(500).json({ ok: false, message: "Server error" });
   }
 });
 
