@@ -4,8 +4,6 @@ const router = express.Router();
 const Company = require("../models/company");
 
 // Endpoint: GET /api/companies-similar?anchorSlug=...
-// (Backwards compatible) ook bereikbaar via:
-// GET /api/companies-similar/similar?anchorSlug=...
 async function handler(req, res) {
   try {
     const anchorSlug = String(req.query.anchorSlug || "").trim();
@@ -13,9 +11,10 @@ async function handler(req, res) {
       return res.status(400).json({ ok: false, message: "anchorSlug ontbreekt" });
     }
 
+    // ✅ BELANGRIJK: active backward-compatible
     const anchorCompany = await Company.findOne({
       slug: anchorSlug,
-      active: true,
+      active: { $ne: false },
     })
       .select("_id name slug city categories avgRating reviewCount isVerified")
       .lean();
@@ -30,7 +29,7 @@ async function handler(req, res) {
 
     const query = {
       _id: { $ne: anchorCompany._id },
-      active: true,
+      active: { $ne: false },
     };
 
     // ✅ case-insensitive category match
