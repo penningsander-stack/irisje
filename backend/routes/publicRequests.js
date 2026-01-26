@@ -5,7 +5,44 @@ const router = express.Router();
 const Request = require("../models/request");
 const Company = require("../models/company");
 
-// 🔒 Root guard: voorkomt 404 zonder id
+/* ======================================================
+   POST /api/publicRequests
+   → nieuwe aanvraag aanmaken
+   ====================================================== */
+router.post("/", async (req, res) => {
+  try {
+    const { name, email, message, category, specialty, city, companies } = req.body;
+
+    if (!name || !email || !category || !city) {
+      return res.status(400).json({
+        ok: false,
+        message: "Verplichte velden ontbreken",
+      });
+    }
+
+    const request = await Request.create({
+      name: String(name).trim(),
+      email: String(email).trim(),
+      message: String(message || "").trim(),
+      category: String(category).trim(),
+      specialty: String(specialty || "").trim(),
+      city: String(city).trim(),
+      companies: Array.isArray(companies) ? companies : [],
+    });
+
+    return res.status(201).json({
+      ok: true,
+      requestId: request._id,
+    });
+  } catch (err) {
+    console.error("publicRequests POST error:", err);
+    return res.status(500).json({ ok: false, message: "Server error" });
+  }
+});
+
+/* ======================================================
+   GET /api/publicRequests (guard)
+   ====================================================== */
 router.get("/", (req, res) => {
   return res.status(400).json({
     ok: false,
@@ -13,8 +50,10 @@ router.get("/", (req, res) => {
   });
 });
 
-// GET /api/publicRequests/:id
-// Geeft request + passende bedrijven terug (max 50)
+/* ======================================================
+   GET /api/publicRequests/:id
+   → aanvraag + passende bedrijven
+   ====================================================== */
 router.get("/:id", async (req, res) => {
   try {
     const request = await Request.findById(req.params.id).lean();
@@ -26,7 +65,6 @@ router.get("/:id", async (req, res) => {
     const specialty = String(request.specialty || "").trim();
     const city = String(request.city || "").trim();
 
-    // ⚠️ backward-compatible active filter
     const match = { active: { $ne: false } };
     if (category) match.categories = category;
     if (specialty) match.specialties = specialty;
@@ -34,7 +72,6 @@ router.get("/:id", async (req, res) => {
     const companiesRaw = await Company.aggregate([
       { $match: match },
 
-      // Irisje reviews ophalen
       {
         $lookup: {
           from: "reviews",
