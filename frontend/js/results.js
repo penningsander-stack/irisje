@@ -1,495 +1,445 @@
 // frontend/js/results.js
-// Irisje.nl – results page logic (search + requestId + companySlug/offer mode)
-// Fix: offer-mode endpoint must call /api/companies-similar (NOT /api/companies/similar)
-// Keeps: modal embed profile, selection counter/footer, Google + Irisje review display
+// Resultatenpagina – 3 modes:
+// 1) request-mode: ?requestId=...
+// 2) offer-from-company: ?companySlug=...
+// 3) search-mode: ?category=...&city=...&specialty=...
+// Reviews: Google (avgRating/reviewCount) + Irisje (irisjeAvgRating/irisjeReviewCount)
 
-(() => {
-  "use strict";
+const API_BASE = "https://irisje-backend.onrender.com/api";
 
-  const API_BASE = "https://irisje-backend.onrender.com/api";
-  const MAX_SELECT = 5;
+/* =========================
+   ⭐ Google-style sterren
+   ========================= */
+function renderStars(rating) {
+  if (typeof rating !== "number" || rating <= 0) return "";
 
-  document.addEventListener("DOMContentLoaded", init);
+  const rounded = Math.round(rating * 2) / 2;
 
-  async function init() {
-    try {
-      const params = new URLSearchParams(window.location.search);
+  let html = `
+    <span class="rating-number mr-1 text-gray-900">
+      ${rounded.toString().replace(".", ",")}
+    </span>
+    <span class="star-rating">
+  `;
 
-      const requestId = params.get("requestId");
-      const category = params.get("category");
-      const city = params.get("city");
-      const specialty = params.get("specialty");
-      const companySlug = params.get("companySlug");
+  for (let i = 1; i <= 5; i++) {
+    let fill = 0;
+    if (rounded >= i) fill = 100;
+    else if (rounded + 0.5 === i) fill = 50;
 
-      const embed = params.get("embed") === "1";
-      if (embed) document.body.classList.add("embed-mode");
-
-      bindModal();
-      bindFooter();
-
-      setState("loading", "Bedrijven laden…");
-
-      // MODE B: offer-from-company (anchor via slug + up to 4 similars)
-      if (companySlug) {
-        await runOfferMode(companySlug);
-        return;
-      }
-
-      // MODE A2: request-based results (preferred when requestId exists)
-      if (requestId) {
-        await runRequestMode(requestId);
-        return;
-      }
-
-      // MODE A1: direct search mode (category + city + specialty)
-      await runSearchMode({ category, city, specialty });
-    } catch (err) {
-      console.error(err);
-      showError("Er ging iets mis bij het laden van de resultaten.");
-    }
+    html += `
+      <span class="star">
+        ★
+        <span class="star-fill" style="width:${fill}%">★</span>
+      </span>
+    `;
   }
 
-  /* ============================================================
-     MODE A2 — REQUEST MODE (op basis van requestId)
-     Endpoint: /api/publicRequests/:id
-     ============================================================ */
-  async function runRequestMode(requestId) {
-    const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`);
-    const data = await safeJson(res);
+  html += `</span>`;
+  return html;
+}
 
-    if (!res.ok || !data || data.ok !== true) {
-      throw new Error((data && (data.message || data.error)) || "Request kon niet worden geladen");
-    }
+function toNumberOrNull(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
-    const request = data.request || {};
-    const companies = Array.isArray(data.companies) ? data.companies : [];
+function toIntOrZero(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : 0;
+}
 
-    setText("resultsSubtitle", buildSubtitleFromRequest(request));
-    setState("ready");
+/**
+ * Reviews:
+ * - Google: avgRating + reviewCount (Company document)
+ * - Irisje: irisjeAvgRating + irisjeReviewCount (publicRequests aggregation)
+ * Fallback (oude situatie): averageRating + reviewCount (Irisje), maar alléén als irisje* ontbreekt.
+ */
+function renderReviewBlock(company) {
+  // Google
+  const googleRating = toNumberOrNull(company.avgRating ?? company.googleRating);
+  const googleCount = toIntOrZero(company.reviewCount ?? company.googleReviewCount);
 
-    showNoLocalNotice(!!data.noLocalResults);
+  // Irisje (nieuw)
+  const irisjeRatingNew = toNumberOrNull(company.irisjeAvgRating);
+  const irisjeCountNew = toIntOrZero(company.irisjeReviewCount);
 
-    // Anchor (optioneel)
-    renderCompanies(companies, { anchorId: request.companyId || null });
+  // Irisje (oude fallback)
+  const irisjeRatingOld = toNumberOrNull(company.averageRating);
+  const irisjeCountOld = toIntOrZero(company.reviewCount);
+
+  const hasIrisjeNew = irisjeRatingNew != null && irisjeCountNew > 0;
+  const hasIrisjeOld = !hasIrisjeNew && irisjeRatingOld != null && irisjeCountOld > 0;
+
+  let html = `<div class="company-reviews mt-1 flex flex-col gap-0.5 text-sm">`;
+
+  if (googleRating != null && googleRating > 0) {
+    html += `
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500 text-xs">Google</span>
+        <span class="text-yellow-500">${renderStars(googleRating)}</span>
+        <span class="text-gray-400 text-xs">(${googleCount})</span>
+      </div>
+    `;
   }
 
-  /* ============================================================
-     MODE A1 — SEARCH MODE (category + city + specialty)
-     Let op: /api/companies geeft alle bedrijven; we filteren client-side.
-     ============================================================ */
-  async function runSearchMode({ category, city, specialty }) {
-    const res = await fetch(`${API_BASE}/companies`);
-    const data = await safeJson(res);
-
-    if (!res.ok || !data || data.ok !== true || !Array.isArray(data.companies)) {
-      throw new Error("Bedrijven konden niet worden geladen");
-    }
-
-    const wantedCategory = normalize(category);
-    const wantedCity = normalize(city);
-    const wantedSpecialty = normalize(specialty);
-
-    const filtered = data.companies.filter((c) => {
-      const cCity = normalize(c.city);
-      const cCategories = Array.isArray(c.categories) ? c.categories.map(normalize) : [];
-      const cSpecialties = Array.isArray(c.specialties) ? c.specialties.map(normalize) : [];
-
-      const cityOk = wantedCity ? cCity === wantedCity : true;
-      const catOk = wantedCategory ? cCategories.includes(wantedCategory) : true;
-      const specOk = wantedSpecialty ? cSpecialties.includes(wantedSpecialty) : true;
-
-      return cityOk && catOk && specOk;
-    });
-
-    setText("resultsSubtitle", buildSubtitleFromQuery({ category, city, specialty }));
-    setState("ready");
-    showNoLocalNotice(false);
-
-    renderCompanies(filtered);
+  if (hasIrisjeNew) {
+    html += `
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500 text-xs">Irisje</span>
+        <span class="text-yellow-500">${renderStars(irisjeRatingNew)}</span>
+        <span class="text-gray-400 text-xs">(${irisjeCountNew})</span>
+      </div>
+    `;
+  } else if (hasIrisjeOld) {
+    html += `
+      <div class="flex items-center gap-1">
+        <span class="text-gray-500 text-xs">Irisje</span>
+        <span class="text-yellow-500">${renderStars(irisjeRatingOld)}</span>
+        <span class="text-gray-400 text-xs">(${irisjeCountOld})</span>
+      </div>
+    `;
   }
 
-  /* ============================================================
-     MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF (anchorSlug + similars)
-     Anchor:  /api/companies/slug/:slug
-     Similar: /api/companies-similar?anchorSlug=...
-     ============================================================ */
-  async function runOfferMode(anchorSlug) {
-    // 1) anchor ophalen via bestaande companies/slug route
-    const anchorRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(anchorSlug)}`);
-    const anchorData = await safeJson(anchorRes);
+  html += `</div>`;
+  return html;
+}
 
-    if (!anchorRes.ok || !anchorData || anchorData.ok !== true || !anchorData.company) {
-      throw new Error("Ankerbedrijf kon niet worden geladen");
-    }
+/* =========================
+   DOMContentLoaded
+   ========================= */
+document.addEventListener("DOMContentLoaded", async () => {
+  const params = new URLSearchParams(window.location.search);
 
-    const anchor = anchorData.company;
+  const requestId = params.get("requestId");
+  const companySlug = params.get("companySlug");
 
-    // 2) similars ophalen via JOUW endpoint /api/companies-similar (niet /api/companies/similar)
-    const simRes = await fetch(`${API_BASE}/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`);
-    const simData = await safeJson(simRes);
+  const category = params.get("category");
+  const specialty = params.get("specialty");
+  const city = params.get("city");
 
-    if (!simRes.ok || !simData || simData.ok !== true) {
-      throw new Error((simData && (simData.message || simData.error)) || "Vergelijkbare bedrijven konden niet worden geladen");
-    }
+  const companyIdFromUrl = params.get("companyId");
 
-    const similars = Array.isArray(simData.companies) ? simData.companies.slice(0, 4) : [];
+  const stateEl = document.getElementById("resultsState");
+  const listEl = document.getElementById("companiesList");
+  const footerEl = document.getElementById("resultsFooter");
+  const countEl = document.getElementById("selectedCount");
+  const sendBtn = document.getElementById("sendBtn");
+  const subtitleEl = document.getElementById("resultsSubtitle");
 
-    setText("resultsSubtitle", `Gebaseerd op jouw aanvraag bij ${anchor.name}. Selecteer maximaal ${MAX_SELECT} bedrijven.`);
-    setState("ready");
-    showNoLocalNotice(false);
+  const modalOverlay = document.getElementById("companyModalOverlay");
+  const modalCloseBtn = document.getElementById("companyModalClose");
+  const modalOpenNewTabBtn = document.getElementById("companyModalOpenNewTab");
+  const modalTitle = document.getElementById("companyModalTitle");
+  const modalFrame = document.getElementById("companyModalFrame");
 
-    // Anchor bovenaan + badge
-    renderCompanies([anchor, ...similars], { anchorId: anchor._id });
+  let modalUrl = "";
+  let storedScrollY = 0;
+
+  if (!stateEl || !listEl) return;
+
+  const isRequestMode = !!requestId;
+  const isOfferFromCompanyMode = !!companySlug;
+  const isSearchMode = !requestId && !companySlug && !!category && !!city; // specialty is optioneel
+
+  if (!isRequestMode && !isOfferFromCompanyMode && !isSearchMode) {
+    stateEl.textContent = "Ongeldige aanvraag.";
+    return;
   }
 
-  /* ============================================================
-     RENDERING
-     ============================================================ */
-  function renderCompanies(companies, options = {}) {
-    const list = document.getElementById("companiesList");
-    if (!list) return;
+  /* =========================
+     ✔ Teller + max 5 (event delegation)
+     ========================= */
+  listEl.addEventListener("change", (e) => {
+    const cb = e.target.closest(".company-checkbox");
+    if (!cb) return;
 
-    list.innerHTML = "";
+    const checkedCount = listEl.querySelectorAll(".company-checkbox:checked").length;
 
-    if (!Array.isArray(companies) || companies.length === 0) {
-      list.innerHTML = `<div class="empty-state">Geen geschikte bedrijven gevonden.</div>`;
-      updateFooterState();
-      return;
+    if (checkedCount > 5) {
+      cb.checked = false;
+      alert("Je kunt maximaal 5 bedrijven selecteren.");
     }
 
-    const anchorId = options.anchorId || null;
+    updateSelectionUI();
+  });
 
-    companies.forEach((company) => {
-      const isAnchor = !!anchorId && String(company._id) === String(anchorId);
+  /* =========================
+     ✔ Modal openen (event delegation)
+     ========================= */
+  listEl.addEventListener("click", (e) => {
+    const link = e.target.closest(".company-profile-link");
+    if (!link) return;
+    e.preventDefault();
+    openCompanyModal(link.href, link.dataset.companyName);
+  });
 
-      const card = document.createElement("div");
-      card.className = `result-card${isAnchor ? " top-highlight" : ""}`;
-
-      const name = escapeHtml(company.name || "Onbekend bedrijf");
-      const city = escapeHtml(company.city || "");
-      const categories = Array.isArray(company.categories) ? company.categories.join(" • ") : "";
-      const tagline = company.tagline ? String(company.tagline) : "";
-      const slug = company.slug ? String(company.slug) : "";
-
-      // -------- Ratings mapping (belangrijk: niet alles als 0 labelen)
-      // Google (historisch in Company): avgRating + reviewCount
-      const googleRating = numberOrNull(
-        company.googleRating ?? company.avgRating
-      );
-      const googleCount = numberOrNull(
-        company.googleReviewCount ?? company.reviewCount
-      );
-
-      // Irisje (platform): verschillende mogelijke velden afhankelijk van backend
-      const irisjeRating = numberOrNull(
-        company.irisjeAvgRating ?? company.averageRating
-      );
-      const irisjeCount = numberOrNull(
-        company.irisjeReviewCount ?? company.irisjeReviewCount ?? company.irisjeReviewCount
-      );
-
-      const ratingHtml = buildRatingBlock({
-        irisjeRating,
-        irisjeCount,
-        googleRating,
-        googleCount,
-      });
-
-      card.innerHTML = `
-        <div class="result-header">
-          <div>
-            ${isAnchor ? `<div class="pill pill-indigo">Beste match</div>` : ``}
-            <div class="result-title">
-              <a href="#" class="js-open-company" data-slug="${escapeHtml(slug)}">${name}</a>
-            </div>
-            <div class="result-location">${city}</div>
-            ${categories ? `<div class="result-categories">${escapeHtml(categories)}</div>` : ``}
-            ${tagline ? `<div class="result-tagline">${escapeHtml(tagline)}</div>` : ``}
-          </div>
-          <div class="result-rating">
-            ${ratingHtml}
-          </div>
-        </div>
-
-        <div class="result-footer">
-          <div class="result-actions">
-            <label class="checkbox-label">
-              <input type="checkbox" class="company-checkbox" value="${escapeHtml(String(company._id || ""))}">
-              Selecteer
-            </label>
-            ${company.isVerified ? `<span class="result-verified">Geverifieerd</span>` : `<span class="result-verified">Niet geverifieerd</span>`}
-          </div>
-        </div>
-      `;
-
-      list.appendChild(card);
-
-      // Modal open handler
-      const openBtn = card.querySelector(".js-open-company");
-      if (openBtn) {
-        openBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          const s = openBtn.getAttribute("data-slug") || "";
-          if (s) openCompanyModal(s);
-        });
-      }
-
-      // Checkbox handler
-      const cb = card.querySelector(".company-checkbox");
-      if (cb) {
-        cb.addEventListener("change", () => {
-          enforceSelectionLimit(MAX_SELECT, cb);
-          updateFooterState();
-        });
-      }
-    });
-
-    updateFooterState();
-  }
-
-  function buildRatingBlock({ irisjeRating, irisjeCount, googleRating, googleCount }) {
-    const parts = [];
-
-    // Irisje alleen tonen als er expliciet Irisje-velden zijn (en count > 0 of rating > 0)
-    const hasIrisje =
-      irisjeRating != null &&
-      (Number(irisjeCount || 0) > 0 || Number(irisjeRating) > 0);
-
-    // Google tonen als er rating of count is
-    const hasGoogle =
-      googleRating != null &&
-      (Number(googleCount || 0) > 0 || Number(googleRating) > 0);
-
-    if (hasIrisje) {
-      parts.push(`
-        <div class="rating-line">
-          <span class="pill pill-irisje">Irisje</span>
-          <span class="rating-value">${formatOneDecimal(irisjeRating)}</span>
-          ${renderStars(irisjeRating)}
-          <span class="rating-count">(${Number(irisjeCount || 0)})</span>
-        </div>
-      `);
-    }
-
-    if (hasGoogle) {
-      parts.push(`
-        <div class="rating-line">
-          <span class="pill pill-google">Google</span>
-          <span class="rating-value">${formatOneDecimal(googleRating)}</span>
-          ${renderStars(googleRating)}
-          <span class="rating-count">(${Number(googleCount || 0)})</span>
-        </div>
-      `);
-    }
-
-    if (parts.length === 0) {
-      return `<div class="result-reviewcount">Geen reviews</div>`;
-    }
-
-    return parts.join("");
-  }
-
-  // 5 sterren, visueel stabiel (voorkomt “10 sterren” copy/paste-effect door nested tekst)
-  function renderStars(ratingOutOfFive) {
-    const r = clamp(Number(ratingOutOfFive) || 0, 0, 5);
-
-    let html = `<span class="star-rating" title="${formatOneDecimal(r)} / 5" style="display:inline-flex; gap:2px; font-size:14px; line-height:1; vertical-align:middle;">`;
-    for (let i = 1; i <= 5; i++) {
-      const filled = r >= i ? "1" : "0";
-      html += `<span class="star" aria-hidden="true" style="opacity:${filled};">★</span>`;
-    }
-    html += `</span>`;
-    return html;
-  }
-
-  /* ============================================================
-     FOOTER (selectie)
-     ============================================================ */
-  function bindFooter() {
-    const btn = document.getElementById("sendBtn");
-    if (btn) {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-
-        const selectedIds = getSelectedCompanyIds();
-        if (selectedIds.length === 0) {
-          alert("Selecteer minimaal 1 bedrijf.");
-          return;
-        }
-
-        alert(`Geselecteerd: ${selectedIds.length} bedrijf(ven).`);
-      });
-    }
-  }
-
-  function updateFooterState() {
-    const selected = getSelectedCompanyIds();
-    const footer = document.getElementById("resultsFooter");
-    const countEl = document.getElementById("selectedCount");
-    const btn = document.getElementById("sendBtn");
-
-    if (countEl) countEl.textContent = `${selected.length} van ${MAX_SELECT} geselecteerd`;
-    if (btn) btn.disabled = selected.length === 0;
-
-    if (!footer) return;
-    footer.classList.toggle("hidden", selected.length === 0);
-  }
-
-  function getSelectedCompanyIds() {
-    return Array.from(document.querySelectorAll(".company-checkbox:checked"))
-      .map((el) => el.value)
-      .filter(Boolean);
-  }
-
-  function enforceSelectionLimit(max, changedCheckbox) {
-    const checked = document.querySelectorAll(".company-checkbox:checked");
-    if (checked.length <= max) return;
-
-    if (changedCheckbox) changedCheckbox.checked = false;
-    alert(`Je kunt maximaal ${max} bedrijven selecteren.`);
-  }
-
-  /* ============================================================
-     MODAL (embed profiel)
-     results.html gebruikt id="companyModalFrame" (niet Iframe)
-     ============================================================ */
-  function bindModal() {
-    const overlay = document.getElementById("companyModalOverlay");
-    const closeBtn = document.getElementById("companyModalClose");
-    const openNewTab = document.getElementById("companyModalOpenNewTab");
-    const frame = document.getElementById("companyModalFrame");
-
-    if (closeBtn) closeBtn.addEventListener("click", closeCompanyModal);
-    if (overlay) {
-      overlay.addEventListener("click", (e) => {
-        if (e.target === overlay) closeCompanyModal();
-      });
-    }
-
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeCompanyModal();
-    });
-
-    if (openNewTab) {
-      openNewTab.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (!frame) return;
-        const src = frame.getAttribute("src");
-        if (src) window.open(src.replace("&embed=1", ""), "_blank", "noopener");
-      });
-    }
-  }
-
-  function openCompanyModal(slug) {
-    const overlay = document.getElementById("companyModalOverlay");
-    const frame = document.getElementById("companyModalFrame");
-    if (!overlay || !frame) return;
-
-    frame.src = `/company.html?slug=${encodeURIComponent(slug)}&embed=1`;
-    overlay.classList.remove("hidden");
-    document.body.classList.add("modal-open");
+  function openCompanyModal(url, titleText) {
+    storedScrollY = window.scrollY;
+    modalUrl = url;
+    if (modalTitle) modalTitle.textContent = titleText || "Bedrijfsprofiel";
+    if (modalFrame) modalFrame.src = url;
+    if (modalOverlay) modalOverlay.style.display = "block";
+    document.body.style.overflow = "hidden";
   }
 
   function closeCompanyModal() {
-    const overlay = document.getElementById("companyModalOverlay");
-    const frame = document.getElementById("companyModalFrame");
-    if (!overlay) return;
-
-    overlay.classList.add("hidden");
-    document.body.classList.remove("modal-open");
-    if (frame) frame.src = "about:blank";
+    if (modalOverlay) modalOverlay.style.display = "none";
+    if (modalFrame) modalFrame.src = "about:blank";
+    modalUrl = "";
+    document.body.style.overflow = "";
+    window.scrollTo(0, storedScrollY);
   }
 
-  /* ============================================================
-     STATE / UI HELPERS
-     ============================================================ */
-  function setState(state, message = "") {
-    const stateBox = document.getElementById("resultsState");
-    if (!stateBox) return;
+  if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeCompanyModal);
 
-    stateBox.classList.toggle("hidden", state === "ready");
+  if (modalOverlay) {
+    modalOverlay.addEventListener("click", (e) => {
+      if (e.target === modalOverlay) closeCompanyModal();
+    });
+  }
 
-    if (state === "loading") {
-      stateBox.innerHTML = `<div class="loading-state">${escapeHtml(message || "Laden…")}</div>`;
-    } else if (state === "error") {
-      stateBox.innerHTML = `<div class="error-state">${escapeHtml(message || "Er ging iets mis.")}</div>`;
-    } else {
-      stateBox.innerHTML = "";
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeCompanyModal();
+  });
+
+  if (modalOpenNewTabBtn) {
+    modalOpenNewTabBtn.addEventListener("click", () => {
+      if (modalUrl) window.open(modalUrl, "_blank", "noopener");
+    });
+  }
+
+  /* =========================
+     Verzenden
+     ========================= */
+  function handleSendClick() {
+    const selected = document.querySelectorAll(".company-checkbox:checked");
+    if (!selected.length) return alert("Selecteer minimaal één bedrijf.");
+    if (selected.length > 5) return alert("Je kunt maximaal 5 bedrijven selecteren.");
+
+    const selectedCompanies = Array.from(selected)
+      .map((cb) => {
+        const card = cb.closest(".result-card");
+        if (!card) return null;
+
+        const nameEl = card.querySelector(".company-name a");
+        const cityEl = card.querySelector(".company-city");
+
+        return {
+          id: cb.dataset.companyId,
+          name: nameEl ? nameEl.textContent.trim() : "",
+          city: cityEl ? cityEl.textContent.trim() : "",
+        };
+      })
+      .filter(Boolean);
+
+    sessionStorage.setItem("selectedCompaniesSummary", JSON.stringify(selectedCompanies));
+    sessionStorage.setItem("selectedCompanyIds", JSON.stringify(selectedCompanies.map((c) => c.id)));
+
+    if (requestId) {
+      sessionStorage.setItem("requestId", requestId);
+      window.location.href = `/request-send.html?requestId=${encodeURIComponent(requestId)}`;
+      return;
     }
+
+    // search-mode fallback
+    window.location.href = `/request-send.html?category=${encodeURIComponent(category || "")}&specialty=${encodeURIComponent(
+      specialty || ""
+    )}&city=${encodeURIComponent(city || "")}`;
   }
 
-  function showError(message) {
-    setState("error", message || "Er ging iets mis.");
-  }
+  if (sendBtn) sendBtn.addEventListener("click", handleSendClick);
 
-  function showNoLocalNotice(show) {
-    const el = document.getElementById("noLocalNotice");
-    if (!el) return;
-    el.classList.toggle("hidden", !show);
-  }
+  /* =========================
+     Data ophalen + renderen
+     ========================= */
+  try {
+    stateEl.textContent = "Resultaten laden…";
 
-  function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value || "";
-  }
+    // MODE 2: offer-from-company (anchor + similar)
+    if (isOfferFromCompanyMode) {
+      if (subtitleEl) subtitleEl.textContent = "";
 
-  function buildSubtitleFromRequest(request) {
-    const parts = [];
-    if (request.category) parts.push(request.category);
-    if (request.specialty) parts.push(request.specialty);
-    if (request.city) parts.push(request.city);
-    if (parts.length === 0) return "Gebaseerd op jouw aanvraag.";
-    return `Gebaseerd op jouw aanvraag voor ${parts.join(" in ")}.`;
-  }
+      const anchorRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(companySlug)}`, {
+        cache: "no-store",
+      });
+      const anchorData = await anchorRes.json();
+      if (!anchorRes.ok || !anchorData?.ok || !anchorData.company) {
+        throw new Error(anchorData?.message || "Ankerbedrijf kon niet worden geladen");
+      }
 
-  function buildSubtitleFromQuery({ category, city, specialty }) {
-    const c = category ? String(category) : "";
-    const s = specialty ? String(specialty) : "";
-    const ci = city ? String(city) : "";
+      const anchor = anchorData.company;
 
-    const left = [c, s].filter(Boolean).join(" – ");
-    const right = ci ? `in ${ci}` : "";
+      const simRes = await fetch(
+        `${API_BASE}/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`,
+        { cache: "no-store" }
+      );
+      const simData = await simRes.json();
+      if (!simRes.ok || !simData?.ok) {
+        throw new Error(simData?.message || simData?.error || "Vergelijkbare bedrijven konden niet worden geladen");
+      }
 
-    if (!left && !right) return "Resultaten";
-    return `Gebaseerd op jouw zoekopdracht: ${[left, right].filter(Boolean).join(" ")}.`;
-  }
+      const similars = Array.isArray(simData.companies) ? simData.companies : [];
+      const merged = [anchor, ...similars];
 
-  /* ============================================================
-     FETCH / FORMAT HELPERS
-     ============================================================ */
-  async function safeJson(res) {
-    try {
-      return await res.json();
-    } catch {
-      return null;
+      stateEl.textContent = "";
+      if (subtitleEl) {
+        subtitleEl.textContent = `Gebaseerd op jouw aanvraag bij ${anchor.name}. Selecteer maximaal 5 bedrijven.`;
+      }
+
+      renderCompanies(merged, { anchorId: anchor._id });
+      if (footerEl) footerEl.classList.remove("hidden");
+      return;
     }
+
+    // MODE 1: request-mode
+    if (isRequestMode) {
+      const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.message || data?.error || "Request kon niet worden geladen");
+      }
+
+      const companies = Array.isArray(data.companies) ? data.companies : [];
+
+      if (!companies.length) {
+        stateEl.textContent = "Er zijn op dit moment geen bedrijven beschikbaar.";
+        return;
+      }
+
+      stateEl.textContent = "";
+      if (subtitleEl) {
+        const c = (data.request?.category || "").trim();
+        const s = (data.request?.specialty || "").trim();
+        const ci = (data.request?.city || "").trim();
+        const left = [c, s].filter(Boolean).join(" – ");
+        subtitleEl.textContent = left && ci ? `Gebaseerd op jouw aanvraag voor ${left} in ${ci}.` : "Gebaseerd op jouw aanvraag.";
+      }
+
+      renderCompanies(companies, { anchorId: data.request?.companyId || null });
+
+      // preselect (optioneel)
+      const preselectedSlug = sessionStorage.getItem("preselectedCompanySlug");
+      const checkbox = companyIdFromUrl
+        ? listEl.querySelector(`.company-checkbox[data-company-id="${companyIdFromUrl}"]`)
+        : preselectedSlug
+        ? listEl.querySelector(`.company-checkbox[data-company-slug="${preselectedSlug}"]`)
+        : null;
+
+      if (checkbox) checkbox.checked = true;
+      sessionStorage.removeItem("preselectedCompanySlug");
+
+      updateSelectionUI();
+      if (footerEl) footerEl.classList.remove("hidden");
+      return;
+    }
+
+    // MODE 3: search-mode (category + city + optional specialty)
+    {
+      const res = await fetch(`${API_BASE}/companies`, { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok || !data?.ok || !Array.isArray(data.companies)) {
+        throw new Error("Bedrijven konden niet worden geladen");
+      }
+
+      const wantedCategory = normalize(category);
+      const wantedCity = normalize(city);
+      const wantedSpecialty = normalize(specialty);
+
+      const filtered = data.companies.filter((c) => {
+        const cCity = normalize(c.city);
+        const cCategories = Array.isArray(c.categories) ? c.categories.map(normalize) : [];
+        const cSpecialties = Array.isArray(c.specialties) ? c.specialties.map(normalize) : [];
+
+        const cityOk = wantedCity ? cCity === wantedCity : true;
+        const catOk = wantedCategory ? cCategories.includes(wantedCategory) : true;
+        const specOk = wantedSpecialty ? cSpecialties.includes(wantedSpecialty) : true;
+
+        return cityOk && catOk && specOk;
+      });
+
+      if (!filtered.length) {
+        stateEl.textContent = "Er zijn op dit moment geen bedrijven beschikbaar.";
+        return;
+      }
+
+      stateEl.textContent = "";
+      if (subtitleEl) {
+        const left = [category, specialty].filter(Boolean).join(" – ");
+        subtitleEl.textContent = `Gebaseerd op jouw zoekopdracht: ${left} in ${city}.`;
+      }
+
+      renderCompanies(filtered);
+      if (footerEl) footerEl.classList.remove("hidden");
+    }
+  } catch (err) {
+    console.error(err);
+    stateEl.textContent = "Resultaten konden niet worden geladen.";
+  }
+
+  function renderCompanies(companies, options = {}) {
+    listEl.innerHTML = "";
+    updateSelectionUI();
+
+    const anchorId = options.anchorId ? String(options.anchorId) : null;
+
+    companies.forEach((company, index) => {
+      const card = document.createElement("div");
+      card.className = "result-card";
+
+      const isAnchor = anchorId && String(company._id) === anchorId;
+
+      const profileUrl = `/company.html?slug=${encodeURIComponent(company.slug || "")}&embed=1`;
+
+      card.innerHTML = `
+        <label class="company-select">
+          <input type="checkbox"
+            class="company-checkbox"
+            data-company-id="${company._id || ""}"
+            data-company-slug="${company.slug || ""}"
+          />
+          <div class="company-info">
+            <div class="company-header">
+              <h3 class="company-name block">
+                ${
+                  isAnchor || index === 0
+                    ? `<span class="best-match-badge">Beste match</span>`
+                    : ""
+                }
+                <a href="${profileUrl}"
+                   class="company-profile-link"
+                   data-company-name="${escapeHtml(company.name)}">
+                  ${escapeHtml(company.name)}
+                </a>
+              </h3>
+              ${renderReviewBlock(company)}
+            </div>
+            <div class="company-city">${escapeHtml(company.city)}</div>
+          </div>
+        </label>
+      `;
+
+      listEl.appendChild(card);
+    });
+  }
+
+  function updateSelectionUI() {
+    const selected = listEl.querySelectorAll(".company-checkbox:checked").length;
+    if (countEl) countEl.textContent = `${selected} van 5 geselecteerd`;
+    if (sendBtn) sendBtn.disabled = selected === 0;
   }
 
   function normalize(v) {
     return String(v || "").trim().toLowerCase();
   }
 
-  function numberOrNull(v) {
-    const n = Number(v);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function formatOneDecimal(v) {
-    const n = Number(v);
-    if (!Number.isFinite(n)) return "0,0";
-    return n.toFixed(1).replace(".", ",");
-  }
-
-  function clamp(n, min, max) {
-    return Math.max(min, Math.min(max, n));
-  }
-
   function escapeHtml(str) {
-    return String(str)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+    return String(str || "").replace(/[&<>"']/g, (s) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[s]);
   }
-})();
+});
