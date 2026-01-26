@@ -53,8 +53,6 @@ app.use("/api/seed", require("./routes/seed"));
 
 const companiesSimilarRoutes = require("./routes/companiesSimilar");
 
-app.use("/api/companies", companiesSimilarRoutes);
-
 
 
 /* =========================

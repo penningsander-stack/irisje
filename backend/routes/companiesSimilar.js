@@ -1,73 +1,63 @@
 // backend/routes/companiesSimilar.js
-
 const express = require("express");
 const router = express.Router();
 const Company = require("../models/company");
 
-/**
- * GET /api/companies/similar
- * Query:
- *  - anchorSlug (verplicht)
- *
- * Logica:
- *  1. Zoek ankerbedrijf op slug (GEEN active-filter)
- *  2. Zoek max 4 andere bedrijven met:
- *     - zelfde city
- *     - overlap in categories
- *     - ander _id dan anker
- */
-
-router.get("/similar", async (req, res) => {
+// Endpoint: GET /api/companies-similar?anchorSlug=...
+// (Backwards compatible) also responds on GET /api/companies-similar/similar?anchorSlug=...
+async function handler(req, res) {
   try {
-    const { anchorSlug } = req.query;
-
+    const anchorSlug = String(req.query.anchorSlug || "").trim();
     if (!anchorSlug) {
-      return res.status(400).json({
-        ok: false,
-        message: "anchorSlug ontbreekt"
-      });
+      return res.status(400).json({ ok: false, message: "anchorSlug ontbreekt" });
     }
 
-    // 1️⃣ Ankerbedrijf ophalen (GEEN active-filter)
-    const anchor = await Company.findOne({ slug: anchorSlug });
+    const anchorCompany = await Company.findOne({ slug: anchorSlug, active: true })
+      .select("_id name slug city categories avgRating reviewCount isVerified")
+      .lean();
 
-    if (!anchor) {
-      return res.status(404).json({
-        ok: false,
-        message: "Ankerbedrijf niet gevonden"
-      });
+    if (!anchorCompany) {
+      return res.status(404).json({ ok: false, message: "Ankerbedrijf niet gevonden" });
     }
 
-    // 2️⃣ Vergelijkbare bedrijven zoeken
-    const similarCompanies = await Company.find({
-      _id: { $ne: anchor._id },
-      city: anchor.city,
-      categories: { $in: anchor.categories }
-    })
-      .limit(4)
-      .select(
-        "name slug city categories specialties avgRating reviewCount isVerified"
-      );
+    const category = Array.isArray(anchorCompany.categories) ? anchorCompany.categories[0] : null;
+
+    const query = {
+      _id: { $ne: anchorCompany._id },
+      active: true,
+    };
+
+    if (category) query.categories = category;
+
+    const companies = await Company.find(query)
+      .select("_id name slug city categories avgRating reviewCount isVerified")
+      .lean();
+
+    const sameCity = [];
+    const otherCity = [];
+
+    for (const c of companies) {
+      if (String(c.city || "").toLowerCase() === String(anchorCompany.city || "").toLowerCase()) {
+        sameCity.push(c);
+      } else {
+        otherCity.push(c);
+      }
+    }
+
+    const combined = [...sameCity, ...otherCity].slice(0, 20);
 
     return res.json({
       ok: true,
-      anchorCompany: {
-        _id: anchor._id,
-        name: anchor.name,
-        slug: anchor.slug,
-        city: anchor.city,
-        categories: anchor.categories
-      },
-      companies: similarCompanies
+      anchorCompany,
+      companies: combined,
     });
-
   } catch (err) {
     console.error("companiesSimilar error:", err);
-    return res.status(500).json({
-      ok: false,
-      message: "Interne serverfout"
-    });
+    return res.status(500).json({ ok: false, message: "Server error" });
   }
-});
+}
+
+router.get("/", handler);
+router.get("/similar", handler);
 
 module.exports = router;
