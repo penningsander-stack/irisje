@@ -1,7 +1,7 @@
 // frontend/js/results.js
 // Irisje.nl – results page logic (search mode + request mode + offer-from-company mode)
-// - Preserves premium UI hooks: modal open, footer counter, selection limit
-// - Restores dual ratings: Google (avgRating/reviewCount) + Irisje (irisjeAvgRating/irisjeReviewCount)
+// Fixes: companySlug-mode, requestId-mode, modal id mismatch (companyModalFrame),
+// selection footer/teller, clickable company names (embed profiel), correct Google label.
 
 (() => {
   "use strict";
@@ -21,27 +21,25 @@
       const specialty = params.get("specialty");
       const companySlug = params.get("companySlug");
 
-      const embed = params.get("embed") === "1";
-      if (embed) document.body.classList.add("embed-mode");
-
       bindModal();
       bindFooter();
+      bindListEvents();
 
       setState("loading", "Bedrijven laden…");
 
-      // MODE B: offer-from-company (anchor via slug + up to 4 similars)
+      // MODE B: offer-from-company (anchor via slug + similars)
       if (companySlug) {
         await runOfferMode(companySlug);
         return;
       }
 
-      // MODE A2: request-based results (preferred when requestId exists)
+      // MODE A2: request-based results
       if (requestId) {
         await runRequestMode(requestId);
         return;
       }
 
-      // MODE A1: direct search mode (category + city + specialty)
+      // MODE A1: direct search mode
       await runSearchMode({ category, city, specialty });
     } catch (err) {
       console.error(err);
@@ -53,7 +51,9 @@
      MODE A2 — REQUEST MODE (op basis van requestId)
      ============================================================ */
   async function runRequestMode(requestId) {
-    const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`);
+    const res = await fetch(`${API_BASE}/publicRequests/${encodeURIComponent(requestId)}`, {
+      cache: "no-store",
+    });
     const data = await safeJson(res);
 
     if (!res.ok || !data || data.ok !== true) {
@@ -68,16 +68,15 @@
 
     showNoLocalNotice(!!data.noLocalResults);
 
-    // Anchor bovenaan markeren als backend companyId meegeeft
     renderCompanies(companies, { anchorId: request.companyId || null });
   }
 
   /* ============================================================
      MODE A1 — SEARCH MODE (category + city + specialty)
-     Let op: /api/companies geeft alle bedrijven; we filteren client-side.
+     Let op: /api/companies geeft bedrijven; we filteren client-side.
      ============================================================ */
   async function runSearchMode({ category, city, specialty }) {
-    const res = await fetch(`${API_BASE}/companies`);
+    const res = await fetch(`${API_BASE}/companies`, { cache: "no-store" });
     const data = await safeJson(res);
 
     if (!res.ok || !data || data.ok !== true || !Array.isArray(data.companies)) {
@@ -109,11 +108,15 @@
 
   /* ============================================================
      MODE B — OFFERTES VANAF SPECIFIEK BEDRIJF (anchorSlug + similars)
-     Endpoint: /api/companies-similar?anchorSlug=...
+     Endpoints:
+     - /api/companies/slug/:slug
+     - /api/companies/similar?anchorSlug=...
      ============================================================ */
   async function runOfferMode(anchorSlug) {
-    // 1) anchor ophalen via bestaande companies/slug route
-    const anchorRes = await fetch(`${API_BASE}/companies/slug/${encodeURIComponent(anchorSlug)}`);
+    const anchorRes = await fetch(
+      `${API_BASE}/companies/slug/${encodeURIComponent(anchorSlug)}`,
+      { cache: "no-store" }
+    );
     const anchorData = await safeJson(anchorRes);
 
     if (!anchorRes.ok || !anchorData || anchorData.ok !== true || !anchorData.company) {
@@ -122,17 +125,22 @@
 
     const anchor = anchorData.company;
 
-    // 2) similars ophalen via companies-similar
-    const simRes = await fetch(`${API_BASE}/companies-similar?anchorSlug=${encodeURIComponent(anchor.slug)}`);
+    const simRes = await fetch(
+      `${API_BASE}/companies/similar?anchorSlug=${encodeURIComponent(anchor.slug)}`,
+      { cache: "no-store" }
+    );
     const simData = await safeJson(simRes);
 
     if (!simRes.ok || !simData || simData.ok !== true) {
-      throw new Error((simData && (simData.message || simData.error)) || "Vergelijkbare bedrijven konden niet worden geladen");
+      throw new Error((simData && simData.message) || "Vergelijkbare bedrijven konden niet worden geladen");
     }
 
     const similars = Array.isArray(simData.companies) ? simData.companies.slice(0, 4) : [];
 
-    setText("resultsSubtitle", `Gebaseerd op jouw aanvraag bij ${anchor.name}. Selecteer maximaal ${MAX_SELECT} bedrijven.`);
+    setText(
+      "resultsSubtitle",
+      `Gebaseerd op jouw aanvraag bij ${anchor.name}. Selecteer maximaal ${MAX_SELECT} bedrijven.`
+    );
     setState("ready");
     showNoLocalNotice(false);
 
@@ -167,18 +175,25 @@
       const categories = Array.isArray(company.categories) ? company.categories.join(" • ") : "";
       const tagline = company.tagline ? String(company.tagline) : "";
       const slug = company.slug ? String(company.slug) : "";
+      const id = company._id ? String(company._id) : "";
 
-      // Google ratings (historisch in Company opgeslagen)
+      // Google (jouw huidige backend-model gebruikt avgRating + reviewCount hiervoor)
       const googleRating = numberOrNull(company.avgRating);
-      const googleCount = numberOrNull(company.reviewCount);
+      const googleCount = intOrZero(company.reviewCount);
 
-      // Irisje ratings (door backend toegevoegd in publicRequests-mode)
+      // Irisje (alleen tonen als backend echt aparte velden meegeeft)
+      // We accepteren meerdere mogelijke veldnamen om compatibel te blijven.
       const irisjeRating =
         numberOrNull(company.irisjeAvgRating) ??
-        numberOrNull(company.averageRating); // fallback indien oudere backend keys bestaan
+        numberOrNull(company.irisjeRating) ??
+        numberOrNull(company.averageRating) ??
+        null;
+
       const irisjeCount =
-        numberOrNull(company.irisjeReviewCount) ??
-        numberOrNull(company.irisjeCount);
+        intOrZero(company.irisjeReviewCount) ||
+        intOrZero(company.irisjeCount) ||
+        intOrZero(company.irisjeReviews) ||
+        0;
 
       const ratingHtml = buildRatingBlock({
         googleRating,
@@ -191,13 +206,20 @@
         <div class="result-header">
           <div>
             ${isAnchor ? `<div class="pill pill-indigo">Beste match</div>` : ``}
+
             <div class="result-title">
-              <a href="#" class="js-open-company result-link" data-slug="${escapeHtml(slug)}">${name}</a>
+              ${
+                slug
+                  ? `<a href="#" class="js-open-company" data-slug="${escapeHtml(slug)}">${name}</a>`
+                  : `<span>${name}</span>`
+              }
             </div>
+
             <div class="result-location">${city}</div>
             ${categories ? `<div class="result-categories">${escapeHtml(categories)}</div>` : ``}
             ${tagline ? `<div class="result-tagline">${escapeHtml(tagline)}</div>` : ``}
           </div>
+
           <div class="result-rating">
             ${ratingHtml}
           </div>
@@ -206,90 +228,96 @@
         <div class="result-footer">
           <div class="result-actions">
             <label class="checkbox-label">
-              <input type="checkbox" class="company-checkbox" value="${escapeHtml(String(company._id || ""))}">
+              <input type="checkbox" class="company-checkbox" value="${escapeHtml(id)}">
               Selecteer
             </label>
-            ${company.isVerified ? `<span class="result-verified">Geverifieerd</span>` : `<span class="result-verified">Niet geverifieerd</span>`}
+            ${
+              company.isVerified
+                ? `<span class="result-verified">Geverifieerd</span>`
+                : `<span class="result-verified">Niet geverifieerd</span>`
+            }
           </div>
         </div>
       `;
 
       list.appendChild(card);
-
-      const openBtn = card.querySelector(".js-open-company");
-      if (openBtn) {
-        openBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          const s = openBtn.getAttribute("data-slug") || "";
-          if (s) openCompanyModal(s);
-        });
-      }
-
-      const cb = card.querySelector(".company-checkbox");
-      if (cb) {
-        cb.addEventListener("change", () => {
-          enforceSelectionLimit(MAX_SELECT, cb);
-          updateFooterState();
-        });
-      }
     });
 
     updateFooterState();
   }
 
   function buildRatingBlock({ googleRating, googleCount, irisjeRating, irisjeCount }) {
-    const rows = [];
+    const parts = [];
 
-    // Irisje eerst tonen
-    if (irisjeRating != null) {
-      rows.push(renderRatingRow("Irisje", irisjeRating, irisjeCount ?? 0, "pill-irisje"));
-    }
-
-    // Google daarna
+    // Google: altijd labelen als Google (dit zijn jouw bestaande velden)
     if (googleRating != null) {
-      rows.push(renderRatingRow("Google", googleRating, googleCount ?? 0, "pill-google"));
+      parts.push(`
+        <div class="rating-line">
+          <span class="pill pill-google">Google</span>
+          <span class="rating-value">${formatOneDecimal(googleRating)}</span>
+          ${renderStars(googleRating)}
+          <span class="rating-count">(${googleCount})</span>
+        </div>
+      `);
     }
 
-    if (rows.length === 0) return `<div class="result-reviewcount">Geen reviews</div>`;
-    return rows.join("");
+    // Irisje: alleen tonen als er echte Irisje-velden zijn meegeleverd
+    if (irisjeRating != null && irisjeCount > 0) {
+      parts.push(`
+        <div class="rating-line">
+          <span class="pill pill-irisje">Irisje</span>
+          <span class="rating-value">${formatOneDecimal(irisjeRating)}</span>
+          ${renderStars(irisjeRating)}
+          <span class="rating-count">(${irisjeCount})</span>
+        </div>
+      `);
+    }
+
+    if (parts.length === 0) {
+      return `<div class="result-reviewcount">Geen reviews</div>`;
+    }
+
+    return parts.join("");
   }
 
-  function renderRatingRow(label, rating, count, pillClass) {
-    return `
-      <div class="rating-line">
-        <span class="pill ${pillClass}">${escapeHtml(label)}</span>
-        <span class="rating-value">${formatOneDecimal(rating)}</span>
-        ${renderStarsSvg(rating)}
-        <span class="rating-count">(${Number.isFinite(Number(count)) ? Number(count) : 0})</span>
-      </div>
-    `;
-  }
-
-  // SVG stars (geen dubbele ★ bij kopiëren/plakken)
-  function renderStarsSvg(ratingOutOfFive) {
+  function renderStars(ratingOutOfFive) {
     const r = clamp(Number(ratingOutOfFive) || 0, 0, 5);
     const stars = [];
     for (let i = 1; i <= 5; i++) {
-      const fill = clamp(r - (i - 1), 0, 1);
+      const fill = clamp(r - (i - 1), 0, 1); // 0..1
       const pct = Math.round(fill * 100);
-      stars.push(starSvg(pct, i));
+      stars.push(`
+        <span class="star" aria-hidden="true">
+          ★
+          <span class="star-fill" style="width:${pct}%">★</span>
+        </span>
+      `);
     }
-    return `<span class="star-rating" aria-label="${formatOneDecimal(r)} van 5">${stars.join("")}</span>`;
+    return `<span class="star-rating" title="${formatOneDecimal(r)} / 5">${stars.join("")}</span>`;
   }
 
-  function starSvg(percent, idx) {
-    const clipId = `clip_${idx}_${Math.random().toString(16).slice(2)}`;
-    return `
-      <svg class="star-svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-        <defs>
-          <clipPath id="${clipId}">
-            <rect x="0" y="0" width="${(24 * percent) / 100}" height="24"></rect>
-          </clipPath>
-        </defs>
-        <path class="star-bg" fill="#e5e7eb" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-        <path class="star-fg" fill="#f59e0b" clip-path="url(#${clipId})" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path>
-      </svg>
-    `;
+  /* ============================================================
+     LIST EVENTS (modal open + checkbox limit) — event delegation
+     ============================================================ */
+  function bindListEvents() {
+    const list = document.getElementById("companiesList");
+    if (!list) return;
+
+    list.addEventListener("click", (e) => {
+      const link = e.target.closest(".js-open-company");
+      if (!link) return;
+      e.preventDefault();
+      const slug = link.getAttribute("data-slug") || "";
+      if (slug) openCompanyModal(slug);
+    });
+
+    list.addEventListener("change", (e) => {
+      const cb = e.target.closest(".company-checkbox");
+      if (!cb) return;
+
+      enforceSelectionLimit(MAX_SELECT, cb);
+      updateFooterState();
+    });
   }
 
   /* ============================================================
@@ -308,7 +336,10 @@
         return;
       }
 
-      alert(`Geselecteerd: ${selectedIds.length} bedrijf(ven).`);
+      alert(
+        `Geselecteerd: ${selectedIds.length} bedrijf(ven).\n\n` +
+          `Koppel deze knop pas aan jouw bestaande verzend-flow als je exact aangeeft welk endpoint/route nu gebruikt moet worden.`
+      );
     });
   }
 
@@ -322,7 +353,7 @@
     if (btn) btn.disabled = selected.length === 0;
 
     if (!footer) return;
-    footer.style.display = selected.length > 0 ? "flex" : "none";
+    footer.classList.toggle("hidden", selected.length === 0);
   }
 
   function getSelectedCompanyIds() {
@@ -340,7 +371,7 @@
   }
 
   /* ============================================================
-     MODAL (embed company.html)
+     MODAL (matcht results.html: companyModalFrame)
      ============================================================ */
   function bindModal() {
     const overlay = document.getElementById("companyModalOverlay");
@@ -349,17 +380,21 @@
     const frame = document.getElementById("companyModalFrame");
 
     if (closeBtn) closeBtn.addEventListener("click", closeCompanyModal);
-    if (overlay) overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) closeCompanyModal();
-    });
+
+    if (overlay) {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeCompanyModal();
+      });
+    }
 
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeCompanyModal();
     });
 
-    if (openNewTab && frame) {
+    if (openNewTab) {
       openNewTab.addEventListener("click", (e) => {
         e.preventDefault();
+        if (!frame) return;
         const src = frame.getAttribute("src");
         if (src) window.open(src.replace("&embed=1", ""), "_blank", "noopener");
       });
@@ -369,21 +404,16 @@
   function openCompanyModal(slug) {
     const overlay = document.getElementById("companyModalOverlay");
     const frame = document.getElementById("companyModalFrame");
-    const title = document.getElementById("companyModalTitle");
-
     if (!overlay || !frame) return;
 
-    if (title) title.textContent = slug;
     frame.src = `/company.html?slug=${encodeURIComponent(slug)}&embed=1`;
-
-    overlay.style.display = "flex";
+    overlay.style.display = "block";
     document.body.classList.add("modal-open");
   }
 
   function closeCompanyModal() {
     const overlay = document.getElementById("companyModalOverlay");
     const frame = document.getElementById("companyModalFrame");
-
     if (!overlay) return;
 
     overlay.style.display = "none";
@@ -416,7 +446,15 @@
   function showNoLocalNotice(show) {
     const el = document.getElementById("noLocalNotice");
     if (!el) return;
-    el.style.display = show ? "block" : "none";
+
+    if (!show) {
+      el.classList.add("hidden");
+      el.textContent = "";
+      return;
+    }
+
+    el.textContent = "Geen lokale resultaten gevonden. We tonen bedrijven uit de omgeving.";
+    el.classList.remove("hidden");
   }
 
   function setText(id, value) {
@@ -429,7 +467,6 @@
     if (request.category) parts.push(request.category);
     if (request.specialty) parts.push(request.specialty);
     if (request.city) parts.push(request.city);
-
     if (parts.length === 0) return "Gebaseerd op jouw aanvraag.";
     return `Gebaseerd op jouw aanvraag voor ${parts.join(" in ")}.`;
   }
@@ -464,6 +501,12 @@
   function numberOrNull(v) {
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
+  }
+
+  function intOrZero(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.floor(n));
   }
 
   function formatOneDecimal(v) {
