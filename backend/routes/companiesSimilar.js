@@ -4,7 +4,8 @@ const router = express.Router();
 const Company = require("../models/company");
 
 // Endpoint: GET /api/companies-similar?anchorSlug=...
-// (Backwards compatible) also responds on GET /api/companies-similar/similar?anchorSlug=...
+// (Backwards compatible) ook bereikbaar via:
+// GET /api/companies-similar/similar?anchorSlug=...
 async function handler(req, res) {
   try {
     const anchorSlug = String(req.query.anchorSlug || "").trim();
@@ -12,7 +13,10 @@ async function handler(req, res) {
       return res.status(400).json({ ok: false, message: "anchorSlug ontbreekt" });
     }
 
-    const anchorCompany = await Company.findOne({ slug: anchorSlug, active: true })
+    const anchorCompany = await Company.findOne({
+      slug: anchorSlug,
+      active: true,
+    })
       .select("_id name slug city categories avgRating reviewCount isVerified")
       .lean();
 
@@ -20,14 +24,22 @@ async function handler(req, res) {
       return res.status(404).json({ ok: false, message: "Ankerbedrijf niet gevonden" });
     }
 
-    const category = Array.isArray(anchorCompany.categories) ? anchorCompany.categories[0] : null;
+    const rawCategory = Array.isArray(anchorCompany.categories)
+      ? anchorCompany.categories[0]
+      : null;
 
     const query = {
       _id: { $ne: anchorCompany._id },
       active: true,
     };
 
-    if (category) query.categories = category;
+    // ✅ case-insensitive category match
+    if (rawCategory) {
+      query.categories = {
+        $regex: `^${rawCategory}$`,
+        $options: "i",
+      };
+    }
 
     const companies = await Company.find(query)
       .select("_id name slug city categories avgRating reviewCount isVerified")
@@ -37,7 +49,10 @@ async function handler(req, res) {
     const otherCity = [];
 
     for (const c of companies) {
-      if (String(c.city || "").toLowerCase() === String(anchorCompany.city || "").toLowerCase()) {
+      if (
+        String(c.city || "").toLowerCase() ===
+        String(anchorCompany.city || "").toLowerCase()
+      ) {
         sameCity.push(c);
       } else {
         otherCity.push(c);
