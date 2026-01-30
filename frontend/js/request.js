@@ -14,13 +14,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
 
-  // ⬅️ mag ontbreken
-  const errorBox = document.getElementById("formError");
+  const errorBox = document.getElementById("formError"); // mag ontbreken
 
-  // ❗ alleen ECHT verplichte elementen checken
+  // Alleen écht kritieke elementen blokkeren
   if (
     !form ||
     !categorySelect ||
+    !nameInput ||
+    !emailInput ||
     !specialtyOptions ||
     !specialtyOtherWrap ||
     !specialtyOtherInput ||
@@ -63,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     specialtyOtherWrap.classList.add("hidden");
     specialtyOtherInput.value = "";
 
-    const list = SPECIALTIES[categoryValue];
+    const list = SPECIALTIES[categoryValue.toLowerCase()];
     if (!list) return;
 
     list.forEach((spec) => {
@@ -138,6 +139,8 @@ document.addEventListener("DOMContentLoaded", () => {
       errorBox.classList.add("hidden");
     }
 
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
     const category = categorySelect.value;
     const city = cityHidden.value;
 
@@ -148,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
       specialty = specialtyOtherInput.value.trim();
     }
 
-    if (!category || !city || !specialty) {
+    if (!name || !email || !category || !city || !specialty) {
       if (errorBox) {
         errorBox.textContent = "Vul alle stappen volledig in.";
         errorBox.classList.remove("hidden");
@@ -162,11 +165,18 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category, specialty, city }),
+          body: JSON.stringify({
+            name,
+            email,
+            category,
+            specialty,
+            city,
+          }),
         }
       );
 
       const data = await res.json();
+
       if (!res.ok || !data.ok) {
         throw new Error(data.message || "Aanvraag mislukt");
       }
