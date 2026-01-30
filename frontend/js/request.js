@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const errorBox = document.getElementById("formError");
 
-  // ❗ NOOIT meer het script stoppen
+  // Alleen basisvereisten
   if (!form || !categorySelect) {
     console.warn("request.js: basisformulier niet gevonden");
     return;
@@ -65,7 +65,11 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.className = "chip";
       btn.textContent = spec;
 
-      btn.addEventListener("click", () => {
+      // ✅ CRUCIALE FIX: klik afdwingen op de chip zelf
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         specialtyOptions
           .querySelectorAll(".chip")
           .forEach((b) => b.classList.remove("active"));
