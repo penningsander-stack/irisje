@@ -13,30 +13,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const cityInput = document.getElementById("cityInput");
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
-
   const errorBox = document.getElementById("formError");
 
   if (
-    !form ||
-    !categorySelect ||
-    !specialtyOptions ||
-    !specialtyOtherWrap ||
-    !specialtyOtherInput ||
-    !cityInput ||
-    !cityHidden ||
-    !suggestionsBox ||
-    !errorBox
+    !form || !categorySelect || !nameInput || !emailInput ||
+    !specialtyOptions || !specialtyOtherWrap || !specialtyOtherInput ||
+    !cityInput || !cityHidden || !suggestionsBox || !errorBox
   ) {
     console.error("request.js: vereiste form-elementen ontbreken");
     return;
   }
 
   /* ===============================
-     SPECIALISMES PER CATEGORIE
+     SPECIALISMES (LOWERCASE KEYS)
   =============================== */
 
   const SPECIALTIES = {
-    Advocaat: [
+    advocaat: [
       "Arbeidsrecht",
       "Familierecht",
       "Strafrecht",
@@ -45,26 +38,26 @@ document.addEventListener("DOMContentLoaded", () => {
       "Bestuursrecht",
       "Anders",
     ],
-    Loodgieter: [
+    loodgieter: [
       "Lekkage",
       "Verstopping",
       "CV-ketel",
       "Sanitair",
       "Anders",
     ],
-    Elektricien: [
+    elektricien: [
       "Storing",
       "Groepenkast",
       "Verlichting",
       "Anders",
     ],
-    Schilder: [
+    schilder: [
       "Binnen",
       "Buiten",
       "Onderhoud",
       "Anders",
     ],
-    Hovenier: [
+    hovenier: [
       "Tuinonderhoud",
       "Aanleg",
       "Boomverzorging",
@@ -72,22 +65,23 @@ document.addEventListener("DOMContentLoaded", () => {
     ],
   };
 
-  function renderSpecialties(category) {
+  function renderSpecialties(categoryValue) {
     specialtyOptions.innerHTML = "";
     specialtyOtherWrap.classList.add("hidden");
     specialtyOtherInput.value = "";
 
-    if (!SPECIALTIES[category]) return;
+    const list = SPECIALTIES[categoryValue];
+    if (!list) return;
 
-    SPECIALTIES[category].forEach((spec) => {
+    list.forEach((spec) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "chip";
       btn.textContent = spec;
 
       btn.addEventListener("click", () => {
-        document
-          .querySelectorAll("#specialtyOptions .chip")
+        specialtyOptions
+          .querySelectorAll(".chip")
           .forEach((b) => b.classList.remove("active"));
 
         btn.classList.add("active");
@@ -105,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   categorySelect.addEventListener("change", () => {
-    renderSpecialties(categorySelect.value);
+    renderSpecialties(categorySelect.value); // ⬅️ lowercase value
   });
 
   /* ===============================
@@ -113,26 +107,10 @@ document.addEventListener("DOMContentLoaded", () => {
   =============================== */
 
   const PLACES = [
-    "Amsterdam",
-    "Rotterdam",
-    "Den Haag",
-    "Utrecht",
-    "Eindhoven",
-    "Groningen",
-    "Tilburg",
-    "Breda",
-    "Nijmegen",
-    "Apeldoorn",
-    "Arnhem",
-    "Leiden",
-    "Haarlem",
-    "Amersfoort",
-    "Zwolle",
-    "Alkmaar",
-    "Almere",
-    "Zoetermeer",
-    "Dordrecht",
-    "Gouda",
+    "Amsterdam","Rotterdam","Den Haag","Utrecht","Eindhoven",
+    "Groningen","Tilburg","Breda","Nijmegen","Apeldoorn",
+    "Arnhem","Leiden","Haarlem","Amersfoort","Zwolle",
+    "Alkmaar","Almere","Zoetermeer","Dordrecht","Gouda"
   ];
 
   cityInput.addEventListener("input", () => {
@@ -144,8 +122,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     PLACES.filter((c) => c.toLowerCase().includes(q)).forEach((city) => {
       const div = document.createElement("div");
-      div.textContent = city;
       div.className = "autocomplete-item";
+      div.textContent = city;
       div.addEventListener("click", () => {
         cityInput.value = city;
         cityHidden.value = city;
@@ -164,19 +142,19 @@ document.addEventListener("DOMContentLoaded", () => {
     errorBox.classList.add("hidden");
     errorBox.textContent = "";
 
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
     const category = categorySelect.value;
     const city = cityHidden.value;
 
-    const activeSpec = document.querySelector(
-      "#specialtyOptions .chip.active"
-    );
-    let specialty = activeSpec ? activeSpec.textContent : "";
+    const activeChip = specialtyOptions.querySelector(".chip.active");
+    let specialty = activeChip ? activeChip.textContent : "";
 
     if (specialty === "Anders") {
       specialty = specialtyOtherInput.value.trim();
     }
 
-    if (!category || !city || !specialty) {
+    if (!name || !email || !category || !city || !specialty) {
       errorBox.textContent = "Vul alle stappen volledig in.";
       errorBox.classList.remove("hidden");
       return;
@@ -189,15 +167,16 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            name,
+            email,
             category,
-            city,
             specialty,
+            city,
           }),
         }
       );
 
       const data = await res.json();
-
       if (!res.ok || !data.ok) {
         throw new Error(data.message || "Aanvraag mislukt");
       }
