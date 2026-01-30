@@ -14,27 +14,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
 
-  const errorBox = document.getElementById("formError"); // mag ontbreken
+  const errorBox = document.getElementById("formError");
 
-  // Alleen écht kritieke elementen blokkeren
-  if (
-    !form ||
-    !categorySelect ||
-    !nameInput ||
-    !emailInput ||
-    !specialtyOptions ||
-    !specialtyOtherWrap ||
-    !specialtyOtherInput ||
-    !cityInput ||
-    !cityHidden ||
-    !suggestionsBox
-  ) {
-    console.error("request.js: kritieke form-elementen ontbreken");
+  // ❗ NOOIT meer het script stoppen
+  if (!form || !categorySelect) {
+    console.warn("request.js: basisformulier niet gevonden");
     return;
   }
 
   /* ===============================
-     SPECIALISMES (lowercase keys)
+     SPECIALISMES
   =============================== */
 
   const SPECIALTIES = {
@@ -60,11 +49,14 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function renderSpecialties(categoryValue) {
-    specialtyOptions.innerHTML = "";
-    specialtyOtherWrap.classList.add("hidden");
-    specialtyOtherInput.value = "";
+    if (!specialtyOptions) return;
 
-    const list = SPECIALTIES[categoryValue.toLowerCase()];
+    specialtyOptions.innerHTML = "";
+
+    if (specialtyOtherWrap) specialtyOtherWrap.classList.add("hidden");
+    if (specialtyOtherInput) specialtyOtherInput.value = "";
+
+    const list = SPECIALTIES[categoryValue?.toLowerCase()];
     if (!list) return;
 
     list.forEach((spec) => {
@@ -80,9 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         btn.classList.add("active");
 
-        if (spec === "Anders") {
+        if (spec === "Anders" && specialtyOtherWrap) {
           specialtyOtherWrap.classList.remove("hidden");
-        } else {
+        } else if (specialtyOtherWrap && specialtyOtherInput) {
           specialtyOtherWrap.classList.add("hidden");
           specialtyOtherInput.value = "";
         }
@@ -107,25 +99,27 @@ document.addEventListener("DOMContentLoaded", () => {
     "Alkmaar","Almere","Zoetermeer","Dordrecht","Gouda"
   ];
 
-  cityInput.addEventListener("input", () => {
-    const q = cityInput.value.toLowerCase();
-    suggestionsBox.innerHTML = "";
-    cityHidden.value = "";
+  if (cityInput && suggestionsBox && cityHidden) {
+    cityInput.addEventListener("input", () => {
+      const q = cityInput.value.toLowerCase();
+      suggestionsBox.innerHTML = "";
+      cityHidden.value = "";
 
-    if (q.length < 2) return;
+      if (q.length < 2) return;
 
-    PLACES.filter((c) => c.toLowerCase().includes(q)).forEach((city) => {
-      const div = document.createElement("div");
-      div.className = "autocomplete-item";
-      div.textContent = city;
-      div.addEventListener("click", () => {
-        cityInput.value = city;
-        cityHidden.value = city;
-        suggestionsBox.innerHTML = "";
+      PLACES.filter((c) => c.toLowerCase().includes(q)).forEach((city) => {
+        const div = document.createElement("div");
+        div.className = "autocomplete-item";
+        div.textContent = city;
+        div.addEventListener("click", () => {
+          cityInput.value = city;
+          cityHidden.value = city;
+          suggestionsBox.innerHTML = "";
+        });
+        suggestionsBox.appendChild(div);
       });
-      suggestionsBox.appendChild(div);
     });
-  });
+  }
 
   /* ===============================
      SUBMIT
@@ -139,16 +133,16 @@ document.addEventListener("DOMContentLoaded", () => {
       errorBox.classList.add("hidden");
     }
 
-    const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
+    const name = nameInput?.value?.trim();
+    const email = emailInput?.value?.trim();
     const category = categorySelect.value;
-    const city = cityHidden.value;
+    const city = cityHidden?.value;
 
-    const activeChip = specialtyOptions.querySelector(".chip.active");
+    const activeChip = specialtyOptions?.querySelector(".chip.active");
     let specialty = activeChip ? activeChip.textContent : "";
 
     if (specialty === "Anders") {
-      specialty = specialtyOtherInput.value.trim();
+      specialty = specialtyOtherInput?.value?.trim();
     }
 
     if (!name || !email || !category || !city || !specialty) {
