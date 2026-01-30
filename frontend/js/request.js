@@ -13,19 +13,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const cityInput = document.getElementById("cityInput");
   const cityHidden = document.getElementById("city");
   const suggestionsBox = document.getElementById("citySuggestions");
+
+  // ⬅️ mag ontbreken
   const errorBox = document.getElementById("formError");
 
+  // ❗ alleen ECHT verplichte elementen checken
   if (
-    !form || !categorySelect || !nameInput || !emailInput ||
-    !specialtyOptions || !specialtyOtherWrap || !specialtyOtherInput ||
-    !cityInput || !cityHidden || !suggestionsBox || !errorBox
+    !form ||
+    !categorySelect ||
+    !specialtyOptions ||
+    !specialtyOtherWrap ||
+    !specialtyOtherInput ||
+    !cityInput ||
+    !cityHidden ||
+    !suggestionsBox
   ) {
-    console.error("request.js: vereiste form-elementen ontbreken");
+    console.error("request.js: kritieke form-elementen ontbreken");
     return;
   }
 
   /* ===============================
-     SPECIALISMES (LOWERCASE KEYS)
+     SPECIALISMES (lowercase keys)
   =============================== */
 
   const SPECIALTIES = {
@@ -45,24 +53,9 @@ document.addEventListener("DOMContentLoaded", () => {
       "Sanitair",
       "Anders",
     ],
-    elektricien: [
-      "Storing",
-      "Groepenkast",
-      "Verlichting",
-      "Anders",
-    ],
-    schilder: [
-      "Binnen",
-      "Buiten",
-      "Onderhoud",
-      "Anders",
-    ],
-    hovenier: [
-      "Tuinonderhoud",
-      "Aanleg",
-      "Boomverzorging",
-      "Anders",
-    ],
+    elektricien: ["Storing", "Groepenkast", "Verlichting", "Anders"],
+    schilder: ["Binnen", "Buiten", "Onderhoud", "Anders"],
+    hovenier: ["Tuinonderhoud", "Aanleg", "Boomverzorging", "Anders"],
   };
 
   function renderSpecialties(categoryValue) {
@@ -99,7 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   categorySelect.addEventListener("change", () => {
-    renderSpecialties(categorySelect.value); // ⬅️ lowercase value
+    renderSpecialties(categorySelect.value);
   });
 
   /* ===============================
@@ -139,11 +132,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    errorBox.classList.add("hidden");
-    errorBox.textContent = "";
 
-    const name = nameInput.value.trim();
-    const email = emailInput.value.trim();
+    if (errorBox) {
+      errorBox.textContent = "";
+      errorBox.classList.add("hidden");
+    }
+
     const category = categorySelect.value;
     const city = cityHidden.value;
 
@@ -154,9 +148,11 @@ document.addEventListener("DOMContentLoaded", () => {
       specialty = specialtyOtherInput.value.trim();
     }
 
-    if (!name || !email || !category || !city || !specialty) {
-      errorBox.textContent = "Vul alle stappen volledig in.";
-      errorBox.classList.remove("hidden");
+    if (!category || !city || !specialty) {
+      if (errorBox) {
+        errorBox.textContent = "Vul alle stappen volledig in.";
+        errorBox.classList.remove("hidden");
+      }
       return;
     }
 
@@ -166,13 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            email,
-            category,
-            specialty,
-            city,
-          }),
+          body: JSON.stringify({ category, specialty, city }),
         }
       );
 
@@ -183,8 +173,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       window.location.href = `/results.html?requestId=${data.requestId}`;
     } catch (err) {
-      errorBox.textContent = err.message;
-      errorBox.classList.remove("hidden");
+      if (errorBox) {
+        errorBox.textContent = err.message;
+        errorBox.classList.remove("hidden");
+      }
     }
   });
 });
